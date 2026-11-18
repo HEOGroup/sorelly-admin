@@ -38,3 +38,5 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - Fatura em comum: um total de banho dividido entre vários pedidos (Rayssa: a fatura vem com valor total, divisão em partes iguais, fechos também são banhados).
 
 - 17/11/2026 (Marcus): menu Pedidos vira lista (Compras de Bruto, Pedidos Banho/Bruto, Peças) e a lista Peças passa a se chamar Cadastro; quadro novo Peças com o que falta comprar (DevMaster + pedidos). Detalhes em docs/DECISOES.md de 17/11/2026.
+
+- 18/11/2026 (Nickolas): Compras ganha a etapa **Análise financeira** entre Solicitada e Liberada para compra. Na solicitação, o CNPJ pagador sai e entram as formas de pagamento que o fornecedor aceita (Cartão, Boleto, Pix, Pix REV, Dinheiro; Sem NF = só Dinheiro e Pix REV). O financeiro escolhe CNPJ e forma na análise; Aprovar e liberar é tudo ou nada; mudança depois de liberar pede motivo e volta para a análise (ou vira divergência se já comprou). Mesmas pessoas aprovam e liberam. Detalhes em docs/DECISOES.md de 18/11/2026.

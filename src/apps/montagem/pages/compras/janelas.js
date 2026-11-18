@@ -4,8 +4,8 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro, ESTADO } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_PLANO, MOTIVOS_ORCAMENTO, PAGAVEL_STATUS, ROTULO_ETIQUETA, ROTULO_FORMA_PLANO, ROTULO_MOTIVO_ORC, ROTULO_UNIDADE, ROTULO_URGENCIA, TRANSICOES, UNIDADES, URGENCIAS,
-  compraParaOrientacoes, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, planoSituacao, podeAcaoPedido, podeEditarPlano, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
+import { ETAPA_ANALISE, ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_DISP, FORMAS_PLANO, FORMAS_SEM_NF, REF_PRAZO, ROTULO_FORMA_DISP, MOTIVOS_ORCAMENTO, PAGAVEL_STATUS, ROTULO_ETIQUETA, ROTULO_FORMA_PLANO, ROTULO_MOTIVO_ORC, ROTULO_UNIDADE, ROTULO_URGENCIA, TRANSICOES, UNIDADES, URGENCIAS,
+  compraParaOrientacoes, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, pendenciasAnalise, planoSituacao, podeAcaoPedido, podeEditarPlano, textoFormaDisp, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
 import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, EstoqueMomento, Janela, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
@@ -46,7 +46,7 @@ function DlgEsperar(p){
 }
 function DlgComprar(p){
   var c = p.c, ped = p.ped, lib = ped.liberacao, doFinanceiro = !!lib && lib.modo==="plano", edita = podeEditarPlano(c.s, ped, c.uid, c.papel);
-  var base = ped.plano.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", parcelas:x.parcelas || null, pago:!!x.pago}; });
+  var base = rowsDe(ped.plano);
   var st = useState({valor:(doFinanceiro && ped.plano.length ? ped.planoInfo.soma : ped.valorFinal) || null, comprador:c.por, dia:hojeSP(), prev:ped.previsaoEntrega || "", numero:ped.numeroFornecedor || "", nf:ped.notaFiscal || "", rows:base}), v = st[0];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; st[1](n); };
   var mudou = JSON.stringify(v.rows)!==JSON.stringify(base);
@@ -69,7 +69,7 @@ function DlgComprar(p){
       e(Campo,{rot:"Nota fiscal"}, e("input",{value:v.nf, onChange:function(ev){ set("nf", ev.target.value); }, className:CAMPO}))),
     e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
       e("span",{className:"text-[12px] font-bold uppercase tracking-wide text-white/75"}, "Como comprar · plano de pagamento"),
-      e(PlanoEditor,{rows:v.rows, set:function(r){ set("rows", r); }, cfg:c.ce.config, aviso:c.aviso, edita:edita, refTotal:{valorCompra:v.valor, valorEstimado:ped.valorEstimado}}),
+      e(PlanoEditor,{rows:v.rows, set:function(r){ set("rows", r); }, cfg:c.ce.config, aviso:c.aviso, edita:edita, formas:formasDe(ped), refTotal:{valorCompra:v.valor, valorEstimado:ped.valorEstimado}}),
       !edita && ped.plano.length===0 && e("p",{className:"rounded-lg bg-[#FBBF24]/15 px-2 py-1.5 text-[12.5px] text-[#FBBF24]"}, "Sem plano de pagamento: peça ao financeiro para definir como comprar antes de efetuar."),
       !edita && doFinanceiro && e("p",{className:"text-[11.5px] text-white/60"}, "Alterar o plano exige a autorização para aprovar e liberar compras.")));
 }
@@ -123,23 +123,41 @@ function DlgValor(p){   // reenviar com novo valor · ajustar orçamento e aprov
     e(Campo,{rot:"Link"}, e("input",{value:v.link, onChange:function(ev){ set("link", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Observações"}, e("textarea",{value:v.obs, rows:2, onChange:function(ev){ set("obs", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})));
 }
-// liberar para compra: só OK (o comprador decide como comprar) ou já definindo COMO comprar (plano de pagamento fechado)
-function DlgLiberar(p){
-  var c = p.c, ped = p.ped, base = ped.plano.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", parcelas:x.parcelas || null, pago:!!x.pago}; });
-  var st = useState({modo:"ok", nota:"", rows:base}), v = st[0], max = c.ce.config.motivoMax;
+// ANÁLISE FINANCEIRA (etapa 2, 18/11/2026): o financeiro escolhe o CNPJ pagador e a forma de pagamento entre as que o fornecedor aceita, com as condições (parcelas, juros, vencimento ou prazo).
+// "Salvar análise" guarda sem liberar (o quadro mostra o que falta). "Liberar para compra" confere tudo e libera. op "aprovar_liberar" = aprova e libera de uma vez: se faltar algo, nada muda.
+// Nada aqui marca pagamento, dá baixa, confirma recebimento ou mexe no estoque.
+function DlgAnalise(p){
+  var c = p.c, ped = p.ped, junto = p.op==="aprovar_liberar", max = c.ce.config.motivoMax;
+  var st = useState({cnpjId:ped.cnpjId || "", cnpjOutro:ped.cnpjOutro || "", nota:"", rows:rowsDe(ped.plano)}), v = st[0];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; st[1](n); };
-  var enviar = function(){ var a = {op:"pedido_liberar", id:ped.id, modo:v.modo, nota:v.nota}; if(v.modo==="plano") a.plano = linhasDoPlano(v.rows); if(c.exec(a)) p.fechar(); };
-  var opcao = function(k, ic, t, d){ var on = v.modo===k; return e("button",{type:"button", "aria-pressed":on, onClick:function(){ set("modo", k); }, className:"flex flex-1 basis-56 flex-col items-center gap-1 rounded-xl px-3 py-2 text-center transition "+(on ? "bg-[#3B82F6]/25 ring-2 ring-[#3B82F6]" : "bg-white/5 ring-1 ring-white/10 hover:bg-white/10")}, e(Ph,{n:ic, s:20, className:on ? "text-[#BFDBFE]" : "text-white/70"}), e("b",{className:"text-[13px]"}, t), e("span",{className:"text-[11.5px] leading-tight text-white/65"}, d)); };
-  return e(Dialogo,{t:"Liberar para compra", sub:"#"+ped.id+" · "+ped.titulo+" · "+formatarReais(ped.valorFinal), tam:v.modo==="plano" ? "max-w-xl" : "max-w-lg", fechar:p.fechar, rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), e(Bt,{key:"o", tipo:"forte", ic:"lock-open", onClick:enviar}, "Liberar para compra")]},
-    e("div",{className:"flex flex-wrap justify-center gap-2"},
-      opcao("ok", "seal-check", "Só liberar", "O comprador decide como comprar"),
-      opcao("plano", "currency-circle-dollar", "Definir como comprar", "Plano de pagamento: partes, vencimentos e parcelas no cartão")),
-    v.modo==="plano" && e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
-      e("span",{className:"text-[12px] font-bold uppercase tracking-wide text-white/75"}, "Plano de pagamento"),
-      e(PlanoEditor,{rows:v.rows, set:function(r){ set("rows", r); }, cfg:c.ce.config, aviso:c.aviso, edita:true, refTotal:{valorCompra:null, valorEstimado:ped.valorEstimado}}),
-      e("p",{className:"text-[11.5px] text-white/60"}, "O plano precisa fechar com o total para liberar. O comprador só confirma; alterar depois exige a autorização para aprovar e liberar.")),
+  var dados = function(){ return {cnpjId:v.cnpjId, cnpjOutro:v.cnpjOutro, plano:linhasDoPlano(v.rows), nota:v.nota}; };
+  var salvar = function(){ if(c.exec(Object.assign({op:"pedido_decisao", id:ped.id}, dados()))) p.fechar(); };
+  var liberar = function(){ if(c.exec(Object.assign(junto ? {op:"pedido_aprovar", liberar:true} : {op:"pedido_liberar"}, {id:ped.id}, dados()))) p.fechar(); };
+  return e(Dialogo,{t:junto ? "Aprovar e liberar" : "Análise financeira", sub:"#"+ped.id+" · "+ped.titulo+" · "+formatarReais(ped.valorFinal), tam:"max-w-xl", fechar:p.fechar,
+    rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), !junto && e(Bt,{key:"s", ic:"floppy-disk", onClick:salvar}, "Salvar análise"), e(Bt,{key:"o", tipo:"forte", ic:"lock-open", onClick:liberar}, junto ? "Aprovar e liberar" : "Liberar para compra")]},
+    junto && e("p",{className:"rounded-lg bg-black/25 px-2 py-1.5 text-[13px]"}, "Aprova e libera de uma vez. Se faltar algum dado, nada é alterado."),
+    e("div",{className:"flex flex-col gap-1 rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
+      e("span",{className:"text-[11px] font-bold uppercase tracking-wide"}, "Formas que o fornecedor aceita"),
+      e(FormasDisponiveis,{fd:ped.formasDisp})),
+    e("div",{className:"grid grid-cols-1 gap-2 "+(v.cnpjId==="outro" ? "sm:grid-cols-2" : "")},
+      e(Campo,{rot:"CNPJ pagador"}, e("select",{value:v.cnpjId, onChange:function(ev){ set("cnpjId", ev.target.value); }, className:CAMPO}, e("option",{value:""}, "Selecione"), opcoesCnpj(c.s).map(function(o){ return opt(o.id, o.rotulo); }))),
+      v.cnpjId==="outro" && e(Campo,{rot:"Qual é o outro CNPJ"}, e("input",{value:v.cnpjOutro, onChange:function(ev){ set("cnpjOutro", ev.target.value); }, className:CAMPO}))),
+    e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
+      e("span",{className:"text-[11px] font-bold uppercase tracking-wide"}, "Forma escolhida e condições"),
+      e(PlanoEditor,{rows:v.rows, set:function(r){ set("rows", r); }, cfg:c.ce.config, aviso:c.aviso, edita:true, formas:formasDe(ped), refTotal:{valorCompra:null, valorEstimado:ped.valorEstimado}}),
+      e("p",{className:"text-[11px]"}, "Pode dividir entre formas: a soma precisa fechar com o total. Liberar não marca nada como pago.")),
     e(Campo,{rot:"Observação para o comprador (opcional)"}, e("textarea",{value:v.nota, maxLength:max, rows:2, onChange:function(ev){ set("nota", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})));
 }
+// formas que o fornecedor aceita (gravadas na solicitação). Pedido antigo, sem a informação: "Não informado"
+function FormasDisponiveis(p){
+  var fd = p.fd, ks = fd && fd.opcoes ? FORMAS_DISP.filter(function(k){ return fd.opcoes[k]; }) : [];
+  if(!ks.length) return e("span",{className:"text-[13px]"}, "Não informado");
+  return e("div",{className:"flex flex-col gap-1"},
+    fd.semNF && e("span",{className:"flex justify-center"}, e(Selo,{cor:"alerta", ic:"warning"}, "Sem NF: só Dinheiro e Pix REV")),
+    ks.map(function(k){ return e("div",{key:k, className:"break-words rounded-md border border-white/20 px-2 py-0.5 text-[13px]"}, textoFormaDisp(k, fd.opcoes[k])); }));
+}
+// lista de formas que o editor de pagamento oferece: as que o fornecedor aceita (pedido antigo, sem a lista: todas)
+var formasDe = function(ped){ var fd = ped.formasDisp; var ks = fd && fd.opcoes ? FORMAS_DISP.filter(function(k){ return fd.opcoes[k]; }) : []; return ks.length ? ks : null; };
 // escolhe a janela pequena da operação
 function DlgOp(p){
   var ped = pedidoDe(p.c.s, p.dlg.id), op = p.dlg.op; if(!ped) return null;
@@ -148,7 +166,7 @@ function DlgOp(p){
   if(op==="cancelar") return e(DlgMotivo,Object.assign({titulo:"Cancelar compra", rotulo:"Cancelar compra"}, base));
   if(op==="novo_orcamento") return e(DlgNovoOrc,base);
   if(op==="esperar") return e(DlgEsperar,base);
-  if(op==="liberar") return e(DlgLiberar,base);
+  if(op==="liberar" || op==="decisao" || op==="aprovar_liberar") return e(DlgAnalise,base);
   if(op==="comprar") return e(DlgComprar,base);
   if(op==="receber") return e(DlgReceber,base);
   if(op==="entregar") return e(DlgEntregar,base);
@@ -159,26 +177,36 @@ function DlgOp(p){
 }
 
 // ───────────── plano de pagamento (editor reutilizado no detalhe, na liberação e na compra) ─────────────
-var linhasDoPlano = function(rows){ return rows.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento, parcelas:x.forma==="cartao" ? (Number(x.parcelas) || 1) : undefined}; }); };
+// linha do plano para a tela (rowsDe) e de volta para a regra (linhasDoPlano): vencimento OU prazo combinado; parcelas no cartão e no boleto; juros e taxa só no cartão (18/11/2026)
+var rowsDe = function(plano){ return (plano || []).map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", prazo:x.prazo || "", parcelas:x.parcelas || null, juros:x.juros==null ? null : x.juros, taxa:x.taxa || "", pago:!!x.pago}; }); };
+var linhasDoPlano = function(rows){ return rows.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento, prazo:x.prazo || "", parcelas:x.forma==="cartao" ? (Number(x.parcelas) || 1) : x.forma==="boleto" && Number(x.parcelas)>0 ? Number(x.parcelas) : undefined, juros:x.forma==="cartao" ? x.juros : undefined, taxa:x.forma==="cartao" ? x.taxa : undefined}; }); };
+var JUROS_SEL = function(j){ return j===true || j==="sim" ? "sim" : j===false || j==="nao" ? "nao" : ""; };
+var JUROS_VAL = function(s){ return s==="sim" ? true : s==="nao" ? false : null; };
 // partes do plano (controlado: rows/set vêm de quem usa). ref = {valorCompra, valorEstimado} (total de referência); linhaExtra(r, i) opcional; botoes opcionais no fim
 function PlanoEditor(p){
-  var rows = p.rows, set = p.set, cfg = p.cfg, edita = p.edita;
+  var rows = p.rows, set = p.set, cfg = p.cfg, edita = p.edita, formas = p.formas && p.formas.length ? p.formas : FORMAS_PLANO;   // p.formas = só as que o fornecedor aceita
   var alt = function(i, patch){ set(rows.map(function(x, k){ return k===i ? Object.assign({}, x, patch) : x; })); };
   var sit = planoSituacao(Object.assign({plano:[]}, p.refTotal, {plano:rows.map(function(x){ return {valor:x.valor || 0}; })}), cfg), dif = sit.diferenca;
-  var nova = function(valor){ var ult = rows[rows.length-1]; set(rows.concat([{forma:ult ? ult.forma : "pix_empresa", valor:valor, vencimento:ult ? ult.vencimento : hojeSP(), parcelas:null, pago:false}])); };
+  var nova = function(valor){ var ult = rows[rows.length-1]; set(rows.concat([{forma:ult ? ult.forma : (p.formas && p.formas.length ? formas[0] : "pix_empresa"), valor:valor, vencimento:ult ? ult.vencimento : hojeSP(), prazo:ult ? ult.prazo : "", parcelas:null, juros:null, taxa:"", pago:false}])); };
   var dividir = function(){ var resto = r2(sit.total-sit.soma); if(resto<=0.004) return p.aviso("Não há valor restante para dividir."); nova(resto); };
   var corDif = sit.vazio ? "neutro" : sit.fecha ? "ok" : "ruim";
   return e("div",{className:"flex flex-col gap-2"},
     e(Resumo,{itens:[["Soma", formatarReais(sit.soma)], ["Total", formatarReais(sit.total)], ["Diferença", (dif<0 ? "−" : "")+formatarReais(Math.abs(dif)), corDif==="ok" ? "text-success" : corDif==="ruim" ? "text-destructive" : ""]]}),
-    rows.length===0 && e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Nenhuma parte de pagamento."),
+    rows.length===0 && e("p",{className:"px-2 py-1 text-[13px]"}, "Nenhuma parte de pagamento."),
     rows.map(function(r, i){
+      var ops = formas.indexOf(r.forma)<0 ? formas.concat([r.forma]) : formas, parc = r.forma==="cartao" || r.forma==="boleto";
       return e("div",{key:i, className:"flex flex-col gap-1.5 rounded-lg bg-black/25 p-2 ring-1 ring-white/10"},
         e("div",{className:"flex items-center gap-1.5"},
-          e("select",{value:r.forma, disabled:!edita, "aria-label":"Forma da parte "+(i+1), onChange:function(ev){ alt(i, {forma:ev.target.value, parcelas:ev.target.value==="cartao" ? (r.parcelas || 1) : null}); }, className:CAMPO}, FORMAS_PLANO.map(function(f){ return opt(f, ROTULO_FORMA_PLANO[f]); })),
+          e("select",{value:r.forma, disabled:!edita, "aria-label":"Forma da parte "+(i+1), onChange:function(ev){ var f = ev.target.value; alt(i, {forma:f, parcelas:f==="cartao" ? (r.parcelas || 1) : null, juros:null, taxa:""}); }, className:CAMPO}, ops.map(function(f){ return opt(f, ROTULO_FORMA_PLANO[f] || f); })),
           edita && e("button",{type:"button", "aria-label":"Remover parte "+(i+1), onClick:function(){ set(rows.filter(function(x, k){ return k!==i; })); }, className:"grid size-9 shrink-0 place-items-center rounded-lg bg-white/10 hover:bg-white/20"}, e(Ph,{n:"x", s:14}))),
         e(Dinheiro,{value:r.valor, label:"Valor da parte "+(i+1), disabled:!edita, onChange:function(x){ alt(i, {valor:x || 0}); }}),
-        e("input",{type:"date", value:r.vencimento, disabled:!edita, "aria-label":"Vencimento da parte "+(i+1), onChange:function(ev){ alt(i, {vencimento:ev.target.value}); }, className:CAMPO}),
-        r.forma==="cartao" && e("input",{type:"number", min:1, max:cfg.parcelasMax, value:r.parcelas || 1, disabled:!edita, "aria-label":"Parcelas da parte "+(i+1), placeholder:"Parcelas", onChange:function(ev){ alt(i, {parcelas:ev.target.value}); }, className:CAMPO}),
+        e("div",{className:"grid grid-cols-2 gap-1.5"},
+          e(Campo,{rot:"Vencimento"}, e("input",{type:"date", value:r.vencimento, disabled:!edita, "aria-label":"Vencimento da parte "+(i+1), onChange:function(ev){ alt(i, {vencimento:ev.target.value}); }, className:CAMPO})),
+          e(Campo,{rot:"Ou prazo combinado"}, e("input",{value:r.prazo || "", disabled:!edita, "aria-label":"Prazo combinado da parte "+(i+1), placeholder:"30 dias após a nota", onChange:function(ev){ alt(i, {prazo:ev.target.value}); }, className:CAMPO}))),
+        parc && e("div",{className:"grid grid-cols-2 gap-1.5"},
+          e(Campo,{rot:"Parcelas"}, e("input",{type:"number", min:1, max:cfg.parcelasMax, value:r.parcelas || (r.forma==="cartao" ? 1 : ""), disabled:!edita, "aria-label":"Parcelas da parte "+(i+1), onChange:function(ev){ alt(i, {parcelas:ev.target.value}); }, className:CAMPO})),
+          r.forma==="cartao" && e(Campo,{rot:"Juros"}, e("select",{value:JUROS_SEL(r.juros), disabled:!edita, "aria-label":"Juros da parte "+(i+1), onChange:function(ev){ alt(i, {juros:JUROS_VAL(ev.target.value)}); }, className:CAMPO}, opt("", "Selecione"), opt("nao", "Sem juros"), opt("sim", "Com juros")))),
+        r.forma==="cartao" && r.juros===true && e(Campo,{rot:"Taxa ou condição dos juros"}, e("input",{value:r.taxa || "", disabled:!edita, "aria-label":"Taxa dos juros da parte "+(i+1), placeholder:"2,5% ao mês", onChange:function(ev){ alt(i, {taxa:ev.target.value}); }, className:CAMPO})),
         p.linhaExtra && p.linhaExtra(r, i));
     }),
     !sit.vazio && !sit.fecha && e("p",{className:"rounded-lg bg-[#EF4444]/15 px-2 py-1 text-[12px] text-[#F87171]"}, sit.aviso),
@@ -192,19 +220,20 @@ function Resumo(p){ return e("div",{className:"grid gap-1.5", style:{gridTemplat
 function Grade(p){ return e(TabelaPlanilha,{cols:p.cols, linhas:p.linhas, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nenhum item."}); }
 function PlanoPag(p){
   var c = p.c, ped = p.ped, cfg = c.ce.config, pagavel = PAGAVEL_STATUS.indexOf(ped.status)>=0;
-  var base = ped.plano.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", parcelas:x.parcelas || null, pago:!!x.pago}; });
-  var chave = JSON.stringify(base), st = useState({chave:chave, rows:base, forcar:false}), v = st[0];
+  var base = rowsDe(ped.plano);
+  var chave = JSON.stringify(base), st = useState({chave:chave, rows:base, forcar:false, motivo:""}), v = st[0];
   var rows = v.chave===chave ? v.rows : base, sujo = JSON.stringify(rows)!==chave;
-  var edita = podeEditarPlano(c.s, ped, c.uid, c.papel);
-  var set = function(r){ st[1]({chave:chave, rows:r, forcar:v.forcar}); };
+  var edita = podeEditarPlano(c.s, ped, c.uid, c.papel), liberada = !!ped.decisao;   // depois de liberar, trocar a forma ou passar do total pede motivo
+  var set = function(r){ st[1]({chave:chave, rows:r, forcar:v.forcar, motivo:v.motivo}); };
   var salvar = function(){
-    if(ped.enviada && !v.forcar){ st[1]({chave:chave, rows:rows, forcar:true}); return c.aviso("Já foi enviado aos pagamentos: clique em Salvar plano de novo para confirmar a alteração."); }
-    c.exec({op:"pedido_plano_set", id:ped.id, forcar:v.forcar, plano:linhasDoPlano(rows)});
+    if(ped.enviada && !v.forcar){ st[1]({chave:chave, rows:rows, forcar:true, motivo:v.motivo}); return c.aviso("Já foi enviado aos pagamentos: clique em Salvar plano de novo para confirmar a alteração."); }
+    c.exec({op:"pedido_plano_set", id:ped.id, forcar:v.forcar, motivo:v.motivo, plano:linhasDoPlano(rows)});
   };
   var def = ped.status==="LIBERADA" && ped.liberacao && ped.liberacao.modo==="plano";
   return e(Painel,{t:"Plano de pagamento", ic:"currency-circle-dollar"},
-    def && e("p",{className:"rounded-lg bg-black/25 px-2 py-1 text-[11.5px] text-white/70"}, "Plano definido pelo financeiro ("+ped.liberacao.por+")."),
-    e(PlanoEditor,{rows:rows, set:set, cfg:cfg, edita:edita, refTotal:ped, aviso:c.aviso,
+    def && e("p",{className:"rounded-lg bg-black/25 px-2 py-1 text-[11px]"}, "Plano definido na análise financeira ("+ped.liberacao.por+")."),
+    liberada && sujo && e(Campo,{rot:"Motivo da mudança (obrigatório se mudar a forma ou passar do total liberado)"}, e("input",{value:v.motivo, onChange:function(ev){ st[1]({chave:chave, rows:rows, forcar:v.forcar, motivo:ev.target.value}); }, className:CAMPO})),
+    e(PlanoEditor,{rows:rows, set:set, cfg:cfg, edita:edita, refTotal:ped, aviso:c.aviso, formas:formasDe(ped),
       linhaExtra:function(r){ return pagavel && r.id && !sujo && e("div",{className:"flex justify-center"}, r.pago ? e(Selo,{cor:"ok", ic:"check-circle"}, "Paga") : e(Bt,{className:"py-1!", ic:"check-circle", onClick:function(){ c.exec({op:"pedido_plano_pago", id:ped.id, parteId:r.id}); }}, "Marcar paga")); },
       botoes:[sujo && e(Bt,{key:"d", ic:"arrow-counter-clockwise", onClick:function(){ set(base); }}, "Desfazer"), sujo && e(Bt,{key:"s", tipo:"forte", ic:"check-circle", onClick:salvar}, "Salvar plano")]}));
 }
@@ -242,12 +271,36 @@ function Conferencia(p){
 // ───────────── nova solicitação e edição ─────────────
 var SEQ = 0;
 function itemVazio(cls){ return {k:++SEQ, titulo:"", quantidade:1, unidade:"UNID", valorUnitario:null, classificacao:cls || "", materialId:""}; }
+// FORMAS DE PAGAMENTO DISPONÍVEIS na solicitação (18/11/2026): várias ao mesmo tempo, cada uma com as condições do fornecedor. Sem NF = só Dinheiro e Pix REV.
+function EditorFormas(p){
+  var fd = p.fd, op = fd.opcoes, dis = p.disabled;
+  var marca = function(k, on){ var o = Object.assign({}, op); if(on) o[k] = k==="boleto" ? {ref:"emissao_nf"} : {}; else delete o[k]; p.set({semNF:fd.semNF, opcoes:o}); };
+  var altOp = function(k, patch){ var o = Object.assign({}, op); o[k] = Object.assign({}, op[k], patch); p.set({semNF:fd.semNF, opcoes:o}); };
+  var semNF = function(on){ var o = {}; Object.keys(op).forEach(function(k){ if(!on || FORMAS_SEM_NF.indexOf(k)>=0) o[k] = op[k]; }); p.set({semNF:on, opcoes:o}); };
+  var campo = function(k, chave, ph, tipo){ return e("input",{type:tipo || "text", min:tipo ? 1 : undefined, max:tipo ? p.parcelasMax : undefined, value:op[k][chave]==null ? "" : op[k][chave], disabled:dis, placeholder:ph, "aria-label":ROTULO_FORMA_DISP[k]+": "+ph, onChange:function(ev){ var x = {}; x[chave] = ev.target.value; altOp(k, x); }, className:CAMPO}); };
+  return e("div",{className:"flex flex-col gap-1.5"},
+    e("label",{className:"flex cursor-pointer items-center justify-center gap-2 text-[13px] font-bold"}, e("input",{type:"checkbox", checked:!!fd.semNF, disabled:dis, onChange:function(ev){ semNF(ev.target.checked); }}), "Sem NF (só Dinheiro e Pix REV)"),
+    FORMAS_DISP.map(function(k){
+      var on = !!op[k], bloq = !!fd.semNF && FORMAS_SEM_NF.indexOf(k)<0, o = op[k] || {};
+      return e("div",{key:k, className:"flex flex-col gap-1.5 rounded-lg bg-black/25 p-2 ring-1 ring-white/10 "+(bloq ? "opacity-50" : "")},
+        e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px] font-bold"}, e("input",{type:"checkbox", checked:on, disabled:dis || bloq, onChange:function(ev){ marca(k, ev.target.checked); }}), ROTULO_FORMA_DISP[k]),
+        on && k==="cartao" && e("div",{className:"grid grid-cols-2 gap-1.5"},
+          e("select",{value:JUROS_SEL(o.juros), disabled:dis, "aria-label":"Cartão: juros", onChange:function(ev){ altOp(k, {juros:ev.target.value}); }, className:CAMPO}, opt("", "Juros"), opt("nao", "Sem juros"), opt("sim", "Com juros")),
+          campo(k, "parcelasMax", "Parcelas até", "number")),
+        on && k==="cartao" && JUROS_SEL(o.juros)==="sim" && campo(k, "taxa", "Taxa ou condição dos juros"),
+        on && k==="boleto" && e("div",{className:"grid grid-cols-2 gap-1.5"},
+          campo(k, "parcelas", "Parcelas", "number"),
+          campo(k, "prazos", "Prazos: 30/60/90")),
+        on && k==="boleto" && e("select",{value:o.ref || "emissao_nf", disabled:dis, "aria-label":"Boleto: prazos contados a partir", onChange:function(ev){ altOp(k, {ref:ev.target.value}); }, className:CAMPO}, REF_PRAZO.map(function(r){ return opt(r[0], "Dias contados "+r[1]); })),
+        on && k!=="cartao" && k!=="boleto" && campo(k, "condicao", k==="dinheiro" ? "Prazo ou condição" : "Condição (ex.: à vista)"));
+    }));
+}
 function FormCompra(p){
   var c = p.c, ce = c.ce, cfg = ce.config, ed = p.ped || null;
   var podeItens = ed ? (podeAcaoPedido(ed, "itens_set") && c.pode(TRANSICOES.itens_set, ed)) : true, podeDados = ed ? c.opera : true;
-  var ini = ed ? {forn:ed.fornecedor || "", titulo:ed.titulo, setorId:ed.setorId==null ? "" : String(ed.setorId), categoriaId:ed.categoriaId==null ? "" : String(ed.categoriaId), urgencia:ed.urgencia, cnpjId:ed.cnpjId || "", cnpjOutro:ed.cnpjOutro || "", previsao:ed.previsaoEntrega || "", link:ed.link || "", obs:ed.observacao || "", cond:ed.condicoesTxt || "",
+  var ini = ed ? {forn:ed.fornecedor || "", titulo:ed.titulo, setorId:ed.setorId==null ? "" : String(ed.setorId), categoriaId:ed.categoriaId==null ? "" : String(ed.categoriaId), urgencia:ed.urgencia, fd:ed.formasDisp ? JSON.parse(JSON.stringify(ed.formasDisp)) : {semNF:false, opcoes:{}}, motivo:"", previsao:ed.previsaoEntrega || "", link:ed.link || "", obs:ed.observacao || "", cond:ed.condicoesTxt || "",
       itens:ed.itens.map(function(i){ return {k:++SEQ, titulo:i.titulo, quantidade:i.quantidade, unidade:i.unidade, valorUnitario:i.valorUnitario!=null ? i.valorUnitario : (i.valorTotal && i.quantidade ? r2(i.valorTotal/i.quantidade) : null), classificacao:i.classificacao || "", materialId:i.materialId==null ? "" : String(i.materialId)}; })}
-    : {forn:"", titulo:"", setorId:"", categoriaId:"", urgencia:"MEDIA", cnpjId:"", cnpjOutro:"", previsao:"", link:"", obs:"", cond:"", itens:[itemVazio((cfg.classificacoes[0] || {}).id)]};
+    : {forn:"", titulo:"", setorId:"", categoriaId:"", urgencia:"MEDIA", fd:{semNF:false, opcoes:{}}, motivo:"", previsao:"", link:"", obs:"", cond:"", itens:[itemVazio((cfg.classificacoes[0] || {}).id)]};
   var st = useState(ini), f = st[0];
   useEffect(function(){ var h = function(ev){ if(ev.key==="Escape") p.fechar(); }; window.addEventListener("keydown", h); return function(){ window.removeEventListener("keydown", h); }; }, []);
   var set = function(k, x){ var n = Object.assign({}, f); n[k] = x; st[1](n); };
@@ -256,12 +309,13 @@ function FormCompra(p){
   var forn = ce.fornecedores.find(function(x){ return norm(x.nome)===norm(f.forn); });
   var dados = function(){
     var o = {urgencia:f.urgencia, setorId:idDe(ce.setores, f.setorId) || "", categoriaId:idDe(ce.categorias, f.categoriaId) || "", previsaoEntrega:f.previsao, link:f.link, observacao:f.obs, condicoesTxt:f.cond, fornecedorId:forn ? forn.id : undefined, fornecedorNome:forn ? forn.nome : f.forn.trim()};
-    if(f.cnpjId){ o.cnpjId = f.cnpjId; o.cnpjOutro = f.cnpjOutro; } return o;
+    if(!ed || Object.keys(f.fd.opcoes).length) o.formasDisp = f.fd;   // pedido antigo sem formas: só manda se alguém marcou
+    if(f.motivo.trim()) o.motivo = f.motivo; return o;
   };
   var itensAcao = function(){ return f.itens.map(function(i){ return {titulo:i.titulo, quantidade:i.quantidade, unidade:i.unidade, valorUnitario:i.valorUnitario==null ? undefined : i.valorUnitario, classificacao:i.classificacao || undefined, materialId:idDe(ce.materiais, i.materialId)}; }); };
   var salvar = function(){
     if(!f.forn.trim()) return c.aviso("Informe o fornecedor.");
-    if(!f.cnpjId) return c.aviso("Escolha o CNPJ pagador.");
+    if(!ed && !Object.keys(f.fd.opcoes).length) return c.aviso("Marque as formas de pagamento que o fornecedor aceita.");
     if(!ed){ if(c.exec(Object.assign({op:"pedido_add", titulo:f.titulo, itens:itensAcao()}, dados()))) p.fechar(); return; }
     if(podeItens && !c.exec({op:"pedido_itens_set", id:ed.id, itens:itensAcao(), titulo:f.titulo})) return;
     if(podeDados && !c.exec(Object.assign({op:"pedido_set", id:ed.id}, dados()))) return;
@@ -277,8 +331,7 @@ function FormCompra(p){
       ce.categorias.length>0 && e(Campo,{rot:"Categoria"}, e("select",{value:f.categoriaId, disabled:!podeDados, onChange:function(ev){ set("categoriaId", ev.target.value); }, className:CAMPO}, e("option",{value:""}, "—"), ce.categorias.map(function(x){ return opt(x.id, x.nome); }))),
       e(Campo,{rot:"Urgência"}, e("select",{value:f.urgencia, disabled:!podeDados, onChange:function(ev){ set("urgencia", ev.target.value); }, className:CAMPO}, URGENCIAS.map(function(u){ return opt(u, ROTULO_URGENCIA[u]); }))),
       e(Campo,{rot:"Prazo de entrega"}, e("input",{type:"date", value:f.previsao, disabled:!podeDados, onChange:function(ev){ set("previsao", ev.target.value); }, className:CAMPO}))),
-    e(Campo,{rot:"CNPJ pagador"}, e("select",{value:f.cnpjId, disabled:!podeDados, onChange:function(ev){ set("cnpjId", ev.target.value); }, className:CAMPO}, e("option",{value:""}, "Selecione…"), opcoesCnpj(c.s).map(function(o){ return opt(o.id, o.rotulo); }))),
-    f.cnpjId==="outro" && e(Campo,{rot:"Qual é o outro CNPJ"}, e("input",{value:f.cnpjOutro, disabled:!podeDados, onChange:function(ev){ set("cnpjOutro", ev.target.value); }, className:CAMPO})),
+    ed && ed.decisao && e(Campo,{rot:"Motivo da mudança (obrigatório se trocar o fornecedor depois de liberada)"}, e("input",{value:f.motivo, disabled:!podeDados, onChange:function(ev){ set("motivo", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Link"}, e("input",{value:f.link, disabled:!podeDados, onChange:function(ev){ set("link", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Condições"}, e("input",{value:f.cond, disabled:!podeDados, onChange:function(ev){ set("cond", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Observações"}, e("textarea",{value:f.obs, rows:2, disabled:!podeDados, onChange:function(ev){ set("obs", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})));
@@ -299,18 +352,21 @@ function FormCompra(p){
     }),
     podeItens && e(Bt,{ic:"plus", className:"self-center", onClick:function(){ set("itens", f.itens.concat([itemVazio(f.itens.length ? f.itens[f.itens.length-1].classificacao : "")])); }}, "Item"));
   var nOrc = orcamentosExigidos(cfg, total);
-  var col3 = e(Painel,{key:"c", t:"Resumo", ic:"receipt"},
-    e(Resumo,{itens:[["Itens", String(f.itens.length)], ["Total", formatarReais(total)]]}),
-    nOrc>0 && e("p",{className:"rounded-lg bg-[#60A5FA]/15 px-2 py-1.5 text-[12px] text-[#BFDBFE]"}, "Esta compra pede "+nOrc+" orçamentos. "+textoOrcamentos(cfg)+"."),
-    e("p",{className:"px-1 text-[12px] text-white/60"}, "O plano de pagamento pode ser montado depois, dentro da compra."),
-    ed && !podeItens && !podeDados && e("p",{className:"text-[12.5px] text-[#FBBF24]"}, "Sem autorização para editar esta compra."));
+  var col3 = e("div",{key:"c", className:"flex flex-col gap-1.5"},
+    e(Painel,{t:"Formas de pagamento disponíveis", ic:"currency-circle-dollar"},
+      e(EditorFormas,{fd:f.fd, set:function(x){ set("fd", x); }, disabled:!podeDados, parcelasMax:cfg.parcelasMax}),
+      e("p",{className:"px-1 text-[11px]"}, "O que o fornecedor aceita. O financeiro escolhe o CNPJ pagador e a forma na análise financeira.")),
+    e(Painel,{t:"Resumo", ic:"receipt"},
+      e(Resumo,{itens:[["Itens", String(f.itens.length)], ["Total", formatarReais(total)]]}),
+      nOrc>0 && e("p",{className:"rounded-lg bg-[#60A5FA]/15 px-2 py-1.5 text-[11px] text-[#BFDBFE]"}, "Esta compra pede "+nOrc+" orçamentos. "+textoOrcamentos(cfg)+"."),
+      ed && !podeItens && !podeDados && e("p",{className:"text-[13px] text-[#FBBF24]"}, "Sem autorização para editar esta compra.")));
   return e(Janela,{t:ed ? "Editar compra #"+ed.id : "Nova solicitação de compra", sub:ed ? ed.titulo : "Enviada ao financeiro para aprovação", fechar:p.fechar, colunas:[col1, col2, col3],
     rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), e(Bt,{key:"s", tipo:"forte", ic:"paper-plane-tilt", disabled:!!ed && !podeItens && !podeDados, semAut:true, onClick:salvar}, ed ? "Salvar alterações" : "Enviar solicitação")]});
 }
 
 // ───────────── detalhe da compra (3 colunas) ─────────────
 var IDX = {NAO_VERIFICADA:0, AGUARDANDO:0, AGUARDANDO_ORCAMENTO:0, AGUARDANDO_AUTORIZACAO:0, AGUARDANDO_CNPJ:1, AGUARDANDO_FORMA_PAGAMENTO:1, APROVADA:1, LIBERADA:2, COMPRADA:3, EM_TRANSITO:3, RECEBIDA_PARCIAL:3, RECEBIDA:4, ENTREGUE:5};
-var FORA_DOS_BOTOES = {plano_set:1, itens_set:1, enviar_pagamentos:1, etiqueta:1};
+var FORA_DOS_BOTOES = {plano_set:1, itens_set:1, enviar_pagamentos:1, etiqueta:1, decisao:1, cnpj:1, pagamento:1};   // CNPJ e pagamento agora ficam na janela da análise financeira (Liberar para compra)
 // cor do tempo parado: 1 a 2 dias verde, 3 a 4 amarelo, 5 ou mais vermelho (igual ao cartão do funil)
 var corDias = function(d){ return d>=5 ? "text-destructive" : d>=3 ? "text-warning" : "text-success"; };
 var CLASSE_TOM = {success:"text-success", danger:"text-destructive", warning:"text-warning"};
@@ -320,8 +376,8 @@ function Processo(p){
   var ultRec = ped.recebimentos.length ? ped.recebimentos[ped.recebimentos.length-1] : null;
   var passos = [
     {t:"Solicitada", quem:ped.solicitante, em:ped.solicitadoOriginalEm || ped.solicitadoEm, nota:ped.status==="AGUARDANDO_AUTORIZACAO" ? "Aguardando autorização" : ped.status==="AGUARDANDO_ORCAMENTO" ? "Novo orçamento pedido" : ped.status==="AGUARDANDO" ? "Em espera" : ""},
-    {t:"Aprovada", quem:ped.aprovadoPor, em:ped.aprovadoEm, nota:ped.status==="AGUARDANDO_CNPJ" ? "Falta o CNPJ pagador" : ped.status==="AGUARDANDO_FORMA_PAGAMENTO" ? "Falta a conta pagadora" : ped.cnpj || ""},
-    {t:"Liberada", quem:ped.liberacao ? ped.liberacao.por : "", em:ped.liberacao ? ped.liberacao.em : "", nota:ped.status==="APROVADA" ? "Falta o financeiro liberar para compra" : ped.liberacao ? (ped.liberacao.modo==="plano" ? "Com plano de pagamento definido" : "Só liberação: o comprador decide como comprar")+(ped.liberacao.nota ? " · "+ped.liberacao.nota : "") : ""},
+    {t:"Análise financeira", quem:ped.aprovadoPor, em:ped.aprovadoEm, nota:ETAPA_ANALISE.indexOf(ped.status)>=0 ? pendenciasAnalise(ped).join(" · ") : ped.cnpj || ""},
+    {t:"Liberada", quem:ped.liberacao ? ped.liberacao.por : "", em:ped.liberacao ? ped.liberacao.em : "", nota:ETAPA_ANALISE.indexOf(ped.status)>=0 ? "Falta a análise financeira liberar" : ped.liberacao ? (ped.liberacao.modo==="plano" ? "Com CNPJ e forma de pagamento definidos" : "Só liberação: o comprador decide como comprar")+(ped.liberacao.nota ? " · "+ped.liberacao.nota : "") : ""},
     {t:"Efetuada", quem:ped.comprador, em:ped.compradoEm, nota:ped.valorCompra!=null ? formatarReais(ped.valorCompra)+(ped.status==="EM_TRANSITO" ? " · em trânsito" : "") : ""},
     {t:"Recebida", quem:ped.recebidoPor, em:ped.recebidoEm || (ultRec ? ultRec.dia : ""), nota:ped.status==="RECEBIDA_PARCIAL" ? "Recebida em parte: "+ped.recebimento.recebida+" de "+ped.recebimento.pedida : ""},
     {t:"Entregue", quem:ped.entregueParaNome, em:ped.entregueEm, nota:""}];
@@ -364,6 +420,29 @@ function Prazos(p){
     e(Linha,{t:"Vencimento", v:ven.v, cor:ven.cor}),
     e(Linha,{t:ped.valorCompra!=null ? "Valor da compra" : "Valor estimado", v:ped.valorCompra==null && !(ped.valorFinal>0) ? "A definir" : formatarReais(ped.valorFinal)})));
 }
+// texto de uma parte do pagamento: "Boleto R$ 250,00 em 3x · 30 dias após a nota", "Cartão R$ 500,00 em 6x com juros (2,5% ao mês) · vence 20/11/2026"
+var textoParte = function(x){
+  return (ROTULO_FORMA_PLANO[x.forma] || x.forma)+" "+formatarReais(x.valor)+(x.parcelas>1 ? " em "+x.parcelas+"x" : "")+(x.forma==="cartao" && x.juros!=null ? (x.juros ? " com juros"+(x.taxa ? " ("+x.taxa+")" : "") : " sem juros") : "")+(x.vencimento ? " · vence "+formatarDia(x.vencimento) : "")+(x.prazo ? " · "+x.prazo : "");
+};
+var nomesFormas = function(l){ return (l || []).map(function(f){ return ROTULO_FORMA_DISP[f] || ROTULO_FORMA_PLANO[f] || f; }).join(" + "); };
+// DECISÃO FINANCEIRA (18/11/2026): o que a análise financeira decidiu (CNPJ, forma, condições, quem e quando), o que o fornecedor aceitava, liberações anteriores e divergências
+function DecisaoFin(p){
+  var ped = p.ped, d = ped.decisao, pend = pendenciasAnalise(ped), hist = ped.decisoesHist || [], div = ped.divergencias || [];
+  var tit = function(t){ return e("span",{className:"pt-1 text-[11px] font-bold uppercase"}, t); };
+  return e(Painel,{t:"Decisão financeira", ic:"currency-circle-dollar"},
+    pend.length>0 && e("div",{className:"flex flex-wrap justify-center gap-2"}, pend.map(function(x){ return e(Selo,{key:x, cor:x==="Pronto para liberar" ? "ok" : "alerta", ic:x==="Pronto para liberar" ? "check-circle" : "warning"}, x); })),
+    d ? e("div",{className:"flex flex-col text-left"},
+        e(Linha,{t:"CNPJ pagador", v:d.cnpj || "Não informado"}), e(Linha,{t:"Forma escolhida", v:nomesFormas(d.formas)}), e(Linha,{t:"Total liberado", v:formatarReais(d.total)}),
+        e(Linha,{t:"Decidido por", v:d.por+" · "+formatarDataHora(d.em)}), e(Linha,{t:"Observação", v:d.nota}),
+        (d.plano || []).map(function(x, i){ return e(Linha,{key:i, t:"Parte "+(i+1), v:textoParte(x)}); }))
+      : e("div",{className:"flex flex-col text-left"}, e(Linha,{t:"CNPJ pagador", v:ped.cnpj || "Não informado"}), e(Linha,{t:"Forma escolhida", v:ped.plano.length ? nomesFormas(ped.plano.map(function(x){ return x.forma; }).filter(function(x, k, l){ return l.indexOf(x)===k; })) : "Não informado"})),
+    tit("Formas que o fornecedor aceita"),
+    e(FormasDisponiveis,{fd:ped.formasDisp}),
+    div.length>0 && tit("Divergências depois da compra"),
+    div.map(function(x, i){ return e("div",{key:"d"+i, className:"break-words rounded-md border border-[var(--negativo)] px-2 py-0.5 text-left text-[11px]"}, formatarDataHora(x.em)+" · "+x.por+" · "+x.campos.join(", ")+". Motivo: "+x.motivo); }),
+    hist.length>0 && tit("Liberações anteriores"),
+    hist.slice().reverse().map(function(x, i){ return e("div",{key:"h"+i, className:"break-words rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px]"}, formatarDataHora(x.em)+" · "+x.por+" · "+(x.cnpj || "Não informado")+" · "+nomesFormas(x.formas)+" · "+formatarReais(x.total)+(x.motivo ? ". Trocada por "+x.substituidaPor+" em "+formatarDataHora(x.substituidaEm)+": "+x.motivo : "")); }));
+}
 function HistoricoCompra(p){
   var ped = p.ped, st = useState(false), todos = st[0], evs = ped.eventos.slice().reverse(), vis = todos ? evs : evs.slice(0, 5);
   return e(Painel,{t:"Histórico", ic:"clock-counter-clockwise"},
@@ -399,9 +478,10 @@ function Detalhe(p){
       ped.enviada && e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada aos pagamentos"),
       e("div",{className:"flex flex-col text-left"},
         e(Linha,{t:"Fornecedor", v:ped.fornecedor}), e(Linha,{t:"Solicitante", v:ped.solicitante}), e(Linha,{t:"Setor", v:ped.setorNome}), e(Linha,{t:"Categoria", v:ped.categoriaNome}),
-        e(Linha,{t:"Classificação", v:ped.classificacoesTxt}), e(Linha,{t:"CNPJ pagador", v:ped.cnpj}), e(Linha,{t:"Nº do pedido", v:ped.numeroFornecedor}), e(Linha,{t:"Condições", v:ped.condicoesTxt})),
+        e(Linha,{t:"Classificação", v:ped.classificacoesTxt}), e(Linha,{t:"CNPJ pagador", v:ped.cnpj || "Não informado"}), e(Linha,{t:"Nº do pedido", v:ped.numeroFornecedor}), e(Linha,{t:"Condições", v:ped.condicoesTxt})),
       ped.link && e("a",{href:/^https?:\/\//i.test(ped.link) ? ped.link : "https://"+ped.link, target:"_blank", rel:"noopener noreferrer", className:"inline-flex items-center justify-center gap-1.5 break-all rounded-md border border-white/20 px-2 py-0.5 text-[11px] font-bold hover:bg-white/10"}, e(Ph,{n:"link", s:12}), ped.link),
       ped.observacao && e("p",{className:"break-words rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px]"}, ped.observacao)),
+    e(DecisaoFin,{ped:ped}),
     ped.origem && ped.origem.tipo==="estoque" ? e(RetratoEstoque,{c:c, o:ped.origem}) : blocoEstoque);   // retrato gravado no pedido (Nickolas, 16/11/2026) ou, em compra antiga, o calculado do histórico
   var blocoItens =
     e(Painel,{t:"Itens", ic:"package"},
@@ -424,7 +504,7 @@ function Detalhe(p){
       acoes.length===0 ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Sem ações disponíveis nesta etapa.") : e("div",{className:"flex flex-col gap-1.5"}, acoes.map(function(a){
         var ok = c.pode(a, ped);
         var bt = e(Bt,{key:a.op, tipo:COR_BT[a.op] || "normal", ic:ICONE_OP[a.op], disabled:!ok, semAut:true, onClick:function(){ ac.iniciar(ped, a.op); }}, a.rotulo);
-        return a.op==="aprovar" ? [bt, e(Bt,{key:"aprovar_liberar", tipo:"forte", ic:"lock-open", disabled:!ok || !c.pode(TRANSICOES.liberar, ped), semAut:true, titulo:"Aprova e libera para compra num clique", onClick:function(){ ac.aprovarLiberar(ped); }}, "Aprovar e liberar")] : bt;
+        return a.op==="aprovar" ? [bt, e(Bt,{key:"aprovar_liberar", tipo:"forte", ic:"lock-open", disabled:!ok || !c.pode(TRANSICOES.liberar, ped), semAut:true, titulo:"Aprova e já faz a análise financeira (CNPJ e forma de pagamento)", onClick:function(){ ac.aprovarLiberar(ped); }}, "Aprovar e liberar")] : bt;
       }))),
     ped.recebimento.pedida>0 && (pagavel || ped.status==="APROVADA" || ped.status==="LIBERADA") && e(Painel,{t:"Recebimento", ic:"package"},
       e("div",{className:"h-2 overflow-hidden rounded-full bg-white/10"}, e("div",{className:"h-full rounded-full", style:{width:Math.min(100, Math.round(100*ped.recebimento.recebida/Math.max(1, ped.recebimento.pedida)))+"%", background:ped.recebimento.completo ? ESTADO.ok : ESTADO.alerta}})),
@@ -474,11 +554,11 @@ function useAcoes(c){
     if(DIRETAS[op]) return c.exec({op:"pedido_"+op, id:p.id});
     setDlg({op:op, id:p.id});
   };
-  // atalho: aprova e já libera para compra (só liberação; o comprador decide como comprar). Os dois passos entram na linha do tempo
+  // atalho "Aprovar e liberar" (18/11/2026): abre a janela da análise financeira; só aprova e libera se tudo estiver certo (tudo ou nada)
   a.aprovarLiberar = function(p){
     if(!podeAcaoPedido(p, "aprovar")) return c.aviso("Não dá para aprovar e liberar com o pedido em \""+p.rotuloStatus+"\".");
     if(!c.pode(TRANSICOES.aprovar, p) || !c.pode(TRANSICOES.liberar, p)) return c.aviso(DECIDE_MSG);
-    return c.exec({op:"pedido_aprovar", id:p.id, liberar:true});
+    setDlg({op:"aprovar_liberar", id:p.id});
   };
   a.janelas = function(){
     var ped = det!=null ? pedidoDe(c.s, det) : null, out = [];

@@ -18,8 +18,8 @@ var COR_STATUS = {CRITICO:"ruim", ATENCAO:"alerta", OK:"ok"};
 var IC_STATUS = {CRITICO:"warning-octagon", ATENCAO:"warning", OK:"check-circle"};
 var ROT_STATUS = {CRITICO:"Crítico", ATENCAO:"Atenção", OK:"OK"};
 // ANDAMENTO DA COMPRA (16/11/2026): selo ao lado da situação do estoque, lido da compra ligada (domain: andamentoMaterial)
-var COR_AND = {SOLICITADO:"alerta", COTACAO:"alerta", APROVACAO:"alerta", A_COMPRAR:"info", ENTREGA:"info", RECEBIDO:"ok"};
-var IC_AND = {SOLICITADO:"paper-plane-tilt", COTACAO:"magnifying-glass", APROVACAO:"hourglass-medium", A_COMPRAR:"lock-open", ENTREGA:"truck", RECEBIDO:"package"};
+var COR_AND = {SOLICITADO:"alerta", COTACAO:"alerta", APROVACAO:"alerta", ANALISE:"info", A_COMPRAR:"info", ENTREGA:"info", RECEBIDO:"ok"};
+var IC_AND = {SOLICITADO:"paper-plane-tilt", COTACAO:"magnifying-glass", APROVACAO:"hourglass-medium", ANALISE:"currency-circle-dollar", A_COMPRAR:"lock-open", ENTREGA:"truck", RECEBIDO:"package"};
 function SeloAndamento(p){
   var a = p.and, et = a.etapa;
   return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.onClick(); }, title:et ? "Andamento da compra: abrir"+(a.extra ? " (há "+(a.extra+1)+" compras abertas)" : "") : "Sem compra em andamento: ver o histórico de compras", className:"cursor-pointer rounded-full hover:brightness-125"},

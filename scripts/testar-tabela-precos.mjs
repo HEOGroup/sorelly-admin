@@ -15,7 +15,7 @@ const t = (nome, cond, extra) => { if(cond){ ok++; console.log("  OK   "+nome); 
 let s = { ce: D.ceDemo() };
 const run = (op, dados, opera) => { const r = D.ceReduz(s, Object.assign({ type:"CE", op, por:"Teste", porId:17, opera:opera!==false }, dados)); if(r.patch && r.patch.ce) s = { ce:r.patch.ce }; return r; };
 const passou = (r) => !!(r.patch && r.patch.ce);
-run("forn_add", { nome:"GRÁFICA TESTE" }); const forn = s.ce.fornecedores.find((f) => f.nome==="GRÁFICA TESTE");
+run("forn_add", { nome:"GRÁFICA TESTE" }); const forn = s.ce.fornecedores[s.ce.fornecedores.length-1];   // o nome é padronizado no cadastro (17/11/2026)
 run("cat_add", { nome:"Impressos teste" }); const cat = s.ce.categorias.find((c) => c.nome==="Impressos teste");
 const prod = () => s.ce.precos.find((p) => p.nome==="TAG TRIO PRATA");
 

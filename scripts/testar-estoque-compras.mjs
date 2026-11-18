@@ -52,10 +52,11 @@ t("cancela a segunda", passou(run("pedido_cancelar", { id:segunda.id, motivo:"Du
 t("depois de cancelar: uma aberta só", mat().andamento.abertas.length===1 && mat().andamento.extra===0);
 
 console.log("3. Andamento muda pela compra (o mesmo registro)");
-t("aprovar (sem CNPJ) → Aguardando aprovação", passou(run("pedido_aprovar", { id:ped().id })) && mat().andamento.etapa==="APROVACAO", ped().status);
-t("CNPJ → Aprovado · a comprar", passou(run("pedido_cnpj", { id:ped().id, cnpjId:"34" })) && mat().andamento.etapa==="A_COMPRAR", ped().status);
-t("liberar → continua Aprovado · a comprar", passou(run("pedido_liberar", { id:ped().id, modo:"ok" })) && mat().andamento.etapa==="A_COMPRAR");
-r = run("pedido_comprar", { id:ped().id, valorCompra:250, compradoEm:hoje, plano:[{ forma:"pix_empresa", valor:250, vencimento:hoje }] });
+t("aprovar → Análise financeira (etapa 2)", passou(run("pedido_aprovar", { id:ped().id })) && ped().status==="APROVADA" && mat().andamento.etapa==="ANALISE", ped().status);
+run("pedido_set", { id:ped().id, valorEstimado:250 });   // o financeiro informa o valor (fluxo de 18/11/2026: a decisão precisa fechar com o total)
+t("liberar sem decisão é recusado", !passou(run("pedido_liberar", { id:ped().id })));
+t("liberar com CNPJ e forma → Liberado · a comprar", passou(run("pedido_liberar", { id:ped().id, cnpjId:"34", plano:[{ forma:"pix_empresa", valor:250, vencimento:hoje }] })) && mat().andamento.etapa==="A_COMPRAR", ped().status);
+r = run("pedido_comprar", { id:ped().id, valorCompra:250, compradoEm:hoje });
 t("compra efetuada → Aguardando entrega", passou(r) && mat().andamento.etapa==="ENTREGA", r.msg);
 t("histórico: mudanças de andamento registradas", logs("ANDAMENTO").length>=4, String(logs("ANDAMENTO").length));
 
