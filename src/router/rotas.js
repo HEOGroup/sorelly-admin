@@ -228,6 +228,7 @@ const montagem = {
     pagina("contas-a-pagar-mensal", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
     pagina("resultado-do-mes", () => import("@/apps/montagem/pages/ResultadoMes"), "AbaResultadoMes"),
     pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
+    pagina("atividades-do-financeiro", () => import("@/apps/montagem/pages/AtividadesFinanceiro"), "AbaAtividadesFinanceiro"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),
     pagina("comissoes-montagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisMontagem"),

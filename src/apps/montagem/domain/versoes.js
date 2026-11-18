@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.20", data:"2026-11-18", titulo:"Financeiro: aba Atividades (só o Marcus)", itens:[
+  {tipo:"novo", area:"Financeiro → Atividades", txt:"Tela nova, que só o Marcus abre. Mostra a rotina do Financeiro (cada atividade, a última vez, quem fez e se está em dia), tudo o que cada pessoa fez por dia e o que há para corrigir. Junta a DevMaster (baixas, estornos, transferências, títulos lançados e extratos importados) e o Sorelly Admin (Pix direcionados, baixas no Contas a pagar, saldos das contas e Financeiro familiar). Escolha Hoje, 7 dias ou 30 dias."}
  {v:"0.21.19", data:"2026-11-18", titulo:"Correção: foto das peças na DevMaster volta a funcionar no sistema online", itens:[
   {tipo:"correção", area:"Encomendas e reposições → peças", txt:"A leitura da foto de uma peça na DevMaster tinha ficado de fora da publicação anterior. Sem ela, a ficha do pedido e o link da revendedora não mostravam a foto das peças no sistema online. Corrigido."}
  ]},

@@ -192,6 +192,7 @@ export const SLUG_DA_ABA = {
   celrep: "app-representante",
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
+  finativ: "atividades-do-financeiro",   // Financeiro › Atividades (18/11/2026): só o Marcus
   resultado: "resultado-do-mes",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
