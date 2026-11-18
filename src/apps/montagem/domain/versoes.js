@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.23", data:"2026-11-18", titulo:"Acesso Estoque de materiais e Kits com quantidades", itens:[
+  {tipo:"novo", area:"RH › Acessos", txt:"Novo grupo de acesso \"Estoque de materiais\": abre só as duas telas de Estoque (Materiais e estoque e Material gráfico). Primeira pessoa: Geovana."},
+  {tipo:"melhoria", area:"Material gráfico › Kits", txt:"Kits em linhas com a foto inteira, o que vem dentro (item e quantidade) e kits prontos (32 e 13, informados pela Amanda em 18/11/2026)."}]},
+ {v:"0.21.6", data:"2026-11-18", titulo:"Material gráfico: aba Kits com as embalagens Preto e Dourado", itens:[
+  {tipo:"novo", area:"Material gráfico › Kits", txt:"Aba Kits mostra as fotos dos kits de embalagem que a Sorelly usa (caixinha travesseiro, envelope, caixa de presente prata e dourada, cordinha). Custo e preço entram depois."}]},
  {v:"0.21.22", data:"2026-11-18", titulo:"Link das peças encontradas: ordem fixa, limite embaixo e resposta peça a peça", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Peças sempre em ordem fixa (anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras). A barra de baixo mostra o limite liberado e o total que ela escolheu (não deixa passar do limite). O cartão muda de cor quando ela responde, a observação sai do campo e vira texto, e tocar de novo tira a marca. Ao enviar com peça sem resposta, a tela volta sozinha para a primeira que falta."}
  ]},

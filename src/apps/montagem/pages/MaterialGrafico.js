@@ -267,7 +267,24 @@ function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}
 function AbaGfPrecos(){ return e(AbaTabelaPrecos,null); }
 function AbaGfEstoque(){ return e(AbaEstoqueMaterial,{soGrafico:true}); }   // o bloco azul já tem o título; sem PageHead por cima (Marcus, 17/11/2026)
 function EmBreve(t, txt){ return Tela(t, txt, e("div",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 p-6 text-center text-[13px]"}, "Em breve.")); }
-function AbaGfKits(){ return EmBreve("Kits", "Fase 2: kits padrão (com custo) e kits à venda (com preço e margem)."); }
+// KITS (Marcus, 18/11/2026): uma linha por kit, com a foto INTEIRA do kit (sem recorte) e o que vem dentro. O estoque dessas embalagens ainda não está no sistema: a Amanda conta e passa.
+var KITS_LINHAS = [
+  {id:1, foto:"/material-grafico/kit-preto-dourado-madeira.jpg", kit:"Kit Preto e Dourado", fundo:"Fundo de madeira", itens:[{n:"Bolsinha", c:"Dourada", q:"1"}, {n:"Bolsinha", c:"Preta", q:"1"}, {n:"Bolsinha almofada", c:"Preta", q:"2"}, {n:"Envelope", c:"Preta", q:"4"}], estoque:"32 kits"},
+  {id:2, foto:"/material-grafico/kit-preto-dourado-branco.jpg", kit:"Kit Preto e Dourado", fundo:"Fundo branco, com prata", itens:[{n:"Bolsinha", c:"Dourada", q:"1"}, {n:"Bolsinha", c:"Prata", q:"1"}, {n:"Bolsinha almofada", c:"Preta", q:"2"}, {n:"Envelope", c:"Preta", q:"4"}], estoque:"13 kits"},
+  {id:3, foto:"/material-grafico/kit-envelope-preto.jpg", kit:"Envelope preto Sorelly", fundo:"Frente, aba estampada", itens:[{n:"Envelope", c:"Preta", q:"1 na foto"}], estoque:"A contar"}];
+var COR_BOLA = {"Preta":"#1c1c1c", "Dourada":"#d4af37", "Prata":"#c0c0c0", "Preta e dourada":"linear-gradient(90deg,#1c1c1c 50%,#d4af37 50%)"};   // bolinha da cor do item
+function AbaGfKits(){
+  var cols = [
+    {k:"foto", t:"Foto", semFiltro:true, render:function(v, l){ return e(QuadroFoto,{url:v, alt:l.kit+" · "+l.fundo, tam:260, compacto:true}); }},
+    {k:"kit", t:"Kit", render:function(v, l){ return e("span",{className:"flex flex-col items-center"}, e("span",{className:"text-[13px] font-bold text-white"}, v), e("span",{className:"text-[11px] font-semibold text-white"}, l.fundo)); }},
+    {k:"itens", t:"O que vem dentro", w:"24rem", render:function(v){ return e("div",{className:"flex w-full flex-col divide-y divide-white/20 text-left"}, v.map(function(i, n){ return e("div",{key:i.n+i.c+n, className:"grid items-center gap-2 py-1.5", style:{gridTemplateColumns:"1rem 1fr auto"}},
+      e("span",{className:"inline-block h-3.5 w-3.5 rounded-full border border-white/60", style:{background:COR_BOLA[i.c] || "#888"}}),
+      e("span",{className:"flex flex-col leading-tight"}, e("span",{className:"text-[13px] font-bold text-white"}, i.n), e("span",{className:"text-[11px] font-semibold text-white"}, i.c)),
+      e("span",{className:"text-[13px] font-semibold text-warning"}, "× "+i.q)); })); }},
+    {k:"estoque", t:"Kits prontos", render:function(v){ return e("span",{className:"text-[13px] font-semibold text-warning"}, v); }}];
+  return e("div",{className:"flex flex-col gap-2.5 "+PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+    e(BlocoPainel,{titulo:"Kits · embalagens Preto e Dourado", compacto:true}, e("div",{className:"bg-[linear-gradient(180deg,rgba(59,100,170,0.38),rgba(59,100,170,0.05))]"}, e(TabelaPlanilha,{chave:"id", centro:true, grade:true, semContagem:true, linhas:KITS_LINHAS, cols:cols, linhaCls:function(){ return "bg-[linear-gradient(180deg,rgba(59,100,170,0.40),rgba(59,100,170,0.06))]"; }}))));
+}
 function AbaGfVendas(){ return EmBreve("Vendas", "Fase 3: venda de material gráfico."); }
 
 export { AbaGfPainel, AbaGfCompras, AbaGfPrecos, AbaGfEstoque, AbaGfKits, AbaGfVendas };
