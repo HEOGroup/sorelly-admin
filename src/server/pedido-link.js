@@ -47,13 +47,16 @@ export async function criarLink({ nome, cod, representante, telefone, cidade, uf
 export async function lerLink(id) {
   if (!codigoValido(id)) return null;
   await garantirTabelaLink();
-  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, publicadas, retorno, limite, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, publicadas, retorno, limite, dados, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
   if (!r) return null;
   const temPecas = Array.isArray(r.publicadas) && r.publicadas.length > 0;
   const estado = temPecas ? (r.vencido ? "expirado" : "acompanhar") : r.status !== "aberto" ? "enviado" : r.vencido ? "expirado" : "aberto";
   const acompanhar = temPecas && !r.vencido ? { pecas: r.publicadas.map((x) => ({ cod: x.cod, desc: x.desc || "", preco: x.preco == null ? null : Number(x.preco) })), retorno: r.retorno || null } : null;
+  // o que ELA pediu (para ela rever em outra aba: "às vezes nem ela lembra", Marcus 18/11/2026)
+  const d = r.dados && typeof r.dados === "object" ? r.dados : null;
+  const pedido = d ? { tipo: d.tipo || "", em: r.enviado_em || null, obs: d.obs || "", fotos: (Array.isArray(d.fotos) ? d.fotos : []).filter((f) => f && chaveAnexoValida(f.key)).map((f) => ({ key: f.key, cor: f.cor || "", obs: f.obs || "" })), textos: (Array.isArray(d.textos) ? d.textos : []).map((t) => ({ cor: (t && t.cor) || "", obs: (t && t.obs) || "" })) } : null;
   const forcaEncomenda = !!(r.uf && r.uf !== "PR");   // outro estado: só encomenda (vai no próximo kit)
-  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar, limite: r.limite || null };
+  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar, limite: r.limite || null, pedido };
 }
 
 // ---------- peças encontradas pelo setor, para a revendedora aprovar no MESMO link (18/11/2026, Marcus) ----------
@@ -89,6 +92,18 @@ export async function aprovarPecas(id, { quer, obs, notas }) {
   const retorno = { em: new Date().toISOString(), quer: Array.from(new Set(sim)), nao: todas.filter((c) => !sim.includes(c)), obs: String(obs || "").trim().slice(0, 300), notas: nt };
   await consulta("update sorelly.pedido_link set retorno = $2 where id = $1", [id, JSON.stringify(retorno)]);
   return retorno;
+}
+/** Lado público: foto que a PRÓPRIA revendedora mandou no pedido dela. Só serve chave que está no pedido deste link. */
+export async function fotoDoPedido(id, key) {
+  if (!codigoValido(id) || !chaveAnexoValida(key)) return null;
+  await garantirTabelaLink();
+  const r = (await consulta("select dados from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const lista = r && r.dados && Array.isArray(r.dados.fotos) ? r.dados.fotos : [];
+  if (!lista.some((f) => f && f.key === key)) return null;
+  await garantirTabelaAnexo();
+  const a = (await consulta("select url from sorelly.anexo_modulo where id = $1 and modulo = 'er'", [key])).rows[0];
+  const m = a ? /^data:(image[/][a-z0-9.+-]+);base64,(.+)$/i.exec(a.url) : null;
+  return m ? { mime: m[1], bytes: Buffer.from(m[2], "base64") } : null;
 }
 /** Lado público: foto de uma peça publicada (a da funcionária ou a da DevMaster). Só serve peça que está na lista do link. */
 export async function fotoPublicaDaPeca(id, cod) {

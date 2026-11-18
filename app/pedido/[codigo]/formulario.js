@@ -100,9 +100,10 @@ function Acompanhar({ info, codigo }) {
   const pecas = info.acompanhar.pecas.map((p, i) => ({ ...p, _i: i })).sort((x, y) => GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(x.desc)) - GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(y.desc)) || x._i - y._i);
   const [escolha, setEscolha] = useState(() => { const o = {}; if (ret) { (ret.quer || []).forEach((c) => { o[c] = "sim"; }); (ret.nao || []).forEach((c) => { o[c] = "nao"; }); } return o; });
   const [obs, setObs] = useState(ret ? ret.obs || "" : ""), [enviando, setEnviando] = useState(false), [feito, setFeito] = useState(!!ret), [erro, setErro] = useState("");
-  const [semFoto, setSemFoto] = useState({}), [piscar, setPiscar] = useState("");
+  const [semFoto, setSemFoto] = useState({}), [piscar, setPiscar] = useState(""), [aba, setAba] = useState("pecas");
+  const ped = info.pedido;
   const [notas, setNotas] = useState(() => ({ ...((ret && ret.notas) || {}) }));
-  const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length;
+  const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length, naoN = pecas.filter((p) => escolha[p.cod] === "nao").length;
   const querTotal = pecas.reduce((t, p) => t + (escolha[p.cod] === "sim" ? Number(p.preco) || 0 : 0), 0);
   const passou = !!lim && querTotal > lim.max + 0.001;
   const enviar = async () => {
@@ -129,8 +130,11 @@ function Acompanhar({ info, codigo }) {
       <div key={p.cod} id={"peca-" + p.cod} className={"rounded-2xl p-[1.5px] transition " + (piscar === p.cod ? "animate-pulse bg-[#f87171] " : sim ? "bg-gradient-to-br from-[#bbf7d0] via-[#4ade80] to-[#15803d] " : nao ? "bg-gradient-to-br from-[#fecaca] via-[#f87171] to-[#991b1b] " : "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#7a5a14] ")}>
         <section className={"flex h-full flex-col overflow-hidden rounded-[15px] bg-black " + (sim ? "bg-[linear-gradient(to_top,rgba(74,222,128,.30),rgba(74,222,128,.08)_50%,rgba(0,0,0,0)_88%)]" : nao ? "bg-[linear-gradient(to_top,rgba(248,113,113,.30),rgba(248,113,113,.08)_50%,rgba(0,0,0,0)_88%)]" : "bg-[linear-gradient(to_top,rgba(232,184,75,.30),rgba(232,184,75,.08)_45%,rgba(0,0,0,0)_80%)]")}>
           <div className="p-1.5 pb-0">
-            {semFoto[p.cod] ? <div className="grid aspect-square w-full place-items-center rounded-xl border border-[#E8B84B]/30 text-center text-[12px]">Foto em breve</div>
-              : <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={frasePeca(p.desc) || "Peça"} className={"mx-auto block aspect-square w-full rounded-xl object-contain " + (nao ? "opacity-70" : "")} onError={() => setSemFoto((o) => ({ ...o, [p.cod]: true }))} />}
+            {/* a foto tem uma borda fina da cor do cartão: dourada, verde (quero) ou vermelha (não quero) */}
+            <div className={"overflow-hidden rounded-xl border-2 " + (sim ? "border-[#4ade80]" : nao ? "border-[#f87171]" : "border-[#E8B84B]")}>
+            {semFoto[p.cod] ? <div className="grid aspect-square w-full place-items-center text-center text-[12px]">Foto em breve</div>
+              : <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={frasePeca(p.desc) || "Peça"} className={"mx-auto block aspect-square w-full object-contain " + (nao ? "opacity-70" : "")} onError={() => setSemFoto((o) => ({ ...o, [p.cod]: true }))} />}
+            </div>
           </div>
           <div className="flex flex-1 flex-col gap-1.5 p-2.5">
             <p className="break-words text-[12px] font-bold leading-snug">{frasePeca(p.desc) || "Peça"}</p>
@@ -155,7 +159,41 @@ function Acompanhar({ info, codigo }) {
         <p className="mt-1 text-[13px] leading-snug">A equipe encontrou estas peças para o seu pedido. Veja cada foto e marque <b>Quero</b> ou <b>Não quero</b>. Depois toque em <b>Enviar resposta</b>.</p>
         {lim && <p className="mt-1.5 text-[13px] leading-snug">Seu limite: <b className="text-[#F5E7BE]">{reais(lim.max)}</b> por reposição. <a href={"/pedido/" + encodeURIComponent(codigo) + "/tabela"} target="_blank" rel="noopener" className="font-bold text-[#F5E7BE] underline">Ver a tabela de valores</a></p>}
       </section>
-      {GRUPOS_PECA.map(([id, nome]) => {
+      <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#E8B84B]/50 bg-black p-1" role="tablist">
+        {[["pecas", "Peças que encontramos"], ["pedido", "O que eu pedi"]].map(([id, nome]) => (
+          <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => { setAba(id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            className={"h-10 rounded-lg text-[13px] font-bold " + (aba === id ? "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#B8892A] text-[#14233f]" : "text-white")}>{nome}</button>
+        ))}
+      </div>
+      {aba === "pedido" && (
+        <section className="flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
+          {!ped || (!ped.fotos.length && !ped.textos.length) ? <p className="text-[13px] leading-snug">O seu pedido não ficou guardado neste link. Se precisar, fale com o setor.</p> : (
+            <>
+              <p className="text-[13px] leading-snug">Este foi o seu pedido{ped.tipo ? " (" + (ped.tipo === "encomenda" ? "encomenda" : "reposição") + ")" : ""}{ped.em ? ", enviado em " + quando(ped.em) : ""}:</p>
+              {ped.fotos.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {ped.fotos.map((f, i) => (
+                    <div key={f.key} className="flex flex-col gap-1">
+                      <div className="overflow-hidden rounded-xl border-2 border-[#E8B84B]">
+                        <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/foto-pedido?key=" + encodeURIComponent(f.key)} alt={"Foto " + (i + 1) + " do seu pedido"} className="block aspect-square w-full object-cover" />
+                      </div>
+                      <p className="break-words text-[12px] leading-snug"><b>{f.cor ? f.cor.charAt(0).toUpperCase() + f.cor.slice(1) : "Foto " + (i + 1)}</b>{f.obs ? " · " + f.obs : ""}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {ped.textos.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[13px] font-bold text-[#F5E7BE]">Peças que você só descreveu</p>
+                  {ped.textos.map((t, i) => <p key={i} className="rounded-lg border border-[#E8B84B]/40 bg-black/50 px-3 py-2 text-[13px] leading-snug"><b>{t.cor ? t.cor.charAt(0).toUpperCase() + t.cor.slice(1) : "Peça"}</b>{t.obs ? " · " + t.obs : ""}</p>)}
+                </div>
+              )}
+              {ped.obs && <p className="text-[13px] leading-snug"><b className="text-[#F5E7BE]">Recado que você deixou: </b>{ped.obs}</p>}
+            </>
+          )}
+        </section>
+      )}
+      {aba === "pecas" && GRUPOS_PECA.map(([id, nome]) => {
         const lista = pecas.filter((p) => grupoDaPeca(p.desc) === id);
         if (!lista.length) return null;
         return (
@@ -165,21 +203,30 @@ function Acompanhar({ info, codigo }) {
           </div>
         );
       })}
-      <section className="flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
+      {aba === "pecas" && <section className="flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
         <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => { setObs(ev.target.value); setFeito(false); }} placeholder="Quer avisar algo? (opcional)" className="w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-3 py-2 text-[13px] placeholder:text-white/60" />
         {feito && !erro && <p className="text-center text-[14px] font-bold text-[#F5E7BE]">Resposta enviada ✓ Você marcou {querN} de {pecas.length}. Pode mudar e enviar de novo.</p>}
-      </section>
-      <div className="h-24" aria-hidden />
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[#E8B84B]/60 bg-black/95 px-3 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="mx-auto flex w-full max-w-[560px] flex-col gap-1.5">
-          {erro && <p className="text-center text-[12px] font-bold text-[#fecaca]">{erro}</p>}
-          <div className="flex items-center gap-3">
-            <p className="min-w-0 flex-1 text-[12px] leading-tight"><b>{querN}</b> {querN === 1 ? "peça" : "peças"} que você quer · marcadas {pecas.length - faltam} de {pecas.length}<br />
-              <span className={passou ? "font-bold text-[#fecaca]" : "text-[#F5E7BE]"}>{reais(querTotal)}{lim ? " de " + reais(lim.max) + " liberados" : ""}</span></p>
-            <button type="button" disabled={enviando} onClick={enviar} className={BTN + " shrink-0 px-4"}>{enviando ? "Enviando" : feito ? "Enviar de novo" : "Enviar resposta"}</button>
+      </section>}
+      {aba === "pecas" && <div className="h-44" aria-hidden />}
+      {/* barra fixa de baixo: resumo, medidor do limite e o botão, em três linhas bem alinhadas */}
+      {aba === "pecas" && <div className="fixed inset-x-0 bottom-0 z-20 rounded-t-2xl border-t border-[#E8B84B]/70 bg-black/95 px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-8px_24px_rgba(0,0,0,.7)]">
+        <div className="mx-auto flex w-full max-w-[560px] flex-col gap-2">
+          {erro && <p className="rounded-lg border border-[#f87171]/60 bg-[#f87171]/15 px-3 py-1.5 text-center text-[12px] font-bold leading-snug text-[#fecaca]">⚠ {erro}</p>}
+          <div className="grid grid-cols-3 gap-2 text-center text-[11px] leading-tight">
+            <p className="rounded-lg border border-[#4ade80]/40 bg-[#4ade80]/10 py-1"><b className="block text-[15px] text-[#bbf7d0]">{querN}</b>quero</p>
+            <p className="rounded-lg border border-[#f87171]/40 bg-[#f87171]/10 py-1"><b className="block text-[15px] text-[#fecaca]">{naoN}</b>não quero</p>
+            <p className="rounded-lg border border-[#E8B84B]/40 bg-[#E8B84B]/10 py-1"><b className="block text-[15px] text-[#F5E7BE]">{faltam}</b>faltam</p>
           </div>
+          <div>
+            <div className="mb-1 flex items-baseline justify-between text-[12px]">
+              <span>Total que você quer: <b className={passou ? "text-[#fecaca]" : "text-[#F5E7BE]"}>{reais(querTotal)}</b></span>
+              {lim && <span>Limite: <b>{reais(lim.max)}</b></span>}
+            </div>
+            {lim && <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuemin={0} aria-valuemax={lim.max} aria-valuenow={Math.round(querTotal)}><div className={"h-full rounded-full " + (passou ? "bg-[#f87171]" : "bg-gradient-to-r from-[#F5E7BE] via-[#E8B84B] to-[#B8892A]")} style={{ width: Math.min(100, (querTotal / lim.max) * 100) + "%" }} /></div>}
+          </div>
+          <button type="button" disabled={enviando} onClick={enviar} className={BTN + " w-full"}>{enviando ? "Enviando" : feito ? "Enviar de novo" : "Enviar resposta"}</button>
         </div>
-      </div>
+      </div>}
     </Tela>
   );
 }

@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.25", data:"2026-11-18", titulo:"Link das peças: aba \"O que eu pedi\"", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"No link das peças encontradas, a revendedora agora tem duas abas: \"Peças que encontramos\" e \"O que eu pedi\" (as fotos, as descrições e o recado do pedido dela), para ela rever o que pediu. A barra de baixo só aparece na aba das peças."},
+ ]},
+ {v:"0.21.23", data:"2026-11-18", titulo:"Link das peças: barra de baixo refeita e tabela de valores mais compacta", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Barra fixa de baixo refeita: três contadores (quero, não quero, faltam), total em R$ com medidor do limite e botão largo. Aviso de peça sem resposta em destaque. Tabela de valores com fonte menor, faixas em uma linha e colunas alinhadas."}
+ ]},
  {v:"0.21.24", data:"2026-11-18", titulo:"Financeiro: correções da revisão (Pix, comprovante, família e Atividades)", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar", txt:"O bloco Pagamentos da Família passa a mostrar também Rebel Mode, 68 Gang e Show Banca (sem prazo gravado vale o fim do mês, igual ao Contas a pagar)."},
   {tipo:"correção", area:"Financeiro → Pix do Direcionar", txt:"Comprovante anexado por outra pessoa (funcionária ou representante) agora libera o pagamento do fornecedor também quando chega pelo servidor. Pix em link ou maquininha não abate mais a dívida de prestador. Pix já lançado à mão no Financeiro familiar não conta duas vezes. Prestador da família cujo destino já existia com o mesmo nome só é ligado, sem duplicar. A data do Pix confirmado à noite não pula para o dia seguinte."},
