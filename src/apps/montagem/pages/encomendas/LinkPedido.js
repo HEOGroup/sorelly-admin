@@ -3,7 +3,7 @@
 // Cartãozinho que abre na hora (18/11/2026, Marcus: "não precisa ser assim, abre um bloco na hora para gerar, faz bonito"): busca a revendedora, gera o link (vale 48 horas, só dela) e copia a mensagem.
 // Quando a revendedora envia as fotos pela página pública, o pedido cai sozinho no Funil (Separando, ou Confirmar taxa se ela não aceitou a taxa).
 import { Botao } from "@/apps/montagem/components/padrao-fin";
-import { acessoReposicao, formatarDataHora, formatarReais, mensagemTexto, revPorNome } from "@/apps/montagem/domain/encomendas";
+import { acessoReposicao, formatarDataHora, formatarReais, mensagemTexto, qtdMes, revPorNome, valorMaximo } from "@/apps/montagem/domain/encomendas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { baseLink, copiar } from "@/apps/montagem/pages/encomendas/visual";
 import { e, useEffect, useState } from "@/shared/react";
@@ -35,7 +35,7 @@ function LinkPedido(p){
     var r = f.rev || {}, m = r.cod ? media3(r) : null;
     // retirar na empresa só para quem tem direito (regra de 21/10/2026): Top 50 ou média de R$ 2.000 ou mais
     var ac = acessoReposicao(cfg, revPorNome(E.er, nome), m), empresa = ac.canais.indexOf("empresa")>=0;
-    chamar("POST", "/encomendas/link", {nome:nome, cod:r.cod || "", representante:r.representante || "", telefone:r.celular || "", cidade:r.cidade || "", uf:r.uf || "", media:m, taxa:f.isenta && E.pode ? 0 : cfg.reposicao.taxa, empresa:empresa}).then(function(j){
+    chamar("POST", "/encomendas/link", {nome:nome, cod:r.cod || "", representante:r.representante || "", telefone:r.celular || "", cidade:r.cidade || "", uf:r.uf || "", media:m, taxa:f.isenta && E.pode ? 0 : cfg.reposicao.taxa, empresa:empresa, limite:{max:valorMaximo(cfg, m, ac.top50), qtd:qtdMes(cfg, m, ac.top50), tabela:cfg.valores, qtdRegra:cfg.qtd}}).then(function(j){
       var ate = new Date(Date.now()+(j.validadeHoras || 48)*3600*1000);
       st[1](function(o){ return Object.assign({}, o, {id:j.id, gerando:false, validade:ate.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"})+" às "+ate.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}); }); carregarLinks();
     }, function(x){ st[1](function(o){ return Object.assign({}, o, {gerando:false, msg:x && x.message ? x.message : "Não consegui gerar o link."}); }); });

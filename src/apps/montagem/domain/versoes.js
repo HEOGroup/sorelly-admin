@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.21", data:"2026-11-18", titulo:"Link do pedido: visual preto e dourado, peças em 2 por linha e barra com o total", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Página com fundo preto, blocos com degradê dourado subindo de baixo e botões dourados. Peças encontradas em 2 por linha, nome em letra normal e uma barra fixa embaixo com quantas peças ela quer, o total em R$ e o botão Enviar resposta. Cada peça encontrada tem um campo de observação da revendedora (aparece na ficha). O link mostra o limite liberado para ela (valor máximo por reposição e reposições por mês). Nomes das peças sem folheado e banhado, e topo com título em ouro. Página nova Valores de reposição (tabela por média de vendas, com a linha da revendedora em destaque), aberta por um atalho no limite dela."}
+ ]},
  {v:"0.21.20", data:"2026-11-18", titulo:"Financeiro: aba Atividades (só o Marcus)", itens:[
   {tipo:"novo", area:"Financeiro → Atividades", txt:"Tela nova, que só o Marcus abre. Mostra a rotina do Financeiro (cada atividade, a última vez, quem fez e se está em dia), tudo o que cada pessoa fez por dia e o que há para corrigir. Junta a DevMaster (baixas, estornos, transferências, títulos lançados e extratos importados) e o Sorelly Admin (Pix direcionados, baixas no Contas a pagar, saldos das contas e Financeiro familiar). Escolha Hoje, 7 dias ou 30 dias."}
  {v:"0.21.19", data:"2026-11-18", titulo:"Correção: foto das peças na DevMaster volta a funcionar no sistema online", itens:[

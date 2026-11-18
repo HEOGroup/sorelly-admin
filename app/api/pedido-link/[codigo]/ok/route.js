@@ -6,6 +6,6 @@ import { aprovarPecas } from "@/server/pedido-link";
 
 export const POST = rota(async (req, { params }) => {
   const b = await corpo(req, 16 * 1024);
-  try { return json({ ok: true, retorno: await aprovarPecas(String(params.codigo || ""), { quer: b.quer, obs: b.obs }) }); }
+  try { return json({ ok: true, retorno: await aprovarPecas(String(params.codigo || ""), { quer: b.quer, obs: b.obs, notas: b.notas }) }); }
   catch (x) { if (x && [404, 410].includes(x.statusCode)) return erro(x.message, x.statusCode); throw x; }
 }, { publica: true });

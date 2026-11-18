@@ -16,7 +16,7 @@ export function garantirTabelaLink() {
   if (!pronta) pronta = consulta(`create table if not exists sorelly.pedido_link (
     id text primary key, revendedora text not null, cod text, representante text, telefone text, cidade text, media numeric, taxa numeric not null default 0,
     criado_por text, criado_em timestamptz not null default now(), expira_em timestamptz not null,
-    status text not null default 'aberto', enviado_em timestamptz, dados jsonb, importado_em timestamptz, importado_por text, uf text)`).then(() => consulta("alter table sorelly.pedido_link add column if not exists uf text")).then(() => consulta("alter table sorelly.pedido_link add column if not exists empresa boolean not null default false")).then(() => consulta("alter table sorelly.pedido_link add column if not exists publicadas jsonb, add column if not exists retorno jsonb, add column if not exists publicado_em timestamptz")).catch((e) => { pronta = null; throw e; });
+    status text not null default 'aberto', enviado_em timestamptz, dados jsonb, importado_em timestamptz, importado_por text, uf text)`).then(() => consulta("alter table sorelly.pedido_link add column if not exists uf text")).then(() => consulta("alter table sorelly.pedido_link add column if not exists empresa boolean not null default false")).then(() => consulta("alter table sorelly.pedido_link add column if not exists publicadas jsonb, add column if not exists retorno jsonb, add column if not exists publicado_em timestamptz")).then(() => consulta("alter table sorelly.pedido_link add column if not exists limite jsonb")).catch((e) => { pronta = null; throw e; });
   return pronta;
 }
 
@@ -25,7 +25,7 @@ const slug = (nome) => semAcento(nome).replace(/[^a-z0-9]+/g, "-").replace(/^-+|
 export const codigoValido = (c) => typeof c === "string" && /^[a-z0-9-]{12,80}$/.test(c);
 
 /** Cria o link da revendedora: nome + código aleatório (o código é o que protege; o nome só deixa o endereço legível). */
-export async function criarLink({ nome, cod, representante, telefone, cidade, uf, media, taxa, empresa, por }) {
+export async function criarLink({ nome, cod, representante, telefone, cidade, uf, media, taxa, empresa, limite, por }) {
   await garantirTabelaLink();
   const n = String(nome || "").trim().slice(0, 120);
   if (!n) throw Object.assign(new Error("Dados inválidos: informe a revendedora."), { statusCode: 400 });
@@ -33,6 +33,13 @@ export async function criarLink({ nome, cod, representante, telefone, cidade, uf
   await consulta(`insert into sorelly.pedido_link (id, revendedora, cod, representante, telefone, cidade, media, taxa, criado_por, uf, empresa, expira_em)
     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $11, $12, now() + ($10 || ' hours')::interval)`,
     [id, n, String(cod || "").slice(0, 20), String(representante || "").slice(0, 120), String(telefone || "").slice(0, 30), String(cidade || "").slice(0, 80), Number.isFinite(Number(media)) && media !== "" && media !== null ? Number(media) : null, Number(taxa) > 0 ? Number(taxa) : 0, String(por || "").slice(0, 80), String(HORAS_VALIDADE), String(uf || "").trim().toUpperCase().slice(0, 2), empresa === true]);
+  // limite liberado para ela (valor máximo por reposição e reposições por mês): aparece na página dela (Marcus, 18/11/2026)
+  const mx = limite && Number(limite.max) > 0 ? Math.round(Number(limite.max) * 100) / 100 : 0, qt = limite && Number(limite.qtd) > 0 ? Math.round(Number(limite.qtd)) : 0;
+  // a tabela inteira (média → valor máximo) e a regra de quantas por mês, para a página "Valores de reposição" do link
+  const tabela = (limite && Array.isArray(limite.tabela) ? limite.tabela : []).slice(0, 12).map((x) => ({ de: Number(x && x.de) || 0, max: Number(x && x.max) || 0 })).filter((x) => x.max > 0);
+  const qr = limite && limite.qtdRegra && typeof limite.qtdRegra === "object" ? limite.qtdRegra : null;
+  const qtdRegra = qr ? { limiteMedia: Number(qr.limiteMedia) || 0, abaixo: Number(qr.abaixo) || 0, acima: Number(qr.acima) || 0, top50: Number(qr.top50) || 0 } : null;
+  if (mx > 0) await consulta("update sorelly.pedido_link set limite = $2 where id = $1", [id, JSON.stringify({ max: mx, qtd: qt, tabela, qtdRegra })]);
   return id;
 }
 
@@ -40,13 +47,13 @@ export async function criarLink({ nome, cod, representante, telefone, cidade, uf
 export async function lerLink(id) {
   if (!codigoValido(id)) return null;
   await garantirTabelaLink();
-  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, publicadas, retorno, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, publicadas, retorno, limite, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
   if (!r) return null;
   const temPecas = Array.isArray(r.publicadas) && r.publicadas.length > 0;
   const estado = temPecas ? (r.vencido ? "expirado" : "acompanhar") : r.status !== "aberto" ? "enviado" : r.vencido ? "expirado" : "aberto";
   const acompanhar = temPecas && !r.vencido ? { pecas: r.publicadas.map((x) => ({ cod: x.cod, desc: x.desc || "", preco: x.preco == null ? null : Number(x.preco) })), retorno: r.retorno || null } : null;
   const forcaEncomenda = !!(r.uf && r.uf !== "PR");   // outro estado: só encomenda (vai no próximo kit)
-  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar };
+  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar, limite: r.limite || null };
 }
 
 // ---------- peças encontradas pelo setor, para a revendedora aprovar no MESMO link (18/11/2026, Marcus) ----------
@@ -73,12 +80,13 @@ export async function retornos(ids) {
   const o = {}; r.rows.forEach((x) => { o[x.id] = { retorno: x.retorno || null, publicadoEm: x.publicado_em }; }); return o;
 }
 /** Lado público: a revendedora diz quais peças quer. Vale a última resposta. */
-export async function aprovarPecas(id, { quer, obs }) {
+export async function aprovarPecas(id, { quer, obs, notas }) {
   const l = await lerLink(id);
   if (!l) throw Object.assign(new Error("Link não encontrado."), { statusCode: 404 });
   if (l.estado !== "acompanhar") throw Object.assign(new Error(l.estado === "expirado" ? "Este link expirou." : "Ainda não há peças para você ver."), { statusCode: 410 });
   const todas = l.acompanhar.pecas.map((p) => p.cod), sim = (Array.isArray(quer) ? quer : []).map((c) => String(c || "").toUpperCase()).filter((c) => todas.includes(c));
-  const retorno = { em: new Date().toISOString(), quer: Array.from(new Set(sim)), nao: todas.filter((c) => !sim.includes(c)), obs: String(obs || "").trim().slice(0, 300) };
+  const nt = {}; if (notas && typeof notas === "object") todas.forEach((c) => { const t = String(notas[c] || "").trim().slice(0, 160); if (t) nt[c] = t; });   // observação da revendedora em cada peça
+  const retorno = { em: new Date().toISOString(), quer: Array.from(new Set(sim)), nao: todas.filter((c) => !sim.includes(c)), obs: String(obs || "").trim().slice(0, 300), notas: nt };
   await consulta("update sorelly.pedido_link set retorno = $2 where id = $1", [id, JSON.stringify(retorno)]);
   return retorno;
 }

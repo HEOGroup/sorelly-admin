@@ -15,6 +15,6 @@ export const GET = rota(async (req, { eu }) => {
 export const POST = rota(async (req, { eu }) => {
   if (!podeModulo(eu, "er")) return erro("Você não tem acesso a este módulo.", 403);
   const b = await corpo(req, 16 * 1024);
-  const id = await criarLink({ nome: b.nome, cod: b.cod, representante: b.representante, telefone: b.telefone, cidade: b.cidade, uf: b.uf, media: b.media, taxa: b.taxa, empresa: b.empresa === true, por: eu.nome });
+  const id = await criarLink({ nome: b.nome, cod: b.cod, representante: b.representante, telefone: b.telefone, cidade: b.cidade, uf: b.uf, media: b.media, taxa: b.taxa, empresa: b.empresa === true, limite: b.limite, por: eu.nome });
   return json({ id, validadeHoras: HORAS_VALIDADE });
 });

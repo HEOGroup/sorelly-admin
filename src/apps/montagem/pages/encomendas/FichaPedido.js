@@ -4,7 +4,7 @@
 // Visão limpa por padrão: só o que se lê e as caixas "Separada". O botão Editar (no topo) mostra o que muda coisas: origem e nota das fotos, tirar foto, adicionar fotos, tirar item, novo item e quem atende.
 // Fotos vão para o servidor (lib/anexo.js, módulo er); o pedido guarda só a chave. Cola com Ctrl+V ou escolhe do computador (até 20). Regras em domain/encomendas.js (ops ped_item_*, ped_foto_*, ped_taxa, ped_bipar).
 import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
-import { FINAIS, ROTULO_STATUS, acessoReposicao, caminhoDe, revPorNome, formatarDataHora, formatarReais, fotoDaRevendedora, mensagemTexto, proximaEtapa } from "@/apps/montagem/domain/encomendas";
+import { FINAIS, ROTULO_STATUS, acessoReposicao, caminhoDe, qtdMes, revPorNome, formatarDataHora, formatarReais, fotoDaRevendedora, mensagemTexto, proximaEtapa } from "@/apps/montagem/domain/encomendas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { abrirAnexo, enviarAnexo, lerArquivo } from "@/apps/montagem/lib/anexo";
 import { baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
@@ -275,7 +275,7 @@ function FichaPedido(p){
   var copiarMsg = function(){
     set("lk", true); set("lkErro", "");
     var direitos = acessoReposicao(cfg, revPorNome(E.er, x.revendedora), x.media3m);   // retirar na empresa só para quem tem direito
-    var texto = chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:x.taxaIsenta ? 0 : cfg.reposicao.taxa, empresa:direitos.canais.indexOf("empresa")>=0}).then(function(j){
+    var texto = chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:x.taxaIsenta ? 0 : cfg.reposicao.taxa, empresa:direitos.canais.indexOf("empresa")>=0, limite:{max:x.valorMax, qtd:qtdMes(cfg, x.media3m, direitos.top50), tabela:cfg.valores, qtdRegra:cfg.qtd}}).then(function(j){
       return mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(baseLink()+"/pedido/"+j.id);
     });
     copiarDepois(texto).then(function(){ set("lk", false); set("lkOk", true); }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
@@ -328,6 +328,7 @@ function FichaPedido(p){
     e("div",{className:"flex flex-col gap-1 text-[13px]"},
       e("p",null, e("b",{className:"text-[#bbf7d0]"}, "Quer: "), (ret.quer || []).length ? ret.quer.join(", ") : "nenhuma"),
       e("p",null, e("b",null, "Não quer: "), (ret.nao || []).length ? ret.nao.join(", ") : "nenhuma"),
+      ret.notas && Object.keys(ret.notas).length>0 && e("div",{className:"flex flex-col gap-0.5"}, e("b",null, "Observações por peça:"), Object.keys(ret.notas).map(function(c){ return e("p",{key:c}, e("b",null, c+": "), ret.notas[c]); })),
       ret.obs && e("p",null, e("b",null, "Recado: "), ret.obs),
       e("p",{className:"text-[11px]"}, "Respondeu em "+formatarDataHora(ret.em)))) : (v.ret ? e("p",{key:"rp", className:"text-[11px]"}, "Peças publicadas no link. Aguardando a resposta da revendedora.") : null);
   var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, respBloco, pecasBloco);
