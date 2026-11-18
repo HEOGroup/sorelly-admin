@@ -17,6 +17,17 @@ function inicioDaJanela(dias) {
 const agoraBR = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "medium" }).format(new Date()).replace(" ", "T");
 const hojeBR = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+// TODOS os produtos com foto na DevMaster, sem limite de data (18/11/2026): peças antigas que o sistema já controla e ganharam foto lá não eram vistas, porque a leitura normal só olha os últimos 120 dias. Cache de 10 minutos.
+async function codigosComFoto() {
+  const c = (G.__sorellyFotosDmTodos = G.__sorellyFotosDmTodos || {});
+  if (c.mapa && Date.now() - c.em < 10 * 60 * 1000) return c.mapa;
+  const linhas = await todasAsPaginas("dmaaa", { campos: ["aaa_codigo", "aaa_datacadastro", "aaa_foto"] });
+  const mapa = new Map();
+  linhas.forEach((x) => { if (String(x.aaa_foto || "").trim()) { const cod = String(x.aaa_codigo || "").trim().toUpperCase(); if (cod) mapa.set(cod, String(x.aaa_datacadastro || "").slice(0, 10)); } });
+  c.mapa = mapa; c.em = Date.now();
+  return mapa;
+}
+
 // produtos cadastrados nos últimos N dias: [{id, cod, desc, dia:"2026-11-09", foto:true|false}]
 export async function produtosRecentes({ dias = 60, forcar = false } = {}) {
   const chave = String(dias), c = (G.__sorellyFotosDm = G.__sorellyFotosDm || {});
@@ -32,7 +43,8 @@ export async function produtosRecentes({ dias = 60, forcar = false } = {}) {
 
 // Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; foto já na DevMaster marca Foto, Editada e Sistema como "dm" (a Ana coloca a foto lá depois de editar).
 // Só grava as chaves que mudaram, com trava de versão (não pisa em quem está marcando uma etapa na tela ao mesmo tempo).
-export async function sincronizarFotosDm({ dias = 120 } = {}) {
+// gravar:false = só simula (conta o que mudaria, sem gravar nada). antigas:false = não olha as peças com mais de 120 dias.
+export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = true } = {}) {
   const dm = await produtosRecentes({ dias, forcar: true }), hoje = hojeBR();
   for (let tentativa = 0; tentativa < 4; tentativa++) {
     const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'fc'");
@@ -51,9 +63,31 @@ export async function sincronizarFotosDm({ dias = 120 } = {}) {
       if (it.foto && !c.subEm) { if (!c.dmFoto) c.dmFoto = agoraBR(); if (!c.fotoEm) c.fotoEm = "dm"; if (!c.edEm) c.edEm = "dm"; c.subEm = "dm"; if (c.esp) delete c.esp; alterou = true; subiram++; }   // o Castilho tira a foto, a Ana edita e coloca na DevMaster: só então o sistema enxerga a foto
       if (alterou) mudou[chave] = c;
     }
-    if (!Object.keys(mudou).length) return { novos: 0, subiram: 0, lidos: dm.itens.length };
-    const u = await consulta("update sorelly.estado_modulo set conteudo = conteudo || $1::jsonb, versao = versao + 1, atualizado_por = 'automatico', atualizado_em = now() where modulo = 'fc' and versao = $2", [JSON.stringify(mudou), r.rows[0].versao]);
-    if (u.rowCount) return { novos, subiram, lidos: dm.itens.length };
+    // peças antigas (fora dos 120 dias) que o sistema já controla e já têm foto na DevMaster: marca Foto, Editada e Sistema como "dm". A data da foto é a do cadastro (antiga), então NÃO entra na meta da semana.
+    let antigasMarcadas = 0, espPuladas = 0;
+    if (antigas) {
+      const comFoto = await codigosComFoto();
+      for (const k of Object.keys(atual)) {
+        if (k.indexOf("c_") !== 0) continue;
+        const cod = k.slice(2);
+        if (!comFoto.has(cod)) continue;
+        const existente = mudou[k] || atual[k];
+        if (!existente || typeof existente !== "object" || existente.subEm) continue;
+        if (existente.esp) { espPuladas++; continue; }   // peça que a equipe marcou de propósito (Diversas, Aguardando, Repetido...): não mexe
+        const c = JSON.parse(JSON.stringify(existente)), dia = comFoto.get(cod);
+        if (!c.dmFoto) c.dmFoto = (/^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : "2000-01-01") + "T00:00:00";
+        if (!c.fotoEm) c.fotoEm = "dm";
+        if (!c.edEm) c.edEm = "dm";
+        c.subEm = "dm"; if (c.esp) delete c.esp;
+        mudou[k] = c; antigasMarcadas++;
+      }
+    }
+    if (!gravar) return { novos, subiram, antigasMarcadas, espPuladas, lidos: dm.itens.length, simulacao: true };
+    // a hora da leitura vai junto (m.dmEm): é o "Última atualização" da tela. Sem nada novo, só regrava se a última hora tem mais de 4 minutos.
+    const agora = agoraBR(), ultima = String(((atual.m || {}).dmEm) || "");
+    if (!Object.keys(mudou).length && ultima && Date.now() - Date.parse(ultima + "-03:00") < 4 * 60 * 1000) return { novos: 0, subiram: 0, antigasMarcadas: 0, lidos: dm.itens.length };
+    const u = await consulta("update sorelly.estado_modulo set conteudo = jsonb_set(conteudo || $1::jsonb, '{m,dmEm}', to_jsonb($3::text), true), versao = versao + 1, atualizado_por = 'automatico', atualizado_em = now() where modulo = 'fc' and versao = $2", [JSON.stringify(mudou), r.rows[0].versao, agora]);
+    if (u.rowCount) return { novos, subiram, antigasMarcadas, lidos: dm.itens.length };
   }
   return { novos: 0, subiram: 0, motivo: "Outra pessoa gravou ao mesmo tempo; tenta de novo na próxima." };
 }
@@ -62,7 +96,7 @@ export async function sincronizarFotosDm({ dias = 120 } = {}) {
 export function agendarFotosDm() {
   if (G.__sorellyFotosDmAgendado) return;
   G.__sorellyFotosDmAgendado = true;
-  const rodar = async () => { try { const r = await sincronizarFotosDm(); if (r.novos || r.subiram) console.log("[fotos-dm]", JSON.stringify(r)); } catch (e) { console.error("[fotos-dm] falhou:", e && e.message); } };
+  const rodar = async () => { try { const r = await sincronizarFotosDm(); if (r.novos || r.subiram || r.antigasMarcadas) console.log("[fotos-dm]", JSON.stringify(r)); } catch (e) { console.error("[fotos-dm] falhou:", e && e.message); } };
   setTimeout(rodar, 30000);
   setInterval(rodar, 5 * 60 * 1000);
 }

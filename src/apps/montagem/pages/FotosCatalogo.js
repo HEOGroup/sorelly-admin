@@ -54,13 +54,14 @@ function BarraMeta(p){
   var corMeta = mr.situacao==="Batida" ? ESTADO.ok : mr.situacao==="Não batida" ? ESTADO.ruim : ESTADO.alerta, escuro = "bg-[#131a2b]";
   return e("section",{className:"overflow-hidden rounded-lg border-2 border-white/60"},
     e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 px-3 py-1.5 "+escuro},
-      e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]"}, "Meta · até "+formatarDia(mt.fim)),
+      e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]"}, "Meta · "+formatarDia(mt.ini).slice(0, 5)+" a "+formatarDia(mt.fim).slice(0, 5)),
       e("b",{className:"text-[14px] tabular-nums"}, N(mr.feitas)+" de "+N(mt.alvo)+" fotos"),
       e("span",{className:"text-[13px] tabular-nums"}, "Falta "+N(mr.falta)+(mr.restam && mr.falta ? " · "+N(mr.porDia)+" por dia" : "")),
       e("span",{className:"block h-1.5 min-w-[140px] flex-1 overflow-hidden rounded bg-black/30"}, e("i",{className:"block h-full", style:{width:Math.max(1, Math.round(mr.pct))+"%", background:corMeta}})),
       e("b",{className:"text-[14px] tabular-nums"}, PCT(mr.feitas, mt.alvo)),
       e("b",{className:"text-[13px]", style:{color:corMeta}}, mr.situacao),
-      e("span",{className:"text-[13px] tabular-nums"}, "Bônus "+BKC(mt.bonus))));
+      e("span",{className:"text-[13px] tabular-nums"}, mr.proximo ? "Próximo degrau: "+N(mr.proximo.alvo)+" fotos = "+BKC(mr.proximo.bonus)+" · falta "+N(mr.proximo.falta) : "Todos os degraus conquistados"),
+      e("span",{className:"text-[13px] tabular-nums"}, "Bônus agora "+BKC(mr.bonusAtual)+" · até "+BKC(mt.bonus))));
 }
 
 // MESES ANTERIORES (Marcus, 11/11/2026): peças cadastradas antes de 01/11 que ainda não têm foto. Começa por OUTUBRO; o mês seguinte só aparece quando o anterior termina.
@@ -263,15 +264,17 @@ function Processos(){
 // META (Marcus, 10/11/2026): 500 fotos até sexta = bônus de R$ 250,00; a próxima meta entra em METAS (domain/fotos-catalogo.js)
 function Meta(p){
   var hoje = hojeSP();
-  return e("div",{className:"flex flex-col gap-2.5"}, e("p",{className:"text-[13px] text-foreground"}, "Foto conta quando chega na DevMaster (a Ana coloca lá e o sistema lê sozinho) ou quando é marcada nesta tela, no período da meta. O bônus só vale para quem trabalhar no período."), METAS.map(function(m){
+  return e("div",{className:"flex flex-col gap-2.5"}, e("p",{className:"text-[13px] text-foreground"}, "Foto conta quando chega na DevMaster (a Ana coloca lá e o sistema lê sozinho) ou quando é marcada nesta tela, no período da meta. O bônus só vale para quem trabalhar no período."), METAS.slice().reverse().map(function(m){
     var r = metaProgresso(p.fc, m, hoje), cor = r.situacao==="Batida" ? ESTADO.ok : r.situacao==="Não batida" ? ESTADO.ruim : ESTADO.alerta;
-    var linhas = r.linhas.map(function(x){ return {id:x.dia, dia:x.dia, fotos:x.fotos, acum:x.acum, pct:x.acum/m.alvo*100}; });
+    var linhas = r.linhas.map(function(x){ return {id:x.dia, dia:x.dia, fotos:x.fotos, acum:x.acum, falta:Math.max(0, m.alvo-x.acum), pct:x.acum/m.alvo*100}; });
+    var degraus = r.degraus.map(function(g){ return {id:String(g.alvo), alvo:g.alvo, bonus:g.bonus, falta:g.falta, porDia:r.restam && g.falta ? g.porDia : null, sit:g.feito ? "Conquistado" : "Falta "+N(g.falta), feito:g.feito}; });
     var umaLinha = [{id:"m", ini:m.ini, fim:m.fim, alvo:m.alvo, feitas:r.feitas, falta:r.falta, pct:r.feitas/m.alvo*100, porDia:r.restam ? r.porDia : null, bonus:m.bonus, sit:r.situacao}];
     return e("div",{key:m.id, className:"flex flex-col gap-2"},
       e(Bloco,{t:m.nome+" · até "+formatarDia(m.fim)},
         e(Plan,{linhas:umaLinha, cols:[{k:"ini", t:"Início", fmt:formatarDia}, {k:"fim", t:"Prazo", fmt:formatarDia}, {k:"alvo", t:"Meta", fmt:function(v){ return N(v)+" fotos"; }}, {k:"feitas", t:"Feitas", fmt:N}, {k:"falta", t:"Falta", fmt:N}, {k:"pct", t:"%", fmt:function(v){ return PCT(v, 100); }}, {k:"porDia", t:"Por dia", fmt:function(v){ return v==null ? "—" : N(v)+" por dia"; }}, {k:"bonus", t:"Bônus", fmt:BKC}, {k:"sit", t:"Situação", cor:function(){ return r.situacao==="Batida" ? "text-success" : r.situacao==="Não batida" ? "text-destructive" : "text-amber-400"; }}]})),
+      r.degraus.length>1 ? e(Bloco,{t:"Degraus do bônus"}, e(Plan,{linhas:degraus, cols:[{k:"alvo", t:"Fotos na semana", fmt:N}, {k:"bonus", t:"Bônus", fmt:BKC}, {k:"falta", t:"Falta", fmt:N}, {k:"porDia", t:"Por dia", fmt:function(v){ return v==null ? "—" : N(v)+" por dia"; }}, {k:"sit", t:"Situação", cor:function(l){ return l.feito ? "text-success" : ""; }}]})) : null,
       e(Bloco,{t:"Fotos por dia"},
-        e(Plan,{linhas:linhas, cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+(v===hoje ? " · hoje" : ""); }}, {k:"fotos", t:"Fotos no dia", fmt:N}, {k:"acum", t:"Acumulado", fmt:N}, {k:"pct", t:"% da meta", fmt:function(v){ return PCT(v, 100); }}]})));
+        e(Plan,{linhas:linhas, cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+(v===hoje ? " · hoje" : ""); }}, {k:"fotos", t:"Fotos no dia", fmt:N}, {k:"acum", t:"Acumulado", fmt:N}, {k:"falta", t:"Falta para a meta", fmt:N}, {k:"pct", t:"% da meta", fmt:function(v){ return PCT(v, 100); }}]})));
   }));
 }
 
@@ -289,12 +292,13 @@ function AbaFotosCatalogo(){
   var colsAnt = useMemo(function(){ var acaoTem = function(op, cod, valor){ d({type:"FC", op:op, cod:cod, etapa:valor, valor:valor, por:porDe(s)}); }; var c = colunasDia(acaoTem); c.splice(4, 0, colTem(acaoTem)); return c; }, [s.usuario, d]);   // eslint-disable-line react-hooks/exhaustive-deps
   var cols = useMemo(function(){ return colunas(function(op, cod, etapa){ d({type:"FC", op:op, cod:cod, etapa:etapa, valor:etapa, por:porDe(s)}); }); }, [s.usuario, d]);   // eslint-disable-line react-hooks/exhaustive-deps
   // código novo cadastrado na DevMaster (Rayssa) entra sozinho aqui: consulta a cada 2 minutos enquanto a tela está aberta; foto já subida na DevMaster marca o Sistema
+  var fh = useState(""), falhaDm = fh[0], setFalhaDm = fh[1], lidoEm = [fc && fc.dmEm, fc && fc.dmEmServidor].filter(Boolean).sort().pop();
   useEffect(function(){
     if(!apiAtiva() || !token()) return undefined;
-    var vivo = true, rodar = function(){ chamar("GET", "/fotos/dm?dias=120").then(function(r){ if(vivo && r && Array.isArray(r.itens)) d({type:"FC", op:"dm_sync", itens:r.itens, por:"DevMaster"}); }).catch(function(){}); };
+    var vivo = true, rodar = function(){ chamar("GET", "/fotos/dm?dias=120").then(function(r){ if(vivo && r && Array.isArray(r.itens)){ setFalhaDm(""); d({type:"FC", op:"dm_sync", itens:r.itens, por:"DevMaster"}); } }).catch(function(x){ if(vivo) setFalhaDm((x && x.message) || "sem resposta"); }); };
     rodar(); var iv = setInterval(rodar, 120000); return function(){ vivo = false; clearInterval(iv); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  var cab = e(PageHead,{t:"Fotos de catálogo", sub:"Última atualização: "+(fc && fc.dmEm ? String(fc.dmEm).slice(8, 10)+"/"+String(fc.dmEm).slice(5, 7)+" às "+String(fc.dmEm).slice(11, 16) : "ainda não lida")});
+  var cab = e(PageHead,{t:"Fotos de catálogo", sub:"Última atualização: "+(lidoEm ? String(lidoEm).slice(8, 10)+"/"+String(lidoEm).slice(5, 7)+" às "+String(lidoEm).slice(11, 16) : "ainda não lida")+(falhaDm ? " · a leitura da DevMaster falhou agora ("+falhaDm+")" : "")});
   if(!fc) return e(Pagina,null, cab, e("p",{className:"py-6 text-center text-[13px] text-foreground"}, "Dados das fotos de catálogo indisponíveis."));
   return e(Pagina,null, cab,
     e(BarraMeta,{fc:fc}),

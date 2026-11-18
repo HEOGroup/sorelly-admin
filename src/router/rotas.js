@@ -159,6 +159,7 @@ const montagem = {
     pagina("regras-e-mensagens-reposicao", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncRegras"),
     pagina("marketing", () => import("@/apps/montagem/pages/Marketing"), "AbaMarketing"),
     pagina("fotos-de-catalogo", () => import("@/apps/montagem/pages/FotosCatalogo"), "AbaFotosCatalogo"),
+    pagina("relatorio-diario", () => import("@/apps/montagem/pages/RelatorioMarketing"), "AbaRelatorioMarketing"),
     pagina("modelos", () => import("@/apps/montagem/pages/Modelas"), "AbaModelas"),
     pagina("trafego-pago", () => import("@/apps/montagem/pages/Trafego"), "AbaTrafego"),
     pagina("inadimplencia-dividas", () => import("@/apps/montagem/pages/inad/Dividas"), "AbaInadDividas"),

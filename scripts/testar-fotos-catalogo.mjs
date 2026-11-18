@@ -138,5 +138,15 @@ const lr = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"M0802"});
 t("lote: Editadas sem foto marca a foto junto", !!lr.fc.codigos.find(c=>c.cod==="M0802").edEm && !!lr.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
 lt = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"A2357"});
 t("lote: editada marca o modelo e as grades que já têm foto", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.edEm));
+// meta em degraus: 300 = 150, 350 = 200, 400 = 250
+const MD = Object.assign({}, M, {alvo:4, degraus:[{alvo:2, bonus:100}, {alvo:3, bonus:200}, {alvo:4, bonus:300}]});
+const md = F.metaProgresso(fm, MD, "2026-11-11");
+t("meta em degraus: 3 fotos conquistam o degrau de 200 e falta 1 para o último", md.bonusAtual===200 && md.proximo.alvo===4 && md.proximo.falta===1 && md.degraus.filter(g=>g.feito).length===2);
+t("meta em degraus: sem foto nenhuma não há bônus e o próximo é o primeiro", F.metaProgresso({codigos:[]}, MD, "2026-11-11").bonusAtual===0 && F.metaProgresso({codigos:[]}, MD, "2026-11-11").proximo.alvo===2);
+t("meta em degraus: depois do prazo com degrau conquistado fica Encerrada", F.metaProgresso(fm, MD, "2026-11-14").situacao==="Encerrada");
+// a foto vale no dia da PRIMEIRA prova: se chegou na DevMaster dia 12 e só dia 16 alguém deu OK na tela, conta dia 12 (o total da meta antiga não pode cair)
+const fp = {codigos:[{cod:"P1", dia:"2026-11-05", fotoEm:"2026-11-16T10:00:00", dmFoto:"2026-11-12T10:00:00"}, {cod:"P2", dia:"2026-11-05", fotoEm:"2026-11-12T09:00:00", dmFoto:"2026-11-14T10:00:00"}]};
+const mpP = F.metaProgresso(fp, {id:"p", nome:"P", ini:"2026-11-10", fim:"2026-11-13", alvo:5, bonus:0, dmDesde:"2026-11-11T10:20:00"}, "2026-11-20");
+t("meta: a foto conta no dia da primeira prova (DevMaster dia 12 antes do OK da tela dia 16)", mpP.feitas===2 && mpP.linhas.find(l=>l.dia==="2026-11-12").fotos===2, JSON.stringify(mpP.linhas));
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

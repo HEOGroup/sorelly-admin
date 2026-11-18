@@ -17,6 +17,7 @@ export const SETORES_DO_MODULO = {
   mk: ["marketing"], gr: ["garantia"],
   fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
   jp: ["rh", "pecas"],   // RH › Pagamento em joias (17/11/2026): RH e cadastro de peças (separa as joias); a Diretoria abre tudo; quem autoriza é a autorização joias_autoriza
+  mr: ["marketing"],   // Marketing › Relatório diário (17/11/2026): só Marketing e Diretoria
   mod: [],   // Marketing › Modelos (veio das Encomendas em 12/11/2026): Diretoria e as pessoas de PESSOAS_DO_MODULO (Castilho); a tela também confere a autorização modelos_ver
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   rc: ["*"],   // quem é Kit 100% Prata (12/11/2026): todo mundo logado lê (atendimento, agendamento, representantes) e a marcação vale igual em todos os computadores

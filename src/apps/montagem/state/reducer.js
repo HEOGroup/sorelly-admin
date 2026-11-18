@@ -41,6 +41,7 @@ import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
 import { modReduz } from "@/apps/montagem/domain/modelas";
 import { jpReduz } from "@/apps/montagem/domain/joias-pagamento";
+import { mrReduz } from "@/apps/montagem/domain/relatorio-marketing";
 import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
@@ -264,6 +265,7 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
+      if(a.chave==="mr") return Object.assign({}, s, {mr:Object.assign({}, s.mr, a.conteudo)});   // Marketing › Relatório diário: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="jp") return Object.assign({}, s, {jp:Object.assign({}, s.jp, a.conteudo)});   // Pagamento em joias: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
       if(a.chave==="revdia"){
@@ -296,7 +298,7 @@ function reducer(s, a){
         var fcS = Object.assign({v:1, categorias:[], historico:[], codigos:[]}, s.fc), fcCods = (fcS.codigos||[]).slice(), fcMapa = new Map(), fcTira = {};
         fcCods.forEach(function(c, i){ fcMapa.set(c.cod, i); });
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
-          if(k==="m"){ if(v){ if(Array.isArray(v.historico) && v.historico.length) fcS.historico = v.historico; if(Array.isArray(v.categorias) && v.categorias.length) fcS.categorias = v.categorias; if(v.semeado) fcS.semeado = true; } return; }
+          if(k==="m"){ if(v){ if(Array.isArray(v.historico) && v.historico.length) fcS.historico = v.historico; if(Array.isArray(v.categorias) && v.categorias.length) fcS.categorias = v.categorias; if(v.semeado) fcS.semeado = true; if(v.dmEm) fcS.dmEmServidor = v.dmEm; } return; }
           if(k.indexOf("c_")!==0) return; var cod = k.slice(2), ix = fcMapa.get(cod);
           if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
         if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
@@ -352,6 +354,7 @@ function reducer(s, a){
     case "INAD": { var rIn = inadReduz(s, a); return com(s, rIn.patch, rIn.msg); }   // setor de Inadimplência (dívidas, acordos, pagamentos, Serasa, kits em atraso)
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
+    case "MR": { var rMr = mrReduz(s, a); return com(s, rMr.patch, rMr.msg); }   // Marketing › Relatório diário
     case "JP": { var rJp = jpReduz(s, a); return com(s, rJp.patch, rJp.msg); }   // RH › Pagamento em joias
     case "MOD": { var rMod = modReduz(s, a); return com(s, rMod.patch, rMod.msg); }   // Encomendas › Modelos (cadastro particular do Marcus)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)

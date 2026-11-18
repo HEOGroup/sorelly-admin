@@ -184,9 +184,9 @@ function minutosDesde(iso, agora){ return minutos(iso, agora); }
 function fotosFeitas(fc, desde){
   var corte = (METAS[0] && METAS[0].dmDesde) || "", out = [];
   unidades(fc).forEach(function(u){
-    var q = "", quem = "", origem = "", x = String(u.fotoEm||"");
-    if(ehDia(parteDia(x))){ q = x; quem = u.fotoQuem || "Sem nome"; origem = "Marcada na tela"; }
-    else if(u.dmFoto && String(u.dmFoto)>=corte){ q = String(u.dmFoto); quem = "DevMaster"; origem = "Chegou na DevMaster"; }
+    var q = "", quem = "", origem = "", x = String(u.fotoEm||""), tela = ehDia(parteDia(x)) ? x : "", dm = u.dmFoto && String(u.dmFoto)>=corte ? String(u.dmFoto) : "";
+    if(tela && (!dm || tela<=dm)){ q = tela; quem = u.fotoQuem || "Sem nome"; origem = "Marcada na tela"; }
+    else if(dm){ q = dm; quem = "DevMaster"; origem = "Chegou na DevMaster"; }
     if(!q || parteDia(q)<desde) return;
     out.push({id:u.cod, cod:u.cod, quando:q, dia:parteDia(q), quem:quem, origem:origem, desc:u.desc||"", cadastro:u.dia||"", sistema:u.subEm ? "Sim" : "Não"});
   });
@@ -197,20 +197,31 @@ function fotosFeitas(fc, desde){
 // Primeira meta: 500 fotos até sexta-feira (13/11) = bônus de R$ 250,00 para o setor. A próxima meta entra aqui quando o Marcus definir.
 // Foto contada = marcada na tela (Foto, com data) OU foto que passou a existir na DevMaster depois do início do sistema (dmFoto, gravado na hora em que a leitura da DevMaster vê a foto).
 // dmDesde: foto que a leitura da DevMaster viu ANTES dessa hora não conta: em 11/11 a leitura carimbou 877 fotos de uma vez às 09:45 e 1.184 às 10:19 (ao abrir a janela de 120 dias); depois disso os carimbos vêm um a um, com o trabalho da equipe.
-var METAS = [{id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250, dmDesde:"2026-11-11T10:20:00"}];
+var METAS = [
+  {id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250, dmDesde:"2026-11-11T10:20:00"},
+  // Meta da semana de 16 a 20/11/2026 (Marcus, 17/11/2026): degraus ajustados em 17/11/2026 (Marcus): 250 = R$ 150, 300 = R$ 200, 350 = R$ 250 (antes 300, 350 e 400); meta de partida era 80 fotos por dia, pago em dinheiro até quinta 26/11 (Marcus, 18/11/2026), só para quem trabalhar. Conta a segunda (55).
+  {id:"2026-11-20", nome:"Meta da semana", ini:"2026-11-16", fim:"2026-11-20", alvo:350, bonus:250, degraus:[{alvo:250, bonus:150}, {alvo:300, bonus:200}, {alvo:350, bonus:250}], dmDesde:"2026-11-11T10:20:00"}
+];
 var diasEntre = function(a, b){ return Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/86400000); };
 var somaDia = function(d, n){ var x = new Date(d+"T12:00:00Z"); x.setUTCDate(x.getUTCDate()+n); return x.toISOString().slice(0, 10); };
 // A meta conta toda foto nova de QUALQUER peça, de qualquer mês (Marcus, 11/11/2026). A leitura da DevMaster também acha fotos ANTIGAS que ninguém tinha marcado: essas ficam de fora pela hora de corte (dmDesde).
 var INICIO_PECAS = "2026-11-01";
-var diaDaFoto = function(c, dmDesde){ var d = parteDia(c.fotoEm); if(ehDia(d)) return d; if(dmDesde && String(c.dmFoto||"")<dmDesde) return ""; d = parteDia(c.dmFoto); return ehDia(d) ? d : ""; };
+var diaDaFoto = function(c, dmDesde){
+  var a = parteDia(c.fotoEm), b = ""; a = ehDia(a) ? a : "";
+  if(!(dmDesde && String(c.dmFoto||"")<dmDesde)){ b = parteDia(c.dmFoto); b = ehDia(b) ? b : ""; }
+  return a && b ? (a<b ? a : b) : (a || b);
+};
 function metaProgresso(fc, m, hoje){
   var por = {}, feitas = 0, dias = [], d;
   unidades(fc).forEach(function(c){ var x = diaDaFoto(c, m.dmDesde); if(x && x>=m.ini && x<=m.fim){ por[x] = (por[x]||0)+1; feitas++; } });
   for(d = m.ini; d<=m.fim; d = somaDia(d, 1)) dias.push(d);
   var acum = 0, linhas = dias.map(function(x){ acum += por[x]||0; return {dia:x, fotos:por[x]||0, acum:acum}; });
   var falta = Math.max(0, m.alvo-feitas), restam = dias.filter(function(x){ return x>=hoje; }).length;
-  var situacao = feitas>=m.alvo ? "Batida" : hoje>m.fim ? "Não batida" : "Em andamento";
-  return {meta:m, feitas:feitas, falta:falta, pct:Math.min(100, feitas/m.alvo*100), linhas:linhas, restam:restam, porDia:restam ? Math.ceil(falta/restam) : 0, situacao:situacao};
+  // degraus de bônus (a meta antiga tem um só): de cada um, se já foi conquistado, quanto falta e quanto por dia
+  var graus = (m.degraus || [{alvo:m.alvo, bonus:m.bonus}]).map(function(g){ var f = Math.max(0, g.alvo-feitas); return {alvo:g.alvo, bonus:g.bonus, feito:feitas>=g.alvo, falta:f, porDia:restam ? Math.ceil(f/restam) : 0}; });
+  var conquistados = graus.filter(function(g){ return g.feito; }), bonusAtual = conquistados.length ? conquistados[conquistados.length-1].bonus : 0, proximo = graus.filter(function(g){ return !g.feito; })[0] || null;
+  var situacao = feitas>=m.alvo ? "Batida" : hoje>m.fim ? (bonusAtual ? "Encerrada" : "Não batida") : "Em andamento";
+  return {meta:m, feitas:feitas, falta:falta, pct:Math.min(100, feitas/m.alvo*100), linhas:linhas, restam:restam, porDia:restam ? Math.ceil(falta/restam) : 0, situacao:situacao, degraus:graus, bonusAtual:bonusAtual, proximo:proximo};
 }
 
 // ---------- entrada de códigos (colar do Excel: um por linha ou separados por espaço, vírgula ou ponto e vírgula) ----------

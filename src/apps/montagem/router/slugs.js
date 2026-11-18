@@ -149,6 +149,7 @@ export const SLUG_DA_ABA = {
   posvendas: "pos-vendas",
   marketing: "marketing",
   fotoscat: "fotos-de-catalogo",
+  relmkt: "relatorio-diario",
   trafego: "trafego-pago",
   modelos: "modelos",
   inaddiv: "inadimplencia-dividas",
