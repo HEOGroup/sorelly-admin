@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.98", data:"2026-11-18", titulo:"Pix para fornecedor: comprovante da representante também libera o pagamento", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar", txt:"O comprovante que a representante anexa na calculadora de acerto agora também libera o pagamento do fornecedor, antes ou depois de o Lucas direcionar. Antes só valia o comprovante da funcionária no atendimento interno."}
+ ]},
  {v:"0.20.97", data:"2026-11-18", titulo:"Marketing: Relatório diário, meta da semana e leitura da DevMaster corrigida", itens:[
   {tipo:"novo", area:"Marketing → Relatório diário", txt:"Nova aba Relatório diário no Marketing: uma linha por dia do mês, uma coluna por atividade (Artes do dia, Stories, Reels e vídeos, Fotos editadas; a lista se muda no botão Atividades), total do dia, quem preencheu e observação. Clicar no dia abre o card para lançar as quantidades e copiar o relatório em texto para o WhatsApp."},
   {tipo:"melhoria", area:"Marketing → Fotos de catálogo", txt:"Meta da semana de 16 a 20/11 (350 fotos) com degraus do bônus (250 = R$ 150,00, 300 = R$ 200,00, 350 = R$ 250,00), quanto falta para o próximo degrau e tabela de degraus. A contagem usa a data mais antiga em que a foto apareceu (marcada na tela ou lida na DevMaster)."},

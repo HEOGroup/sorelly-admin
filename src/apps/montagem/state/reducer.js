@@ -102,7 +102,10 @@ function sincCompFornecedor(s){
   if(!s.pf || !(s.pf.lancamentos||[]).some(function(l){ return l.aguardaComp && l.lf; })) return s;
   var sx = s;
   s.pf.lancamentos.filter(function(l){ return l.aguardaComp && l.lf; }).forEach(function(l){
-    var x = (s.lancFin||[]).find(function(z){ return z.internoId===l.lf.internoId; }), li = x && (x.linhas||[])[l.lf.li], pt = li && (li.partes||[])[l.lf.k], cmp = pt && pt.comprovante;
+    var x, li, pt;
+    if(l.lf.repId){ x = (s.lancFin||[]).find(function(z){ return z.id===l.lf.repId; }); li = x && (x.linhas||[]).find(function(z){ return z.pid===l.lf.pid; }); pt = li && (li.partes||[])[0]; }   // representante (calculadora de acerto)
+    else { x = (s.lancFin||[]).find(function(z){ return z.internoId===l.lf.internoId; }); li = x && (x.linhas||[])[l.lf.li]; pt = li && (li.partes||[])[l.lf.k]; }   // funcionária (atendimento interno)
+    var cmp = pt && pt.comprovante;
     if(!cmp) return;
     var r = pfReduz(sx, {op:"lanc_comp", id:l.id, arqNome:cmp.nome||"comprovante", arqTipo:"", arqKey:"", arqData:typeof cmp.url==="string" && cmp.url.indexOf("data:")===0 ? cmp.url : ""});
     if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
@@ -389,10 +392,12 @@ function reducer(s, a){
         if(pFo && pFo.status==="direcionado" && sDp.pf){
           var itFo = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
             var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
-            var lfFo = null; if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
+            var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
+            if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
             itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:new Date(pFo.confirmadoEm||Date.now()).toISOString().slice(0, 10), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
           if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
+      if(a.op==="confirma") sDp = sincCompFornecedor(sDp);   // o comprovante já pode estar anexado (representante ou funcionária)
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
@@ -1251,7 +1256,7 @@ function reducer(s, a){
       if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
       if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;
           return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:{nome:a.anexo.nome, url:a.anexo.dados||null}})]}); })}); })});
-        return com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro"); }
+        return sincCompFornecedor(com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro")); }
       if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }

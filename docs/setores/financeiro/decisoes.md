@@ -492,3 +492,34 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - **Prestador particular (10/11/2026, Marcus):** cada pessoa tem o próprio cadastro do prestador; sem dívida lançada a linha some do Resumo do grupo. O PDF do orçamento da dívida agora fica no servidor (`/api/anexos`, módulo `ff`). Detalhes em `docs/DECISOES.md` do mesmo dia.
 
 - **10/11/2026** (diário geral): Controle de pagamentos › Destinos mostra Escrever na folha, Banco, Favorecido e Chave Pix (lidos de Chaves Pix, com Copiar). Novo destino Itaú Marco PJ. Pendência 5 de Chaves Pix resolvida; a 7 (chaves no servidor) segue com o Leonardo.
+
+## 17/11/2026 — Pix para fornecedor: do Direcionar ao Contas a pagar (regra do Marcus, construída; v0.20.94 e v0.20.98)
+**Regra, em uma frase:** Pix de revendedora para fornecedor é sempre "um valor até uma data". Quando o Lucas confirma no Direcionar um Pix com um FORNECEDOR como destino, o Pix vira pagamento do fornecedor sozinho. Ninguém digita de novo.
+
+| Ponto | Como é |
+|---|---|
+| Em qual parcela cai | Na data de pagamento (janela) MAIS ANTIGA em aberto daquele fornecedor |
+| Quando conta como pago | Só com o Pix confirmado no Direcionar E o comprovante anexado. Antes disso fica "Falta o comprovante" e NÃO entra em Contas a pagar |
+| Quem anexa o comprovante | A REPRESENTANTE, na calculadora de acerto (Pix de representante), ou a FUNCIONÁRIA, na aba Atendimento interno (Atendimento Sorelly). O mesmo comprovante aparece no Consolidado Sorelly. Ninguém anexa de novo no Financeiro |
+| Chave Pix | A conta devolvida pelo Direcionar chega ao Atendimento Sorelly já com a chave Pix e o botão Copiar, para a funcionária passar à revendedora. A chave é lida na hora do cadastro (Chaves Pix e Destinos); nada é copiado para o pedido |
+| Lançamento de pagamentos | Deixa de ser onde o Pix nasce. Vira a tela de conferir e corrigir: ver comprovante, estornar, mandar o extrato ao fornecedor. O botão Anexar comprovante dela é só reserva |
+| Confirmar duas vezes | Não duplica |
+| Reabrir o Pix | Retira o pagamento que ainda NÃO tem comprovante; o que já tem fica |
+| Lançamentos antigos | Os ~1.500 antigos não mudam: a regra do comprovante vale só para os novos |
+
+**Fluxo:**
+```
+Lucas confirma no Direcionar (destino = fornecedor)
+        ↓
+Pagamento nasce no fornecedor, na data mais antiga em aberto: "Falta o comprovante"
+        ↓
+Representante (calculadora de acerto) ou funcionária (atendimento interno) anexa o comprovante
+        ↓
+O pagamento pega o comprovante sozinho, conta como pago e entra em Contas a pagar
+```
+
+**Código (para quem for mexer):** `state/reducer.js` (caso `DP`: ao confirmar e ao reabrir; `sincCompFornecedor`: copia o comprovante de `lancFin`, roda ao confirmar, a cada `FIN_LINHA` e quando a representante anexa em `REP_PAG` comprovante); `domain/pf.js` (ops `pix_dir`, `pix_dir_desfaz`, `lanc_comp`; `fornDoDestino` liga o destino ao fornecedor PELO NOME; `janelaMaisAntigaAberta`; `pagoPix` ignora o que tem `aguardaComp`); `domain/contas-empresa.js › setPf` ignora `aguardaComp`; `lib/chave-da-parte.js` (chave na linha da conta do atendimento). Cada lançamento novo guarda `origemPix` (id#n, evita duplicar), `aguardaComp` e `lf` (onde está o comprovante). Testes: `node scripts/testar-pix-fornecedor.mjs` (13 verificações) e `node scripts/testar-chave-da-parte.mjs` (4).
+
+**Limites conhecidos:** destino sem fornecedor de NOME igual no cadastro de Pagamentos a fornecedores não gera pagamento. Testado no navegador na porta 3000 com pedido falso (limpo depois); o comprovante do atendimento interno e o da representante foram testados só no reducer, em memória.
+
+**Erro que NÃO se repete (Marcus, 17/11/2026):** quem anexa o comprovante é a representante ou a funcionária do atendimento interno, nunca o Direcionar nem o Financeiro.

@@ -49,4 +49,23 @@ if(dest){
   const l3 = s.pf.lancamentos.find(l => l.origemPix==="PI1#0");
   t("interno: comprovante anexado no atendimento libera o pagamento", l3 && !l3.aguardaComp && l3.arqNome==="c.jpg", JSON.stringify(l3));
 }
+// representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha com o pid)
+if(dest){
+  const { idPedidoRep } = await jiti.import("@/apps/montagem/domain/pagamento-rep");
+  const mk = (id, pid, comp) => ({id:idPedidoRep("K"+id), origem:"rep", kitId:"K"+id, linhas:[{tipo:"pagamento", forma:"pix", valor:30, pid, partes:[{descricao:"", valor:30, comprovante:comp, ok:false}]}]});
+  const pixRep = (id, pid) => ({id:id, origem:"rep", pid, kitId:"K"+id, quem:"Representante TESTE", repOrigem:"TESTE", valor:30, pagos:[], divisoes:[{destinoId:dest.id, valor:30}], status:"fila", forma:"pix"});
+  // A) comprovante já anexado quando o Lucas direciona
+  let a = Object.assign({}, s, {lancFin:[mk("RA","PA",{nome:"c.jpg", url:"data:image/jpeg;base64,AAAA"})], dp:Object.assign({}, s.dp, {pix:[pixRep("RA","PA")], regras:[]})});
+  a = reducer(a, {type:"DP", op:"confirma", id:"RA", por:"Teste"});
+  const la = a.pf.lancamentos.find(l => l.origemPix==="RA#0");
+  t("representante: comprovante já anexado libera ao direcionar", la && !la.aguardaComp && la.arqNome==="c.jpg", JSON.stringify(la));
+  // B) comprovante anexado depois, na calculadora de acerto
+  let b = Object.assign({}, s, {lancFin:[mk("RB","PB",null)], dp:Object.assign({}, s.dp, {pix:[pixRep("RB","PB")], regras:[]})});
+  b = reducer(b, {type:"DP", op:"confirma", id:"RB", por:"Teste"});
+  const lb0 = b.pf.lancamentos.find(l => l.origemPix==="RB#0");
+  t("representante: sem comprovante, aguarda", lb0 && lb0.aguardaComp===true);
+  b = reducer(b, {type:"REP_PAG", op:"comprovante", kitId:"KRB", pid:"PB", anexo:{nome:"d.pdf", dados:"data:application/pdf;base64,AAAA"}});
+  const lb = b.pf.lancamentos.find(l => l.origemPix==="RB#0");
+  t("representante: anexou na calculadora, libera o pagamento", lb && !lb.aguardaComp && lb.arqNome==="d.pdf", JSON.stringify(lb));
+}
 console.log(ok+" ok, "+falha+" falha"); process.exit(falha ? 1 : 0);
