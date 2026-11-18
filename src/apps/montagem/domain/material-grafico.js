@@ -44,8 +44,13 @@ function mensagemOrcamento(o, fornecedorNome){
 var numero = function(v){ if(v==null || v==="") return null; var n = Number(String(v).replace(/\./g, "").replace(",", ".")); return isFinite(n) ? n : null; };
 
 // Executa a operação sobre ce (já clonado). ctx = {por, agora, proximoId}. Devolve {erro} ou {msg}.
+var vazio0 = function(v){ return v==null || String(v).trim()===""; };
 function gfOp(ce, a, ctx){
   ce.orcamentos = ce.orcamentos || [];
+  if(a.op==="cat_lig"){   // Catálogo: liga um modelo (foto) a um material do estoque; "" = sem material
+    if(vazio0(a.modeloId)) return {erro:"Modelo não informado."};
+    ce.catalogoLig = Object.assign({}, ce.catalogoLig || {}); ce.catalogoLig[String(a.modeloId)] = vazio0(a.materialId) ? "" : String(a.materialId); return {msg:"Ligação do modelo salva."};
+  }
   var o = a.id!=null ? ce.orcamentos.filter(function(x){ return String(x.id)===String(a.id); })[0] : null;
   var vazio = function(v){ return v==null || String(v).trim()===""; };
   if(a.op==="orc_add"){

@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.5", data:"2026-11-18", titulo:"Material gráfico: Painel em kanban, nomes padronizados e orçamento das bolsinhas de Natal", itens:[
+  {tipo:"novo", area:"Material gráfico › Painel", txt:"Kanban só para o lado: Não pedir mais (primeira, oculta, com botão), Novos materiais, Solicitado ao financeiro, Produzindo, Sem estoque, Abaixo do mínimo, Perto do mínimo e Estoque OK. Cards padronizados (foto de altura cheia, nome em 2 linhas, 3 blocos alinhados, efeito de botão); card com pedido mostra o nível de estoque. Foto de referência para material sem foto própria."},
+  {tipo:"novo", area:"Material gráfico › Painel", txt:"Faixa de cima só com o essencial (fonte 11 px): Tipo, Modelo, Foto, Coluna e Ordenar (quantidade, estoque, falta, valor, previsão, pedido, nome), mais Fechar colunas vazias. Classificação Embalagens de presente junta bolsinhas, sacolas, envelopes e caixas de presente."},
+  {tipo:"melhoria", area:"Material gráfico › Dados", txt:"Nomes padronizados (Item, Modelo, Tamanho, Cor e Linha): o coração só existe em Mini, BB Select é linha, Floréa é uma tag só. Duplicados marcados e parados. Orçamento das bolsinhas de Natal lançado no funil. Registro em docs/setores/material-grafico."},
+  {tipo:"correção", area:"Todas as telas", txt:"O mouse não trava mais em telas com área larga: a escuta global de arrastar (atalhos-tela) só mede a tela quando o mouse sai da área já achada."}]},
  {v:"0.21.4", data:"2026-11-18", titulo:"Lançamento de pagamentos: diferença enviada a mais descontada na próxima data", itens:[
   {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"O ajuste \"Diferença enviada a mais\" agora sobe a dívida da data paga a mais e DESCONTA o mesmo valor da próxima data do fornecedor que ainda tem saldo em aberto (ex.: +R$ 100,00 em 20/11 e −R$ 100,00 em 20/12; a soma das dívidas não muda). Avisos na linha: \"descontada em dd/mm\" e \"Desconto de R$ X · enviado a mais em dd/mm\". O botão \"Passar para dd/mm\" (saldo que falta) só aparece depois que a data vence."}
  ]},

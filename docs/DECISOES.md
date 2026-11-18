@@ -2752,3 +2752,9 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Hoje: Office Graf +R$ 70,90 em 15/11 e −R$ 70,90 em 30/11 (dívida R$ 6.162,30); Lucas Castilho +R$ 15,60 em 10/11 e −R$ 15,60 em 23/11 (dívida R$ 2.484,40).
 - **"Passar para dd/mm" (saldo que falta) só aparece depois que a data vence** (na linha e na janela de lançar).
 - **Confraternização:** fica o Pix de R$ 290,70 em novembro (lançamento 1550, 30/11); sai o lançamento 1553 (R$ 290,70 em 31/12, mesmo comprovante). Pedido do Lucas.
+## 18/11/2026 · Material gráfico: Painel em kanban, nomes padronizados e orçamento das bolsinhas de Natal
+Marcus (tudo com o Edson, do Office Graff, setor Material gráfico). Resumo; o detalhe está em `docs/setores/material-grafico/` (`LEIA-ME.md`, `decisoes.md`, `pendencias.md`, `renomeacao-18-11-2026.md`; valores e contato em `levantamento.local.md`, fora do Git).
+- Painel do setor virou kanban só para o lado, com cards padronizados, fotos, filtros essenciais (Tipo, Modelo, Foto, Coluna, Ordenar) e a coluna Não pedir mais (oculta, volta a pedir quando reativar). A aba Catálogo foi excluída.
+- Nomes: padrão Item · Modelo · Tamanho · Cor · Linha. O coração só existe em Mini; BB Select é linha; a Floréa é uma tag só; Flower precisa de estoque separado por cor. Dados renomeados pela API com registro.
+- Bolsinhas de Natal (creme e vermelha) vão virar kit para venda. Orçamento da creme lançado no funil (Negociando). Falta margem e preço do kit.
+- Classificação nova: Embalagens de presente (bolsinhas, sacolas, envelopes e caixas de presente numa só).

@@ -176,7 +176,7 @@ var CONFIG_PADRAO = {
   tipos:[{id:"materiais_embalagens", nome:"Materiais e Embalagens", aprovador:"Financeiro"}, {id:"limpeza", nome:"Limpeza", aprovador:"Financeiro"}, {id:"materiais_producao", nome:"Materiais de Produção", aprovador:"Diretoria"}]};   // no original: Anamaria nas duas primeiras, Marcus em Produção (só exibição)
 function ceDemo(){
   var s = {v:3, seq:0, config:clone(CONFIG_PADRAO), acessos:{compras:{}, estoque:{}}, regras:"", fornecedores:[], setores:[], categorias:[], catalogo:[], contas:[], motivosNegativa:[],
-    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[], precos:[], logPrecos:[], orcamentos:[]};   // orcamentos: funil do Material gráfico (17/11/2026, domain/material-grafico.js); precos/logPrecos: Tabela de preços (16/11/2026, domain/tabela-precos.js)
+    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[], precos:[], logPrecos:[], orcamentos:[], catalogoLig:{}};   // orcamentos: funil do Material gráfico (17/11/2026, domain/material-grafico.js); precos/logPrecos: Tabela de preços (16/11/2026, domain/tabela-precos.js)
   if(LOCAL){
     if(LOCAL.config) Object.assign(s.config, LOCAL.config);
     s.regras = LOCAL.regras||""; s.motivosNegativa = (LOCAL.motivosNegativa||[]).slice();
@@ -792,7 +792,7 @@ function ceReduz(s, a){
 
     // ---------------- compras (solicitações de compra) ----------------
     // ---------------- MATERIAL GRÁFICO (17/11/2026): orçamentos, rodadas de negociação e o pedido que sai deles ----------------
-    case "orc_add": case "orc_rodada": case "orc_fechar": case "orc_cancelar": case "orc_reabrir": {
+    case "cat_lig": case "orc_add": case "orc_rodada": case "orc_fechar": case "orc_cancelar": case "orc_reabrir": {
       var rg = gfOp(ce, a, {por:por, agora:agora, proximoId:proximoId}); if(rg.erro) return recusa(rg.erro); return ok(rg.msg);
     }
     case "orc_pedido": {   // orçamento fechado vira compra (pedido_add) e fica ligado a ela
