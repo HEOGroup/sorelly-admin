@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.19", data:"2026-11-18", titulo:"Correção: foto das peças na DevMaster volta a funcionar no sistema online", itens:[
+  {tipo:"correção", area:"Encomendas e reposições → peças", txt:"A leitura da foto de uma peça na DevMaster tinha ficado de fora da publicação anterior. Sem ela, a ficha do pedido e o link da revendedora não mostravam a foto das peças no sistema online. Corrigido."}
+ ]},
  {v:"0.21.18", data:"2026-11-18", titulo:"Link do pedido: peças encontradas com Quero ou Não quero, 10 peças no máximo, endereço online", itens:[
   {tipo:"novo", area:"Encomendas e reposições → ficha e link", txt:"Botão Enviar peças para ela ver: publica as peças separadas no mesmo link (foto da DevMaster ou da funcionária) e copia a mensagem. A revendedora marca Quero ou Não quero e a resposta aparece na ficha."},
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Máximo de 10 peças por pedido. Links sempre com o endereço online (abrem no celular). Topo da página com a logo mais baixa e o título Pedido de peças."}
