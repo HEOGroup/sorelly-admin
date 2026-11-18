@@ -54,16 +54,18 @@ const Aviso = ({ titulo, texto }) => (
     <p className="mt-2 text-[13px] leading-snug">{texto}</p>
   </section>
 );
-const Regra = ({ icone, titulo, children, lido, aoMarcar }) => (
+const Regra = ({ icone, titulo, children, lido, aoMarcar, semOk }) => (
   <div className={"rounded-lg border p-3 " + (lido ? "border-[#4ade80]/60 bg-[#4ade80]/[.07]" : "border-white/15 bg-white/[.04]")}>
     <div className="flex gap-3">
       <span className="mt-0.5 text-[16px] leading-none" aria-hidden>{icone}</span>
       <div><p className="text-[14px] font-bold">{titulo}</p><p className="mt-0.5 text-[13px] leading-snug">{children}</p></div>
     </div>
-    <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 rounded-md bg-black/25 px-2.5 py-2 text-[13px] font-bold">
-      <input type="checkbox" checked={!!lido} onChange={(ev) => aoMarcar(ev.target.checked)} className="size-5 shrink-0" />
-      <span>{lido ? "Li e estou de acordo ✓" : "Li e estou de acordo"}</span>
-    </label>
+    {semOk ? null : (
+      <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 rounded-md bg-black/25 px-2.5 py-2 text-[13px] font-bold">
+        <input type="checkbox" checked={!!lido} onChange={(ev) => aoMarcar(ev.target.checked)} className="size-5 shrink-0" />
+        <span>{lido ? "Li e estou de acordo ✓" : "Li e estou de acordo"}</span>
+      </label>
+    )}
   </div>
 );
 const Campo = ({ rotulo, children }) => (<label className="flex flex-col gap-1"><span className="text-[13px] font-bold">{rotulo}</span>{children}</label>);
@@ -137,8 +139,8 @@ export default function Formulario({ codigo }) {
     { id: "quinze", icone: "🗓️", titulo: "Pediu 15 dias antes do seu acerto?", texto: <>O pedido fica como <b>encomenda para o próximo kit</b>, e aí <b>não tem taxa</b>. Se preferir, escolha encomenda acima.</> },
     NAO_GARANTE,
   ] : rep ? [
-    { id: "repo", icone: "🛵", titulo: "Reposição: no meio do seu kit", texto: <>Você pede, nós separamos e entregamos no seu endereço. <b>Todas as reposições são pagas.</b></> },
-    { id: "taxa", icone: "💰", titulo: "Taxa de " + reais(info.taxa || 15) + " (entrega)", texto: <>É o valor do <b>rapaz da entrega</b>, que sai só para o nosso setor. Ela é paga por <b>Pix no dia em que o seu pedido for fechado</b>, quando as peças estiverem separadas. Assim o pedido <b>sai no dia seguinte ou no outro</b>. Sem o Pix, o pedido não sai.</> },
+    { id: "repo", icone: "🛵", titulo: "Reposição: no meio do seu kit", texto: <>Você pede, nós separamos e entregamos no seu endereço.{info.taxa === 0 ? null : <> <b>Todas as reposições são pagas.</b></>}</> },
+    ...(info.taxa === 0 ? [{ id: "taxa", icone: "💰", titulo: "Sem taxa de entrega", texto: <>O seu pedido está <b>isento da taxa de entrega</b>: você não paga nada pela entrega. O pedido sai no dia seguinte ou no outro, depois de separado.</> }] : [{ id: "taxa", icone: "💰", titulo: "Taxa de " + reais(info.taxa || 15) + " (entrega)", texto: <>É o valor do <b>rapaz da entrega</b>, que sai só para o nosso setor. Ela é paga por <b>Pix no dia em que o seu pedido for fechado</b>, quando as peças estiverem separadas. Assim o pedido <b>sai no dia seguinte ou no outro</b>. Sem o Pix, o pedido não sai.</> }]),
     { id: "quinze", icone: "🗓️", titulo: "Pediu 15 dias antes do seu acerto?", texto: <>O pedido fica como <b>encomenda para o próximo kit</b>, e aí <b>não tem taxa</b>. Se preferir, escolha encomenda acima.</> },
     NAO_GARANTE,
   ] : [
@@ -146,7 +148,8 @@ export default function Formulario({ codigo }) {
     { id: "quando", icone: "🗓️", titulo: "Quando é encomenda?", texto: <>Quando o pedido é feito <b>15 dias ou mais antes do seu acerto</b>, ou quando você <b>mora em outro estado</b>.</> },
     NAO_GARANTE,
   ];
-  const todosLidos = regras.every((r) => lidos[r.id]);
+  const unico = rep && !empresa && info.taxa === 0;   // pedido isento: sem OK em cada item, só um "Estou de acordo com tudo e assino"
+  const todosLidos = unico || regras.every((r) => lidos[r.id]);
 
   if (passo === 1) return (
     <Tela passo={1} total={total}>
@@ -162,7 +165,7 @@ export default function Formulario({ codigo }) {
           <>
             <p className="mb-2 text-[13px] font-bold">O que você quer pedir?</p>
             <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(" + (info.podeEmpresa ? 3 : 2) + ", minmax(0, 1fr))" }} role="radiogroup" aria-label="Tipo do pedido">
-              {[["reposicao", "entrega", "Reposição", "entrega · taxa " + reais(info.taxa || 15)], ...(info.podeEmpresa ? [["reposicao", "empresa", "Reposição", "eu retiro na empresa · sem taxa"]] : []), ["encomenda", "entrega", "Encomenda", "próximo kit · sem taxa"]].map(([v, fm, t, sub]) => {
+              {[["reposicao", "entrega", "Reposição", (info.taxa === 0 ? "entrega · sem taxa (isento)" : "entrega · taxa " + reais(info.taxa || 15))], ...(info.podeEmpresa ? [["reposicao", "empresa", "Reposição", "eu retiro na empresa · sem taxa"]] : []), ["encomenda", "entrega", "Encomenda", "próximo kit · sem taxa"]].map(([v, fm, t, sub]) => {
                 const on = tipo === v && (v === "encomenda" || forma === fm);
                 return (
                   <button key={v + fm} type="button" role="radio" aria-checked={on} onClick={() => { setTipo(v); setForma(fm); setLidos({}); }}
@@ -177,12 +180,12 @@ export default function Formulario({ codigo }) {
       </section>
 
       <div className="flex flex-col gap-2.5">
-        {regras.map((r) => <Regra key={r.id} icone={r.icone} titulo={r.titulo} lido={!!lidos[r.id]} aoMarcar={(v) => setLidos({ ...lidos, [r.id]: v })}>{r.texto}</Regra>)}
+        {regras.map((r) => <Regra key={r.id} semOk={unico} icone={r.icone} titulo={r.titulo} lido={!!lidos[r.id]} aoMarcar={(v) => setLidos({ ...lidos, [r.id]: v })}>{r.texto}</Regra>)}
       </div>
 
       <section className="flex flex-col gap-2 rounded-xl border border-[#E8B84B]/50 bg-[#E8B84B]/10 p-3">
         <button type="button" disabled={!todosLidos} onClick={() => setPasso(2)} className={BTN}>Estou de acordo com tudo e assino</button>
-        {!todosLidos && <p className="text-center text-[12px]">Só dá para assinar se você estiver de acordo com tudo. Marque &quot;Li e estou de acordo&quot; em cada item acima ({regras.filter((r) => lidos[r.id]).length} de {regras.length}).</p>}
+        {!todosLidos && !unico && <p className="text-center text-[12px]">Só dá para assinar se você estiver de acordo com tudo. Marque &quot;Li e estou de acordo&quot; em cada item acima ({regras.filter((r) => lidos[r.id]).length} de {regras.length}).</p>}
         <p className="text-center text-[12px]">Este link é só seu e vale até <b>{quando(info.expiraEm)}</b>.</p>
       </section>
     </Tela>

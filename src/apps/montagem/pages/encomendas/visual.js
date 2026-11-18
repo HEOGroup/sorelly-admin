@@ -15,9 +15,21 @@ function useEr(){
   var exec = function(op, dados){ var a = Object.assign({type:"ER", op:op, por:por}, dados||{}); var r = erReduz(s, a); d(a); return !!(r.patch && r.patch.er); };
   return {s:s, er:s.er, cfg:s.er.config, por:por, pode:podeConfigurar(s.usuario), exec:exec};
 }
+function copiaAntiga(t){
+  try{ var a = document.createElement("textarea"); a.value = t; a.setAttribute("readonly", ""); a.style.position = "fixed"; a.style.opacity = "0"; document.body.appendChild(a); a.select(); var ok = document.execCommand("copy"); a.remove(); return !!ok; }catch(x){ return false; }
+}
 function copiar(t){
-  try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t); return true; } }catch(x){}
-  try{ var a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); document.execCommand("copy"); a.remove(); return true; }catch(x){ return false; }
+  try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).catch(function(){ copiaAntiga(t); }); return true; } }catch(x){}
+  return copiaAntiga(t);
+}
+// copia um texto que só fica pronto depois (ex.: gerar o link no servidor). Chamar direto do clique, passando a Promise do texto: o navegador guarda o gesto do clique.
+function copiarDepois(promessaTexto){
+  try{
+    if(navigator.clipboard && window.ClipboardItem){
+      return navigator.clipboard.write([new window.ClipboardItem({"text/plain":promessaTexto.then(function(t){ return new Blob([t], {type:"text/plain"}); })})]).then(function(){ return promessaTexto; }, function(){ return promessaTexto.then(function(t){ copiar(t); return t; }); });
+    }
+  }catch(x){}
+  return promessaTexto.then(function(t){ copiar(t); return t; });
 }
 
 var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#14B8A6] text-[#06312C] hover:bg-[#2DD4BF]", perigo:"bg-[#EF4444]/20 text-[#F87171] ring-1 ring-[#EF4444]/50 hover:bg-[#EF4444]/30"};
@@ -37,4 +49,4 @@ function Escolha(p){
     return e("button",{key:o[0], type:"button", onClick:function(){ p.set(o[0]); }, className:"rounded-lg px-3 py-1.5 text-[12.5px] font-bold ring-1 transition "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"),
       style:on ? {background:"linear-gradient(135deg,"+TURQ+"66,"+TURQ+"22)", boxShadow:"inset 0 0 0 1px "+TURQ+"cc"} : undefined}, o[1]); }));
 }
-export { TURQ, useEr, copiar, Bt, BtMini, Painel, Escolha };
+export { TURQ, useEr, copiar, copiarDepois, Bt, BtMini, Painel, Escolha };

@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.9", data:"2026-11-18", titulo:"Encomendas: nova solicitação por link, dados automáticos, bipagem de envio", itens:[
+  {tipo:"novo", area:"Atendimento interno → Bipagem de envio", txt:"A bipadora digita a revendedora e o sistema mostra as encomendas abertas do setor Encomendas. Com encomenda, o OK só vale com a conferência de que as peças separadas vão junto com o kit. Cada OK fica registrado."},
+  {tipo:"novo", area:"Encomendas e reposições → ficha do pedido", txt:"A ficha puxa da DevMaster código, cidade, telefone e média das 3 últimas vendas e mostra o valor máximo da reposição. Botões Copiar telefone e Copiar mensagem; pedido novo abre num bloco menor, só para mandar a mensagem."},
+  {tipo:"melhoria", area:"Encomendas e reposições → Nova solicitação", txt:"Nova solicitação agora gera o link da cliente (com Abrir o link) e a diretoria pode gerar já sem taxa; a página da revendedora mostra a isenção escrita. O formulário antigo ficou em Registrar à mão, sem link."}
+ ]},
  {v:"0.21.8", data:"2026-11-18", titulo:"Link de conferência do fornecedor: abre de verdade", itens:[
   {tipo:"correção", area:"Financeiro → Lançamento de pagamentos e Maquininha Banho", txt:"O link de conferência apontava para acertos.sorelly.com.br, endereço que nunca existiu: nenhum link abria. Agora o link é uma página pública do próprio sistema (/f/<código> para o acerto e /f/cartao/<código> para a listagem de cartão), só leitura, sem login, com os comprovantes. O código é criado só no servidor e nunca troca (antes duas telas abertas trocavam o código e o link já enviado parava de abrir); links antigos que foram trocados voltam a abrir. \"Ver como o fornecedor vê\" abre o próprio link e \"Baixar HTML\" baixa a mesma página. Comprovantes que estavam guardados só no navegador de quem lançou sobem sozinhos para o servidor quando a tela é aberta naquele computador."}
  ]},

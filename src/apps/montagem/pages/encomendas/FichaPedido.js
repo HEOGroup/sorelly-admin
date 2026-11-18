@@ -4,20 +4,23 @@
 // Visão limpa por padrão: só o que se lê e as caixas "Separada". O botão Editar (no topo) mostra o que muda coisas: origem e nota das fotos, tirar foto, adicionar fotos, tirar item, novo item e quem atende.
 // Fotos vão para o servidor (lib/anexo.js, módulo er); o pedido guarda só a chave. Cola com Ctrl+V ou escolhe do computador (até 20). Regras em domain/encomendas.js (ops ped_item_*, ped_foto_*, ped_taxa, ped_bipar).
 import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
-import { FINAIS, ROTULO_STATUS, caminhoDe, formatarDataHora, formatarReais, fotoDaRevendedora, mensagemTexto, proximaEtapa } from "@/apps/montagem/domain/encomendas";
-import { chamar } from "@/apps/montagem/lib/api";
+import { FINAIS, ROTULO_STATUS, acessoReposicao, caminhoDe, revPorNome, formatarDataHora, formatarReais, fotoDaRevendedora, mensagemTexto, proximaEtapa } from "@/apps/montagem/domain/encomendas";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { abrirAnexo, enviarAnexo, lerArquivo } from "@/apps/montagem/lib/anexo";
 import { baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { baixarBlob, gerarPdfPedido } from "@/apps/montagem/lib/pdf-pedido";
 import { Foto } from "@/apps/montagem/pages/encomendas/Atencao";
 import { avancarPedido } from "@/apps/montagem/pages/encomendas/Quadro";
-import { copiar } from "@/apps/montagem/pages/encomendas/visual";
+import { copiar, copiarDepois } from "@/apps/montagem/pages/encomendas/visual";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var EQUIPE = ["Agatha", "Elen", "Eduarda Gabriela"];
 var RESULTADOS = [["", "Resultado"], ["igual", "Achou igual"], ["parecido", "Achou parecido"], ["nao", "Não achou"]];
 var ROTULO_RES = {igual:"Achou igual", parecido:"Achou parecido", nao:"Não achou"};
 var COR_RES = {igual:"border-[#4ade80] text-[#bbf7d0]", parecido:"border-[#fbbf24] text-[#fde68a]", nao:"border-[#f87171] text-[#fecaca]"};
+var LISTA_REV = null;   // revendedoras da DevMaster (uma leitura só); quem não tem acesso fica sem preenchimento automático
+function listaRevendedoras(){ if(!LISTA_REV) LISTA_REV = chamar("GET", "/revendedoras").then(function(j){ return j.itens || []; }, function(x){ LISTA_REV = null; throw x; }); return LISTA_REV; }
+var semAc = function(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var FOTOS_DM = {};   // código → Promise do data URL da foto da peça na DevMaster (desce uma vez)
 function fotoDm(cod){
   if(!FOTOS_DM[cod]) FOTOS_DM[cod] = chamar("GET", "/encomendas/pecas/foto?cod="+encodeURIComponent(cod)).then(function(r){ return r.url || ""; }, function(x){ delete FOTOS_DM[cod]; throw x; });
@@ -52,12 +55,12 @@ var BTN_V ="h-8 min-w-24 max-w-full rounded-md border border-[#f87171]/60 bg-[#f
 // moldura: cartão largo, barra azul no topo (com o botão Editar) e fundo em degradê simples
 function Moldura(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-3", onClick:p.fechar},
-    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"flex h-[min(94vh,960px)] w-full max-w-[1580px] flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 58%)"}},
+    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:(p.compacto ? "flex max-h-[min(94vh,960px)] w-full max-w-[880px] flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl" : "flex h-[min(94vh,960px)] w-full max-w-[1580px] flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl"), style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 58%)"}},
       e("div",{className:"relative flex shrink-0 items-center justify-center bg-[var(--bloco-titulo)] px-24 py-1 text-white"},
         e("h2",{className:"text-[11px] font-bold uppercase leading-tight"}, p.t),
         e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-2 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-[13px] font-bold leading-none hover:bg-white/15"}, "×")),
       // esquerda FIXA (revendedora, andamento e ações) e direita que rola (pedido × peças, fotos, histórico)
-      e("div",{className:"grid min-h-0 flex-1 gap-2.5 py-2.5 pl-1.5 pr-2.5 lg:grid-cols-[256px_minmax(0,1fr)]"},
+      e("div",{className:"grid min-h-0 gap-2.5 py-2.5 pl-1.5 pr-2.5 lg:grid-cols-[256px_minmax(0,1fr)] "+(p.compacto ? "overflow-y-auto" : "flex-1")},
         e("div",{className:"flex min-h-0 flex-col gap-2 overflow-y-auto [&>*]:shrink-0"}, p.colunas[0]),
         // direita: o pedido dela fica FIXO no topo (texto + fotos com zoom); embaixo, o trabalho rola
         e("div",{className:"flex min-h-0 min-w-0 flex-col gap-2"}, p.fixoDir,
@@ -233,6 +236,18 @@ function FichaPedido(p){
     document.addEventListener("paste", cola); document.addEventListener("keydown", esc);
     return function(){ document.removeEventListener("paste", cola); document.removeEventListener("keydown", esc); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // preenche sozinho código, cidade, telefone, média das 3 últimas vendas e o valor máximo da reposição (DevMaster) quando o pedido ainda não tem
+  var faltaDado = !!x && (!x.cod || !x.cidade || !x.telefone || x.media3m==null);
+  useEffect(function(){
+    if(!faltaDado || !apiAtiva()) return undefined; var vivo = true;
+    listaRevendedoras().then(function(lista){
+      if(!vivo) return; var atual = ref.current.er.pedidos.find(function(y){ return y.id===p.id; }); if(!atual) return;
+      var r = lista.filter(function(i){ return semAc(i.nome)===semAc(atual.revendedora); })[0]; if(!r) return;
+      var vs = (r.vendas || []).slice(0, 3), media = vs.length ? Math.round(vs.reduce(function(t, y){ return t+(Number(y.v) || 0); }, 0)/vs.length*100)/100 : null;
+      ref.current.exec("ped_dados", {id:p.id, cod:r.cod, cidade:r.cidade, telefone:r.celular, representante:r.representante, media3m:media});
+    }, function(){ /* sem acesso à DevMaster: segue sem preencher */ });
+    return function(){ vivo = false; };
+  }, [p.id, faltaDado]);   // eslint-disable-line react-hooks/exhaustive-deps
   if(!x) return null;
   var edita = v.edita, fim = !!FINAIS[x.status], fotos = x.fotos || [];
   var media = x.media3m!=null ? formatarReais(x.media3m) : "—", prox = proximaEtapa(x), cam = caminhoDe(x), iAtual = cam.indexOf(x.status);
@@ -240,17 +255,26 @@ function FichaPedido(p){
   var entrega = x.tipo==="reposicao" && x.canal==="entrega", primeiro = String(x.revendedora || "").trim().split(" ")[0];
   var taxaTxt = x.taxaIsenta ? "Isenta" : x.taxa>0 ? formatarReais(x.taxa)+(x.comprovante ? " · paga" : " · sem comprovante") : "Sem taxa";
   var taxaCor = x.taxaIsenta || x.comprovante ? "text-success" : x.taxa>0 ? "text-[#fbbf24]" : "";
+  var compacto = !fotos.length && !(x.pecas || []).length;   // pedido novo: a revendedora é quem preenche pelo link; aqui só se manda a mensagem
+  var copiarMsg = function(){
+    set("lk", true); set("lkErro", "");
+    var direitos = acessoReposicao(cfg, revPorNome(E.er, x.revendedora), x.media3m);   // retirar na empresa só para quem tem direito
+    var texto = chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:x.taxaIsenta ? 0 : cfg.reposicao.taxa, empresa:direitos.canais.indexOf("empresa")>=0}).then(function(j){
+      return mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(window.location.origin+"/pedido/"+j.id);
+    });
+    copiarDepois(texto).then(function(){ set("lk", false); set("lkOk", true); if(/^(localhost|127.)/.test(window.location.hostname)) set("lkErro", "Atenção: você está no computador local. Este link só abre aqui. Gere pelo sistema online para mandar à cliente."); }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
+  };
 
   // ESQUERDA FIXA (Marcus, 17/11/2026, estilo C): revendedora com foto pequena ao lado dos dados; embaixo Andamento e Ações
   var perfil = fotoDaRevendedora(E.er, x.revendedora), iniciais = String(x.revendedora || "").split(" ").filter(Boolean).slice(0, 2).map(function(w){ return w.charAt(0).toUpperCase(); }).join("");
   var avatar = e("div",{key:"av", className:"flex w-full shrink-0 flex-col gap-1"},
     perfil ? e("button",{type:"button", title:"Abrir a foto", onClick:function(){ abrirAnexo(perfil.key); }, className:"block w-full overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:perfil.key, cls:"block aspect-square w-full object-cover", alt:"Foto de "+x.revendedora}))
       : e("div",{className:"grid aspect-square w-full place-items-center rounded-lg border border-dashed border-white/40 text-[13px] font-bold"}, iniciais),
-    edita && e("label",{className:"inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card px-1 text-[11px] hover:bg-white/10"}, perfil ? "Trocar foto" : "Colocar foto", e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ enviarPerfil(ev.target.files); ev.target.value = ""; }})),
-    edita && perfil && e("button",{type:"button", onClick:function(){ E.exec("perfil_foto_del", {nome:x.revendedora}); }, className:"h-8 rounded-md border border-border bg-card px-1 text-[11px] hover:bg-white/10"}, "Tirar foto"));
+    edita && e("label",{className:"inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-white/40 bg-white/10 px-1 text-[11px] hover:bg-white/20"}, perfil ? "Trocar foto" : "Colocar foto", e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ enviarPerfil(ev.target.files); ev.target.value = ""; }})),
+    edita && perfil && e("button",{type:"button", onClick:function(){ E.exec("perfil_foto_del", {nome:x.revendedora}); }, className:"h-8 rounded-md border border-white/40 bg-white/10 px-1 text-[11px] hover:bg-white/20"}, "Tirar foto"));
   var topo = e(Caixa,{key:"t", t:"Revendedora", dir:e("button",{type:"button", onClick:function(){ set("edita", !edita); }, "aria-pressed":edita, className:"h-5 rounded border px-2 text-[11px] font-normal normal-case leading-none tracking-normal "+(edita ? "border-white bg-white font-semibold text-[#14233f]" : "border-white/45 bg-white/10 hover:bg-white/25")}, edita ? "Pronto" : "Editar")},
     e("div",{className:"flex flex-col gap-2"}, avatar, e("div",{className:"flex min-w-0 flex-1 flex-col"},
-      e(Par,{leve:true, t:"Código", v:x.cod || "—"}), e(Par,{leve:true, t:"Cidade", v:x.cidade || "—"}), e(Par,{leve:true, t:"Telefone", v:x.telefone || "—"}), e(Par,{leve:true, t:"Média 3", v:media}))),
+      e(Par,{leve:true, t:"Código", v:x.cod || "—"}), e(Par,{leve:true, t:"Cidade", v:x.cidade || "—"}), e(Par,{leve:true, t:"Telefone", v:x.telefone || "—"}), e(Par,{leve:true, t:"Média 3", v:media}), x.tipo==="reposicao" && e(Par,{leve:true, t:"Valor máximo", v:x.valorMax>0 ? formatarReais(x.valorMax) : "—"}))),
     e("div",{className:"mt-1.5 flex flex-col"},
       e(Par,{leve:true, t:"Representante", v:x.representante || "—"}),
       edita ? e("div",{key:"qa", className:"flex items-center justify-between gap-3.5 border-b border-white/20 py-[3px] text-[11px]"}, e("span",null, "Quem atende"),
@@ -288,7 +312,7 @@ function FichaPedido(p){
   // NO TOPO (fixo): o que ela pediu em texto (uma linha por item) e as fotos que ela mandou, com botões para aumentar ou diminuir
   var TAMANHOS = [56, 80, 112, 160, 220], iz = v.zoom===undefined ? 3 : v.zoom, lado = TAMANHOS[iz];
   var zoom = function(d){ set("zoom", Math.max(0, Math.min(TAMANHOS.length-1, iz+d))); };
-  var btnZ = "grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] font-bold hover:bg-white/10 disabled:opacity-40";
+  var btnZ = "grid size-8 place-items-center rounded-md border border-white/40 bg-white/10 text-[13px] font-bold hover:bg-white/20 disabled:opacity-40";
   var fixoDir = e(Caixa,{t:"O que ela pediu", dir:e("span",{className:"flex items-center gap-1.5 text-[11px] font-normal normal-case tracking-normal"}, v.ligando && e("span",{className:"mr-2 font-bold text-[#E8B84B]"}, "Ligando "+v.ligando+": clique na foto dela ou arraste a peça"), v.ligando && (x.pecas || []).some(function(y){ return y.cod===v.ligando && y.foto; }) && e("button",{type:"button", onClick:function(){ ligar(v.ligando, ""); }, className:"mr-2 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Desligar"), v.ligando && e("button",{type:"button", onClick:function(){ set("ligando", ""); }, className:"mr-3 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Cancelar"), v.sugMsg && e("span",{className:"mr-2 max-w-[360px] text-right"}, v.sugMsg), nSugs>0 && e("button",{type:"button", onClick:aceitarTodas, title:"Liga só as de confiança alta ou média; as com ? você confirma uma a uma", className:"mr-2 h-8 rounded-md border border-[#4ade80] bg-[#4ade80]/15 px-2 text-[11px] font-bold text-[#bbf7d0]"}, "Aceitar todas"), e("button",{type:"button", disabled:!!v.sugBusy, onClick:sugerir, title:"A IA compara as fotos dela com as peças e sugere a ligação; quem confirma é você", className:"mr-3 h-8 rounded-md border border-border bg-card px-2 text-[11px] font-bold hover:bg-white/10 disabled:opacity-50"}, v.sugBusy ? "Analisando…" : "Sugerir ligações (IA)"), "Tamanho das fotos",
       e("button",{type:"button", "aria-label":"Diminuir as fotos", disabled:iz===0, onClick:function(){ zoom(-1); }, className:btnZ}, "−"),
       e("button",{type:"button", "aria-label":"Aumentar as fotos", disabled:iz===TAMANHOS.length-1, onClick:function(){ zoom(1); }, className:btnZ}, "+"))},
@@ -332,7 +356,7 @@ function FichaPedido(p){
 
   // ANDAMENTO E AÇÕES: as etapas à esquerda e os botões à direita, esticados até a altura das etapas; embaixo, quando preciso, o Pix da taxa
   var precisaPix = entrega && x.taxa>0 && (x.status==="comprovante" || x.comprovante) && !fim;
-  var btn = "min-h-8 w-full flex-1 whitespace-nowrap rounded-md border px-2 text-[11px] ";
+  var btn = "min-h-8 w-full flex-1 whitespace-nowrap rounded-md border px-2 "+(compacto ? "text-[13px] " : "text-[11px] ");
   var colAndamento = e("div",{key:"a", className:"flex min-w-0 flex-col gap-2"},
     e(Caixa,{t:"Andamento e ações"},
       e("div",{className:"grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-2.5"},
@@ -341,21 +365,18 @@ function FichaPedido(p){
             return e("div",{key:k, className:"flex items-center gap-2 py-[3px] text-[11px] "+(atual ? "font-bold" : "")},
               e("span",{"aria-hidden":true, className:"size-2.5 shrink-0 rounded-full border-2 "+(feita ? "border-[#4ade80] bg-[#4ade80]" : atual ? "border-[#F5E7BE] bg-[#E8B84B]" : "border-white/50")}), ROTULO_STATUS[k]); })),
           null),
-        e("div",{className:"flex min-w-0 flex-col gap-1.5"},
+        e("div",{className:"flex min-w-0 flex-col gap-1.5"+(compacto ? " max-w-[300px]" : "")},
           !fim && prox && e("button",{type:"button", disabled:(x.status==="comprovante" && x.taxa>0 && !x.comprovante) || (x.status==="aceite" && x.taxa>0 && !x.taxaAceita) || (x.status==="bipagem" && entrega && !x.bipado), onClick:function(){ avancarPedido(E, x, p.ir); }, title:(x.status==="aceite" && x.taxa>0 && !x.taxaAceita) ? "Falta a revendedora aceitar a taxa" : (x.status==="comprovante" && x.taxa>0 && !x.comprovante) ? "Falta o comprovante da taxa" : (x.status==="bipagem" && entrega && !x.bipado) ? "Falta bipar as peças" : "", className:btn+"border-primary bg-primary/25 text-primary hover:bg-primary/35 disabled:opacity-60"}, e("span",{className:"flex flex-col items-center leading-tight"}, e("span",{className:"font-semibold"}, "Concluir etapa"), e("span",null, "› "+ROTULO_STATUS[prox]))),
-          entrega && x.status==="bipagem" && !x.bipado && e("button",{type:"button", onClick:function(){ E.exec("ped_bipar", {id:x.id}); }, className:btn+"border-border bg-card hover:bg-white/10"}, "Bipei as peças"),
+          entrega && x.status==="bipagem" && !x.bipado && e("button",{type:"button", onClick:function(){ E.exec("ped_bipar", {id:x.id}); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20"}, "Bipei as peças"),
           entrega && x.bipado && x.status==="bipagem" && e("span",{className:"text-center text-[11px]"}, "Bipado por "+x.bipado.por),
-          entrega && (x.status==="condicional" || x.status==="concluido") && e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "avaliacao").split("{nome}").join(primeiro)); }, className:btn+"border-border bg-card hover:bg-white/10"}, "Copiar avaliação"),
-          entrega && (x.status==="novo" || x.status==="aceite") && e("button",{type:"button", disabled:!!v.lk, title:"Gera o link só dela (vale 48 horas) e copia a mensagem para mandar", onClick:function(){
-            set("lk", true); set("lkErro", "");
-            chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:cfg.reposicao.taxa}).then(function(j){
-              copiar(mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(window.location.origin+"/pedido/"+j.id)); set("lk", false);
-            }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
-          }, className:btn+"border-border bg-card hover:bg-white/10 disabled:opacity-50"}, v.lk ? "Gerando link" : "Copiar link do pedido"),
+          entrega && (x.status==="condicional" || x.status==="concluido") && e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "avaliacao").split("{nome}").join(primeiro)); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20"}, "Copiar avaliação"),
+          !compacto && entrega && (x.status==="novo" || x.status==="aceite") && e("button",{type:"button", disabled:!!v.lk, title:"Gera o link só dela (vale 48 horas) e copia a mensagem para mandar", onClick:copiarMsg, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, v.lk ? "Gerando link" : "Copiar mensagem"),
           v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
-          e("button",{type:"button", disabled:!!v.pdf, onClick:baixarPdf, className:btn+"border-border bg-card hover:bg-white/10 disabled:opacity-50"}, v.pdf ? "Montando PDF" : "Baixar PDF"),
-          !fim && entrega && E.pode && e("button",{type:"button", onClick:function(){ E.exec("ped_taxa", {id:x.id, isenta:!x.taxaIsenta}); }, className:btn+"border-border bg-card hover:bg-white/10"}, x.taxaIsenta ? "Cobrar taxa" : "Isentar taxa"),
-          !fim && e("button",{type:"button", onClick:function(){ E.exec("ped_aguardando", {id:x.id, ligar:!x.aguardando}); }, title:x.aguardando ? "Aguardando peças desde "+formatarDataHora(x.aguardando.em)+" (por "+x.aguardando.por+"). Clique para voltar a contar o prazo." : "O pedido continua aberto, mas deixa de contar como atrasado", className:btn+(x.aguardando ? "border-[#fbbf24] bg-[#fbbf24]/20 text-[#fde68a] hover:bg-[#fbbf24]/30" : "border-border bg-card hover:bg-white/10")}, x.aguardando ? "Voltar a contar prazo" : "Aguardando peças"),
+          !compacto && e("button",{type:"button", disabled:!x.telefone, title:x.telefone ? "Copia "+x.telefone : "Telefone ainda não encontrado", onClick:function(){ copiar(x.telefone); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, "Copiar telefone"),
+          v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
+          !compacto && e("button",{type:"button", disabled:!!v.pdf, onClick:baixarPdf, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, v.pdf ? "Montando PDF" : "Baixar PDF"),
+          !fim && entrega && E.pode && e("button",{type:"button", onClick:function(){ E.exec("ped_taxa", {id:x.id, isenta:!x.taxaIsenta}); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20"}, x.taxaIsenta ? "Cobrar taxa" : "Isentar taxa"),
+          !fim && e("button",{type:"button", onClick:function(){ E.exec("ped_aguardando", {id:x.id, ligar:!x.aguardando}); }, title:x.aguardando ? "Aguardando peças desde "+formatarDataHora(x.aguardando.em)+" (por "+x.aguardando.por+"). Clique para voltar a contar o prazo." : "O pedido continua aberto, mas deixa de contar como atrasado", className:btn+(x.aguardando ? "border-[#fbbf24] bg-[#fbbf24]/20 text-[#fde68a] hover:bg-[#fbbf24]/30" : "border-white/40 bg-white/10 hover:bg-white/20")}, x.aguardando ? "Voltar a contar prazo" : "Aguardando peças"),
           !fim && e("button",{type:"button", onClick:function(){ p.ir({tipo:"motivo", id:x.id}); }, className:btn+"border-[#f87171]/60 bg-[#f87171]/15 text-[#fecaca] hover:bg-[#f87171]/25"}, "Recusar"))),
       entrega && x.status==="aceite" && x.taxa>0 && e("div",{className:"mt-2 flex flex-col gap-1.5"},
         e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "taxa_aceite").split("{nome}").join(primeiro)); }, className:"h-8 w-full animate-pulse rounded-md border border-[#E8B84B] bg-[#E8B84B]/20 text-[11px] font-bold text-[#F5E7BE]"}, "Copiar msg de taxa"),
@@ -381,6 +402,15 @@ function FichaPedido(p){
         e("div",{className:"flex justify-end"}, e(Botao,{desabilitado:!v.nota.trim(), onClick:function(){ if(E.exec("ped_nota", {id:x.id, nota:v.nota})) set("nota", ""); }}, "Registrar anotação"))))
     : e("p",{className:"text-[13px]"}, x.historico.length+(x.historico.length===1 ? " registro" : " registros")+" · último: "+(x.historico.length ? formatarDataHora(x.historico[x.historico.length-1].em) : "—"))));
 
-  return e(Moldura,{t:x.revendedora+" · "+(x.tipo==="encomenda" ? "Encomenda para o próximo kit" : x.canal==="empresa" ? "Reposição com ida na empresa" : x.canal==="representante" ? "Reposição pela representante" : "Reposição pelo João"), fechar:p.fechar, editando:edita, alterna:function(){ set("edita", !edita); }, fixoDir:fixoDir, colunas:[e("div",{key:"e", className:"flex min-w-0 flex-col gap-2.5"}, topo, colAndamento), colMeio], rodape:rodape});
+  // PEDIDO NOVO, SEM FOTO NEM PEÇA (Marcus, 18/11/2026: "aqui é só para mandar a mensagem para a revendedora, ela é que preenche"): bloco menor; à esquerda só a cliente, à direita os dois botões de enviar e embaixo o andamento
+  var BC = "inline-flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-white/40 bg-white/10 px-2 text-center text-[13px] font-semibold hover:bg-white/20 disabled:cursor-default disabled:opacity-50";   // padrao-ok: botões menores, pedido do Marcus (18/11/2026)
+  var pedidoC = e(Caixa,{key:"pc", t:"Enviar para a revendedora"},
+    e("div",{className:"flex flex-col gap-2.5"},
+      e("p",{className:"text-[13px] leading-snug"}, "É a "+primeiro+" quem preenche o pedido, pelo link dela (vale 48 horas). Copie a mensagem, mande pelo WhatsApp e espere: o que ela mandar aparece aqui."),
+      e("div",{className:"grid grid-cols-2 gap-2"},
+        e("button",{type:"button", disabled:!!v.lk, onClick:copiarMsg, title:"Gera o link só dela e copia a mensagem pronta", className:BC+" !border-[#E8B84B] !bg-[#E8B84B]/20 !text-[#F5E7BE]"}, v.lk ? "Gerando link" : v.lkOk ? "Mensagem copiada ✓" : "Copiar mensagem com o link"),
+        e("button",{type:"button", disabled:!x.telefone, onClick:function(){ copiar(x.telefone); set("telOk", true); }, title:x.telefone ? "Copia "+x.telefone : "Telefone ainda não encontrado", className:BC}, !x.telefone ? "Sem telefone" : v.telOk ? "Telefone copiado ✓" : "Copiar telefone")),
+      v.lkErro && e("span",{className:"text-center text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro)));
+  return e(Moldura,{compacto:compacto, t:x.revendedora+" · "+(x.tipo==="encomenda" ? "Encomenda para o próximo kit" : x.canal==="empresa" ? "Reposição com ida na empresa" : x.canal==="representante" ? "Reposição pela representante" : "Reposição pelo João"), fechar:p.fechar, editando:edita, alterna:function(){ set("edita", !edita); }, fixoDir:compacto ? pedidoC : fixoDir, colunas:compacto ? [e("div",{key:"e", className:"flex min-w-0 flex-col gap-2.5"}, topo), e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, colAndamento, colMeio)] : [e("div",{key:"e", className:"flex min-w-0 flex-col gap-2.5"}, topo, colAndamento), colMeio], rodape:rodape});
 }
 export { FichaPedido };

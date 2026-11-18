@@ -122,6 +122,7 @@ const montagem = {
     pagina("atendimento-interno-listagens", () => import("@/apps/montagem/pages/AtendimentoInternoListagens"), "AbaIntListagens"),
     pagina("atendimento-interno-revendedoras", () => import("@/apps/montagem/pages/RevendedorasInternas"), "AbaRevendedorasInternas"),
     pagina("atendimento-interno-consolidado", () => import("@/apps/montagem/pages/ConsolidadoInterno"), "AbaConsolidadoInterno"),
+    pagina("atendimento-interno-bipagem-envio", () => import("@/apps/montagem/pages/BipagemEnvio"), "AbaBipagemEnvio"),
     pagina("atendimento-interno-calculadora", () => import("@/apps/montagem/pages/AtendimentoInternoCalculadora"), "AbaIntCalculadora"),
     pagina("configuracoes-representantes", () => import("@/apps/montagem/pages/ConfigRepresentantes"), "AbaConfigRepresentantes"),
     pagina("condicionais", () => import("@/apps/montagem/pages/Condicionais"), "AbaCondicionais"),

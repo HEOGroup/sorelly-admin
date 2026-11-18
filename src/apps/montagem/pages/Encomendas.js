@@ -118,7 +118,7 @@ function AbaEncomendas(){
             return chamar("POST", "/encomendas/link/reivindicar", {id:it.id}).then(function(r){
               if(!r.ok) return null;
               var d = it.dados || {};
-              var ok = refE.current.exec("ped_criar_link", {linkId:it.id, responsavel:"", pedido:{tipo:d.tipo || "reposicao", revendedora:it.revendedora, cod:it.cod, representante:it.representante, telefone:it.telefone, cidade:it.cidade, media3m:it.media, observacao:d.obs || "", aceite:!!d.aceite, entrega:d.entrega || null, retirada:d.retirada || null},
+              var ok = refE.current.exec("ped_criar_link", {linkId:it.id, responsavel:"", pedido:{tipo:d.tipo || "reposicao", revendedora:it.revendedora, cod:it.cod, representante:it.representante, telefone:it.telefone, cidade:it.cidade, media3m:it.media, observacao:d.obs || "", aceite:!!d.aceite, entrega:d.entrega || null, retirada:d.retirada || null, isenta:Number(it.taxa)===0},
                 fotos:(d.fotos || []).map(function(x){ return {key:x.key, nota:[nomeCor(x.cor), x.obs].filter(Boolean).join(" · ")}; }), textos:d.textos || []});
               if(!ok) return chamar("POST", "/encomendas/link/reivindicar", {id:it.id, desfazer:true});
               // só dá o pedido como entregue ao Funil depois de ver que ele chegou ao servidor (se a tela fechar antes, o link volta para a fila em 3 minutos)
@@ -194,14 +194,13 @@ function AbaEncomendas(){
     e("h2",{className:"whitespace-nowrap text-center text-[13px] font-bold uppercase leading-tight"}, tituloTela),
     e("div",{className:"flex flex-wrap items-center justify-end gap-1 lg:justify-self-end"},
       e("span",{className:"mx-1 whitespace-nowrap text-[11px] tabular-nums"}, "Em aberto ", e("b",null, String(abertos)), " · Atrasados ", e("b",{className:atrasados>0 ? "text-[var(--negativo)]" : ""}, String(atrasados)), " · Sem comprovante ", e("b",{className:ind.semComprovante>0 ? "text-[var(--negativo)]" : ""}, String(ind.semComprovante))),
-      e("button",{type:"button", onClick:function(){ ir({tipo:"link"}); }, className:BTN_F}, "Link do pedido"),
-      e("button",{type:"button", onClick:function(){ ir({tipo:"nova"}); }, className:BTN_F+" !bg-white !text-[#14233f]"}, "Nova solicitação")));
+      e("button",{type:"button", onClick:function(){ ir({tipo:"link"}); }, className:BTN_F+" !bg-white !text-[#14233f]"}, "Nova solicitação")));   // a nova solicitação é o link: a cliente manda as peças por ele (Marcus, 18/11/2026)
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     e(BlocoPainel,{titulo:"Funil de pedidos", compacto:true, semBarra:true},
       faixa,
       modo==="revendedoras" ? e(PlanilhaRev,{E:E, ir:ir}) : modo==="planilha" ? planilha : modo==="rota" ? rota : quadro),
     modal && modal.tipo==="ficha" && e(FichaPedido,{E:E, id:modal.id, ir:ir, fechar:function(){ ir(null); }}),
-    modal && modal.tipo==="link" && e(LinkPedido,{E:E, fechar:function(){ ir(null); }}),
+    modal && modal.tipo==="link" && e(LinkPedido,{E:E, fechar:function(){ ir(null); }, aoMao:function(){ ir({tipo:"nova"}); }}),
     modal && modal.tipo==="nova" && e(NovaSolicitacao,{E:E, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="novo" && e(NovoPedido,{E:E, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="separar" && (modal.id===null || itemSep) && e(JanelaSeparar,{key:modal.id || "novo", E:E, item:itemSep || null, resps:resps, fechar:function(){ ir(null); }}),

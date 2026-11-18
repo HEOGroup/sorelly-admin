@@ -106,7 +106,7 @@ var MENU_RH = [
 var MENU_REVENDEDORAS = [M("Cadastro","revbase"), M("Kits e vendas","revkits"), M("Condicional","revcond")];
 var MENU_METAS = [M("Revendedoras","metrev"), M("Acompanhamento","metacomp"), M("Histórico","methist"), M("Notificações","metnotif"), M("Regras","metregras")];   // Metas das revendedoras (retomadas em 02/11/2026); as outras telas (Campanha, Simulador, Acompanhamento, Brindes, Histórico, Regras) vêm depois
 var MENU_PONTUAL = [M("Clientes","pontclientes"), M("Tabelas de preço","pontprecos"), M("Inadimplência","pontinad"), M("Pós-venda","pontposvenda"), M("Regras","pontregras")];   // Pontual, empresa de banho do Valdir (06/11/2026): demonstração com 250 clientes inventados
-var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
+var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Bipagem de envio","intbipenv"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
 // Materiais e estoque (17/11/2026, Marcus: "igual ao Financeiro"): as abas de dentro da tela viraram itens do menu, na ordem do fluxo: painel → visão geral → estoque (saldo, entradas e saídas, retiradas) → tabela de preços → cadastros → configurações.
 // Quadro de compras e Planilha de compras saíram do menu (o Painel faz os dois) e continuam só como endereço.
 var MENU_ESTOQUE = [
@@ -218,7 +218,7 @@ var SETORES = [
   {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, areas:[
     {nome:"Link de pagamento", telas:[T("linkpag","Solicitações"), T("linkdesc","Descontados no acerto"), T("linkrel","Relatório de links de pagamento"), T("linkanal","Análises"), T("linktaxas","Taxas e recebimentos"), T("linkmeios","Meios e acessos"), T("linkreps","Representantes")]}]},
   {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", menu:MENU_ATENDIMENTO, semAbas:true, areas:[
-    {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
+    {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intbipenv","Bipagem de envio"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", menu:MENU_ESTOQUE, areas:[
     {nome:"Compras", telas:[T("compras","Painel"), T("cevisao","Visão geral"), T("cequadro","Quadro de compras"), T("ceplanilha","Planilha de compras")]},   // Quadro e Planilha ficam só no endereço (fora do menu): os links antigos continuam abrindo o Funil
     {nome:"Estoque", telas:[T("ceestoque","Estoque de material"), T("cemov","Movimentos"), T("cesol","Pedidos de material"), T("ceprecos","Tabela de preços")]},

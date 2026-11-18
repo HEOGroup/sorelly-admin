@@ -100,6 +100,7 @@ export const SLUG_DA_ABA = {
   intrevs: "atendimento-interno-revendedoras",
   intcalc: "atendimento-interno-calculadora",
   intcons: "atendimento-interno-consolidado",
+  intbipenv: "atendimento-interno-bipagem-envio",
   condicionais: "condicionais",
   kitnovo: "revendedoras-novas",
   knpendencias: "kits-novos-pendencias",

@@ -3,7 +3,7 @@
 // Cartãozinho que abre na hora (18/11/2026, Marcus: "não precisa ser assim, abre um bloco na hora para gerar, faz bonito"): busca a revendedora, gera o link (vale 48 horas, só dela) e copia a mensagem.
 // Quando a revendedora envia as fotos pela página pública, o pedido cai sozinho no Funil (Separando, ou Confirmar taxa se ela não aceitou a taxa).
 import { Botao } from "@/apps/montagem/components/padrao-fin";
-import { acessoReposicao, formatarDataHora, mensagemTexto, revPorNome } from "@/apps/montagem/domain/encomendas";
+import { acessoReposicao, formatarDataHora, formatarReais, mensagemTexto, revPorNome } from "@/apps/montagem/domain/encomendas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { copiar } from "@/apps/montagem/pages/encomendas/visual";
 import { e, useEffect, useState } from "@/shared/react";
@@ -15,7 +15,7 @@ var CAMPO_B = "h-8 w-full rounded-md border border-border bg-card px-2.5 text-[1
 
 function LinkPedido(p){
   var E = p.E, cfg = E.cfg;
-  var st = useState({busca:"", rev:null, id:"", validade:"", gerando:false, msg:"", ver:false}), f = st[0];
+  var st = useState({busca:"", rev:null, id:"", validade:"", gerando:false, msg:"", ver:false, isenta:false}), f = st[0];
   var sl = useState(null), lista = sl[0];   // revendedoras da DevMaster (só a diretoria lê; as outras pessoas digitam o nome)
   var sk = useState(null), links = sk[0];   // últimos links gerados
   var set = function(k, v){ st[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
@@ -35,7 +35,7 @@ function LinkPedido(p){
     var r = f.rev || {}, m = r.cod ? media3(r) : null;
     // retirar na empresa só para quem tem direito (regra de 21/10/2026): Top 50 ou média de R$ 2.000 ou mais
     var ac = acessoReposicao(cfg, revPorNome(E.er, nome), m), empresa = ac.canais.indexOf("empresa")>=0;
-    chamar("POST", "/encomendas/link", {nome:nome, cod:r.cod || "", representante:r.representante || "", telefone:r.celular || "", cidade:r.cidade || "", uf:r.uf || "", media:m, taxa:cfg.reposicao.taxa, empresa:empresa}).then(function(j){
+    chamar("POST", "/encomendas/link", {nome:nome, cod:r.cod || "", representante:r.representante || "", telefone:r.celular || "", cidade:r.cidade || "", uf:r.uf || "", media:m, taxa:f.isenta && E.pode ? 0 : cfg.reposicao.taxa, empresa:empresa}).then(function(j){
       var ate = new Date(Date.now()+(j.validadeHoras || 48)*3600*1000);
       st[1](function(o){ return Object.assign({}, o, {id:j.id, gerando:false, validade:ate.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"})+" às "+ate.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}); }); carregarLinks();
     }, function(x){ st[1](function(o){ return Object.assign({}, o, {gerando:false, msg:x && x.message ? x.message : "Não consegui gerar o link."}); }); });
@@ -49,10 +49,11 @@ function LinkPedido(p){
     ? e("div",{className:"flex flex-col gap-2.5"},
         e("div",{className:"rounded-lg border border-[#4ade80]/50 bg-[#4ade80]/10 px-3 py-2 text-center"},
           e("p",{className:"text-[13px] font-bold text-[#bbf7d0]"}, "Link de "+nome+" pronto"),
-          e("p",{className:"text-[11px]"}, "Só dela. Vale até "+f.validade+" (48 horas) e aceita um envio.")),
+          e("p",{className:"text-[11px]"}, "Só dela. Vale até "+f.validade+" (48 horas) e aceita um envio."+(f.isenta && E.pode ? " Taxa de entrega isenta." : ""))),
         e("input",{readOnly:true, value:url, "aria-label":"Link do pedido", onFocus:function(ev){ ev.target.select(); }, className:CAMPO_B+" text-[11px]"}),
-        e("div",{className:"grid grid-cols-2 gap-2"},
+        e("div",{className:"grid grid-cols-3 gap-2"},
           e(Botao,{onClick:function(){ copiar(url); }}, "Copiar link"),
+          e(Botao,{onClick:function(){ window.open(url, "_blank", "noopener"); }}, "Abrir o link"),
           e(Botao,{principal:true, onClick:function(){ copiar(mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(url)); }}, "Copiar mensagem")),
         e("button",{type:"button", onClick:novo, className:"h-8 rounded-md text-[11px] underline decoration-white/40 underline-offset-2 hover:decoration-white"}, "Gerar link de outra revendedora"))
     // 1) escolher a revendedora
@@ -64,6 +65,8 @@ function LinkPedido(p){
         lista && !f.rev && q.length>=3 && !achadas.length && e("p",{className:"text-center text-[11px]"}, "Ninguém com esse nome na DevMaster. O link vai com o nome digitado."),
         f.rev && e("div",{className:"rounded-lg border border-white/20 bg-black/25 px-3 py-2 text-[11px] leading-snug"},
           e("b",{className:"block text-[13px]"}, f.rev.nome), "Código "+f.rev.cod+" · "+(f.rev.cidade || "—")+(f.rev.uf ? "/"+f.rev.uf : "")+" · rep. "+(f.rev.representante || "—")),
+        nome && E.pode && e("div",{className:"flex items-center justify-between gap-3 text-[13px]"}, e("label",{htmlFor:"lpTx", className:"font-medium"}, "Taxa de entrega"),
+          e("select",{id:"lpTx", value:f.isenta ? "isentar" : "cobrar", onChange:function(ev){ set("isenta", ev.target.value==="isentar"); }, className:CAMPO_B+" !w-44 text-center"}, e("option",{value:"cobrar"}, "Cobrar "+formatarReais(cfg.reposicao.taxa)), e("option",{value:"isentar"}, "Isentar (sem taxa)"))),
         f.msg && e("p",{className:"text-center text-[11px] font-bold text-[var(--negativo)]"}, f.msg),
         e(Botao,{principal:true, desabilitado:!nome || f.gerando, onClick:gerar}, f.gerando ? "Gerando" : "Gerar link de 48 horas"));
 
@@ -77,10 +80,12 @@ function LinkPedido(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-start justify-items-center bg-black/60 p-3 pt-[12vh]", onClick:p.fechar},
     e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"w-full max-w-[460px] overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 70%)"}},
       e("div",{className:"relative flex items-center justify-center bg-[var(--bloco-titulo)] px-10 py-1.5 text-white"},
-        e("h2",{className:"text-[13px] font-bold uppercase leading-tight"}, "Link do pedido"),
+        e("h2",{className:"text-[13px] font-bold uppercase leading-tight"}, "Nova solicitação"),
         e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded text-[13px] font-bold hover:bg-white/15"}, "×")),
       e("div",{className:"p-3"},
-        e("p",{className:"mb-2.5 text-center text-[11px]"}, "A revendedora pede pelo link: coloca as fotos, escolhe dourado, prata ou os dois e aceita a taxa. O link é só dela e vale 48 horas."),
-        corpo, recentes)));
+        e("p",{className:"mb-2.5 text-center text-[11px]"}, "Procure a revendedora e gere o link: ela manda as peças e aceita as condições por ele. O link é só dela e vale 48 horas."),
+        corpo,
+        p.aoMao && !f.id && e("button",{type:"button", onClick:p.aoMao, className:"mt-2 h-8 w-full rounded-md text-[11px] underline decoration-white/40 underline-offset-2 hover:decoration-white"}, "Registrar à mão, sem link"),
+        recentes)));
 }
 export { LinkPedido };
