@@ -49,7 +49,7 @@ function LinkPedido(p){
     ? e("div",{className:"flex flex-col gap-2.5"},
         e("div",{className:"rounded-lg border border-[#4ade80]/50 bg-[#4ade80]/10 px-3 py-2 text-center"},
           e("p",{className:"text-[13px] font-bold text-[#bbf7d0]"}, "Link de "+nome+" pronto"),
-          e("p",{className:"text-[11px]"}, "Só dela. Vale até "+f.validade+" (48 horas) e aceita um envio."+(f.isenta && E.pode ? " Taxa de entrega isenta." : ""))),
+          e("p",{className:"text-[11px]"}, "Só dela. Vale até "+f.validade+" (48 horas) e aceita um envio."+(f.isenta && E.pode ? " Taxa de entrega: ISENTA." : " Taxa de entrega: "+formatarReais(cfg.reposicao.taxa)+"."))),
         e("input",{readOnly:true, value:url, "aria-label":"Link do pedido", onFocus:function(ev){ ev.target.select(); }, className:CAMPO_B+" text-[11px]"}),
         e("div",{className:"grid grid-cols-3 gap-2"},
           e(Botao,{onClick:function(){ copiar(url); }}, "Copiar link"),

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.11", data:"2026-11-18", titulo:"Link do pedido: um só Li e estou de acordo, logo e versão de celular", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Em todo link há um só Li e estou de acordo no fim e o botão Assinar e continuar. Logo da Sorelly no topo, campos claros e iguais, página compacta para o celular sem rolar para o lado. A Nova solicitação mostra a taxa escolhida depois de gerar o link."}
+ ]},
  {v:"0.21.10", data:"2026-11-18", titulo:"Link do pedido: peças com OK e Fechar solicitação", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Na página da revendedora, cada peça abre com fundo claro e foto menor, ganha o botão OK e vira uma linha curta com Editar. Depois do OK vêm + Nova peça ou Fechar solicitação; link isento tem um só Estou de acordo com tudo e assino."}
  ]},

@@ -37,10 +37,11 @@ async function chamar(metodo, caminho, corpo) {
 }
 
 const Tela = ({ passo, total, children }) => (
-  <main className="min-h-screen px-4 py-6 text-white" style={{ background: "linear-gradient(180deg,#1d2c4d 0%,#0f1117 45%)" }}>
-    <div className="mx-auto flex w-full max-w-[560px] flex-col gap-4">
+  <main className="min-h-screen overflow-x-hidden px-3 py-3 text-white sm:px-4 sm:py-6" style={{ background: "linear-gradient(180deg,#1d2c4d 0%,#0f1117 45%)" }}>
+    <div className="mx-auto flex w-full min-w-0 max-w-[560px] flex-col gap-2.5 sm:gap-4">
       <header className="text-center">
-        <p className="text-[13px] font-bold tracking-[.2em] text-[#E8B84B]">SORELLY JOIAS</p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-sorelly.png" alt="Sorelly Joias" className="mx-auto h-14 w-auto sm:mb-1 sm:h-24" />
         <p className="text-[13px]">Reposições e Encomendas{passo ? " · passo " + passo + " de " + total : ""}</p>
         {passo ? <div className="mx-auto mt-2 flex w-40 gap-1" aria-hidden>{Array.from({ length: total }).map((_, i) => <span key={i} className={"h-1 flex-1 rounded-full " + (i < passo ? "bg-[#E8B84B]" : "bg-white/25")} />)}</div> : null}
       </header>
@@ -49,16 +50,16 @@ const Tela = ({ passo, total, children }) => (
   </main>
 );
 const Aviso = ({ titulo, texto }) => (
-  <section className="rounded-xl border border-white/25 bg-black/30 p-5 text-center">
+  <section className="rounded-xl border border-white/30 bg-white/[.08] p-5 text-center">
     <h1 className="text-[16px] font-bold">{titulo}</h1>
     <p className="mt-2 text-[13px] leading-snug">{texto}</p>
   </section>
 );
 const Regra = ({ icone, titulo, children, lido, aoMarcar, semOk }) => (
-  <div className={"rounded-lg border p-3 " + (lido ? "border-[#4ade80]/60 bg-[#4ade80]/[.07]" : "border-white/15 bg-white/[.04]")}>
-    <div className="flex gap-3">
+  <div className={"rounded-lg border p-2.5 sm:p-3 " + (lido ? "border-[#4ade80]/60 bg-[#4ade80]/[.07]" : "border-white/15 bg-white/[.04]")}>
+    <div className="flex gap-2.5">
       <span className="mt-0.5 text-[16px] leading-none" aria-hidden>{icone}</span>
-      <div><p className="text-[14px] font-bold">{titulo}</p><p className="mt-0.5 text-[13px] leading-snug">{children}</p></div>
+      <div className="min-w-0 flex-1 break-words"><p className="text-[14px] font-bold">{titulo}</p><p className="mt-0.5 text-[13px] leading-snug">{children}</p></div>
     </div>
     {semOk ? null : (
       <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 rounded-md bg-black/25 px-2.5 py-2 text-[13px] font-bold">
@@ -69,9 +70,9 @@ const Regra = ({ icone, titulo, children, lido, aoMarcar, semOk }) => (
   </div>
 );
 const Campo = ({ rotulo, children }) => (<label className="flex flex-col gap-1"><span className="text-[13px] font-bold">{rotulo}</span>{children}</label>);
-const ENTRADA = "h-11 w-full rounded-lg border border-white/30 bg-black/40 px-3 text-[16px] placeholder:text-white/50";
-const BTN = "h-12 rounded-xl bg-[#E8B84B] text-[16px] font-bold text-[#14233f] disabled:opacity-40";
-const VOLTAR = "h-12 rounded-xl border border-white/30 bg-white/5 text-[15px] font-bold";
+const ENTRADA = "h-11 w-full rounded-lg border border-white/40 bg-white/10 px-3 text-[16px] text-white placeholder:text-white/60 [&:-webkit-autofill]:shadow-[inset_0_0_0_100px_#34476f] [&:-webkit-autofill]:[-webkit-text-fill-color:#fff]";
+const BTN = "h-11 rounded-xl bg-[#E8B84B] text-[16px] font-bold text-[#14233f] disabled:opacity-40";
+const VOLTAR = "h-11 rounded-xl border border-white/40 bg-white/10 text-[15px] font-bold";
 
 export default function Formulario({ codigo }) {
   const [info, setInfo] = useState(null), [falha, setFalha] = useState(""), [passo, setPasso] = useState(1);
@@ -148,28 +149,28 @@ export default function Formulario({ codigo }) {
     { id: "quando", icone: "🗓️", titulo: "Quando é encomenda?", texto: <>Quando o pedido é feito <b>15 dias ou mais antes do seu acerto</b>, ou quando você <b>mora em outro estado</b>.</> },
     NAO_GARANTE,
   ];
-  const unico = rep && !empresa && info.taxa === 0;   // pedido isento: sem OK em cada item, só um "Estou de acordo com tudo e assino"
-  const todosLidos = unico || regras.every((r) => lidos[r.id]);
+  // em TODO link (com ou sem taxa) há um só "Li e estou de acordo", no fim (Marcus, 18/11/2026); os itens são só para ler
+  const todosLidos = !!lidos.geral;
 
   if (passo === 1) return (
     <Tela passo={1} total={total}>
-      <section className="rounded-xl border border-white/25 bg-black/30 p-4">
+      <section className="rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
         <h1 className="text-[16px] font-bold">Oi, {info.primeiroNome}! 💛</h1>
         <p className="mt-2 text-[13px] leading-snug">Este setor foi criado <b>para ajudar você, revendedora</b>: para você nunca ficar sem a peça que a sua cliente quer, na hora em que ela quer comprar. Peça por aqui que a gente separa para você.</p>
       </section>
 
-      <section className="rounded-xl border border-white/25 bg-black/30 p-3">
+      <section className="rounded-xl border border-white/30 bg-white/[.08] p-3">
         {info.forcaEncomenda ? (
           <p className="text-[13px] leading-snug"><b>Seu pedido é uma encomenda</b> para o próximo kit (sem taxa), porque você é de outro estado.</p>
         ) : (
           <>
             <p className="mb-2 text-[13px] font-bold">O que você quer pedir?</p>
-            <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(" + (info.podeEmpresa ? 3 : 2) + ", minmax(0, 1fr))" }} role="radiogroup" aria-label="Tipo do pedido">
+            <div className={"grid gap-2 " + (info.podeEmpresa ? "grid-cols-1 min-[460px]:grid-cols-3" : "grid-cols-2")} role="radiogroup" aria-label="Tipo do pedido">
               {[["reposicao", "entrega", "Reposição", (info.taxa === 0 ? "entrega · sem taxa (isento)" : "entrega · taxa " + reais(info.taxa || 15))], ...(info.podeEmpresa ? [["reposicao", "empresa", "Reposição", "eu retiro na empresa · sem taxa"]] : []), ["encomenda", "entrega", "Encomenda", "próximo kit · sem taxa"]].map(([v, fm, t, sub]) => {
                 const on = tipo === v && (v === "encomenda" || forma === fm);
                 return (
                   <button key={v + fm} type="button" role="radio" aria-checked={on} onClick={() => { setTipo(v); setForma(fm); setLidos({}); }}
-                    className={"rounded-lg border px-2 py-2 text-center " + (on ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/30 bg-white/5")}>
+                    className={"rounded-lg border px-2 py-2 text-center " + (on ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/40 bg-white/10")}>
                     <span className="block text-[15px] font-bold">{t}</span><span className="block text-[12px]">{sub}</span>
                   </button>
                 );
@@ -180,12 +181,16 @@ export default function Formulario({ codigo }) {
       </section>
 
       <div className="flex flex-col gap-2.5">
-        {regras.map((r) => <Regra key={r.id} semOk={unico} icone={r.icone} titulo={r.titulo} lido={!!lidos[r.id]} aoMarcar={(v) => setLidos({ ...lidos, [r.id]: v })}>{r.texto}</Regra>)}
+        {regras.map((r) => <Regra key={r.id} semOk icone={r.icone} titulo={r.titulo} lido={!!lidos[r.id]} aoMarcar={(v) => setLidos({ ...lidos, [r.id]: v })}>{r.texto}</Regra>)}
       </div>
 
       <section className="flex flex-col gap-2 rounded-xl border border-[#E8B84B]/50 bg-[#E8B84B]/10 p-3">
-        <button type="button" disabled={!todosLidos} onClick={() => setPasso(2)} className={BTN}>Estou de acordo com tudo e assino</button>
-        {!todosLidos && !unico && <p className="text-center text-[12px]">Só dá para assinar se você estiver de acordo com tudo. Marque &quot;Li e estou de acordo&quot; em cada item acima ({regras.filter((r) => lidos[r.id]).length} de {regras.length}).</p>}
+        <label className="flex cursor-pointer items-center gap-2.5 rounded-md bg-black/25 px-2.5 py-2.5 text-[14px] font-bold">
+          <input type="checkbox" checked={!!lidos.geral} onChange={(ev) => setLidos({ ...lidos, geral: ev.target.checked })} className="size-5 shrink-0" />
+          <span>{lidos.geral ? "Li e estou de acordo ✓" : "Li e estou de acordo"}</span>
+        </label>
+        <button type="button" disabled={!todosLidos} onClick={() => setPasso(2)} className={BTN}>Assinar e continuar</button>
+        {!todosLidos && <p className="text-center text-[12px]">Só dá para assinar se você estiver de acordo com tudo.</p>}
         <p className="text-center text-[12px]">Este link é só seu e vale até <b>{quando(info.expiraEm)}</b>.</p>
       </section>
     </Tela>
@@ -194,7 +199,7 @@ export default function Formulario({ codigo }) {
   // ---------- PASSO 2 (retirada na empresa): dia e hora ----------
   if (empresa && passo === 2) return (
     <Tela passo={2} total={3}>
-      <section className="flex flex-col gap-3 rounded-xl border border-white/25 bg-black/30 p-4">
+      <section className="flex flex-col gap-3 rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
         <h1 className="text-[15px] font-bold">Quando você vem retirar?</h1>
         <p className="text-[13px] leading-snug">Escolha o dia e a hora. A equipe <b>confirma o seu horário por mensagem escrita</b>.</p>
         <Campo rotulo="Dia *"><input type="date" min={hoje} value={ret.dia} onChange={(ev) => setRet({ ...ret, dia: ev.target.value })} className={ENTRADA} /></Campo>
@@ -216,7 +221,7 @@ export default function Formulario({ codigo }) {
   // ---------- PASSO 2: entrega (só reposição) ----------
   if (rep && passo === 2) return (
     <Tela passo={2} total={3}>
-      <section className="flex flex-col gap-3 rounded-xl border border-white/25 bg-black/30 p-4">
+      <section className="flex flex-col gap-3 rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
         <h1 className="text-[15px] font-bold">Onde e quando entregar?</h1>
         <p className="text-[13px] leading-snug">Informe o endereço e os melhores horários para o entregador te encontrar.</p>
         <Campo rotulo="Rua e número *"><input type="text" autoComplete="street-address" value={ent.rua} maxLength={120} onChange={(ev) => setEnt({ ...ent, rua: ev.target.value })} placeholder="Ex.: Rua das Flores, 123" className={ENTRADA} /></Campo>
@@ -230,7 +235,7 @@ export default function Formulario({ codigo }) {
           <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Horário">
             {HORARIOS.map(([v, t, s]) => (
               <button key={v} type="button" role="radio" aria-checked={ent.horario === v} onClick={() => setEnt({ ...ent, horario: v })}
-                className={"rounded-lg border px-1 py-2 text-center " + (ent.horario === v ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/30 bg-white/5")}>
+                className={"rounded-lg border px-1 py-2 text-center " + (ent.horario === v ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/40 bg-white/10")}>
                 <span className="block text-[14px] font-bold">{t}</span><span className="block text-[11px]">{s}</span>
               </button>
             ))}
@@ -249,7 +254,7 @@ export default function Formulario({ codigo }) {
   // ---------- PASSO FINAL: as peças ----------
   return (
     <Tela passo={total} total={total}>
-      <section className="rounded-xl border border-white/25 bg-black/30 p-4">
+      <section className="rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
         <h1 className="text-[15px] font-bold">Quais peças você quer?</h1>
         <p className="mt-1 text-[13px] leading-snug">Coloque a foto de cada peça, ou descreva a peça. Em cada uma, toque em <b>dourado</b>, <b>prata</b> ou <b>os dois</b>.</p>
       </section>
