@@ -3,7 +3,7 @@
 import { Faixa, Indicador, Janela, LINHA, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { DICA_TIPO, ROTULO_TIPO, PRESETS_COR, TIPOS, OBS_KEY, pkAvisoExcluir, pkBlocos, pkConfigPublica, pkExibirResposta, pkMontarBloco, pkBloco } from "@/apps/montagem/domain/preferencias-kit";
 import { PreviaBloco, RespostaView, amostraResposta } from "@/apps/montagem/pages/preferencias-kit/resposta";
-import { Area, Bolinha, Bt, Campo, Chip, Ic, Interruptor, Painel, Selo, Txt, Vazio, usePk } from "@/apps/montagem/pages/preferencias-kit/visual";
+import { Area, Aviso, Bolinha, Bt, Campo, Chip, Ic, Interruptor, Painel, Selo, Txt, Vazio, podeEditarFormulario, usePk } from "@/apps/montagem/pages/preferencias-kit/visual";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Fragment, e, useState } from "@/shared/react";
 
@@ -131,7 +131,7 @@ function PreviaApp(p){
 
 // ---------- aba ----------
 function AbaPkFormulario(){
-  var ctx = usePk(), s = ctx.s, pk = ctx.pk;
+  var ctx = usePk(), s = ctx.s, pk = ctx.pk, pode = podeEditarFormulario();   // só a Diretoria edita (18/11/2026): é o que o app mostra
   var sj = useState(null), jan = sj[0];                  // {tipo:"novo"|"editar"|"excluir"|"previa", bloco?}
   var sd = useState({de:null, sobre:null}), dr = sd[0];  // arrastar
   var bl = pkBlocos(s), reais = bl.filter(function(b){ return !b.sistema; });
@@ -145,8 +145,9 @@ function AbaPkFormulario(){
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
       e("p",{className:"text-[13.5px] text-white/80"}, e("b",null, reais.length+" blocos"), " no formulário · ", e("b",{className:"text-[#4ADE80]"}, ativos+" ligados"), " aparecem no app da revendedora · versão "+s.pk.config.versao),
       e("div",{className:"flex flex-wrap items-center gap-2"},
-        e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ sj[1]({tipo:"novo"}); }}, "Novo bloco"),
-        e(Bt,{ic:"arrows-clockwise", titulo:"Aumenta a versão da configuração lida pelo app", onClick:function(){ pk("versao_subir"); }}, "Subir versão"))),
+        pode && e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ sj[1]({tipo:"novo"}); }}, "Novo bloco"),
+        pode && e(Bt,{ic:"arrows-clockwise", titulo:"Aumenta a versão da configuração lida pelo app", onClick:function(){ pk("versao_subir"); }}, "Subir versão"))),
+    !pode && e(Aviso,null, "Só a Diretoria edita o formulário: ele é o que as revendedoras veem no app."),
     reais.length===0 && e(Vazio,{ic:"list-checks"}, "Nenhum bloco criado. O formulário do app está sem perguntas."),
     e(Tab,{cols:["Ordem", "Bloco", "Tipo", "O que a revendedora responde", "Fotos", "No app", ""]}, bl.map(function(b, i){
       return e("tr",{key:b.key, className:LINHA+(b.enabled ? "" : " opacity-60")},
@@ -157,9 +158,9 @@ function AbaPkFormulario(){
         e(Td,null, b.allowImages ? "Sim" : "Não"),
         e(Td,null, e("span",{className:"inline-flex items-center gap-2"}, e(Interruptor,{on:b.enabled, rot:b.enabled ? "Desligar "+b.title : "Ligar "+b.title, onClick:function(){ pk("bloco_enabled", {key:b.key, enabled:!b.enabled}); }}), e("span",{className:"w-16 text-left text-[12px] font-bold "+(b.enabled ? "text-[#E8B84B]" : "text-white/50")}, b.enabled ? "Ligado" : "Desligado"))),
         e(Td,null, e("span",{className:"inline-flex items-center gap-1"},
-          e(Ic,{ic:"caret-up", titulo:"Subir", disabled:i===0, onClick:function(){ ordenar(i, i-1); }}), e(Ic,{ic:"caret-down", titulo:"Descer", disabled:i===bl.length-1, onClick:function(){ ordenar(i, i+1); }}),
-          !b.sistema && e(Ic,{ic:"pencil-simple", titulo:"Editar o bloco", onClick:function(){ sj[1]({tipo:"editar", bloco:b}); }}),
-          !b.sistema && e(Ic,{ic:"trash", perigo:true, titulo:"Excluir o bloco", onClick:function(){ sj[1]({tipo:"excluir", bloco:b}); }}))));
+          pode && e(Ic,{ic:"caret-up", titulo:"Subir", disabled:i===0, onClick:function(){ ordenar(i, i-1); }}), pode && e(Ic,{ic:"caret-down", titulo:"Descer", disabled:i===bl.length-1, onClick:function(){ ordenar(i, i+1); }}),
+          pode && !b.sistema && e(Ic,{ic:"pencil-simple", titulo:"Editar o bloco", onClick:function(){ sj[1]({tipo:"editar", bloco:b}); }}),
+          pode && !b.sistema && e(Ic,{ic:"trash", perigo:true, titulo:"Excluir o bloco", onClick:function(){ sj[1]({tipo:"excluir", bloco:b}); }}))));
     })),
     jan && jan.tipo==="novo" && e(EditorBloco,{key:"novo", fechar:function(){ sj[1](null); }}),
     jan && jan.tipo==="editar" && e(EditorBloco,{key:jan.bloco.key, bloco:jan.bloco, fechar:function(){ sj[1](null); }}),

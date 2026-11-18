@@ -10,6 +10,7 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Diferença do antigo (regra deste sistema):** a montadora não vê dinheiro. Ela registra sem valor e a supervisão completa em Definir valor. Equipe e regras do bônus: só a Diretoria muda (igual ao antigo).
 - **Já montado** considera também os kits montados nas Listagens deste sistema (revendedora do app).
 - **Fator da avaliação do bônus:** lê `sorelly.avaliacao*`. Enquanto as avaliações não forem trazidas do antigo (`--avaliacoes` no script), o fator vale 1 (sem desconto).
+- **Formulário do app (mesmo dia, pedido do Leonardo):** o app passa a ler os blocos deste sistema por uma ponte no admin antigo (`/admin/kit/preferences` repassa `/api/kit/preferences`; sem build nem deploy do app). Por isso, como no antigo, **só a Diretoria edita** o Formulário do app (tela e servidor); no admin antigo a edição dos blocos fica bloqueada.
 
 ## 18/11/2026 (RH › Salário e bônus, confirmações do Marcus)
 - **Sábado conta como dia útil** no 5º dia útil (confirmado). Em Salário e bônus: adiantamento no dia 20 e salário no 5º dia útil.

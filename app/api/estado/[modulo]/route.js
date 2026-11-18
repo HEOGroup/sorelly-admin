@@ -80,6 +80,13 @@ export const PUT = rota(async (req, { eu, params }) => {
     const devolvidos = protegerSaldos(velho, b.chaves.saldosContas);
     if (devolvidos) console.warn("[trava sc] gravação de " + eu.id + " não trazia " + devolvidos + " item(ns) de saldo já guardados; devolvidos");
   }
+  // FORMULÁRIO DO APP (18/11/2026): os blocos do módulo pk são o que o app da revendedora mostra (GET /api/kit/preferences). Como no admin antigo,
+  // só a Diretoria muda: de quem não é, o servidor descarta blocos, Observações e versão (o resto do módulo grava normalmente).
+  if (modulo === "pk" && eu.perfil !== "ADMIN") {
+    const pedido = b.patches || b.chaves;
+    ["blocos", "obs", "config"].forEach((k) => { if (k in pedido) { delete pedido[k]; console.warn("[pk] " + eu.id + " tentou mudar o formulário do app (" + k + "); descartado"); } });
+    if (!Object.keys(pedido).length) return erro("Só a Diretoria edita o formulário do app.", 403);
+  }
   // GRAVAÇÃO SEGURA (11/11/2026, src/server/estado-modulo.js): tela nova manda só a diferença ({patches}); tela antiga ({chaves}) junta sem apagar itens que ela não traz.
   // As duas ficam registradas em sorelly.estado_modulo_log.
   const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id) : await gravarModulo(modulo, b.chaves, "chaves", eu.id);
