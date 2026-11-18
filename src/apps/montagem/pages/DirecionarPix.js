@@ -15,7 +15,7 @@ import { setBaixas, setClasse, setLancamentos, setPf, filtrar } from "@/apps/mon
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
 import { sugerir, LIMITE_ALTO_PADRAO } from "@/apps/montagem/domain/direcionar-pix";
 import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
-import { descontoCartao, fornecedoresDoMesPf, geradoEm } from "@/apps/montagem/domain/pf-mes";
+import { descontoCartao, fornecedoresDoMesPf, geradoEm, prestadoresAbertosPf } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
@@ -125,6 +125,7 @@ function dividasDaFamilia(ff, cp, hoje){
   return out.sort(function(a, b){ return a.prazo.localeCompare(b.prazo) || b.falta-a.falta; });
 }
 
+var DEST_CRIADOS = {};   // nome do fornecedor → destino já pedido nesta sessão (não cria duas vezes enquanto o servidor responde)
 function AbaDirecionar(){
   var c = useDP(), s = c.s, cp = c.cp, dp = c.dp, ctxCnpj = contextoCnpj(s);
   var so = useState("todos"), orig = so[0], setOrig = so[1], ss = useState(null), selId = ss[0], setSelId = ss[1], sd = useState({}), drafts = sd[0], setDrafts = sd[1], se = useState("");
@@ -144,6 +145,13 @@ function AbaDirecionar(){
   var optDest = [["", "Escolha para quem enviar"]]; Object.keys(TIPOS_DESTINO).forEach(function(t){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }).forEach(function(d){ optDest.push([d.id, rotuloDestino(d, "")]); }); });
   // fornecedores: o que FALTA para fechar o mês atual e a data limite (planilha, aba RESUMO MÊS; Marcus 24/10/2026). Clicar adiciona o fornecedor como destino.
   var fornAbertos = fornecedoresDoMesPf(s.pf, cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
+  // TODO fornecedor com conta em aberto aparece na lista "Fornecedor" da conta (Lucas, 18/11/2026): quem ainda não tem destino (ex.: Madalosso, Ello Print) ganha o destino uma vez, com o nome do cadastro
+  // e o PRESTADOR de serviço com conta em aberto no Lançamento de pagamentos também (Lucas, 18/11/2026: a Dávila, R$ 520,00, não aparecia para direcionar)
+  var prestAbertos = prestadoresAbertosPf(s.pf, cp);
+  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).split(" · ")[0]]; })
+    .concat(prestAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["PRESTADOR", f.nome]; }))
+    .filter(function(x, i, a){ return x[1] && a.findIndex(function(y){ return y[1]===x[1]; })===i && !DEST_CRIADOS[x[1]]; }) : [];
+  useEffect(function(){ semDestino.forEach(function(x){ DEST_CRIADOS[x[1]] = true; c.d({type:"CP", op:"destino_add", nome:x[1], tipo:x[0]}); }); }, [semDestino.map(function(x){ return x[1]; }).join("|")]);   // eslint-disable-line react-hooks/exhaustive-deps
   var totalFalta = r2(fornAbertos.reduce(function(tt, f){ return tt+f.total; }, 0));
   var lfSel = sel && sel.internoId ? (s.lancFin||[]).filter(function(x){ return x.internoId===sel.internoId; })[0] : null;   // pedido antigo, sem a marca: a diferença do brinde se reconhece pela linha do lançamento (Marcus, 16/11/2026)
   var partes = (sel ? partesDe(sel) : []).map(function(z, i){ var ln = lfSel && sel.linhas && lfSel.linhas[sel.linhas[i]]; return z.brinde || (ln && ln.tipo==="brinde") ? Object.assign({}, z, {brinde:true}) : z; }), temPix = partes.some(function(z){ return z.forma==="pix"; });
@@ -302,6 +310,8 @@ function AbaDirecionar(){
     var pend = {};
     cp.orientacoes.forEach(function(o){ if(o.status!=="aberta") return; var fl = faltaDe(o); if(!(fl>0)) return; var q = pend[o.destinoId] || (pend[o.destinoId] = {valor:0, prazo:""}); q.valor = r2(q.valor+fl); if(o.ate && (!q.prazo || o.ate<q.prazo)) q.prazo = o.ate; });
     fornAbertos.forEach(function(x){ if(x.destinoId && x.total>0) pend[x.destinoId] = {valor:x.total, prazo:x.dMin||""}; });
+    // prestador com conta em aberto no Lançamento de pagamentos (18/11/2026): soma ao que já vem das orientações
+    prestAbertos.forEach(function(x){ if(!x.destinoId || !(x.saldo>0)) return; var q = pend[x.destinoId] || (pend[x.destinoId] = {valor:0, prazo:""}); q.valor = r2(q.valor+x.saldo); if(x.ate && (!q.prazo || x.ate<q.prazo)) q.prazo = x.ate; });
     var dm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "—"; };
     var folhaDev = function(nome, valor, prazo, id, conta){ return {nome:nome, cols:[nome, BKC(valor), dm(prazo)], w:[46, 30, 24], heads:["Nome", "Devido", "Prazo"], id:id, conta:conta||""}; };
     var ff = s.ff || {};

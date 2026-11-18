@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.15", data:"2026-11-18", titulo:"Direcionar: todo fornecedor e prestador com conta em aberto na lista da conta", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar", txt:"A lista Fornecedor da conta só mostrava quem tinha destino cadastrado no Controle de pagamentos (Madalosso, com R$ 9.844,40 em aberto, ficava de fora). Agora o Direcionar cria sozinho, uma vez, o destino de todo fornecedor com conta em aberto que ainda não tem, com o nome do cadastro."},
+  {tipo:"correção", area:"Financeiro → Direcionar", txt:"Prestador de serviço com conta em aberto no Lançamento de pagamentos também entra na lista da conta (grupo Prestador / funcionário), com o que falta e o prazo: Dávila Aline R$ 520,00, Higor R$ 840,85, Lucas Castilho R$ 2.484,40 e Confraternização R$ 9,30. Antes só entrava o que vinha das orientações do Controle de pagamentos."}
+ ]},
  {v:"0.21.14", data:"2026-11-18", titulo:"Preferências do kit: sem dados locais nem aviso antigo enquanto carrega", itens:[
   {tipo:"correção", area:"Representantes & Kits › Preferências do kit", txt:"Enquanto as preferências do app carregavam, as abas Revendedoras e Análise mostravam os dados guardados no navegador (as revendedoras do atendimento interno, todas com Não preencheu) e o aviso de preferências aleatórias. Agora aparece só a frase de carregando; os dados locais e o aviso ficam só para o uso sem servidor."},
   {tipo:"correção", area:"Representantes & Kits › Preferências do kit", txt:"A lista de kit ativo da DevMaster levava até 2 minutos num servidor novo e travava a tela. Agora o servidor espera no máximo 10 segundos: a tela abre com todas as revendedoras do app e passa a filtrar sozinha quando a lista termina de carregar."},

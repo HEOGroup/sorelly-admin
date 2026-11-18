@@ -2808,3 +2808,11 @@ Marcus (tudo com o Edson, do Office Graff, setor Material gráfico). Resumo; o d
 - O código é criado SÓ no servidor (`POST /api/pf/link`), uma vez por data, e nunca troca. Código antigo que foi trocado é achado no histórico de gravações e continua abrindo.
 - "Ver como o fornecedor vê" abre o próprio link; "Baixar HTML" baixa a mesma página (lib/pf-extrato-html.js monta a página na tela e no servidor). A mensagem de WhatsApp usa o link do servidor.
 - Comprovante guardado só no navegador (`arqId`) sobe sozinho para o servidor quando o Lançamento de pagamentos é aberto naquele computador (operação `lanc_comp_srv`, só acrescenta `arqKey`).
+
+## 18/11/2026 · Direcionar: todo fornecedor com conta em aberto na lista Fornecedor (Lucas)
+- Pedido: "na parte dos fornecedores, que apareça todos que têm em aberto uma conta".
+- Causa: a lista Fornecedor da conta (Direcionar) mostra só destinos do Controle de pagamentos (`cp.destinos`, tipo FORNECEDOR) ligados a um fornecedor com saldo. Madalosso não tinha destino e ficava de fora.
+- Agora: ao abrir o Direcionar, quem pode editar cria uma vez o destino FORNECEDOR de todo fornecedor com conta em aberto sem destino, com o nome do cadastro (`DEST_CRIADOS` em pages/DirecionarPix.js, mesmo jeito do destino H&O). Madalosso criado em 18/11/2026 (cp versão 32).
+- Ello Print não entra: o pedido dela está pendente de aprovação do limite, então ainda não conta como dívida.
+- Fica para decidir: a Pontual tem duas datas em aberto e o "Devido" da lista mostra só a última (R$ 66.273,81 de 21 a 30; a de 11 a 20, R$ 92,31, não soma).
+- **Prestadores (mesmo dia, Lucas: "essa conta que está em aberto não aparece", Dávila R$ 520,00):** a lista da conta do Direcionar também soma o que falta dos PRESTADORES de serviço no Lançamento de pagamentos (`prestadoresAbertosPf` em domain/pf-mes.js; mês atual e 3 antes), no grupo Prestador / funcionário. O destino é achado pelo primeiro nome; sem destino, é criado uma vez (tipo PRESTADOR). Criados em 18/11/2026 às 19h54 (cp versão 33); registro v0.21.15: Lucas Castilho e CONFRATERNIZAÇÃO.
