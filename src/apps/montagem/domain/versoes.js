@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.3", data:"2026-11-18", titulo:"Lançamento de pagamentos: pago a mais aumenta a dívida da própria data", itens:[
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Pix acima do total de uma data (novembro/2026 em diante) não passa mais para a próxima parcela. O sistema cria sozinho nas Negociações o ajuste \"Diferença enviada a mais\" na mesma data e a dívida sobe para o valor pago (ex.: R$ 1.500,00 pago R$ 1.600,00 = dívida R$ 1.600,00, quitada). Estornou o Pix, o ajuste diminui ou sai. Na linha aparece \"Diferença enviada a mais: R$ X · somada à dívida\". Antes de novembro fica só o aviso. Os 2 casos de novembro (Office Graf 15/11 R$ 70,90 e Lucas Castilho 10/11 R$ 15,60) voltam para a data de origem como ajuste."}
+ ]},
  {v:"0.21.2", data:"2026-11-18", titulo:"RH: pesquisa de clima (NR-1)", itens:[
   {tipo:"novo", area:"RH → Pesquisa de clima", txt:"Formulário público e anônimo em /pesquisa-de-clima (10 afirmações de 1 a 5, setor opcional e 2 comentários), que só abre quando o RH abre uma rodada. Tela para abrir e encerrar rodadas (a primeira e depois a cada trimestre) e ver o resultado por afirmação, por setor (só com 5 respostas ou mais) e os comentários. Só Marcus e Maria, conferido no servidor."}
  ]},

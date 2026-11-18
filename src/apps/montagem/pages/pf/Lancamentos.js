@@ -4,7 +4,7 @@
 // Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, lancDistribuir, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
@@ -95,9 +95,12 @@ function AvisoSaldo(p){
   cd.saldoSaiu.forEach(function(x){ itens.push(e("span",{key:"ss"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
   cd.saldoVeio.forEach(function(x){ itens.push(e("span",{key:"sv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
   cd.veio.forEach(function(x){ itens.push(e("span",{key:"v"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
-  // a sobra (datas de novembro/2026 em diante) passa sozinha para a próxima parcela em aberto; antes disso fica só o aviso
+  // pago a mais (novembro/2026 em diante): a dívida da data sobe sozinha com o ajuste "Diferença enviada a mais" das Negociações
+  if(cd.ajuste>0.005) itens.push(e("button",{type:"button", key:"aj", title:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50 hover:brightness-125"},
+    e(Ph,{n:"plus-circle", s:13}), "Diferença enviada a mais: ", e("b",null, brl(cd.ajuste)), " · somada à dívida"));
+  // antes de novembro/2026 (ou com maquininha): fica só o aviso
   if(cd.excPix>0.005) itens.push(e("span",{key:"exc", className:"inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 ring-1 ring-destructive/50"},
-    e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix)), cd.excAntigo ? "" : " · sem parcela em aberto depois desta data"));
+    e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix))));
   return itens.length ? e("div",{className:"flex flex-wrap items-center justify-center gap-2 text-[13px]"}, itens) : null;
 }
 
@@ -118,7 +121,7 @@ function LinhaData(p){
       e(Bt,{tipo:cd.aberto<=0.005 ? "ok" : "normal", ic:"link", titulo:cd.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor", onClick:function(){ p.enviar(cd.chave); }}),
       e(Bt,{ic:aberto ? "caret-up" : "caret-down", titulo:aberto ? "Ocultar pagamentos" : "Ver pagamentos lançados", onClick:function(){ p.alt(cd.chave); }}, String(cd.lancs.length)))));
   var extra = [];
-  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
+  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.ajuste>0.005 || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
   if(cd.mq>0.005 && !aberto) extra.push(e("tr",{key:cd.chave+"mq"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"},
     e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
       "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
@@ -145,12 +148,12 @@ function ModalLancar(p){
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
   var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
-  var vNum = parseFloat(v.valor), prev = vNum>aberto+0.005 ? lancDistribuir(c.pf, chave, vNum) : null;
-  var outras = prev ? prev.partes.filter(function(pt){ return pt.chave!==chave; }) : [];
-  var avisoValor = !prev ? null
-    : e("div",{className:"rounded-lg px-3 py-2 text-center text-[13px] "+(prev.sobra ? "bg-destructive/15 ring-1 ring-destructive/50" : "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50")},
-        outras.length ? e("div",null, "Pago a mais: ", outras.map(function(pt, i){ return e("span",{key:pt.chave}, (i ? " · " : ""), e("b",null, brl(pt.valor)), " vai para "+dbr(pt.limite)); })) : null,
-        prev.sobra ? e("div",null, "Passou do total em ", e("b",null, brl(prev.sobra)), ". Não há mais parcelas em aberto.") : null);
+  // pago a mais: de novembro/2026 em diante a dívida da data sobe sozinha ("Diferença enviada a mais"); antes disso fica só o aviso
+  var vNum = parseFloat(v.valor), excV = vNum>aberto+0.005 ? Math.round((vNum-aberto)*100)/100 : 0, ajusta = excV && ajustaExcesso(c.pf, chave);
+  var avisoValor = !excV ? null
+    : e("div",{className:"rounded-lg px-3 py-2 text-center text-[13px] "+(ajusta ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-destructive/15 ring-1 ring-destructive/50")},
+        ajusta ? e("div",null, "Diferença enviada a mais: ", e("b",null, brl(excV)), ". A dívida desta data sobe de "+brl(j ? j.total : 0)+" para ", e("b",null, brl((j ? j.total : 0)+excV)), ".")
+          : e("div",null, "Passou do total em ", e("b",null, brl(excV)), ". Fica só o aviso na linha."));
   // pagou menos do que falta: manter o saldo em aberto nesta data ou passar a diferença para a 1ª data do mês seguinte
   var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos ? destinoSaldo(c.pf, chave) : null;
   var escolhaSaldo = !dst ? null
@@ -162,9 +165,6 @@ function ModalLancar(p){
     if(!valor || valor<=0) return aviso(c, "Informe o valor pago.", "alerta");
     if(!v.data) return aviso(c, "Informe a data do pagamento.", "alerta");
     var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora.", "alerta");
-    // o que passa do que falta nesta data vai sozinho para as próximas datas em aberto; sem data em aberto, avisa
-    var dv = lancDistribuir(c.pf, chave, valor);
-    if(dv.sobra && !window.confirm("O valor passou do total em "+brl(dv.sobra)+" e não há mais parcelas em aberto. Lançar mesmo assim?")) return;
     var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
