@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.2", data:"2026-11-18", titulo:"RH: pesquisa de clima (NR-1)", itens:[
+  {tipo:"novo", area:"RH → Pesquisa de clima", txt:"Formulário público e anônimo em /pesquisa-de-clima (10 afirmações de 1 a 5, setor opcional e 2 comentários), que só abre quando o RH abre uma rodada. Tela para abrir e encerrar rodadas (a primeira e depois a cada trimestre) e ver o resultado por afirmação, por setor (só com 5 respostas ou mais) e os comentários. Só Marcus e Maria, conferido no servidor."}
+ ]},
  {v:"0.20.104", data:"2026-11-18", titulo:"Atendimento Sorelly: condicionais da DevMaster com marca de cobrança", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"As condicionais abertas da cliente (kit principal e expositor) vêm da DevMaster, com data de saída, peças e valor. A funcionária marca na coluna Cobrar as que está cobrando; só as marcadas entram nas contas. Botão Trazer condicionais da DevMaster para atendimento já aberto. Cliente incluída pelo Incluir agora deixa de ficar sem condicional (caso Danielle)."}
  ]},

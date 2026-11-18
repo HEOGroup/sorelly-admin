@@ -228,6 +228,7 @@ export const SLUG_DA_ABA = {
   rhseg: "rh-seguranca-trabalho",
   segdocs: "pgr-pcmso",
   denuncias: "rh-canal-denuncias",
+  clima: "rh-pesquisa-clima",
   rhadv: "rh-advertencias",
   rhexp: "rh-experiencia",
   rhsolic: "rh-solicitacoes",

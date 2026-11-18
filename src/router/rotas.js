@@ -272,6 +272,7 @@ const montagem = {
     pagina("rh-seguranca-trabalho", () => import("@/apps/montagem/pages/RHSeguranca"), "AbaRhSeguranca"),
     pagina("pgr-pcmso", () => import("@/apps/montagem/pages/SegurancaDocumentos"), "AbaSegurancaDocs"),
     pagina("rh-canal-denuncias", () => import("@/apps/montagem/pages/Denuncias"), "AbaDenuncias"),
+    pagina("rh-pesquisa-clima", () => import("@/apps/montagem/pages/PesquisaClima"), "AbaPesquisaClima"),
     pagina("rh-advertencias", () => import("@/apps/montagem/pages/RH"), "AbaRhColab"),
     pagina("rh-experiencia", () => import("@/apps/montagem/pages/RH"), "AbaRhExp"),
     pagina("rh-solicitacoes", () => import("@/apps/montagem/pages/RHSolicitacoes"), "AbaRhSolic"),

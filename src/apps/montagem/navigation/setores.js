@@ -91,6 +91,7 @@ var MENU_RH = [
   {nome:"Presença", itens:[M("Presença diária","rhpresenca"), M("Relatório diário","rhrelatorio")]},
   {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab")]},
   M("Segurança do trabalho","rhseg"),
+  M("Pesquisa de clima","clima"),   // só Marcus e Maria (RH): o menu esconde para as demais pessoas e o servidor confere
   M("Canal de denúncias","denuncias"),   // só Marcus e Maria (RH): o menu esconde para as demais pessoas e o servidor confere
   {nome:"Contratos", itens:[
     {nome:"Pessoas", itens:[M("Representantes","rhcrep"), M("Funcionários (CLT)","rhcfunc"), M("Terceiros","rhcterc")]},
@@ -248,6 +249,7 @@ var SETORES = [
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
     {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores")]},
     {nome:"Segurança do trabalho", telas:[T("rhseg","Segurança do trabalho")]},
+    {nome:"Pesquisa de clima", telas:[T("clima","Pesquisa de clima")]},
     {nome:"Canal de denúncias", telas:[T("denuncias","Canal de denúncias")]},
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},

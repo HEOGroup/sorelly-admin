@@ -155,5 +155,7 @@ function nr1Op(rh, a, por, novoId){
 
 // quem abre o Canal de denúncias (pessoaId): Marcus (lê as gerais) e Maria Claudia, RH, 38 (lê as que envolvem a direção), decisão de 18/11/2026. O servidor confere a mesma lista (src/server/denuncias.js); aqui só esconde a tela.
 var PESSOAS_DENUNCIAS = [16, 38];
+// quem abre a Pesquisa de clima (pessoaId): Marcus e Maria Claudia (RH), decisão de 18/11/2026. O servidor confere a mesma lista (src/server/clima.js); aqui só esconde a tela.
+var PESSOAS_CLIMA = [16, 38];
 
-export { PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };
+export { PESSOAS_CLIMA, PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };

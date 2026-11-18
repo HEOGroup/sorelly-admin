@@ -37,7 +37,7 @@ import { abaDoCaminho, caminhoDaAba, setorDaAba } from "@/apps/montagem/router/s
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { PESSOAS_DENUNCIAS } from "@/apps/montagem/domain/nr1";
+import { PESSOAS_CLIMA, PESSOAS_DENUNCIAS } from "@/apps/montagem/domain/nr1";
 import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
 import { MenuSetor } from "@/apps/montagem/components/barra-menu";
 import { setPlano } from "@/apps/montagem/lib/estilo-plano";
@@ -230,6 +230,7 @@ function App(){
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   // Canal de denúncias (17/11/2026): só Marcus e Maria (RH) abrem; para as demais pessoas a tela some, mesmo para quem vê tudo (o servidor também recusa)
   if(srv.apiAtiva() && PESSOAS_DENUNCIAS.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="denuncias"; });
+  if(srv.apiAtiva() && PESSOAS_CLIMA.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="clima"; });   // Pesquisa de clima (18/11/2026): só Marcus e Maria (RH)
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
