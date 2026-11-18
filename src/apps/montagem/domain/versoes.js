@@ -6,7 +6,7 @@ var VERSOES = [
  {v:"0.21.25", data:"2026-11-18", titulo:"Link das peças: aba \"O que eu pedi\"", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"No link das peças encontradas, a revendedora agora tem duas abas: \"Peças que encontramos\" e \"O que eu pedi\" (as fotos, as descrições e o recado do pedido dela), para ela rever o que pediu. A barra de baixo só aparece na aba das peças."},
  ]},
- {v:"0.21.23", data:"2026-11-18", titulo:"Link das peças: barra de baixo refeita e tabela de valores mais compacta", itens:[
+ {v:"0.21.23.1", data:"2026-11-18", titulo:"Link das peças: barra de baixo refeita e tabela de valores mais compacta", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Barra fixa de baixo refeita: três contadores (quero, não quero, faltam), total em R$ com medidor do limite e botão largo. Aviso de peça sem resposta em destaque. Tabela de valores com fonte menor, faixas em uma linha e colunas alinhadas."}
  ]},
  {v:"0.21.24", data:"2026-11-18", titulo:"Financeiro: correções da revisão (Pix, comprovante, família e Atividades)", itens:[
