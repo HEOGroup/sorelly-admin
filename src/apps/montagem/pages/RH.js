@@ -5,13 +5,14 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Avatar, Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { grupoDe, nomeDe, veSalarios } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
-import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
+import { CNPJ_COR, CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
   parseHoras, porEmpresaStats, presencaDe, relatorioAdvertencias, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
 import { Dinheiro, Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { Bloco, Bloco as BlocoPadrao, Botao, CAMPO, CampoSel, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { DIAS, EQUIPES, coberturaDe, divide, equipesDe, horario42, textoEscala42 } from "@/apps/montagem/domain/escala42";
+import { FormularioFuncJanela } from "@/apps/montagem/pages/rh/FormularioFunc";
 import { SalImportar, SalJanelas, salDados } from "@/apps/montagem/pages/rh/SalarioVisao";
 import { JoiasJanelas, JoiasNaFicha, NegJoiasJanelas, joiasPagamentos, joiasPessoas, joiasResumo } from "@/apps/montagem/pages/rh/JoiasVisao";
 import { FichaCaixa, FichaMoldura, FichaPar } from "@/apps/montagem/components/ficha-moldura";
@@ -173,21 +174,34 @@ function mensagemEscala(nome, diasHoje, entrada, saida, nomeEscala, k, entradaNo
     "Se tiver alguma dúvida, ou preferir outra equipe, me avise. 🙂"].join("\n");
 }
 
+// blocos de dados a mais da ficha (18/11/2026): contato e endereço, mais dados pessoais, documentos e contrato e banco. Documentos e banco só para quem vê salário.
+var UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+var op = function(l){ return [["", "Escolha"]].concat(l.map(function(x){ return [x, x]; })); };
+var BLOCOS_DADOS = [
+  {id:"ct", t:"Contato e endereço", campos:[["E-mail", "email"], ["CEP", "cep"], ["Rua", "rua"], ["Número", "numero"], ["Complemento", "complemento"], ["Bairro", "bairro"], ["Estado", "uf", "sel", UFS], ["Contato de emergência", "emergNome"], ["Telefone de emergência", "emergFone"], ["Parentesco", "emergParentesco"]]},
+  {id:"cp", t:"Mais dados pessoais", campos:[["Estado civil", "estadoCivil", "sel", ["Solteira(o)", "Casada(o)", "União estável", "Divorciada(o)", "Viúva(o)"]], ["Escolaridade", "escolaridade", "sel", ["Fundamental incompleto", "Fundamental completo", "Médio incompleto", "Médio completo", "Superior incompleto", "Superior completo", "Pós-graduação"]], ["Nome da mãe", "nomeMae"], ["Naturalidade", "naturalidade"], ["Dependentes", "dependentes"]]},
+  {id:"dc", t:"Documentos", gate:true, campos:[["RG", "rg"], ["Órgão emissor", "rgOrgao"], ["PIS/NIS", "pis"], ["CTPS número", "ctpsNumero"], ["CTPS série", "ctpsSerie"], ["Título de eleitor", "tituloEleitor"], ["CNH", "cnh"], ["CNH categoria", "cnhCategoria"]]},
+  {id:"bk", t:"Contrato e banco", gate:true, campos:[["Tipo de contrato", "tipoContrato", "sel", ["CLT", "PJ", "Estágio", "Aprendiz", "Temporário"]], ["Jornada semanal (horas)", "jornadaSemanal"], ["CBO", "cbo"], ["Exame admissional (ASO)", "asoData", "date"], ["Vencimento do ASO", "asoVencimento", "date"], ["Banco", "banco"], ["Agência", "agencia"], ["Conta", "conta"], ["Tipo de conta", "tipoConta", "sel", ["Corrente", "Poupança", "Salário"]], ["Chave Pix", "pix"]]}
+];
+var CHAVES_DADOS = BLOCOS_DADOS.reduce(function(l, b){ return l.concat(b.campos.map(function(k){ return k[1]; })); }, []);
 function colabIni(x){
-  return {setor:x.setor||"", admissao:x.admissao||"", escalaId:x.escalaId, entrada:x.entrada||"", saida:x.saida||"", salario:x.salario ? String(x.salario).replace(".",",") : "", planoId:x.planoId||"", status:x.status, funcao:x.funcao||"", telefone:x.telefone||"", cidade:x.cidade||"", nascimento:x.nascimento||"", folha:x.folha||"", vt:x.vt||"", termoPeca:x.termoPeca ? "sim" : "nao", cpf:x.cpf||"", aviso:!!x.aviso,
-    fIni:(x.ferias||{}).ini||"", fFim:(x.ferias||{}).fim||"", afast:x.afastamento||"", dData:(x.deslig||{}).data||"", dTipo:(x.deslig||{}).tipo||"", dMotivo:(x.deslig||{}).motivo||"", dObs:(x.deslig||{}).obs||""};
+  var novos = {}; CHAVES_DADOS.forEach(function(k){ novos[k] = x[k]===undefined || x[k]===null ? "" : String(x[k]); });
+  return Object.assign(novos, {nome:x.nome||"", cnpj:x.cnpj||"", setor:x.setor||"", admissao:x.admissao||"", escalaId:x.escalaId, entrada:x.entrada||"", saida:x.saida||"", salario:x.salario ? String(x.salario).replace(".",",") : "", planoId:x.planoId||"", status:x.status, funcao:x.funcao||"", telefone:x.telefone||"", cidade:x.cidade||"", nascimento:x.nascimento||"", folha:x.folha||"", vt:x.vt||"", termoPeca:x.termoPeca ? "sim" : "nao", cpf:x.cpf||"", aviso:!!x.aviso,
+    fIni:(x.ferias||{}).ini||"", fFim:(x.ferias||{}).fim||"", afast:x.afastamento||"", dData:(x.deslig||{}).data||"", dTipo:(x.deslig||{}).tipo||"", dMotivo:(x.deslig||{}).motivo||"", dObs:(x.deslig||{}).obs||""});
 }
 function FormColab(p){
-  var c = p.c, x = p.x, cfg = c.rh.config, st = useState(colabIni(x)), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  var criar = !!p.criar, c = p.c, x = p.x, cfg = c.rh.config, st = useState(colabIni(x)), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var patchTudo = function(){ var sal = Number(String(f.salario||"0").replace(/\./g,"").replace(",","."))||0; return Object.assign({setor:f.setor, admissao:f.admissao, escalaId:f.escalaId, entrada:f.entrada, saida:f.saida, salario:sal, planoId:f.planoId, status:f.status, funcao:f.funcao, telefone:f.telefone, cidade:f.cidade, nascimento:f.nascimento, folha:f.folha, vt:f.vt, termoPeca:f.termoPeca==="sim", aviso:f.aviso}, c.veSalario ? {cpf:f.cpf.replace(/\D/g,"")} : {}, { ferias:f.status==="FERIAS" ? {ini:f.fIni, fim:f.fFim} : null, afastamento:f.afast, deslig:f.status==="DESLIGADO" ? {data:f.dData, tipo:f.dTipo, motivo:f.dMotivo, obs:f.dObs} : null}); };
+  var patchBase = patchTudo; patchTudo = function(){ var o = patchBase(); CHAVES_DADOS.forEach(function(k){ o[k] = String(f[k]||"").trim(); }); return o; };
   var KT = ["setor","admissao","escalaId","entrada","saida","planoId","status","funcao","aviso","ferias","afastamento","deslig"], KP = ["salario","telefone","cidade","nascimento","folha","vt","termoPeca","cpf"];
   var salvarBloco = function(chaves, fechaBloco){ var tudo = patchTudo(), patch = {}; chaves.forEach(function(k){ if(tudo[k]!==undefined) patch[k] = tudo[k]; }); acao(c, "colab_set", {id:x.id, patch:patch}); fechaBloco(false); };
   var cancelarBloco = function(camposF, fechaBloco){ var ini = colabIni(x), o = {}; camposF.forEach(function(k){ o[k] = ini[k]; }); set(o); fechaBloco(false); };
   var FT = ["setor","admissao","escalaId","entrada","saida","planoId","status","funcao","aviso","fIni","fFim","afast","dData","dTipo","dMotivo","dObs"], FP = ["salario","telefone","cidade","nascimento","folha","vt","termoPeca","cpf"];
+  var ebS = useState(function(){ var o = {}; if(x.novo) BLOCOS_DADOS.forEach(function(b){ o[b.id] = true; }); return o; }), eb = ebS[0], setEb = function(id, v){ var o = Object.assign({}, eb); o[id] = v; ebS[1](o); };
   var e1 = useState(!!x.novo), edT = e1[0], setEdT = e1[1], e2 = useState(!!x.novo), edP = e2[0], setEdP = e2[1], e3 = useState(false), edE = e3[0], setEdE = e3[1];
   var par = function(t2, v, cor){ return e(FichaPar,{key:t2, t:t2, v:(v===undefined || v===null || v==="") ? "—" : v, cor:cor}); };
   var botaoEd = function(flag, setFlag){ return !flag && e("button",{type:"button", onClick:function(){ setFlag(true); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Editar"); };
-  var rodBloco = function(chaves, camposF, setFlag){ return e("div",{key:"rod", className:"mt-1 flex justify-end gap-2 border-t border-white/20 pt-2"}, e(Botao,{onClick:function(){ cancelarBloco(camposF, setFlag); }}, "Cancelar"), e(Botao,{principal:true, onClick:function(){ salvarBloco(chaves, setFlag); }}, "Salvar")); };
+  var rodBloco = function(chaves, camposF, setFlag){ if(criar) return null; return e("div",{key:"rod", className:"mt-1 flex justify-end gap-2 border-t border-white/20 pt-2"}, e(Botao,{onClick:function(){ cancelarBloco(camposF, setFlag); }}, "Cancelar"), e(Botao,{principal:true, onClick:function(){ salvarBloco(chaves, setFlag); }}, "Salvar")); };
   var inp = function(k, tipo, cls){ return e("input",{type:tipo||"text", value:f[k], "aria-label":k, className:CAMPO+" "+(cls||""), onChange:function(ev){ var o = {}; o[k] = ev.target.value; set(o); }}); };
   var cp = function(rot, k, tipo){ return e("div",{key:k, className:"min-w-0"}, e(Rotulo,{t:rot}), inp(k, tipo)); };
   var sl = function(rot, k, opcoes){ return e(CampoSel,{key:k, t:rot, value:f[k], onChange:function(v){ var o = {}; o[k] = v; set(o); }, opcoes:opcoes}); };
@@ -197,8 +211,10 @@ function FormColab(p){
   var stNome = ((STATUS.find(function(k){ return k[0]===f.status; })||[])[1]||f.status)+(f.aviso ? " · aviso prévio" : "");
   var cabeca = e(FichaCaixa,{key:"cab", t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_"+String(x.id).replace(/-/g, ""), nome:x.nome, s:220})),
-    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:x.nome}), e(FichaPar,{t:"Setor", v:x.setor}), e(FichaPar,{t:"Função", v:x.funcao || "—"}), e(FichaPar,{t:"Empresa", v:rotuloCnpj(x.cnpj)}),
+    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:x.nome}), e(FichaPar,{t:"Setor", v:x.setor}), e(FichaPar,{t:"Função", v:x.funcao || "—"}), e(FichaPar,{t:"Empresa", v:e("span",{style:{color:CNPJ_COR[x.cnpj] || "#E2E8F0"}}, rotuloCnpj(x.cnpj))}),
       e(FichaPar,{t:"Admissão", v:x.admissao ? br(x.admissao) : "Faltando", cor:x.admissao ? "" : "text-amber-400"}), e(FichaPar,{t:"Situação", v:stNome, cor:f.status==="ATIVO" ? "text-emerald-400" : f.status==="DESLIGADO" ? "text-red-400" : "text-amber-400"}))));
+  var cabecaCriar = e(FichaCaixa,{key:"cab", t:"Nova colaboradora"}, e("div",{className:"flex flex-col gap-2"}, e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_novo", nome:f.nome || "Nova colaboradora", s:160})), cp("Nome completo", "nome"),
+    sl("Empresa (CNPJ)", "cnpj", [["", "A informar"]].concat(["34","46","59","67"].map(function(k){ return [k, rotuloCnpj(k)]; })))));
   var ativos42 = colaboradoresRh(c.s).filter(function(y){ return y.status!=="DESLIGADO"; }), eq42 = equipesDe(c.rh, ativos42), marc42 = (c.rh.escala42||{})[x.id]||"", k42 = eq42[x.id] || "P", q42 = EQUIPES[k42];
   var hIni = horario42(f.entrada||x.entrada), diasHoje = ((c.rh.config.escalas.find(function(y){ return y.id===f.escalaId; })||{}).dias)||[], nomeEsc = (c.rh.config.escalas.find(function(y){ return y.id===f.escalaId; })||{}).nome||"—";
   var DIAS_SEM = [[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"],[0,"Dom"]];
@@ -216,6 +232,12 @@ function FormColab(p){
     semana([["Hoje", linhaHoje, "#94A3B8"], ["Nova escala (sugestão)", linhaNova, q42.cor]]),
     e("span",{className:"text-[11px]"}, "Hoje: "+nomeEsc+" · Nova escala (sugestão): saída "+hIni.fim+" nos dias longos e "+hIni.fimCurto+" no dia curto")));
   var horaExtra = negoc ? e(FichaCaixa,{key:"he", t:"Hora extra negociada"}, e("span",{className:"text-[13px]"}, negoc)) : null;
+  var blocosDados = BLOCOS_DADOS.filter(function(b){ return !b.gate || c.veSalario; }).map(function(b){
+    var aberto = !!eb[b.id], fecha = function(v){ setEb(b.id, v); }, chaves = b.campos.map(function(k){ return k[1]; });
+    var ed = e("div",{className:"grid grid-cols-2 gap-2"}, b.campos.map(function(k){ return k[2]==="sel" ? sl(k[0], k[1], op(k[3])) : cp(k[0], k[1], k[2]==="date" ? "date" : undefined); }));
+    var ver = e("div",{className:"flex flex-col"}, b.campos.map(function(k){ var v = f[k[1]]; return par(k[0], k[2]==="date" && v ? br(v) : v); }));
+    return sec(b.t, aberto ? ed : ver, b.id, botaoEd(aberto, function(){ fecha(true); }), aberto ? rodBloco(chaves, chaves, fecha) : null);
+  });
   var trabalhoEd = sec("Trabalho", e("div",{className:"grid grid-cols-2 gap-2"},
       sl("Setor", "setor", setores), cp("Função", "funcao"), cp("Admissão", "admissao", "date"),
       sl("Situação", "status", STATUS.map(function(k){ return [k[0], k[1]]; })), cp("Entrada", "entrada", "time"), cp("Saída", "saida", "time"),
@@ -240,7 +262,12 @@ function FormColab(p){
     : f.status==="DESLIGADO" ? sec("Desligamento", e("div",{className:"flex flex-col"}, par("Data", f.dData ? br(f.dData) : ""), par("Tipo", f.dTipo), par("Motivo", f.dMotivo), par("Observação", f.dObs)), "x") : null;
   var extra = edT ? extraEd : extraVer;
   var rodape = [x.novo ? e(Botao,{key:"e", onClick:function(){ if(window.confirm("Excluir "+x.nome+"? Apaga também presenças, advertências e horas extras dela.")){ acao(c, "colab_del", {id:x.id}); p.fechar(); } }}, "Excluir cadastro") : null, e(Botao,{key:"f", principal:true, onClick:p.fechar}, "Fechar")];
-  return e(FichaMoldura,{t:"Ficha da colaboradora", fechar:p.fechar, esquerda:cabeca, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), escala42, e(JoiasNaFicha,{key:"jo", c:c, x:x}), horaExtra, extra], rodape:rodape});
+  if(criar){
+    var cadastrar = function(){ var tudo = patchTudo(); acao(c, "colab_add", {nome:f.nome, setor:f.setor, cnpj:f.cnpj, admissao:f.admissao, dados:tudo}); p.fechar(); };
+    return e(FichaMoldura,{t:"Nova colaboradora · ficha completa", fechar:p.fechar, esquerda:cabecaCriar, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), e("div",{key:"g2", className:"grid items-start gap-2 md:grid-cols-2"}, blocosDados)],
+      rodape:[e(Botao,{key:"c", onClick:p.fechar}, "Cancelar"), e(Botao,{key:"s", principal:true, desabilitado:!String(f.nome||"").trim() || !f.setor, onClick:cadastrar}, "Cadastrar")]});
+  }
+  return e(FichaMoldura,{t:"Ficha da colaboradora", fechar:p.fechar, esquerda:cabeca, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), e("div",{key:"g2", className:"grid items-start gap-2 md:grid-cols-2"}, blocosDados), escala42, e(JoiasNaFicha,{key:"jo", c:c, x:x}), horaExtra, extra], rodape:rodape});
 }
 // ───────────────── Horas extras como visão de Colaboradores ─────────────────
 // Uma pessoa por linha, uma coluna por dia (HH:MM extra do dia; no modo Anual, uma por mês), totais, custo e a negociação de cada pessoa. Clicar na linha abre o card com todos os lançamentos.
@@ -404,7 +431,7 @@ function E42Cobertura(pp){
 }
 
 function AbaRhColab(){
-  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fx = useState(function(){ return (typeof window!=="undefined" && window.__fichaAbrir) || ""; }), fichaId = fx[0], setFichaId = fx[1], vs = useState(function(){ if(typeof window==="undefined") return "cad"; return window.__fichaAbrir ? "exp" : (window.__visaoRh || "cad"); }), visao = vs[0], setVisao = vs[1], ad = useState(""), abrirAdv = ad[0], setAbrirAdv = ad[1], ap = useState(""), advDe = ap[0], setAdvDe = ap[1], he0 = new Date(), hs = useState({cnpj:"", ano:he0.getFullYear(), mes:he0.getMonth()+1, anual:false}), heEsc = hs[0], setHeEsc = function(o){ hs[1](Object.assign({}, heEsc, o)); }, hp = useState(""), heDe = hp[0], setHeDe = hp[1], ha = useState(""), heAbrir = ha[0], setHeAbrir = ha[1], nd = useState(""), negDe = nd[0], setNegDe = nd[1], na = useState(""), negAbrir = na[0], setNegAbrir = na[1], ea = useState(""), e42Abrir = ea[0], setE42Abrir = ea[1], cpz = useState(false), copiou = cpz[0], setCopiou = cpz[1], nt = useState(function(){ return (typeof window!=="undefined" && window.__negTipo) || "he"; }), negTipo = nt[0], setNegTipo = nt[1], js = useState("pessoa"), joiasSub = js[0], setJoiasSub = js[1], jd = useState(""), joiasDe = jd[0], setJoiasDe = jd[1], ja = useState(""), joiasAbrir = ja[0], setJoiasAbrir = ja[1], njd = useState(""), negJoiasDe = njd[0], setNegJoiasDe = njd[1], nja = useState(""), negJoiasAbrir = nja[0], setNegJoiasAbrir = nja[1], cjp = useState(""), copiadoJ = cjp[0], setCopiadoJ = cjp[1], ss = useState({ano:he0.getFullYear(), mes:he0.getMonth()+1}), salEsc = ss[0], setSalEsc = function(o){ ss[1](Object.assign({}, salEsc, o)); }, sd = useState(""), salDe = sd[0], setSalDe = sd[1], sb = useState("rem"), salSub = sb[0], setSalSub = sb[1], si = useState(false), salImp = si[0], setSalImp = si[1];
+  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fx = useState(function(){ return (typeof window!=="undefined" && window.__fichaAbrir) || ""; }), fichaId = fx[0], setFichaId = fx[1], vs = useState(function(){ if(typeof window==="undefined") return "cad"; return window.__fichaAbrir ? "exp" : (window.__visaoRh || "cad"); }), visao = vs[0], setVisao = vs[1], ad = useState(""), abrirAdv = ad[0], setAbrirAdv = ad[1], ap = useState(""), advDe = ap[0], setAdvDe = ap[1], he0 = new Date(), hs = useState({cnpj:"", ano:he0.getFullYear(), mes:he0.getMonth()+1, anual:false}), heEsc = hs[0], setHeEsc = function(o){ hs[1](Object.assign({}, heEsc, o)); }, hp = useState(""), heDe = hp[0], setHeDe = hp[1], ha = useState(""), heAbrir = ha[0], setHeAbrir = ha[1], nd = useState(""), negDe = nd[0], setNegDe = nd[1], na = useState(""), negAbrir = na[0], setNegAbrir = na[1], ea = useState(""), e42Abrir = ea[0], setE42Abrir = ea[1], cpz = useState(false), copiou = cpz[0], setCopiou = cpz[1], nt = useState(function(){ return (typeof window!=="undefined" && window.__negTipo) || "he"; }), negTipo = nt[0], setNegTipo = nt[1], js = useState("pessoa"), joiasSub = js[0], setJoiasSub = js[1], jd = useState(""), joiasDe = jd[0], setJoiasDe = jd[1], ja = useState(""), joiasAbrir = ja[0], setJoiasAbrir = ja[1], njd = useState(""), negJoiasDe = njd[0], setNegJoiasDe = njd[1], nja = useState(""), negJoiasAbrir = nja[0], setNegJoiasAbrir = nja[1], cjp = useState(""), copiadoJ = cjp[0], setCopiadoJ = cjp[1], ss = useState({ano:he0.getFullYear(), mes:he0.getMonth()+1}), salEsc = ss[0], setSalEsc = function(o){ ss[1](Object.assign({}, salEsc, o)); }, sd = useState(""), salDe = sd[0], setSalDe = sd[1], sb = useState("rem"), salSub = sb[0], setSalSub = sb[1], si = useState(false), salImp = si[0], setSalImp = si[1], ff = useState(false), formFunc = ff[0], setFormFunc = ff[1];
   React.useEffect(function(){ if(typeof window!=="undefined"){ window.__fichaAbrir = null; window.__visaoRh = null; window.__negTipo = null; } }, []);
   // a tabela vai até o fim da tela: altura = tela - posição da tabela (mede de novo ao mudar de visão e ao redimensionar)
   var medidor = React.useRef(null), al = useState(""), altura = al[0], setAltura = al[1];
@@ -413,7 +440,7 @@ function AbaRhColab(){
   var stLb = function(k){ return (STATUS.find(function(y){ return y[0]===k; })||[])[1]||k; };
   var eqCad = equipesDe(c.rh, todos.filter(function(y){ return y.status!=="DESLIGADO"; }));
   var linhas = todos.filter(function(x){ return aba==="todos" || (aba==="ativos" ? x.status!=="DESLIGADO" : x.status==="DESLIGADO"); }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){
-    return {id:x.id, nome:x.nome, setor:x.setor, funcao:x.funcao||"—", empresa:rotuloCnpj(x.cnpj), sit:stLb(x.status)+(x.aviso ? " · aviso prévio" : ""), ok:x.status==="ATIVO" && !x.aviso, desl:x.status==="DESLIGADO",
+    return {id:x.id, nome:x.nome, setor:x.setor, funcao:x.funcao||"—", empresa:rotuloCnpj(x.cnpj), cnpj:x.cnpj, sit:stLb(x.status)+(x.aviso ? " · aviso prévio" : ""), ok:x.status==="ATIVO" && !x.aviso, desl:x.status==="DESLIGADO",
       admissao:x.admissao||"", escala:esc(x.escalaId), entrada:(x.entrada||"")+(x.saida ? " às "+x.saida : ""), eq42:x.status==="DESLIGADO" ? "—" : EQUIPES[eqCad[x.id]||"P"].nome, h42:x.status==="DESLIGADO" ? "—" : horario42Texto(eqCad[x.id]||"P", x.entrada), salario:x.salario||0}; });
   var anoAdv = new Date().getFullYear(), listaAdv = advertenciasComSeq(c.rh), resAdv = resumoAdvertencias(c.rh, anoAdv), tiposAdv = c.rh.config.tiposAdv || [];
   var ultima = {}; listaAdv.forEach(function(x){ if(!ultima[x.colabId] || x.data>ultima[x.colabId].data) ultima[x.colabId] = x; });
@@ -440,19 +467,14 @@ function AbaRhColab(){
     {k:"acoes", t:"Ações", render:function(v, l){ return e("span",{className:"inline-flex gap-2", onClick:function(ev){ ev.stopPropagation(); }}, e(Botao,{onClick:function(){ setFichaId(l.id); }}, "Ficha"), e(Botao,{onClick:function(){ if(window.confirm("Efetivar "+l.nome+" hoje?")) acao(c, "efetivar", {id:l.id}); }}, "Efetivar")); }}];
   var colabFicha = fichaId ? todos.find(function(x){ return x.id===fichaId; }) : null;
   if(colabFicha) return e("div",{className:"flex flex-col gap-2"}, e(FichaExperiencia,{c:c, colab:colabFicha, voltar:function(){ setFichaId(""); }, agir:function(op, extra){ acao(c, op, extra); }}));
-  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"funcao", t:"Função"}, {k:"empresa", t:"Empresa"},
+  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"funcao", t:"Função"}, {k:"empresa", t:"Empresa", render:function(v, l){ return e("span",{style:{color:CNPJ_COR[l.cnpj] || "#E2E8F0"}}, v); }},
     {k:"sit", t:"Situação", cor:function(l){ return l.ok ? "text-emerald-400" : l.desl ? "text-red-400" : "text-amber-400"; }},
     {k:"admissao", t:"Admissão", fmt:function(v){ return v ? br(v) : "Faltando"; }, cor:function(l){ return l.admissao ? "" : "text-amber-400"; }},
     {k:"escala", t:"Escala"}, {k:"entrada", t:"Horário atual"}, {k:"eq42", t:"Equipe 42h (sugestão)"}, {k:"h42", t:"Horário 42h (sugestão)"}].concat(c.veSalario ? [{k:"salario", t:"Salário", fmt:function(v){ return v ? BK(v) : "—"; }}] : []);
   var editando = editId && todos.find(function(x){ return x.id===editId; });
   var opSet = function(k, v){ setNovo(Object.assign({}, novo, (function(){var o={};o[k]=v;return o;})())); };
   return e("div",{className:"-mx-4 -mt-5 flex flex-col gap-2.5 md:-mx-5"},
-    visao==="cad" && novo && e(Bloco,{t:"Nova colaboradora"}, e("div",{className:"grid grid-cols-1 items-end gap-2 md:grid-cols-5"},
-      e(CampoTexto,{t:"Nome completo", id:"nNome", value:novo.nome, onChange:function(v){ opSet("nome", v); }}),
-      e(CampoSel,{t:"Setor", id:"nSetor", value:novo.setor, onChange:function(v){ opSet("setor", v); }, opcoes:FUNCIONARIOS_POR_SETOR.filter(function(s2){ return s2[0]!=="Sócios e família" && s2[0].indexOf("PJ")!==0; }).map(function(s2){ return [s2[0], s2[0]]; })}),
-      e(CampoSel,{t:"Empresa", id:"nCnpj", value:novo.cnpj, onChange:function(v){ opSet("cnpj", v); }, opcoes:[["", "A informar"]].concat(["34","46","59","67"].map(function(k){ return [k, rotuloCnpj(k)]; }))}),
-      e(CampoTexto,{t:"Admissão", id:"nAdm", tipo:"date", value:novo.admissao, onChange:function(v){ opSet("admissao", v); }}),
-      e("div",{className:"flex gap-2"}, e(Botao,{principal:true, onClick:function(){ if(novo.nome.trim()){ acao(c, "colab_add", novo); setNovo(null); } }}, "Cadastrar"), e(Botao,{onClick:function(){ setNovo(null); }}, "Cancelar")))),
+    visao==="cad" && novo && e(FormColab,{key:"novo", c:c, criar:true, x:{id:"__novo", nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:"", status:"ATIVO", entrada:c.rh.config.entradaPadrao, escalaId:c.rh.config.escalaPadrao, novo:true}, fechar:function(){ setNovo(null); }}),
     e(BlocoPainel,{titulo:"Cadastro de colaboradores", compacto:true},
       e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1"},
         e("select",{value:visao, "aria-label":"Visão", onChange:function(ev){ setVisao(ev.target.value); }, className:SEL_AZUL+" w-32"}, e("option",{value:"cad", className:"bg-card"}, "Cadastro"), e("option",{value:"adv", className:"bg-card"}, "Advertências"), e("option",{value:"exp", className:"bg-card"}, "Experiência"), e("option",{value:"he", className:"bg-card"}, "Horas extras"), c.veSalario && e("option",{value:"neg", className:"bg-card"}, "Negociações"), e("option",{value:"e42", className:"bg-card"}, "Escala 42h (sugestão)"), c.veSalario && e("option",{value:"sal", className:"bg-card"}, "Salário e bônus")),
@@ -476,9 +498,11 @@ function AbaRhColab(){
         emJoias && e(BtnAzul,{onClick:function(){ setNegJoiasAbrir("incluir"); }}, "Incluir pessoa"),
         emJoias && e(BtnAzul,{principal:true, onClick:function(){ setJoiasAbrir("novo"); }}, "Novo pagamento"),
         visao==="adv" && e(BtnAzul,{principal:true, onClick:function(){ setAbrirAdv("nova"); }}, "Nova advertência"),
+        visao==="cad" && c.veSalario && e(BtnAzul,{onClick:function(){ setFormFunc(true); }}, "Formulário dos funcionários"),
         visao==="cad" && e(BtnAzul,{principal:true, onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "Nova colaboradora")),
       visao==="exp" && semPlano>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, semPlano+" colaboradoras ainda sem plano de experiência ou sem data de admissão no Cadastro; elas não aparecem aqui.")),
       visao==="e42" && e42Abrir==="cob" && e(E42Cobertura,{c:c, fechar:function(){ setE42Abrir(""); }}),
+      visao==="cad" && c.veSalario && formFunc && e(FormularioFuncJanela,{c:c, fechar:function(){ setFormFunc(false); }}),
       visao==="sal" && c.veSalario && salImp && e(SalImportar,{key:salEsc.ano+"-"+salEsc.mes, c:c, esc:salEsc, fechar:function(){ setSalImp(false); }}),
       visao==="sal" && c.veSalario && e(SalJanelas,{c:c, esc:salEsc, pessoa:salDe, fecharPessoa:function(){ setSalDe(""); }}),
       emJoias && e(JoiasJanelas,{c:c, pessoa:joiasDe, fecharPessoa:function(){ setJoiasDe(""); setJoiasAbrir(""); }, abrir:joiasAbrir, setAbrir:setJoiasAbrir}),
@@ -602,4 +626,4 @@ function AbaRhJoias(){
   if(typeof window!=="undefined"){ window.__visaoRh = "neg"; window.__negTipo = "joias"; }
   return e(AbaRhColab);
 }
-export { AbaRhJoias, AbaRhEscala42, AbaRhVisao, AbaRhPresenca, AbaRhRelatorio, AbaRhColab, AbaRhAdv, AbaRhExp, AbaRhHoras, AbaRhNegoc, AbaRhConfig };
+export { FormColab, AbaRhJoias, AbaRhEscala42, AbaRhVisao, AbaRhPresenca, AbaRhRelatorio, AbaRhColab, AbaRhAdv, AbaRhExp, AbaRhHoras, AbaRhNegoc, AbaRhConfig };

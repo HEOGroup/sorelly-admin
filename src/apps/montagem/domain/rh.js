@@ -72,7 +72,9 @@ function colaboradoresRh(s){
   return base.concat(saiu, novos).map(function(b){ var o = rh.colab[b.id]||{}, l = LOCAL_POR_ID[b.id] ? dadosLocal(LOCAL_POR_ID[b.id]) : {}, esc = cfg.escalas.find(function(x){ return x.id===(o.escalaId||l.escalaId||cfg.escalaPadrao); }) || cfg.escalas[0];
     return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {setor:o.setor||b.setor, escalaId:esc.id, escalaDias:esc.dias}); });
 }
-var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
+// número completo de cada CNPJ e a cor da LETRA (só a cor muda, sem negrito; mesmas cores do Contas a pagar), 18/11/2026
+var CNPJ_NUMERO = {"34":"34.753.252/0001-03", "46":"46.873.285/0001-76", "59":"59.146.403/0001-96", "67":"67.702.461/0001-87"}, CNPJ_COR = {"34":"#D8C48F", "46":"#DBAAC3", "59":"#92CBC2", "67":"#9FBBE3"};
+var rotuloCnpj = function(c){ return c ? (CNPJ_NUMERO[c] || c) : "A informar"; };
 
 // ---------- presença lida do admin antigo (arquivo local rh-atualizacao.local.js, gerado todo dia 3h30 pela tarefa agendada) ----------
 // formato: {stamp, presenca:{"AAAA-MM-DD":{"NOME COMPLETO":"P" | "P|08:43" | "F" ...}}}. O nome do admin é casado com o do sistema (igual, ou 60% das palavras em comum).
@@ -279,7 +281,9 @@ function rhReduz(s, a){
       if(st==="DESLIGADO" && cs.status!=="DESLIGADO") pt.desligPor = por;
       rh.colab[a.id] = Object.assign({}, rh.colab[a.id], pt); return ok("Cadastro de "+cs.nome+" salvo"); }
     case "colab_add": { var nm = String(a.nome||"").trim(); if(!nm || !a.setor) return recusa("Informe nome e setor."); var id = novoId("n-");
-      rh.novos.push({id:id, nome:nm, setor:a.setor, cnpj:a.cnpj||""}); rh.colab[id] = {admissao:a.admissao||""}; return ok(nm+" cadastrada"); }
+      rh.novos.push({id:id, nome:nm, setor:a.setor, cnpj:a.cnpj||""}); rh.colab[id] = {admissao:a.admissao||""};
+      var dd = a.dados || {}; ["admissao","escalaId","entrada","saida","salario","planoId","funcao","telefone","cidade","nascimento","folha","vt","termoPeca","cpf","aviso","email","cep","rua","numero","complemento","bairro","uf","emergNome","emergFone","emergParentesco","estadoCivil","escolaridade","nomeMae","naturalidade","dependentes","rg","rgOrgao","pis","ctpsNumero","ctpsSerie","tituloEleitor","cnh","cnhCategoria","tipoContrato","jornadaSemanal","cbo","asoData","asoVencimento","banco","agencia","conta","tipoConta","pix"].forEach(function(k){ if(dd[k]!==undefined && dd[k]!==null && dd[k]!=="") rh.colab[id][k] = dd[k]; });   // ficha completa: tudo de uma vez (18/11/2026)
+      return ok(nm+" cadastrada"); }
     case "colab_del": { if(!rh.novos.some(function(n){ return n.id===a.id; })) return recusa("Só se exclui quem foi cadastrado aqui. Para quem saiu, use Desligado."); rh.novos = rh.novos.filter(function(n){ return n.id!==a.id; }); delete rh.colab[a.id];
       Object.keys(rh.presenca).forEach(function(d){ delete rh.presenca[d][a.id]; }); rh.adv = rh.adv.filter(function(x){ return x.colabId!==a.id; }); rh.horas = rh.horas.filter(function(x){ return x.colabId!==a.id; }); return ok("Colaboradora excluída"); }
     case "pres_set": { rh.presenca[a.data] = rh.presenca[a.data]||{}; var pr = rh.presenca[a.data][a.id] || {}; if(a.codigo) pr.c = a.codigo; else delete pr.c;
@@ -423,6 +427,6 @@ function presencaChat(s, nome, hoje){
   return {dias:dias, mes:mes};
 }
 
-export { relatorioAdvertencias, bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
+export { CNPJ_NUMERO, CNPJ_COR, relatorioAdvertencias, bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
   advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, experienciaAlertas, ocorrenciasDaPresenca, rhReduz };

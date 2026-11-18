@@ -5,6 +5,14 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 
 
+## 18/11/2026 (RH › Salário e bônus, confirmações do Marcus)
+- **Sábado conta como dia útil** no 5º dia útil (confirmado). Em Salário e bônus: adiantamento no dia 20 e salário no 5º dia útil.
+- O adiantamento **não é por fora**: é pago normal, de cada CNPJ, e todos os funcionários são registrados. No Financeiro (DevMaster) ele está na natureza **3.01.01.11 Adiantamento** (paga por volta do dia 20, às vezes dia 16 a 19 por fim de semana). O botão Puxar do Financeiro lê: Salário (3.01.01.02), Adiantamento (3.01.01.11), Bônus (3.01.01.12 e .21), Vale alimentação (3.01.01.01) e Vale transporte (3.01.01.05).
+- **Formulário dos funcionários (18/11/2026):** um LINK PRÓPRIO por pessoa (`/meus-dados/<código>`, público, sem login), conferido pelo RH e pela Maria antes de aplicar no cadastro (a resposta nunca muda o cadastro sozinha). Só pergunta o que a funcionária sabe; CBO, PIS/NIS, tipo de contrato, jornada e ASO o RH preenche. Tabela `sorelly.ficha_funcionario` (criada pelo próprio servidor), API `/api/meus-dados` (restrita a diretoria e RH). A Maria manda o link no WhatsApp particular de cada pessoa (a janela mostra o telefone e a mensagem pronta de cada pessoa, cada um com botão de copiar). Falta: texto de consentimento revisado pelo contador/advogado e o sistema publicado para as funcionárias abrirem.
+- **Mais dados no cadastro (pedido do Marcus):** blocos Contato e endereço, Mais dados pessoais, Documentos e Contrato e banco (esses dois só para quem vê salário). Lista de campos a revisar com o Marcus e a Maria.
+- **Nova colaboradora abre a ficha completa** (Trabalho e Pessoal abertos, nome e empresa), não um formulário curto; grava tudo de uma vez em Cadastrar.
+- Coluna **Empresa** do RH: número completo do CNPJ (34.753.252/0001-03, 46.873.285/0001-76, 59.146.403/0001-96, 67.702.461/0001-87) sem a palavra CNPJ, só a letra colorida e sem negrito.
+
 ## 17/11/2026 (RH › Segurança do trabalho: plano de ação da NR-1)
 - **Pedido:** a Maria (RH) alinhou com o técnico de Segurança do Trabalho o plano da NR-1 (PGR e PCMSO, EPIs, canal de denúncias, pesquisa de clima, ordem de serviço, CIPA, prevenção de incêndios, ergonomia). **Marcus escolheu o jeito B:** tela de acompanhamento no RH, uma linha por ação, com responsável, prazo, situação, documentos anexados e histórico. Só RH e diretoria veem. Visual no padrão azul do Financeiro.
 - **Prazos:** PGR e PCMSO sexta 20/11; canal de denúncias 30/11; pesquisa de clima 31/12; **dezembro (18/12, sugestão) para EPIs, ordem de serviço, CIPA e incêndios** (Marcus aprovou prazo de dezembro); ergonomia sem prazo.

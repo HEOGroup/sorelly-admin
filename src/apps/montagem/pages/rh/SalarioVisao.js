@@ -11,7 +11,7 @@ import { Janela } from "@/apps/montagem/components/padrao";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { chamar } from "@/apps/montagem/lib/api";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { DIAS_SEMANA, MESES, br, colaboradoresRh, dataIso, diaSem, hojeIso, ultimoDia } from "@/apps/montagem/domain/rh";
+import { CNPJ_COR, DIAS_SEMANA, MESES, br, colaboradoresRh, dataIso, diaSem, hojeIso, rotuloCnpj, ultimoDia } from "@/apps/montagem/domain/rh";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { CampoDin, CampoTexto } from "@/apps/montagem/pages/trafego/comum";
 import { e, useState } from "@/shared/react";
@@ -96,7 +96,7 @@ function SalCard(pp){
       e("div",{className:"flex flex-col"}, e("span",{className:"pb-1 text-[11px] font-semibold uppercase"}, "Salário (5º dia útil)"), e(FichaPar,{t:"Previsto para", v:dataTxt(datas.salario)}), e(FichaPar,{t:"Valor pago", v:num(pag.salValor) ? BK(num(pag.salValor)) : "—"}), e(FichaPar,{t:"Pago em", v:pag.salData ? dataTxt(pag.salData) : "—", cor:atraso(datas.salario, saOk)}), e(FichaPar,{t:"Situação", v:saOk ? "Pago" : (datas.salario && datas.salario<hoje ? "Atrasado" : "Pendente"), cor:saOk ? "text-emerald-400" : atraso(datas.salario, saOk)})));
   var todos = c.rh.pagamentos || {}, hist = Object.keys(todos).filter(function(m){ return todos[m] && todos[m][x.id]; }).sort().reverse().map(function(m){ var o = todos[m][x.id], t2 = totalDe(sal, o); return {id:m, mes:MESES[Number(m.slice(5, 7))-1]+" de "+m.slice(0, 4), total:t2, advValor:num(o.advValor), advData:o.advData || "", salValor:num(o.salValor), salData:o.salData || ""}; });
   var esquerda = e(FichaCaixa,{key:"p", t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"}, e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_"+String(x.id).replace(/-/g, ""), nome:x.nome, s:160})),
-    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:x.nome}), e(FichaPar,{t:"Setor", v:x.setor}), e(FichaPar,{t:"Função", v:x.funcao || "—"}), e(FichaPar,{t:"Empresa", v:"CNPJ "+(x.cnpj || "a informar")}))));
+    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:x.nome}), e(FichaPar,{t:"Setor", v:x.setor}), e(FichaPar,{t:"Função", v:x.funcao || "—"}), e(FichaPar,{t:"Empresa", v:e("span",{style:{color:CNPJ_COR[x.cnpj] || "#E2E8F0"}}, rotuloCnpj(x.cnpj))}))));
   var direita = [e(FichaCaixa,{key:"r", t:"Remuneração · "+titulo, dir:botaoEd(edR, function(){ setD(Object.assign({}, val)); })}, corpoR),
     e(FichaCaixa,{key:"pg", t:"Pagamentos de "+titulo+" · adiantamento no dia 20 e salário no 5º dia útil", dir:botaoEd(edP, function(){ setP(Object.assign({}, pag)); })}, corpoP),
     e(FichaCaixa,{key:"h", t:"Meses lançados"}, e(TabelaPlanilha,{cols:[{k:"mes", t:"Mês"}, {k:"total", t:"Total do mês", fmt:din}, {k:"advValor", t:"Adiantamento pago", fmt:din}, {k:"advData", t:"Pago em", fmt:dataTxt}, {k:"salValor", t:"Salário pago", fmt:din}, {k:"salData", t:"Pago em", fmt:dataTxt}],
@@ -104,18 +104,19 @@ function SalCard(pp){
   return e(FichaMoldura,{t:"Salário e bônus · "+x.nome, largo:true, fechar:pp.fechar, esquerda:esquerda, direita:direita, rodape:[e(Botao,{key:"f", principal:true, onClick:pp.fechar}, "Fechar")]});
 }
 // ---------- Puxar do Financeiro: lê as contas PAGAS do mês (DevMaster, só leitura) e mostra a prévia antes de gravar ----------
-var NAT = {"3.01.01.02":"sal", "3.01.01.12":"bonus", "3.01.01.21":"bonus", "3.01.01.01":"benef", "3.01.01.05":"benef"};
-var NAT_NOME = {sal:"Salário e adiantamento", bonus:"Bônus", benef:"Benefícios (vale alimentação e transporte)"};
+var NAT = {"3.01.01.02":"sal", "3.01.01.11":"adiant", "3.01.01.12":"bonus", "3.01.01.21":"bonus", "3.01.01.01":"benef", "3.01.01.05":"benef"};
+var NAT_NOME = {sal:"Salário (5º dia útil)", adiant:"Adiantamento (dia 20)", bonus:"Bônus", benef:"Benefícios (vale alimentação e transporte)"};
 var norm = function(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim(); };
 function planoDoMes(c, esc, pagas){
-  var mes = chaveMes(esc), colabs = colaboradoresRh(c.s).map(function(x){ return {id:x.id, nome:x.nome, n:norm(x.nome)}; }), por = {}, sem = [], total = {sal:0, bonus:0, benef:0};
+  var mes = chaveMes(esc), colabs = colaboradoresRh(c.s).map(function(x){ return {id:x.id, nome:x.nome, n:norm(x.nome)}; }), por = {}, sem = [], total = {sal:0, adiant:0, bonus:0, benef:0};
   pagas.forEach(function(p){ var tipo = NAT[String(p[1])]; if(!tipo || String(p[8]).slice(0, 7)!==mes) return;
     var nome = norm(p[7]).replace(/^(pix|ted|dinheiro)\s+/, ""), valor = Number(p[10]) || 0, dia = String(p[8]).slice(0, 10);
     var achou = colabs.filter(function(x){ return x.n===nome; }); if(!achou.length) achou = colabs.filter(function(x){ return nome.length>6 && (x.n.indexOf(nome)>=0 || nome.indexOf(x.n)>=0); });
     if(achou.length!==1){ sem.push({nome:String(p[7]), tipo:tipo, valor:valor}); return; }
     var o = por[achou[0].id] = por[achou[0].id] || {id:achou[0].id, nome:achou[0].nome, advValor:0, advData:"", salValor:0, salData:"", bonus:0, beneficios:0};
     total[tipo] += valor;
-    if(tipo==="sal"){ if(Number(dia.slice(8, 10))<=15){ o.salValor += valor; if(dia>o.salData) o.salData = dia; } else { o.advValor += valor; if(dia>o.advData) o.advData = dia; } }
+    if(tipo==="sal"){ o.salValor += valor; if(dia>o.salData) o.salData = dia; }
+    else if(tipo==="adiant"){ o.advValor += valor; if(dia>o.advData) o.advData = dia; }
     else if(tipo==="bonus") o.bonus += valor; else o.beneficios += valor; });
   return {pessoas:Object.keys(por).map(function(k){ return por[k]; }).sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); }), sem:sem, total:total, mes:mes};
 }
@@ -128,12 +129,12 @@ function SalImportar(pp){
   var meses = mesesAte(esc, todos), planos = s.pagas ? meses.map(function(m){ return planoDoMes(c, m, s.pagas); }) : [], titulo = todos ? "janeiro a "+MESES[esc.mes-1]+" de "+esc.ano : MESES[esc.mes-1]+" de "+esc.ano;
   var soma = function(f){ return planos.reduce(function(t2, p){ return t2+f(p); }, 0); }, totalPessoas = soma(function(p){ return p.pessoas.length; }), totalSem = soma(function(p){ return p.sem.length; }), valorSem = soma(function(p){ return p.sem.reduce(function(t2, x){ return t2+x.valor; }, 0); });
   var gravar = function(){ var itens = []; planos.forEach(function(p){ p.pessoas.forEach(function(o){ var patch = patchDe(o); if(Object.keys(patch).length) itens.push({mes:p.mes, id:o.id, patch:patch}); }); }); rhOp(c, "pag_lote", {itens:itens}); setGravado(true); };
-  var linhas = planos.map(function(p, i){ return {id:p.mes, mes:MESES[meses[i].mes-1]+" de "+meses[i].ano, pessoas:p.pessoas.length, sal:p.total.sal, bonus:p.total.bonus, benef:p.total.benef, sem:p.sem.length}; });
+  var linhas = planos.map(function(p, i){ return {id:p.mes, mes:MESES[meses[i].mes-1]+" de "+meses[i].ano, pessoas:p.pessoas.length, sal:p.total.sal, adiant:p.total.adiant, bonus:p.total.bonus, benef:p.total.benef, sem:p.sem.length}; });
   var corpo = s.fase==="lendo" ? e("span",{className:"text-[13px]"}, "Lendo as contas pagas no Financeiro…")
     : s.fase==="erro" ? e("div",{className:"flex flex-col gap-1 text-[13px]"}, e("span",null, "Não consegui ler o Financeiro."), e("span",{className:"text-amber-400"}, s.erro), e("span",null, "Só a diretoria e o Financeiro leem as contas pagas."))
     : e("div",{className:"flex flex-col gap-2"}, e("div",{className:"flex flex-wrap items-center gap-2"}, e("span",{className:"text-[11px] font-semibold uppercase"}, "Período"), e(SegAzulJ,{opcoes:[["mes", MESES[esc.mes-1]+" de "+esc.ano], ["ano", "Janeiro a "+MESES[esc.mes-1]+" de "+esc.ano]], atual:todos ? "ano" : "mes", onMudar:function(v){ setTodos(v==="ano"); setGravado(false); }})),
-      e("span",{className:"text-[13px]"}, "Contas pagas de "+titulo+" encontradas no Financeiro. Salário: baixas até o dia 15 entram como salário do 5º dia útil; depois do dia 15, como adiantamento. Ao gravar, o valor pago, o dia, o bônus e os benefícios de cada pessoa nesses meses são substituídos pelos do Financeiro. Comissão, adicionais, descontos e observação ficam como estão."),
-      e(TabelaPlanilha,{cols:[{k:"mes", t:"Mês"}, {k:"pessoas", t:"Pessoas"}, {k:"sal", t:"Salário e adiantamento", fmt:din}, {k:"bonus", t:"Bônus", fmt:din}, {k:"benef", t:"Benefícios", fmt:din}, {k:"sem", t:"Sem pessoa no cadastro"}], linhas:linhas, chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, semMao:true, limite:24, vazio:"Nada encontrado."}),
+      e("span",{className:"text-[13px]"}, "Contas pagas de "+titulo+" encontradas no Financeiro. A natureza Salário entra como salário do 5º dia útil e a natureza Adiantamento, como adiantamento do dia 20. Ao gravar, o valor pago, o dia, o bônus e os benefícios de cada pessoa nesses meses são substituídos pelos do Financeiro. Comissão, adicionais, descontos e observação ficam como estão."),
+      e(TabelaPlanilha,{cols:[{k:"mes", t:"Mês"}, {k:"pessoas", t:"Pessoas"}, {k:"sal", t:"Salário (5º dia útil)", fmt:din}, {k:"adiant", t:"Adiantamento (dia 20)", fmt:din}, {k:"bonus", t:"Bônus", fmt:din}, {k:"benef", t:"Benefícios", fmt:din}, {k:"sem", t:"Sem pessoa no cadastro"}], linhas:linhas, chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, semMao:true, limite:24, vazio:"Nada encontrado."}),
       e(FichaPar,{t:"Lançamentos de pessoas a gravar", v:String(totalPessoas)}), e(FichaPar,{t:"Pagamentos sem pessoa correspondente no cadastro (não entram)", v:totalSem+" · "+BK(valorSem), cor:totalSem ? "text-amber-400" : ""}),
       gravado && e("span",{className:"text-[13px] text-emerald-400"}, "Gravado: "+titulo+"."));
   return e(Janela,{t:"Puxar do Financeiro · "+titulo, sub:"Leitura das contas pagas. Nada muda antes de você gravar.", fechar:pp.fechar, colunas:[e("div",{key:"corpo"}, corpo)],
