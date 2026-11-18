@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.13", data:"2026-11-18", titulo:"Calculadora de acertos: 5 contas Pix novas", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits › Calculadora de acertos", txt:"Entraram na lista do Pix as contas que estavam em Chaves Pix dos bancos e faltavam no acerto: PIX - ITAÚ - 34, PIX - CAIXA - 34, PIX - UNICRED - 34, PIX - BRADESCO - 46 e PIX - BRADESCO - SERENITY - 59. No Consolidado, cada uma cai no grupo do seu CNPJ."},
+  {tipo:"melhoria", area:"Representantes & Kits › Calculadora de acertos", txt:"Cartão de crédito ganhou a conta CRÉDITO - SICREDI - AXIS - 67 (CNPJ 67 · Axis)."},
+ ]},
  {v:"0.21.12", data:"2026-11-18", titulo:"Fila de montagem e Preferências do kit migradas do admin antigo", itens:[
   {tipo:"novo", area:"Representantes & Kits › Montagem › Fila de montagem", txt:"Tela nova, trazida do admin antigo: todas as revendedoras do app com o resumo das preferências do kit, pendentes primeiro (Já montado = montagem concluída depois da última atualização das preferências). Em cima, os kits das listagens abertas (montando agora e os próximos). Clicar na revendedora abre a área de montar: preferências bloco a bloco lidas na hora do app, OK por bloco, modo compacto, Iniciar montagem com cronômetro, lembrete depois de 2 minutos e Concluir montagem (quem montou, valor do kit, início, término e se usou as preferências). Embaixo, os últimos registros e o botão Análise geral."},
   {tipo:"novo", area:"Representantes & Kits › Acompanhamento › Produtividade da montagem", txt:"Bônus por produtividade da equipe (manhã 8h às 12h e tarde 13h às 17h, kit normal e especial, meta, base e extra por kit, fator da avaliação das representantes), Regras do bônus e Equipe da montagem, com os mesmos números do admin antigo."},

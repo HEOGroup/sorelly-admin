@@ -52,13 +52,15 @@ var CONTAS_PAGAMENTO = {
     "PIX CHARME","PIX - SICREDI - SHOPPING 46","PIX ELLOS BRUTOS","PIX - CAIXA ECONÔMICA - ANAMARIA","PIX ART ELLO",
     "PIX - SANTANDER - ANAMARIA","PIX - MADEIRA COR","PIX - LUCAS - PF","PIX PRESTADORES DE SERVIÇOS","PIX - ANA BEATRIZ - PF",
     "PIX LINDA","PIX - MARCUS HESS - PF","PIX - OFFICE GRAF LTDA","PIX - ITAÚ PJ - MARCO","PIX REPRESENTANTES",
-    "PIX - ITAÚ PF - MARCO ANTÔNIO","PIX - SICREDI - AXIS","PIX SAFRA 34","PIX - SICREDI - SERENITY - 59","CAIXA ECONÔMICA HABITAÇÃO"].map(function(l){return {id:l, label:l};}),
+    "PIX - ITAÚ PF - MARCO ANTÔNIO","PIX - SICREDI - AXIS","PIX SAFRA 34","PIX - SICREDI - SERENITY - 59","CAIXA ECONÔMICA HABITAÇÃO",
+    // 12/11/2026: contas que estavam em Chaves Pix dos bancos e faltavam na calculadora
+    "PIX - ITAÚ - 34","PIX - CAIXA - 34","PIX - UNICRED - 34","PIX - BRADESCO - 46","PIX - BRADESCO - SERENITY - 59"].map(function(l){return {id:l, label:l};}),
   // Pix que a revendedora mandou direto para a representante: sem conta da empresa. O financeiro diz de qual representante é (Comissões) e já dá como pago.
   pix_representante: ["PIX REPRESENTANTE"].map(function(l){return {id:l, label:l};}),
   link: ["LINK - SICREDI - SERENITY - 59","LINK - SICREDI - SORELLY - 46","LINK - SICREDI - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
   credito: ["CRÉDITO - SICREDI - SERENITY - 59","CRÉDITO - BRADESCO CIELO - SERENITY - 59","CRÉDITO - SAFRA - SERENITY 59",
     "CRÉDITO - ITAÚ - SERENITY","CRÉDITO - SAFRA - 46","CRÉDITO - GETNET - P","CRÉDITO - CIELO - P",
-    "CRÉDITO - SICREDI - SORELLY - 34","CRÉDITO - SAFRA - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
+    "CRÉDITO - SICREDI - SORELLY - 34","CRÉDITO - SAFRA - SORELLY - 34","CRÉDITO - SICREDI - AXIS - 67"].map(function(l){return {id:l, label:l};}),
   debito: ["DÉBITO - CIELO - P","DÉBITO - SICREDI - SERENITY - 59","DÉBITO - BRADESCO CIELO - SERENITY - 59",
     "DÉBITO - ITAÚ - SERENITY","DÉBITO - SAFRA - SERENITY 59","DÉBITO - SAFRA - 46","DÉBITO - GETNET - P",
     "DÉBITO - SAFRA - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
