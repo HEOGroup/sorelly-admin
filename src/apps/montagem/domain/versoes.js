@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.102", data:"2026-11-18", titulo:"RH › Negociações: visão Todas com a coluna Forma", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações abre na visão Todas: hora extra e joias numa tabela só, uma linha por pessoa, com a coluna Forma (Dinheiro, Joias ou Dinheiro + joias). Quem só tem negociação de joias (como a Ana Paula) agora aparece na lista; clicar abre a ficha da hora extra ou a das joias."}]},
  {v:"0.20.101", data:"2026-11-18", titulo:"RH › Salário e bônus: adiantamento pela natureza própria e CNPJ completo", itens:[
   {tipo:"correção", area:"RH → Colaboradores", txt:"Puxar do Financeiro agora lê o Adiantamento pela natureza própria do Financeiro (3.01.01.11), que aparece todo mês de janeiro a outubro por volta do dia 20, e o Salário como salário do 5º dia útil. A prévia mostra as duas colunas por mês. Sábado confirmado como dia útil."},
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Coluna Empresa mostra o número completo do CNPJ (sem a palavra CNPJ), com a letra de cada empresa numa cor, sem negrito (mesmas cores do Contas a pagar). Vale também na ficha e nos filtros de empresa do RH."},

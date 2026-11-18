@@ -44,5 +44,15 @@ try {
 const novo2 = rhReduz({ rh:rhD }, { type:"RH", op:"colab_add", por:"Teste", nome:"Pessoa Dados Completos", setor:"Agendamento", cnpj:"34", dados:{ email:"a@b.com", cep:"80000000", rua:"Rua A", emergNome:"Mae", rg:"123", pis:"456", banco:"Sicredi", pix:"a@b.com", tipoContrato:"CLT", asoData:"2026-11-01" } });
 const ach2 = novo2.patch.rh ? colaboradoresRh({ rh:novo2.patch.rh }).find((x) => x.nome==="Pessoa Dados Completos") : null;
 t("colab_add grava endereço, documentos e banco", !!ach2 && ach2.email==="a@b.com" && ach2.rua==="Rua A" && ach2.emergNome==="Mae" && ach2.rg==="123" && ach2.banco==="Sicredi" && ach2.tipoContrato==="CLT" && ach2.asoData==="2026-11-01");
+// Negociações › Todas: quem tem negociação de joias aparece junto com a hora extra, com a coluna Forma
+try {
+  const jv = await jiti.import("@/apps/montagem/pages/rh/JoiasVisao");
+  const rhJ = JSON.parse(JSON.stringify(rhD)); rhJ.negoc = rhJ.negoc || {pessoas:[], grupos:[]}; rhJ.negoc.joias = [{nome:"Ana Paula Teste Joias", motivo:"Joias", valor:500, periodo:"Mensal"}];
+  const cj = { s:{usuario:16, rh:rhJ}, rh:rhJ, d(){}, por:"Teste", veSalario:true };
+  const td = jv.negTodas(cj, [{id:"x1", nome:"Fulana Hora Extra", setor:"Agendamento", h1:20, h2:"", h3:"", sab:50}]);
+  const ana = td.linhas.find((l) => l.nome==="Ana Paula Teste Joias"), ful = td.linhas.find((l) => l.nome==="Fulana Hora Extra");
+  t("Negociações › Todas mostra quem só tem joias, com Forma = Joias", !!ana && ana.forma==="Joias" && /500/.test(ana.joias) && !ana.heId);
+  t("Negociações › Todas: só hora extra = Dinheiro, com as colunas Forma, Hora extra e Joias", !!ful && ful.forma==="Dinheiro" && ["Forma", "Hora extra (dinheiro)", "Joias (combinado)"].every((n) => td.cols.some((c2) => c2.t===n)));
+} catch(x){ t("Negociações › Todas", false, String(x && x.stack || x).slice(0, 300)); }
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

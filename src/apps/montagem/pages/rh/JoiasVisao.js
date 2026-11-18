@@ -39,6 +39,24 @@ function joiasGrupos(c){
 var idFoto = function(o){ return "f_"+String(o.colabId || slug(o.nome)).replace(/-/g, ""); };
 var combinadoTxt = function(n){ return n ? (n.motivo || "Joias")+" · "+brl(n.valor||0)+(n.periodo ? " · "+n.periodo.toLowerCase() : "") : "—"; };
 
+// ---------- visão Negociações › Todas: hora extra + joias numa tabela só, com a coluna Forma (Dinheiro / Joias / Dinheiro + joias) ----------
+function negTodas(c, heLinhas){
+  var grupos = joiasGrupos(c), usados = {}, linhas = [];
+  var temHe = function(l){ return [l.h1, l.h2, l.h3, l.sab].some(function(v){ return v!=="" && v!==null && v!==undefined; }); };
+  var heTxt = function(l){ var f = function(v){ return v==="" || v===null || v===undefined ? "" : brl(v); }; return [["1 h", l.h1], ["2 h", l.h2], ["3 h", l.h3], ["Sáb", l.sab]].filter(function(x){ return f(x[1]); }).map(function(x){ return x[0]+" "+f(x[1]); }).join(" · ") || "—"; };
+  heLinhas.forEach(function(l){
+    var g = grupos.find(function(o){ return (o.colabId && o.colabId===l.id) || o.k===norm(l.nome); }); if(g) usados[g.k] = 1;
+    var he = temHe(l), jo = !!(g && (g.neg || g.itens.length)), forma = he && jo ? "Dinheiro + joias" : jo ? "Joias" : he ? "Dinheiro" : "Sem valor";
+    linhas.push({id:l.id, heId:l.id, joiasK:g ? g.k : "", nome:l.nome, setor:l.setor, forma:forma, he:he ? heTxt(l) : "—", joias:g ? combinadoTxt(g.neg) : "—"});
+  });
+  grupos.forEach(function(g){ if(usados[g.k]) return;
+    linhas.push({id:g.k, heId:"", joiasK:g.k, nome:g.nome, setor:g.setor || "—", forma:"Joias", he:"—", joias:combinadoTxt(g.neg)}); });
+  linhas.sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
+  var COR_FORMA = {"Dinheiro":"text-emerald-400", "Joias":"text-amber-400", "Dinheiro + joias":"text-sky-400", "Sem valor":""};
+  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"forma", t:"Forma", cor:function(l){ return COR_FORMA[l.forma] || ""; }}, {k:"he", t:"Hora extra (dinheiro)"}, {k:"joias", t:"Joias (combinado)"}];
+  return {cols:cols, linhas:linhas};
+}
+
 // ---------- visão Joias › Por pessoa ----------
 function joiasPessoas(c){
   var grupos = joiasGrupos(c);
@@ -149,4 +167,4 @@ function NegJoiasJanelas(pp){
   return e("div",null, pp.abrir==="incluir" && e(NegJoiasIncluir,{c:pp.c, fechar:function(){ pp.setAbrir(""); }}));
 }
 
-export { JoiasNaFicha, joiasPessoas, joiasPagamentos, joiasResumo, JoiasJanelas, NegJoiasJanelas };
+export { JoiasNaFicha, negTodas, joiasPessoas, joiasPagamentos, joiasResumo, JoiasJanelas, NegJoiasJanelas };
