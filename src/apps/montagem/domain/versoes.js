@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.104", data:"2026-11-18", titulo:"Atendimento Sorelly: condicionais da DevMaster com marca de cobrança", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"As condicionais abertas da cliente (kit principal e expositor) vêm da DevMaster, com data de saída, peças e valor. A funcionária marca na coluna Cobrar as que está cobrando; só as marcadas entram nas contas. Botão Trazer condicionais da DevMaster para atendimento já aberto. Cliente incluída pelo Incluir agora deixa de ficar sem condicional (caso Danielle)."}
+ ]},
  {v:"0.20.103", data:"2026-11-18", titulo:"Avisos: alerta de denúncia não volta depois do Entendi", itens:[
   {tipo:"correção", area:"Tecnologia → Avisos", txt:"O alerta (ex.: nova denúncia no Canal de ética) fica lembrado no navegador depois de Entendi ou Abrir tela e não volta a aparecer, mesmo se o estado do servidor perder o lido."}
  ]},

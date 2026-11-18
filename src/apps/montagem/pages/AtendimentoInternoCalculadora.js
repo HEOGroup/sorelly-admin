@@ -22,7 +22,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { atrasoUteisDe, avaliarKit } from "@/apps/montagem/domain/revendedoras-internas";
+import { atrasoUteisDe, avaliarKit, condsDaDevmaster } from "@/apps/montagem/domain/revendedoras-internas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
@@ -233,7 +233,9 @@ function AtendimentoInterno(){
   var especialRev = sel ? comissaoEspecialDe(s, sel.nome) : null;   // comissão especial da revendedora (ficha em Revendedoras internas; Edna, 09/11/2026): muda só a % de comissão, brindes iguais
   var versaoBase = sel ? ((s.regrasConsignado.versoes||[]).find(function(v){ return v.id===sel.regrasVersaoId; }) || versaoVigente(s)) : null;
   var remarcs = sel ? (sel.remarcacoesLista||[]) : [];
-  var condicionais = sel ? (sel.condicionais||[]) : [];
+  // 18/11/2026 (Marcus): as condicionais vêm da DevMaster (todas); a funcionária marca as que está COBRANDO. Só as marcadas entram nas contas (sem a marca = não entra; condicional digitada à mão antes disso, sem o campo, vale como cobrada).
+  var condicionaisTodas = sel ? (sel.condicionais||[]) : [];
+  var condicionais = condicionaisTodas.filter(function(c){ return c.cobrar!==false; });
   // atendimento interno: toda condicional lançada na tela vale como conferida (a funcionária digita número, valor e peças à mão)
   var vendasAntD = (sel && sel.vendasAnt) || [null, null];   // [anterior, mais antiga]; a média das regras novas quer da mais antiga para a mais nova
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
@@ -413,10 +415,10 @@ function AtendimentoInterno(){
   // ── 1 · Condicionais: SÓ número, valor e quantidade de peças, tudo digitado à mão pela funcionária ──
   var condsSel = formD.condicionaisSelecionadas;
   var setConds = function(lista){ if(jaFeito) return; d({type:"INT_ATUALIZAR", id:sel.id, patch:{condicionais:lista}}); };
-  var editCond = function(i, patch){ setConds(condicionais.map(function(c,j){ return j===i ? Object.assign({}, c, patch) : c; })); };
-  var condOk = condManual.numero.length>=3 && !condicionais.some(function(c){ return c.numero===condManual.numero; });
+  var editCond = function(i, patch){ setConds(condicionaisTodas.map(function(c,j){ return j===i ? Object.assign({}, c, patch) : c; })); };
+  var condOk = condManual.numero.length>=3 && !condicionaisTodas.some(function(c){ return c.numero===condManual.numero; });
   var addCond = function(){ if(!condOk || jaFeito) return;
-    setConds(condicionais.concat([{numero:condManual.numero, valor:condManual.valor||0, pecas:Number(condManual.pecas)||0}])); setCondManual(COND_VAZIO); };
+    setConds(condicionaisTodas.concat([{numero:condManual.numero, valor:condManual.valor||0, pecas:Number(condManual.pecas)||0, cobrar:true}])); setCondManual(COND_VAZIO); };
   // peças vendidas: UM total só, no fim (a funcionária junta as condicionais); sem total digitado vale a soma por condicional dos dados antigos de demonstração
   var totalCondValor = condicionais.reduce(function(t,c){ return t+(c.valor||0); }, 0), totalCondPecas = condicionais.reduce(function(t,c){ return t+(c.pecas||0); }, 0);
   var totalVendidas = sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0);
@@ -436,7 +438,7 @@ function AtendimentoInterno(){
         e("input",{value:c.numero, disabled:jaFeito, inputMode:"numeric", "aria-label":"Número da condicional "+(i+1), className:CPK+CC+MONO, onChange:function(ev){ editCond(i,{numero:soDigitos(ev.target.value,8)}); }}),
         e(CampoDinheiro,{value:c.valor, disabled:jaFeito, label:"Valor da condicional "+(i+1), className:CPK+CC+MONO, onChange:function(v){ editCond(i,{valor:v||0}); }}),
         e("input",{value:c.pecas>0 ? c.pecas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Peças da condicional "+(i+1), className:CPK+" px-1! "+CC+MONO, onChange:function(ev){ editCond(i,{pecas:Number(soDigitos(ev.target.value,4))||0}); }}),
-        jaFeito ? e("span") : e(Remover,{label:"Remover condicional "+c.numero, onClick:function(){ setConds(condicionais.filter(function(x,j){ return j!==i; })); }})); }),
+        jaFeito ? e("span") : e(Remover,{label:"Remover condicional "+c.numero, onClick:function(){ setConds(condicionaisTodas.filter(function(x,j){ return j!==i; })); }})); }),
     !jaFeito && e("div",{className:GRID_COND+" border-t border-border/50 pt-1.5"},
       e("input",{value:condManual.numero, inputMode:"numeric", placeholder:"Nº", "aria-label":"Número da nova condicional", className:CPK+CC+MONO, onKeyDown:onEnter(addCond), onChange:function(ev){ setCondManual(Object.assign({}, condManual, {numero:soDigitos(ev.target.value,8)})); }}),
       e(CampoDinheiro,{value:condManual.valor, label:"Valor da nova condicional", className:CPK+CC+MONO, onChange:function(v){ setCondManual(Object.assign({}, condManual, {valor:v})); }}),
@@ -898,17 +900,24 @@ function AtendimentoInterno(){
   var cartao = function(corpo){ return e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, topoCard, corpo); };
 
   // ── estação 1: condicionais (esquerda) e vendas (direita) ──
-  var GCOND = " grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_4.5rem_2rem]";
+  var GCOND = " grid-cols-[2.75rem_minmax(0,1fr)_5.5rem_minmax(0,1.2fr)_3.5rem_2rem]";   // Cobrar · Nº · Data de saída · Valor · Peças · remover
+  var revDm = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId; }) : null;
+  var faltamDm = revDm ? condsDaDevmaster(revDm.conds).filter(function(c){ return !condicionaisTodas.some(function(x){ return x.numero===c.numero; }); }) : [];
+  var dataCurta = function(iso){ return iso ? String(iso).slice(0,10).split("-").reverse().join("/") : "—"; };
   var tabCond = e("div",{className:CTP},
-    e("div",{className:CABT+GCOND}, e("span",null,"Nº"), e("span",null,"Valor"), e("span",null,"Peças"), e("span")),
-    condicionais.map(function(c,i){ return e("div",{key:i, className:LIN+GCOND},
+    e("div",{className:CABT+GCOND}, e("span",null,"Cobrar"), e("span",null,"Nº"), e("span",null,"Saída"), e("span",null,"Valor"), e("span",null,"Peças"), e("span")),
+    condicionaisTodas.length===0 && e("div",{className:LIN+" grid-cols-1 min-h-9"}, e("span",null,"Nenhuma condicional")),
+    condicionaisTodas.map(function(c,i){ var cobra = c.cobrar!==false; return e("div",{key:c.numero+"-"+i, className:LIN+GCOND+(cobra ? "" : " opacity-60")},
+      e("input",{type:"checkbox", checked:cobra, disabled:jaFeito, "aria-label":"Cobrar a condicional "+c.numero, title:cobra ? "Cobrando esta condicional" : "Marque para cobrar esta condicional", className:"size-5 justify-self-center accent-[#E8B84B]", onChange:function(ev){ editCond(i,{cobrar:ev.target.checked}); }}),
       e("input",{value:c.numero, disabled:jaFeito, inputMode:"numeric", "aria-label":"Número da condicional "+(i+1), className:CPT, onChange:function(ev){ editCond(i,{numero:soDigitos(ev.target.value,8)}); }}),
+      e("span",{className:"text-[13px] tabular-nums", title:(c.tipo ? c.tipo : "")+(c.prevista ? " · devolução prevista "+dataCurta(c.prevista) : "")}, dataCurta(c.saida)),
       e(CampoDinheiro,{value:c.valor, disabled:jaFeito, label:"Valor da condicional "+(i+1), className:CPT, onChange:function(v){ editCond(i,{valor:v||0}); }}),
       e("input",{value:c.pecas>0 ? c.pecas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Peças da condicional "+(i+1), className:CPT, onChange:function(ev){ editCond(i,{pecas:Number(soDigitos(ev.target.value,4))||0}); }}),
-      jaFeito ? e("span") : e(Remover,{label:"Remover condicional "+c.numero, onClick:function(){ setConds(condicionais.filter(function(x,j){ return j!==i; })); }})); }),
+      jaFeito ? e("span") : e(Remover,{label:"Remover condicional "+c.numero, onClick:function(){ setConds(condicionaisTodas.filter(function(x,j){ return j!==i; })); }})); }),
     e("div",{className:"flex-1"}),
-    !jaFeito && condNovaAberta && e("div",{className:LIN+GCOND+" bg-primary/15!"},
-      e("input",{value:condManual.numero, inputMode:"numeric", placeholder:"Nº", "aria-label":"Número da nova condicional", className:CPT, onKeyDown:onEnter(addCond), onChange:function(ev){ setCondManual(Object.assign({}, condManual, {numero:soDigitos(ev.target.value,8)})); }}),
+    !jaFeito && faltamDm.length>0 && e("button",{type:"button", onClick:function(){ setConds(condicionaisTodas.concat(faltamDm)); }, className:"h-8 w-full border-t border-primary/20 text-[13px] font-semibold hover:bg-white/5 hover:text-primary"}, "Trazer condicionais da DevMaster ("+faltamDm.length+")"),
+    !jaFeito && condNovaAberta && e("div",{className:LIN+GCOND+" bg-primary/15!"}, e("span"),
+      e("input",{value:condManual.numero, inputMode:"numeric", placeholder:"Nº", "aria-label":"Número da nova condicional", className:CPT, onKeyDown:onEnter(addCond), onChange:function(ev){ setCondManual(Object.assign({}, condManual, {numero:soDigitos(ev.target.value,8)})); }}), e("span"),
       e(CampoDinheiro,{value:condManual.valor, label:"Valor da nova condicional", className:CPT, onChange:function(v){ setCondManual(Object.assign({}, condManual, {valor:v})); }}),
       e("input",{value:condManual.pecas, inputMode:"numeric", placeholder:"0", "aria-label":"Peças da nova condicional", className:CPT, onKeyDown:onEnter(addCond), onChange:function(ev){ setCondManual(Object.assign({}, condManual, {pecas:soDigitos(ev.target.value,4)})); }}),
       e("button",{type:"button", disabled:!condOk, onClick:function(){ addCond(); setCondNovaAberta(false); }, "aria-label":"Adicionar condicional", className:"grid h-8 w-8 place-items-center rounded-md bg-primary text-[13px] font-bold text-primary-foreground disabled:opacity-40"},"+")),

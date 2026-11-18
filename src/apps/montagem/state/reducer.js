@@ -15,7 +15,7 @@ import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { media3, sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
-import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
+import { condsDaDevmaster, internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
@@ -1121,7 +1121,7 @@ function reducer(s, a){
       var rrN = Object.assign({}, rr, primeiroMarcado(rr) ? {} : {primeira:{dia:a.data, desde:cicloDe(rr)}}, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
       if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, (a.quer || vLib) ? {obs:(a.quer ? "Quer: "+a.quer : "Atendimento")+vLib} : {}); }); }
-      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
+      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, Object.assign({tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}, Array.isArray(rr.conds) ? {condicionais:condsDaDevmaster(rr.conds)} : {})); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
     // Comissão especial (Edna, 09/11/2026): porcentagem de comissão por faixa de venda, fixa na ficha da revendedora; os brindes seguem a tabela normal. Só a Diretoria muda (a tela já esconde o botão; o sistema confere de novo aqui).
@@ -1156,7 +1156,7 @@ function reducer(s, a){
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
       if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId || (x.revIntId===ra.id && x.data===ra.agend.data && x.status!=="cancelado"); })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
-        condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
+        condicionais:condsDaDevmaster(ra.conds),
         vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});
       return com(s, {internos:[itA].concat(s.internos||[]), revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {internoId:itA.id}); })});
     }
