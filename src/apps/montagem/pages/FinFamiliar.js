@@ -5,7 +5,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
+import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -14,6 +14,9 @@ import { PageHead } from "@/apps/montagem/ui/page";
 import { Indicador, Pagina } from "@/apps/montagem/components/padrao";
 import { Bloco, BlocoFiltros, Botao, CAMPO, CampoSel, Rotulo, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { chavesParaGravar } from "@/apps/montagem/lib/chave-do-destino";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { e, useState } from "@/shared/react";
 import React from "react";
@@ -342,47 +345,215 @@ function AbaFfPix(){
 }
 
 // ───────────────── Prestadores ─────────────────
-function CartaoPrest(p){
-  var c = p.c, ff = c.ff, x = p.x, fm = useState("todos"), mesF = fm[0], setMesF = fm[1], nd = useState({data:hojeIso(), valor:"", prazo:"", descricao:""}), d = nd[0], setD = nd[1];
+// 18/11/2026 (Marcus: "azul, diminui fonte, mais compacto, sem perder nada"): tela refeita no bloco padrão do Financeiro (BlocoPainel azul, compacto, letra de 11 px) e na TabelaPlanilha.
+// Nada saiu: o resumo (em aberto e saldo por sócio) virou tabela com total; cada prestador é um bloco que abre e fecha na barra azul (todos nascem fechados; Abrir todos e Fechar todos em cima da lista);
+// o filtro de mês virou a coluna Mês das tabelas (filtro no título da coluna, e o total de baixo acompanha o filtro); as explicações viraram dica ao passar o mouse.
+// Novo: cada dívida mostra Pago e Falta (o repasse liquida a dívida mais antiga primeiro, baixaDividas) e o Prazo é trocado na própria linha (vale como vencimento em Contas a pagar).
+var mesTxt = function(iso){ return nomeMes(String(iso||"").slice(0, 7)); };
+var somaDe = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(Number(l[k]) || 0); }, 0)); };
+function CampoSelI(p){ return e("div",{className:"flex min-w-0 items-center gap-1.5 "+(p.cls||"")}, e("label",{htmlFor:p.id, className:"shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), e("select",{id:p.id, value:p.value, onChange:function(ev){ p.onChange(ev.target.value); }, className:SEL_AZUL}, p.opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))); }
+var BTN_BARRA = "h-8 rounded-md border border-[#5b74ad] bg-[#22365e] px-3 text-[11px] font-semibold hover:bg-[#2b4170]";   // botão da faixa de cima da lista de prestadores
+var SEL_AZUL = CAMPO+" !w-auto min-w-[7rem] max-w-full !border-[#6ea0f0]/60 !bg-[#27508f] !text-[11px]";   // menu suspenso: azul mais claro e menor (Marcus, 18/11/2026)
+var FORM_PREST = "flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-border px-2 py-0.5";   // linha de lançamento: rótulo de 11 px em cima, campo e botão de 32 px na mesma linha; em tela estreita os campos descem (nada é cortado)
+var FAIXA_PREST = "w-20 shrink-0 text-[11px] font-bold uppercase tracking-[.05em]";   // título pequeno de seção (sem barra colorida)
+function CampoTxt(p){ return e("div",{className:"flex min-w-0 items-center gap-1.5 "+(p.cls||"")}, e("label",{htmlFor:p.id, className:"shrink-0 whitespace-nowrap text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), e("input",{id:p.id, value:p.value, type:p.type||"text", className:CAMPO+(p.type==="date" ? " [color-scheme:dark]" : ""), onChange:function(ev){ p.onChange(ev.target.value); }, onKeyDown:p.onEnter ? function(ev){ if(ev.key==="Enter") p.onEnter(); } : undefined})); }
+var fixo = function(el){ return e("div",{className:"shrink-0"}, el); };   // o botão do formulário não encolhe: o rótulo nunca é cortado
+var botaoLinha = function(rot, titulo, fn){ return e("button",{type:"button", title:titulo, "aria-label":titulo, onClick:function(ev){ ev.stopPropagation(); fn(); }, className:"h-[18px] px-2 text-[11px] font-semibold leading-none hover:underline"}, rot); };
+
+function DescTip(p){   // 4 primeiras palavras; passar o mouse mostra o texto completo (Marcus, 18/11/2026). O bloco é "fixed" (não é cortado pela rolagem da tabela) e fecha sozinho: mouse fora, rolagem ou clique.
+  var st = useState(null), pos = st[0], setPos = st[1], ref = React.useRef(null), pal = String(p.v || "").split(/\s+/).filter(Boolean), longo = pal.length>(p.n || 4);
+  var cp = pal.slice(0, p.n || 4); while(longo && cp.length>1 && /^(de|da|do|dos|das|e|·)$/i.test(cp[cp.length-1])) cp.pop();   // o texto curto nunca termina em "de", "da", "e"...
+  var curto = cp.join(" ");
+  React.useEffect(function(){
+    if(!pos) return undefined;
+    var fecha = function(){ setPos(null); };
+    var move = function(ev){ if(!ref.current || !ref.current.contains(ev.target)) fecha(); };
+    document.addEventListener("mousemove", move); document.addEventListener("mousedown", fecha); window.addEventListener("scroll", fecha, true); window.addEventListener("blur", fecha);
+    return function(){ document.removeEventListener("mousemove", move); document.removeEventListener("mousedown", fecha); window.removeEventListener("scroll", fecha, true); window.removeEventListener("blur", fecha); };
+  }, [pos, setPos]);
+  return e("span",{ref:ref, className:"inline-block max-w-full whitespace-normal break-words leading-[13px] "+(longo ? "cursor-help" : ""), onMouseEnter:longo ? function(ev){ var r = ev.currentTarget.getBoundingClientRect(); st[1]({x:r.left+r.width/2, abaixo:r.bottom+4, acima:window.innerHeight-r.top+4, cima:r.bottom>window.innerHeight-150}); } : undefined, onMouseLeave:function(){ st[1](null); }},
+    curto,
+    pos && e("span",{role:"tooltip", style:Object.assign({position:"fixed", width:300, left:Math.max(8, Math.min(pos.x-150, window.innerWidth-308))}, pos.cima ? {bottom:pos.acima} : {top:pos.abaixo}), className:"pointer-events-none z-[100] block whitespace-normal rounded-lg border border-[#6a81b4] bg-gradient-to-b from-[#2f5aa8] to-[#0f1729] px-3 py-2 text-left text-[11px] font-medium leading-[15px] text-white shadow-xl"}, p.v));
+}
+function DetPrest(p){   // o que abre embaixo da linha do prestador (Prestadores › tabela): sócio, chave Pix, dívidas e repasses
+  var c = p.c, ff = c.ff, x = p.x, nd = useState({data:hojeIso(), valor:"", prazo:"", descricao:""}), d = nd[0], setD = nd[1];
   var nr = useState({data:hojeIso(), valor:"", origem:"", forma:"PIX", contaTxt:"", pixRev:false}), r = nr[0], setR = nr[1];
-  var dv = ff.dividas.filter(function(y){ return y.prestId===x.id && (mesF==="todos" || y.data.slice(0,7)===mesF); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), rp = ff.repasses.filter(function(y){ return y.prestId===x.id && (mesF==="todos" || y.data.slice(0,7)===mesF); }).sort(function(a, b){ return b.data.localeCompare(a.data); });
-  var sd = saldoPrestador(ff, x.id), somaDv = r2(dv.reduce(function(t, y){ return t+y.valor; }, 0)), somaRp = r2(rp.reduce(function(t, y){ return t+y.valor; }, 0));
-  return e(BlocoBarra,{cor:"azul", t:(function(){ var cbp = (ff.contasBanc||[]).filter(function(z){ return z.prestadorId===x.id && z.ativo!==false; })[0]; return x.responsavelId ? rotuloPrestadorFamilia(pessoaNome(ff, x.responsavelId), x.nome, cbp ? (cbp.banco || cbp.nome) : "") : nomePropio(x.nome); })(), sub:(x.ativo ? "em aberto" : "finalizado")+(x.servico ? " · "+x.servico : ""), dir:"saldo "+BK(sd)}, e("div",{className:"flex flex-col gap-3 p-4"},
-    e("div",{className:"flex flex-wrap items-end gap-3"},
-      e(Campo,{rot:"Responsável (sócio)"}, e(Sel,{value:x.responsavelId, label:"Responsável", className:"w-48", onChange:function(v){ acao(c, "prest_set", {id:x.id, patch:{responsavelId:v}}); }}, e("option",{value:""}, "Nenhum"), ff.personas.filter(function(q){ return q.tipo==="SOCIO"; }).map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
-      e(Campo,{rot:"Chave PIX", className:"min-w-[12rem] flex-1"}, e("input",{key:x.chavePix, defaultValue:x.chavePix, className:INPUT+" h-10!", onBlur:function(ev){ if(ev.target.value!==x.chavePix) acao(c, "prest_set", {id:x.id, patch:{chavePix:ev.target.value}}); }})),
-      e(Campo,{rot:"Mês"}, e(Sel,{value:mesF, label:"Mês", className:"w-44", onChange:setMesF}, e("option",{value:"todos"}, "Todos os meses"), janela().map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); }))),
-      e(Btn,{v:"ghost", sm:true, onClick:function(){ acao(c, "prest_set", {id:x.id, patch:{ativo:!x.ativo}}); }}, x.ativo ? "Finalizar" : "Reabrir"), e(Btn,{v:"ghost", sm:true, onClick:function(){ if(window.confirm("Excluir "+x.nome+" com dívidas e repasses?")) acao(c, "prest_del", {id:x.id}); }}, "Excluir")),
-    e("div",{className:"grid grid-cols-1 gap-3 lg:grid-cols-2"},
-      e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-3"}, e("b",{className:"text-[13.5px]"}, "Dívidas ", e("span",{className:MONO+" text-[#F472B6]"}, BK(somaDv))),
-        e("div",{className:"flex flex-wrap items-end gap-2"}, e(Txt,{value:d.data, type:"date", label:"Data", className:"w-36", onChange:function(v){ setD(Object.assign({}, d, {data:v})); }}), e(Txt,{value:d.valor, ph:"Valor", label:"Valor", className:"w-28", onChange:function(v){ setD(Object.assign({}, d, {valor:v.replace(/[^\d,.]/g,"")})); }}), e(Txt,{value:d.prazo, type:"date", label:"Prazo (opcional)", className:"w-36", onChange:function(v){ setD(Object.assign({}, d, {prazo:v})); }}), e(Txt,{value:d.descricao, ph:"Descrição da dívida", label:"Descrição da dívida", className:"min-w-[14rem] flex-1", onChange:function(v){ setD(Object.assign({}, d, {descricao:v})); }}),
-          e(Btn,{v:"secondary", sm:true, disabled:!(num(d.valor)>0), onClick:function(){ acao(c, "divida_add", {prestId:x.id, data:d.data, valor:num(d.valor), prazo:d.prazo, descricao:d.descricao}); setD(Object.assign({}, d, {valor:"", descricao:""})); }}, "+ Dívida")),
-        dv.map(function(y){ return e("div",{key:y.id, className:"flex items-center justify-between gap-2 text-[13px]"}, e("span",null, br(y.data)+(y.prazo ? " · prazo "+br(y.prazo) : "")+(y.descricao ? " · "+y.descricao : "")), e("span",{className:"flex items-center gap-2"}, e("b",{className:MONO}, BK(y.valor)), iconBtn("trash", "Excluir dívida", function(){ acao(c, "divida_del", {id:y.id}); }, true))); })),
-      e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-3"}, e("b",{className:"text-[13.5px]"}, "Repasses (pagamentos) ", e("span",{className:MONO+" text-[#4ADE80]"}, BK(somaRp))),
-        e("div",{className:"flex flex-wrap items-end gap-2"}, e(Txt,{value:r.data, type:"date", label:"Data", className:"w-36", onChange:function(v){ setR(Object.assign({}, r, {data:v})); }}), e(Txt,{value:r.valor, ph:"Valor", label:"Valor", className:"w-28", onChange:function(v){ setR(Object.assign({}, r, {valor:v.replace(/[^\d,.]/g,"")})); }}),
-          e(Txt,{value:r.origem, ph:"Quem pagou", label:"Quem pagou", className:"w-32", onChange:function(v){ setR(Object.assign({}, r, {origem:v})); }}), e(Sel,{value:r.forma, label:"Forma", className:"w-36", onChange:function(v){ setR(Object.assign({}, r, {forma:v})); }}, FORMAS_REPASSE.map(function(k){ return e("option",{key:k, value:k}, k); })),
-          e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[12px]"}, e("input",{type:"checkbox", checked:r.pixRev, className:"size-4", onChange:function(ev){ setR(Object.assign({}, r, {pixRev:ev.target.checked})); }}), "veio de PIX de revendedora"),
-          e(Btn,{v:"secondary", sm:true, disabled:!(num(r.valor)>0) || !r.origem.trim(), onClick:function(){ acao(c, "repasse_add", {prestId:x.id, data:r.data, valor:num(r.valor), origem:r.origem, forma:r.forma, contaTxt:r.contaTxt, pixRevendedora:r.pixRev}); setR(Object.assign({}, r, {valor:"", origem:""})); }}, "+ Repasse")),
-        rp.map(function(y){ return e("div",{key:y.id, className:"flex items-center justify-between text-[13px]"}, e("span",null, br(y.data)+" · "+y.forma+" · "+y.origem+(y.origemPixLancId ? " (PIX automático)" : "")), e("span",{className:"flex items-center gap-2"}, e("b",{className:MONO}, BK(y.valor)), !y.origemPixLancId && iconBtn("trash", "Excluir repasse", function(){ acao(c, "repasse_del", {id:y.id}); }, true))); })))));
+  var ed = useState(false), editando = ed[0], dr = useState(null), rasc = dr[0], aD = useState(false), aberD = aD[0], aR = useState(false), aberR = aR[0];   // formulários de lançar: fechados até clicar em + Lançar
+  var irCartao = function(id){ setTimeout(function(){ var el = document.getElementById(id); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 80); };   // o cartão de lançar fica embaixo das colunas: a tela desce até ele
+  var cf = useState(null), conf = cf[0], pedir = function(msg, fn){ cf[1]({msg:msg, fn:fn}); };   // "Tem certeza?" antes de excluir (Marcus, 18/11/2026: a dívida da Truck Plaza foi apagada sem aviso)
+  var recente = function(a, b){ return a.data.localeCompare(b.data); };   // do mais antigo (em cima) para o mais novo (embaixo) (Marcus, 18/11/2026)
+  var bx = baixaDividas(ff, x.id), sd = saldoPrestador(ff, x.id), socios = ff.personas.filter(function(q){ return q.tipo==="SOCIO"; });
+  var cbp = (ff.contasBanc||[]).filter(function(z){ return z.prestadorId===x.id && z.ativo!==false; })[0];
+  var lancarDivida = function(){ if(!(num(d.valor)>0)) return; acao(c, "divida_add", {prestId:x.id, data:d.data, valor:num(d.valor), prazo:d.prazo, descricao:d.descricao}); setD(Object.assign({}, d, {valor:"", descricao:""})); aD[1](false); };
+  var lancarRepasse = function(){ if(!(num(r.valor)>0) || !r.origem.trim()) return; acao(c, "repasse_add", {prestId:x.id, data:r.data, valor:num(r.valor), origem:r.origem, forma:r.forma, contaTxt:r.contaTxt, pixRevendedora:r.pixRev}); setR(Object.assign({}, r, {valor:"", origem:""})); aR[1](false); };
+
+  var linhasDv = ff.dividas.filter(function(y){ return y.prestId===x.id; }).sort(recente).map(function(y){ var b = bx.porId[y.id];
+    return {id:y.id, y:y, data:br(y.data), mes:mesTxt(y.data), desc:[y.titulo, y.descricao, y.codigo].filter(Boolean).join(" · ") || "—", prazo:y.prazo || "", valor:y.valor, pago:b ? b.pago : "", falta:b ? Math.max(0, b.falta) : "", acao:"Excluir"}; });
+  var colsDv = [{k:"data", t:"Data", w:"4.5rem"}, {k:"desc", t:"Descrição", render:function(v){ return e(DescTip,{v:v}); }},   // descrição longa quebra em linhas (nada cortado e a tabela não rola para o lado)
+    {k:"prazo", t:"Prazo", w:"6rem", render:function(v, l){ return l.y.valor>0 ? e("input",{type:"date", key:l.id+"|"+l.y.prazo, defaultValue:l.y.prazo || "", "aria-label":"Prazo da dívida", title:"Prazo de pagamento. Sem prazo, vale o último dia do mês.", className:"h-[18px] w-[5.25rem] rounded border border-white/20 bg-transparent px-1 text-[11px] text-white [color-scheme:dark]", onClick:function(ev){ ev.stopPropagation(); }, onBlur:function(ev){ if(ev.target.value!==(l.y.prazo||"")) acao(c, "divida_set", {id:l.id, patch:{prazo:ev.target.value}}); }}) : "—"; }},
+    {k:"valor", t:"Dívida", w:"5.25rem", fmt:BK, cor:function(){ return "text-destructive"; }}, {k:"pago", t:"Pago", w:"5.25rem", fmt:BK, cor:function(){ return "text-success"; }}, {k:"falta", t:"Falta", w:"4.75rem", fmt:BK, cor:function(l){ return l.falta>0.005 ? "text-destructive" : "text-success"; }},
+    {k:"acao", t:"Excluir", w:"4.75rem", render:function(v, l){ return botaoLinha("Excluir", "Excluir dívida", function(){ pedir("a dívida de "+BK(l.valor)+" de "+l.data, function(){ acao(c, "divida_del", {id:l.id}); }); }); }}];
+
+  var linhasRp = ff.repasses.filter(function(y){ return y.prestId===x.id; }).sort(recente).map(function(y){ var auto = !!y.origemPixLancId, dir = !!y.origemDirecionar, rot = auto ? "PIX automático" : dir ? "Direcionar" : "Lançado à mão";
+    return {id:y.id, data:br(y.data), forma:y.forma || "—", quem:(y.origem==="PIX revendedora" ? ((ff.pix || []).filter(function(q){ return q.id===y.origemPixLancId; })[0] || {}).origem : "") || y.origem || "—", origem:(y.forma && y.forma!=="PIX" ? y.forma+" · " : "")+rot, valor:y.valor, trava:auto || dir, acao:auto ? "Automático" : dir ? "Direcionar" : "Excluir"}; });
+  var quebra = function(v){ return e("span",{className:"inline-block whitespace-normal break-words leading-[13px]"}, v); };   // nome e origem quebram em linhas em vez de empurrar a tabela para o lado
+  var colsRp = [{k:"data", t:"Data", w:"4.5rem"}, {k:"quem", t:"Quem pagou", render:function(v){ return e(DescTip,{v:v, n:3}); }}, {k:"valor", t:"Pago", w:"5.25rem", fmt:BK, cor:function(){ return "text-success"; }},
+    {k:"acao", t:"Excluir", w:"4.75rem", render:function(v, l){ return l.trava ? e("span",{className:"cursor-help", title:l.origem+" · não se exclui aqui."}, v) : botaoLinha("Excluir", "Excluir repasse", function(){ pedir("o pago de "+BK(l.valor)+" de "+l.data, function(){ acao(c, "repasse_del", {id:l.id}); }); }); }}];
+
+  // os totais ficam todos na MESMA linha do fundo do bloco, nas quatro colunas (Marcus, 18/11/2026: "o total fica na linha lá no fundo")
+  var totDv = somaDe(linhasDv, "valor"), totDvPago = somaDe(linhasDv, "pago"), totDvFalta = somaDe(linhasDv, "falta"), totRp = somaDe(linhasRp, "valor");
+  var dvPos = ff.dividas.filter(function(y){ return y.prestId===x.id && y.valor>0; }).sort(recente);
+  var totDv4 = somaDe(dvPos, "valor"), totPago4 = r2(Object.keys(bx.porId).reduce(function(t, k){ return t+bx.porId[k].pago; }, 0)+bx.sobra), falta4 = bx.falta;
+  var nomeCred = function(cr){ if(cr.tipo==="pix"){ var rp = ff.repasses.find(function(q){ return q.id===cr.rid; }); return rp && rp.origem ? rp.origem : "Repasse"; } return "Desconto"; };
+  var COL = "flex min-w-0 flex-col border-t border-[#5b74ad] bg-[#1b2a4a] @min-[1155px]:border-t-0 @min-[1155px]:border-l";
+  var CAB = "flex h-8 shrink-0 items-center justify-between gap-2 border-b border-[#5b74ad] bg-[#2b4170] px-2 text-[11px] font-bold uppercase";
+  var RODA = "mt-auto flex h-10 shrink-0 items-center justify-between gap-2 border-t-2 border-[#7f98cf] bg-[#2b4170] px-2 text-[13px] font-semibold";   // a linha de total: mt-auto empurra para o fundo e as quatro colunas têm a mesma altura
+  var BTN_RODA = "h-8 min-w-0 flex-1 rounded-md border border-white/25 px-2 text-[11px] font-semibold hover:bg-white/10";
+  var RODA_G = "mt-auto grid h-10 shrink-0 items-stretch border-t-2 border-[#7f98cf] bg-[#2b4170] text-[11px] font-semibold";   // linha de total em grade: cada célula cai debaixo da sua coluna, com traço entre elas
+  var celT = function(txt, cls){ return e("span",{className:"flex items-center justify-center border-l border-[#5b74ad] px-1 first:border-l-0 "+(cls || "")}, txt); };
+  var MINI = "h-6 shrink-0 rounded border border-white/25 px-2 text-[11px] font-semibold hover:bg-white/10";
+  var Stk = function(t, el, cls){ return e("label",{className:"flex min-w-0 flex-col gap-0.5 text-[11px] font-medium uppercase tracking-[.05em] "+(cls||"")}, t, el); };
+  var LIN = "grid grid-cols-[5rem_minmax(0,1fr)] border-b border-[#3d5086] text-[11px]";
+  var LIN_T = "flex min-h-[24px] items-center whitespace-nowrap border-r border-[#3d5086] bg-[#22365e] px-1.5 font-semibold uppercase tracking-[.05em]";
+  var LIN_V = "flex min-h-[24px] min-w-0 items-center break-words px-2 text-[11px] ";
+  var Lin = function(t, v, cor){ return e("div",{className:LIN}, e("span",{className:LIN_T}, t), e("span",{className:LIN_V+(cor||"")}, v)); };   // uma linha de tabela: rótulo | valor
+  var LinCtl = function(t, ctl){ return e("div",{className:LIN}, e("span",{className:LIN_T}, t), e("span",{className:"flex min-w-0 items-center p-0.5"}, ctl)); };   // o mesmo, com campo para editar
+  var inp = function(id, v, fn, tipo, extra){ return e("input",{id:id, value:v, type:tipo||"text", className:CAMPO+" w-full"+(tipo==="date" ? " [color-scheme:dark]" : ""), onChange:function(ev){ fn(ev.target.value); }, onKeyDown:extra ? function(ev){ if(ev.key==="Enter") extra(); } : undefined}); };
+  var rolagem = function(el, mw){ return e("div",{className:"min-w-0 flex-1 overflow-x-auto [&_td]:!h-[22px] [&_td]:!px-1.5 [&_td]:!py-0.5 [&_td]:!text-[11px] [&_td]:!leading-[14px] [&_th]:!h-6 [&_th]:!px-0 [&_th]:!text-[11px] [&_th_button]:!gap-0.5 [&_th_button]:!px-1.5 [&_tbody_tr:last-child_td]:!border-b-2 [&_tbody_tr:last-child_td]:!border-b-white/40", "data-sem-arrastar":""}, mw ? e("div",{style:{minWidth:mw}}, el) : el); };   // letra de 11 px e células justas: as quatro colunas cabem sem rolar para o lado
+
+  var grade = e("div",{className:"grid min-w-0 grid-cols-1 bg-[#1b2a4a] @min-[1155px]:grid-cols-[12rem_minmax(38.5rem,2.6fr)_minmax(22rem,1fr)]"},
+    conf && e("div",{role:"alertdialog", className:"col-span-full flex flex-wrap items-center justify-center gap-3 border-b-2 border-destructive bg-[#431616] px-2 py-1.5 text-[13px] font-semibold"},
+      e("span",null, "Tem certeza que quer excluir "+conf.msg+"?"),
+      e(Botao,{principal:true, onClick:function(){ var fn = conf.fn; cf[1](null); fn(); }}, "Sim"),
+      e(Botao,{onClick:function(){ cf[1](null); }}, "Não")),
+    e("div",{className:COL+" @min-[1155px]:border-l-0"},
+      e("div",{className:CAB}, e("span",null, "Prestador"), e("span",{className:"flex gap-1"}, e("button",{type:"button", className:MINI, onClick:function(){ if(!editando){ dr[1]({nome:x.nome || "", servico:x.servico || "", chavePix:x.chavePix || "", banco:cbp ? (cbp.banco || "") : "", responsavelId:x.responsavelId || ""}); irCartao("cartao-e-"+x.id); } ed[1](!editando); }}, editando ? "Cancelar" : "Editar"), p.fechar && e("button",{type:"button", className:MINI, onClick:p.fechar}, "Fechar"))),
+      e("div",{className:"m-2 overflow-hidden rounded-md border border-[#3d5086] [&>div:last-child]:border-b-0"},
+        e(React.Fragment,null,
+          Lin("Sócio", x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem sócio"),
+          Lin("Prestador", nomePropio(x.nome)),
+          Lin("Chave PIX", x.chavePix || "Sem chave"),
+          Lin("Banco", cbp ? (cbp.banco || cbp.nome) : "—")),
+        Lin("Serviço", x.servico || "—"),
+        Lin("Situação", x.ativo ? "Em aberto" : "Finalizado", x.ativo ? "text-warning" : "text-success")),
+      e("div",{className:RODA},
+        e("button",{type:"button", className:BTN_RODA, onClick:function(){ acao(c, "prest_set", {id:x.id, patch:{ativo:!x.ativo}}); }}, x.ativo ? "Finalizar" : "Reabrir"),
+        e("button",{type:"button", className:BTN_RODA+" text-destructive", onClick:function(){ pedir("o prestador "+x.nome+" com todas as dívidas e pagos", function(){ acao(c, "prest_del", {id:x.id}); }); }}, "Excluir"))),
+
+    e("div",{className:COL},
+      e("div",{className:CAB, title:"O que se deve ao prestador. O saldo é a soma das dívidas menos os repasses, de todas as datas."}, e("span",null, "Dívidas"), e("button",{type:"button", className:MINI, onClick:function(){ aD[1](!aberD); if(!aberD) irCartao("cartao-d-"+x.id); }}, aberD ? "Fechar" : "+ Lançar")),
+      rolagem(e(TabelaPlanilha,{cols:colsDv, linhas:linhasDv, chave:"id", alturaMax:"22rem", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, vazio:"Nenhuma dívida lançada."}), "34rem"),
+      e("div",{className:RODA_G, style:{gridTemplateColumns:"4.5rem minmax(0,1fr) 6rem 5.25rem 5.25rem 4.75rem 4.75rem"}}, celT("Total"), celT(""), celT(""), celT(BK(totDv), "text-destructive"), celT(BK(totDvPago), "text-success"), celT(BK(totDvFalta), totDvFalta>0.005 ? "text-destructive" : "text-success"), celT(""))),
+
+    e("div",{className:COL},
+      e("div",{className:CAB, title:"O que já foi pago ao prestador. O repasse liquida a dívida mais antiga primeiro."}, e("span",null, "Pago"), e("button",{type:"button", className:MINI, onClick:function(){ aR[1](!aberR); if(!aberR) irCartao("cartao-r-"+x.id); }}, aberR ? "Fechar" : "+ Lançar")),
+      rolagem(e(TabelaPlanilha,{cols:colsRp, linhas:linhasRp, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, alturaMax:"22rem", vazio:"Nenhum pago lançado."})),
+      e("div",{className:RODA_G, style:{gridTemplateColumns:"4.5rem minmax(0,1fr) 5.25rem 4.75rem"}}, celT("Total"), celT(""), celT(BK(totRp), "text-success"), celT(""))));
+  // cartão de lançar: um bloco à parte DENTRO do bloco do prestador, embaixo das quatro colunas (Marcus, 18/11/2026: "mais um cardzinho para lançar nova dívida")
+  var cartao = function(id, titulo, fecha, campos, botao){ return e("div",{id:id, className:"m-2 rounded-lg border border-white/25 bg-[#0a1226]"},
+    e("div",{className:"flex h-8 items-center justify-between border-b border-[#3d4f77] px-2 text-[11px] font-bold uppercase"}, e("span",null, titulo), e("button",{type:"button", className:MINI, onClick:fecha}, "Fechar")),
+    e("div",{className:"flex flex-wrap items-end gap-x-3 gap-y-1.5 p-2"}, campos, botao)); };
+  // Editar: cartão à parte com tudo do prestador. O sócio só muda enquanto não há dívida nem pago lançado (Marcus, 18/11/2026).
+  var temMov = ff.dividas.some(function(y){ return y.prestId===x.id; }) || ff.repasses.some(function(y){ return y.prestId===x.id; });
+  var mudaRasc = function(k, v){ var o = Object.assign({}, rasc); o[k] = v; dr[1](o); };
+  var salvarEd = function(){ if(!rasc || !rasc.nome.trim()) return; var patch = {nome:rasc.nome.trim(), servico:rasc.servico.trim(), chavePix:rasc.chavePix.trim()}; if(!temMov) patch.responsavelId = rasc.responsavelId; acao(c, "prest_set", {id:x.id, patch:patch}); if(cbp && rasc.banco!==(cbp.banco || "")) acao(c, "cb_set", {id:cbp.id, patch:{banco:rasc.banco.trim()}}); ed[1](false); };
+  var cartaoE = editando && rasc && cartao("cartao-e-"+x.id, "Editar prestador · "+nomePropio(x.nome), function(){ ed[1](false); }, [
+    Stk("Nome", inp("ed-nome-"+x.id, rasc.nome, function(v){ mudaRasc("nome", v); }, "text", salvarEd), "min-w-[12rem] flex-1"),
+    Stk("Serviço", inp("ed-serv-"+x.id, rasc.servico, function(v){ mudaRasc("servico", v); }, "text", salvarEd), "min-w-[10rem] flex-1"),
+    Stk("Chave PIX", inp("ed-chave-"+x.id, rasc.chavePix, function(v){ mudaRasc("chavePix", v); }, "text", salvarEd), "min-w-[12rem] flex-1"),
+    Stk("Banco", e("input",{id:"ed-banco-"+x.id, value:rasc.banco, disabled:!cbp, title:cbp ? "" : "Este prestador não tem conta ligada (veja Contas de prestadores)", className:CAMPO+" w-full disabled:opacity-50", onChange:function(ev){ mudaRasc("banco", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvarEd(); }}), "w-40"),
+    Stk(temMov ? "Sócio (travado)" : "Sócio", e("select",{id:"ed-socio-"+x.id, value:rasc.responsavelId, disabled:temMov, title:temMov ? "Travado: este prestador já tem dívida ou pago lançado" : "", className:SEL_AZUL+" disabled:opacity-50", onChange:function(ev){ mudaRasc("responsavelId", ev.target.value); }}, [["", "Nenhum"]].concat(socios.map(function(q){ return [q.id, q.nome]; })).map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })), "w-40")
+  ].map(function(el, i){ return e(React.Fragment,{key:i}, el); }), e(Botao,{principal:true, desabilitado:!rasc.nome.trim(), onClick:salvarEd}, "Salvar"));
+  var cartaoD = aberD && cartao("cartao-d-"+x.id, "Nova dívida · "+nomePropio(x.nome), function(){ aD[1](false); }, [
+    Stk("Data", inp("dv-data-"+x.id, d.data, function(v){ setD(Object.assign({}, d, {data:v})); }, "date"), "w-44"),
+    Stk("Valor (R$)", inp("dv-valor-"+x.id, d.valor, function(v){ setD(Object.assign({}, d, {valor:v.replace(/[^\d,.]/g, "")})); }, "text", lancarDivida), "w-36"),
+    Stk("Prazo", inp("dv-prazo-"+x.id, d.prazo, function(v){ setD(Object.assign({}, d, {prazo:v})); }, "date"), "w-44"),
+    Stk("Descrição", inp("dv-desc-"+x.id, d.descricao, function(v){ setD(Object.assign({}, d, {descricao:v})); }, "text", lancarDivida), "min-w-[14rem] flex-1")
+  ].map(function(el, i){ return e(React.Fragment,{key:i}, el); }), e(Botao,{principal:true, desabilitado:!(num(d.valor)>0), onClick:lancarDivida}, "Lançar dívida"));
+  var cartaoR = aberR && cartao("cartao-r-"+x.id, "Novo pago · "+nomePropio(x.nome), function(){ aR[1](false); }, [
+    Stk("Data", inp("rp-data-"+x.id, r.data, function(v){ setR(Object.assign({}, r, {data:v})); }, "date"), "w-44"),
+    Stk("Valor (R$)", inp("rp-valor-"+x.id, r.valor, function(v){ setR(Object.assign({}, r, {valor:v.replace(/[^\d,.]/g, "")})); }, "text", lancarRepasse), "w-36"),
+    Stk("Quem pagou", inp("rp-quem-"+x.id, r.origem, function(v){ setR(Object.assign({}, r, {origem:v})); }, "text", lancarRepasse), "min-w-[14rem] flex-1"),
+    Stk("Forma", e("select",{id:"rp-forma-"+x.id, value:r.forma, className:SEL_AZUL, onChange:function(ev){ setR(Object.assign({}, r, {forma:ev.target.value})); }}, FORMAS_REPASSE.map(function(k){ return e("option",{key:k, value:k}, k); })), "w-32"),
+    e("label",{key:"pr", className:"flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap text-[13px]", title:"Marque quando o repasse veio de um PIX de revendedora: ele conta como PIX do sócio responsável."}, e("input",{type:"checkbox", checked:r.pixRev, className:"size-4", onChange:function(ev){ setR(Object.assign({}, r, {pixRev:ev.target.checked})); }}), "PIX de revendedora")
+  ].map(function(el, i){ return e(React.Fragment,{key:i}, el); }), e(Botao,{principal:true, desabilitado:!(num(r.valor)>0) || !r.origem.trim(), onClick:lancarRepasse}, "Lançar pago"));
+  return e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-b-lg border-2 border-[#5b74ad] bg-[#1b2a4a]"}, grade, cartaoE, cartaoD, cartaoR);
 }
 function AbaFfPrest(){
   var c = useFF(), ff = c.ff, nf = useState({nome:"", servico:"", chavePix:"", responsavelId:""}), f = nf[0], setF = nf[1], ncb = useState({nome:"", banco:"", chavePix:"", prestadorId:""}), cb = ncb[0], setCb = ncb[1];
-  var abertos = ff.prest.filter(function(x){ return x.ativo; }), porResp = {}; abertos.forEach(function(x){ var k = x.responsavelId || "—"; porResp[k] = r2((porResp[k]||0)+saldoPrestador(ff, x.id)); });
-  var contasPrest = ff.contasBanc.filter(function(b){ return b.prestadorId; });
-  return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Prestadores", sub:"Quem presta serviço e recebe dos sócios: o que se deve (dívidas), o que já foi pago (repasses) e o saldo. Saldo = dívidas − repasses, de todas as datas."}),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-4"}, e(Tile,{t:"Em aberto", v:int(abertos.length), cor:"#F472B6"}), e(Tile,{t:"Saldo devedor", v:BK(r2(abertos.reduce(function(t, x){ return t+saldoPrestador(ff, x.id); }, 0))), cor:"#F59E0B"}),
-      Object.keys(porResp).slice(0, 2).map(function(k){ return e(Tile,{key:k, t:"Saldo · "+(k==="—" ? "sem responsável" : pessoaNome(ff, k)), v:BK(porResp[k]), cor:"#60A5FA"}); })),
-    e(BlocoBarra,{cor:"azul", t:"Novo prestador"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"}, e(Campo,{rot:"Nome", className:"min-w-[12rem] flex-1"}, e(Txt,{value:f.nome, label:"Nome", onChange:function(v){ setF(Object.assign({}, f, {nome:v})); }})), e(Campo,{rot:"Serviço"}, e(Txt,{value:f.servico, label:"Serviço", className:"w-48", onChange:function(v){ setF(Object.assign({}, f, {servico:v})); }})),
-      e(Campo,{rot:"Chave PIX"}, e(Txt,{value:f.chavePix, label:"Chave PIX", className:"w-52", onChange:function(v){ setF(Object.assign({}, f, {chavePix:v})); }})),
-      e(Campo,{rot:"Responsável"}, e(Sel,{value:f.responsavelId, label:"Responsável", className:"w-44", onChange:function(v){ setF(Object.assign({}, f, {responsavelId:v})); }}, e("option",{value:""}, "Nenhum"), ff.personas.filter(function(q){ return q.tipo==="SOCIO"; }).map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
-      e(Btn,{v:"primary", disabled:!f.nome.trim(), onClick:function(){ acao(c, "prest_add", f); setF({nome:"", servico:"", chavePix:"", responsavelId:""}); }}, "Criar"))),
-    ff.prest.length===0 ? e("p",{className:"rounded-xl bg-muted/30 px-4 py-6 text-center text-[13.5px] text-muted-foreground"}, "Nenhum prestador ainda.") : ff.prest.slice().sort(function(a, b){ return (b.ativo ? 1 : 0)-(a.ativo ? 1 : 0) || a.nome.localeCompare(b.nome); }).map(function(x){ return e(CartaoPrest,{key:x.id, c:c, x:x}); }),
-    e(BlocoBarra,{cor:"azul", t:"Contas de prestadores", sub:"conta de prestador: PIX que cai nela vira repasse automático"}, e("div",{className:"flex flex-col gap-3 p-4"},
-      e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"Nome da conta"}, e(Txt,{value:cb.nome, label:"Nome", className:"w-48", onChange:function(v){ setCb(Object.assign({}, cb, {nome:v})); }})), e(Campo,{rot:"Banco"}, e(Txt,{value:cb.banco, label:"Banco", className:"w-36", onChange:function(v){ setCb(Object.assign({}, cb, {banco:v})); }})), e(Campo,{rot:"Chave PIX"}, e(Txt,{value:cb.chavePix, label:"Chave", className:"w-48", onChange:function(v){ setCb(Object.assign({}, cb, {chavePix:v})); }})),
-        e(Campo,{rot:"Prestador"}, e(Sel,{value:cb.prestadorId, label:"Prestador", className:"w-48", onChange:function(v){ setCb(Object.assign({}, cb, {prestadorId:v})); }}, e("option",{value:""}, "Escolha…"), ff.prest.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
-        e(Btn,{v:"secondary", disabled:!cb.nome.trim() || !cb.prestadorId, onClick:function(){ acao(c, "cb_add", cb); setCb({nome:"", banco:"", chavePix:"", prestadorId:""}); }}, "+ Conta")),
-      contasPrest.map(function(b){ return e("div",{key:b.id, className:"flex items-center justify-between text-[13.5px]"}, e("span",null, contaLabel(ff, b.id)+" · "+(b.chavePix||"sem chave")+" · "+((ff.prest.find(function(x){ return x.id===b.prestadorId; })||{}).nome||"—")), iconBtn("trash", "Excluir conta", function(){ acao(c, "cb_del", {id:b.id}); }, true)); })))));
+  var am = useState({}), abMap = am[0], nv = useState(false), novoAberto = nv[0], sel = useState(""), selId = sel[0], cc = useState(null), confC = cc[0], vf = useState(false), verFin = vf[0];   // prestador escolhido na tabela: os dados dele abrem num bloco separado embaixo (Marcus, 18/11/2026)
+  if(!c.pode) return e(Guarda,{c:c});
+  // chaves Pix que o prestador ainda não tem no cadastro mas existem por outro caminho (arquivo local, conta ligada, Greicy universal): um clique grava no servidor e o Direcionar e o Atendimento passam a puxar (Marcus, 18/11/2026)
+  var paraGravar = chavesParaGravar(c.s);
+  var gravarChaves = function(){ paraGravar.forEach(function(k){ acao(c, "prest_set", {id:k.id, patch:{chavePix:k.chave, chavePixTipo:k.tipo, chavePixEm:Date.now(), chavePixPor:c.por}}); }); };
+  var socios = ff.personas.filter(function(q){ return q.tipo==="SOCIO"; });
+  var abertos = ff.prest.filter(function(x){ return x.ativo; }), porResp = {};
+  abertos.forEach(function(x){ var k = x.responsavelId || "—", g = porResp[k] || (porResp[k] = {n:0, saldo:0}); g.n++; g.saldo = r2(g.saldo+saldoPrestador(ff, x.id)); });
+  // resumo em tabela larga de 2 linhas (Marcus, 18/11/2026: "outro layout"): uma coluna por sócio e o total; sem bloco vazio ao lado
+  var chavesResp = Object.keys(porResp).sort(function(x, y){ return porResp[y].saldo-porResp[x].saldo; });
+  var nomeResp = function(k){ return k==="—" ? "Sem responsável" : pessoaNome(ff, k); };
+  var totN = chavesResp.reduce(function(s, k){ return s+porResp[k].n; }, 0), totS = r2(chavesResp.reduce(function(s, k){ return s+porResp[k].saldo; }, 0));
+  var colsResumo = [{k:"ind", t:"Resumo"}].concat(chavesResp.map(function(k){ return {k:"r"+k, t:nomeResp(k), fmt:function(v, l){ return l.id==="saldo" ? BK(v) : String(v); }, cor:function(l){ return l.id==="saldo" ? "text-destructive" : ""; }}; }), [{k:"total", t:"Total", fmt:function(v, l){ return l.id==="saldo" ? BK(v) : String(v); }, cor:function(l){ return l.id==="saldo" ? "text-destructive" : ""; }}]);
+  var lnAberto = {id:"aberto", ind:"Em aberto", total:totN}, lnSaldo = {id:"saldo", ind:"Saldo devedor", total:totS};
+  chavesResp.forEach(function(k){ lnAberto["r"+k] = porResp[k].n; lnSaldo["r"+k] = porResp[k].saldo; });
+  var linhasResumo = [lnAberto, lnSaldo];
+  var criar = function(){ if(!f.nome.trim()) return; acao(c, "prest_add", f); setF({nome:"", servico:"", chavePix:"", responsavelId:""}); nv[1](false); };
+  var criarConta = function(){ if(!cb.nome.trim() || !cb.prestadorId) return; acao(c, "cb_add", cb); setCb({nome:"", banco:"", chavePix:"", prestadorId:""}); };
+  var linhasContas = ff.contasBanc.filter(function(b){ return b.prestadorId; }).map(function(b){ return {id:b.id, conta:b.nome || "—", banco:b.banco || "—", chave:b.chavePix || "Sem chave", prest:(ff.prest.find(function(x){ return x.id===b.prestadorId; }) || {}).nome || "—", acao:"Excluir"}; });
+  var colsContas = [{k:"conta", t:"Conta"}, {k:"banco", t:"Banco"}, {k:"chave", t:"Chave PIX"}, {k:"prest", t:"Prestador"}, {k:"acao", t:"Excluir", render:function(v, l){ return botaoLinha("Excluir", "Excluir conta", function(){ cc[1]({id:l.id, nome:l.conta}); }); }}];
+  var ordenados = ff.prest.slice().sort(function(a, b){ return (b.ativo ? 1 : 0)-(a.ativo ? 1 : 0) || a.nome.localeCompare(b.nome); });
+  // UMA tabela de prestadores, uma linha por prestador (Marcus, 18/11/2026: "não quero essas barras"): clicar na linha abre o detalhe embaixo; filtro e ordem em cada coluna
+  var nFin = ff.prest.filter(function(x){ return !x.ativo; }).length;
+  var linhasPrest = ordenados.filter(function(x){ return x.ativo || verFin || x.id===selId; }).map(function(x){ var cbp = (ff.contasBanc||[]).filter(function(z){ return z.prestadorId===x.id && z.ativo!==false; })[0];
+    var dv = ff.dividas.filter(function(y){ return y.prestId===x.id && y.valor>0; }), rp = ff.repasses.filter(function(y){ return y.prestId===x.id; });
+    return {id:x.id, x:x, socio:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", prest:nomePropio(x.nome), serv:x.servico || "—", banco:cbp ? (cbp.banco || cbp.nome) : "—", sit:x.ativo ? "Em aberto" : "Finalizado", dividas:somaDe(dv, "valor"), repasses:somaDe(rp, "valor"), saldo:saldoPrestador(ff, x.id), sobra:baixaDividas(ff, x.id).sobra}; });
+  var colsPrest = [{k:"socio", t:"Sócio"}, {k:"prest", t:"Prestador"}, {k:"serv", t:"Serviço"}, {k:"banco", t:"Banco"}, {k:"sit", t:"Situação", cor:function(l){ return l.x.ativo ? "" : "text-muted-foreground"; }},
+    {k:"dividas", t:"Dívidas", fmt:BK}, {k:"repasses", t:"Repasses", fmt:BK, cor:function(){ return "text-success"; }}, {k:"saldo", t:"Saldo", fmt:function(v, l){ return l.sobra>0.005 ? "Pago a mais "+BK(l.sobra) : BK(v); }, cor:function(l){ return l.sobra>0.005 ? "text-warning" : l.saldo>0.005 ? "text-destructive" : "text-success"; }}];   // "Pago a mais": os repasses passam das dívidas (falta lançar uma dívida ou o repasse é de outro prestador)
+  var rodapePrest = function(ls){ return ["Total", String(ls.length)+" prestadores", "", "", "", BK(somaDe(ls, "dividas")), BK(somaDe(ls, "repasses")), BK(somaDe(ls, "saldo"))]; };
+  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";   // fundo azul-marinho (Marcus, 18/11/2026: "uma cor de fundo melhor"): a linha aberta fica mais clara e o detalhe numa faixa marinho
+  var COMPACTA = FUNDO+" [&_td]:!h-[22px] [&_td]:!px-2 [&_td]:!py-0 [&_td]:!leading-[14px] [&_td]:!text-[11px] [&_th]:!h-6 [&_td[colspan]]:!p-0";   // linhas de 26 px e letra de 11 px na tabela de prestadores (sem mexer nos campos do detalhe)
+  var escolhido = ff.prest.find(function(x){ return x.id===selId; }), cbEsc = escolhido ? (ff.contasBanc||[]).filter(function(z){ return z.prestadorId===escolhido.id && z.ativo!==false; })[0] : null;
+  var tituloEsc = escolhido ? nomePropio(escolhido.nome)+(escolhido.servico ? " · "+escolhido.servico : "") : "";   // título curto: sócio e conta já estão na coluna Prestador (nada se sobrepõe em janela estreita)
+  var dirEsc = escolhido ? "Saldo "+BK(saldoPrestador(ff, escolhido.id)) : "";
+  return e("div",{className:PADRAO_BLOCOS+" -mb-2 -ml-3 -mr-2 -mt-5 flex flex-col gap-1.5 pl-0 md:-mb-3 md:-ml-5 md:-mr-3 md:pl-0"},
+    e("div",{title:"Quem presta serviço e recebe dos sócios: o que se deve (dívidas), o que já foi pago (repasses) e o saldo."},
+      e(BlocoPainel,{titulo:"Prestadores em aberto", compacto:true, cls:FUNDO},
+        e(TabelaPlanilha,{cols:colsResumo, linhas:linhasResumo, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nenhum prestador em aberto."}))),
+    e("div",{key:"barra", className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#5b74ad] bg-[#1b2a4a] px-2 py-1"},
+      e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]", title:"Clique numa linha da tabela para ver os dados do prestador embaixo."}, ff.prest.length+" prestadores · "+abertos.length+" em aberto"),
+      e("span",{className:"flex items-center gap-2"},
+        paraGravar.length>0 && e("button",{type:"button", className:BTN_BARRA, title:"Grava no servidor a chave Pix de: "+paraGravar.map(function(k){ return k.nome; }).join(", "), onClick:gravarChaves}, "Gravar "+paraGravar.length+" chaves Pix"),
+        nFin>0 && e("button",{type:"button", className:BTN_BARRA, title:"Prestadores finalizados ficam fechados. Lançar uma dívida nova num deles reabre sozinho.", onClick:function(){ vf[1](!verFin); }}, verFin ? "Ocultar finalizados" : "Finalizados ("+nFin+")"),
+        e(Botao,{principal:!novoAberto, onClick:function(){ nv[1](!novoAberto); }}, novoAberto ? "Fechar novo prestador" : "Novo prestador"))),
+    novoAberto && e("div",{className:"rounded-lg border border-border bg-card/60"},
+      e("div",{className:FORM_PREST+" border-b-0"},
+        e(CampoTxt,{t:"Nome", cls:"min-w-[12rem] flex-1", id:"np-nome", value:f.nome, onChange:function(v){ setF(Object.assign({}, f, {nome:v})); }, onEnter:criar}),
+        e(CampoTxt,{t:"Serviço", cls:"min-w-[10rem] flex-1", id:"np-serv", value:f.servico, onChange:function(v){ setF(Object.assign({}, f, {servico:v})); }, onEnter:criar}),
+        e(CampoTxt,{t:"Chave PIX", cls:"w-72", id:"np-chave", value:f.chavePix, onChange:function(v){ setF(Object.assign({}, f, {chavePix:v})); }, onEnter:criar}),
+        e(CampoSelI,{t:"Responsável", cls:"w-60", id:"np-resp", value:f.responsavelId, onChange:function(v){ setF(Object.assign({}, f, {responsavelId:v})); }, opcoes:[["", "Nenhum"]].concat(socios.map(function(q){ return [q.id, q.nome]; }))}),
+        fixo(e(Botao,{principal:true, desabilitado:!f.nome.trim(), onClick:criar}, "Criar prestador")))),
+    ff.prest.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhum prestador ainda.") :
+      e(BlocoPainel,{titulo:"Prestadores", compacto:false, cls:COMPACTA},
+        e(TabelaPlanilha,{cols:colsPrest, linhas:linhasPrest, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodapePrest, vazio:"Nenhum prestador.",
+          aoClicar:function(l){ sel[1](l.id); setTimeout(function(){ var el = document.getElementById("prest-detalhe"); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 60); },
+          linhaCls:function(l){ return l.id===selId ? "!bg-[#26385c]" : ""; }})),
+    e("div",{id:"prest-detalhe", key:"detalhe"},
+      escolhido ? e(BlocoPainel,{titulo:tituloEsc, compacto:false, cls:FUNDO, dir:dirEsc},
+        e("div",{className:"w-0 min-w-full overflow-x-auto", "data-sem-arrastar":""}, e(DetPrest,{key:escolhido.id, c:c, x:escolhido, fechar:function(){ sel[1](""); }}))) :
+      ordenados.length>0 && e("p",{className:"rounded-lg border border-border bg-[#0f1729] px-3 py-3 text-center text-[13px]"}, "Escolha um prestador na tabela para ver todos os dados dele aqui.")),
+    e("div",{title:"Conta de prestador: o PIX que cai nela vira repasse automático."},
+      e(BlocoPainel,{titulo:"Contas de prestadores", compacto:true, cls:FUNDO},
+        e("div",{className:FORM_PREST},
+          e(CampoTxt,{t:"Nome da conta", cls:"min-w-[10rem] flex-1", id:"cb-nome", value:cb.nome, onChange:function(v){ setCb(Object.assign({}, cb, {nome:v})); }, onEnter:criarConta}),
+          e(CampoTxt,{t:"Banco", cls:"w-40", id:"cb-banco", value:cb.banco, onChange:function(v){ setCb(Object.assign({}, cb, {banco:v})); }, onEnter:criarConta}),
+          e(CampoTxt,{t:"Chave PIX", cls:"min-w-[10rem] flex-1", id:"cb-chave", value:cb.chavePix, onChange:function(v){ setCb(Object.assign({}, cb, {chavePix:v})); }, onEnter:criarConta}),
+          e(CampoSelI,{t:"Prestador", cls:"w-64", id:"cb-prest", value:cb.prestadorId, onChange:function(v){ setCb(Object.assign({}, cb, {prestadorId:v})); }, opcoes:[["", "Escolha"]].concat(ff.prest.map(function(x){ return [x.id, x.nome]; }))}),
+          fixo(e(Botao,{principal:true, desabilitado:!cb.nome.trim() || !cb.prestadorId, onClick:criarConta}, "Criar conta"))),
+        confC && e("div",{role:"alertdialog", className:"flex flex-wrap items-center justify-center gap-3 border-b-2 border-destructive bg-[#431616] px-2 py-1.5 text-[13px] font-semibold"},
+          e("span",null, "Tem certeza que quer excluir a conta "+confC.nome+"?"),
+          e(Botao,{principal:true, onClick:function(){ var id = confC.id; cc[1](null); acao(c, "cb_del", {id:id}); }}, "Sim"),
+          e(Botao,{onClick:function(){ cc[1](null); }}, "Não")),
+        e(TabelaPlanilha,{cols:colsContas, linhas:linhasContas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, vazio:"Nenhuma conta de prestador."}))));
 }
 
 // ───────────────── Pró-labores ─────────────────
