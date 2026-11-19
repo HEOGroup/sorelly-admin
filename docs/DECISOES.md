@@ -2892,3 +2892,24 @@ Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `
 - **Pix adiantado da revendedora (regra do Marcus, ainda NÃO construída):** quando a revendedora paga Pix direto a fornecedor ou prestador ANTES do acerto (ex.: Karine, R$ 634,55 em 18/11, sem acerto ainda), o acerto que a funcionária puxar no Atendimento interno tem que vir com esse valor JÁ PAGO, sem lançar de novo e sem criar um segundo repasse no prestador. O lançamento manual de 18/11 no 68 Gang é o registro do adiantamento até lá. Na DevMaster não há baixa dela depois de 23/10.
 - **Telas:** prestadores em três colunas lado a lado (Prestador, Dívidas, Pago) com totais na linha de baixo alinhados às colunas; dados do prestador em tabela e botão Editar abre um cartão (sócio travado quando já há dívida ou pago); lançar dívida e lançar pago em cartão próprio; Excluir pede "Tem certeza?"; descrição e nome de quem pagou mostram poucas palavras e o texto inteiro aparece ao passar o mouse; listas em ordem de data (antigo em cima); prestadores finalizados ficam fechados atrás do botão "Finalizados" e reabrem sozinhos quando se lança dívida nova.
 - **Limpeza pedida pelo Marcus:** Julia Marketing zerada (fechamento de R$ 300,00 em 18/11) e Rebel Mode 2 apagado (estava vazio). Truck Plaza fica finalizada (tem R$ 3.640,00 de histórico; só apagar se o Marcus confirmar).
+
+## 18/11/2026 · Produção › Premiação: bônus por dia
+Marcus: bônus pelo DIA, 300 peças = R$ 15,00, 350 = R$ 20,00, 400 ou mais = R$ 25,00; menos de 300 nada; mês = soma dos dias; pago no dia 11 do mês seguinte. Produção externa fora. Tela com 2 linhas por funcionária (Peças e Bônus) por dia. Valores em BONUS_DIAS (domain/producao.js). Suposições até o Marcus responder: novembro conta o mês inteiro; Crisbele entra; sem mínimo de dias.
+
+## 18/11/2026 · Produção: lançamento da funcionária (Marcus)
+A funcionária lança de UMA funcionária só código e quantidade; o preço vem do último lançamento do código. Lançou o dia, fica travado (por funcionária e dia); errou, pede a correção ao Marcus (botão copia a mensagem); só a Diretoria corrige. Bônus por dia mantido sem peso por tipo de peça (anel conta igual). Código em producao.js (precoPorCodigo, travadasDoDia, dia_salvar) e ProdEditorDia.js.
+
+## 18/11/2026 · Produção: Dávila fora do bônus e primeira na grade
+Marcus: a Dávila (externa) está fora do bônus; fica na tabela da Produção, PRIMEIRA linha, para ver tudo num lugar só; as funcionárias não veem a linha dela. Feito por nome (EXTERNAS/SEM_BONUS em producao.js) e na grade (ProdGrade.js).
+
+## 18/11/2026 · Produção: grade e janela de lançamento
+Marcus: janela de lançamento compacta (fonte menor) com fundo em degradê; a funcionária lança TODAS as linhas de uma funcionária de uma vez e escolhe a unidade uma vez só. Na grade, quem não lançou nos últimos 2 dias úteis (sem sábado e domingo) e não tem bônus no mês fica fechado e só aparece no botão "+". Código: ProdEditorDia.js, ProdGrade.js, producao.js (dia_salvar respeita a unidade escolhida).
+
+## 18/11/2026 · Produção externa sem dourado e pagamento da Dávila na grade
+Marcus: tirar o dourado, alinhar os blocos; o lançamento da Dávila também fica na tela 1 (Produção); na linha dela o valor é o que ela recebe: diária de R$ 130,00 até 15/11 somada às peças × R$ 0,45 de 16/11 em diante; nos outros meses vale só o cálculo das peças. Código: resumoExterna (producao.js), ProdGrade.js, ProdExterna.js.
+
+## 19/11/2026 · Produção externa em formato de estoque e pagamentos por semana
+Marcus: "é estoque, algo assim" e "arruma os pagamentos". Estoque com a Dávila (código, categoria, entrou, voltou, saldo) + Movimentações (entrou e voltou por data). Pagamentos: uma linha por semana (segunda a domingo, paga na quarta) com peças, valor da semana, já pago e falta pagar.
+
+## 19/11/2026 · Dias travados
+Marcus: "trava os dias pra ninguém poder mexer". A funcionária só lança hoje e o dia útil anterior; dia antigo só a Diretoria altera; dia já lançado da funcionária também fica travado. Vale no cálculo (diaAbertoFuncionaria) e na tela. SÓ FUNCIONA NO SITE DEPOIS DE PUBLICAR (o site no ar é a versão antiga).
