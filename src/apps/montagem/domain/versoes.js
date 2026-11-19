@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.41", data:"2026-11-19", titulo:"Atendimento Sorelly: lista de hoje sem coluna extra (botão Cliente aguardando dentro da Situação)", itens:[
+  {tipo:"correção", area:"Atendimento interno → Atendimento Sorelly", txt:"A coluna Chegada deixava a lista de hoje larga demais e cortava a Situação. Saiu a coluna: o botão Cliente aguardando agora fica dentro da Situação das agendadas e, depois do clique, a linha mostra Aguardando com a hora da chegada."}
+ ]},
  {v:"0.21.40", data:"2026-11-19", titulo:"Relatório por pedido: boleto opcional e mensagem igual à do acerto", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"No relatório por pedido, a caixa \"Incluir boleto no relatório e na mensagem\" vem desmarcada: o HTML, o link e a mensagem mostram só o valor em Pix, igual ao acerto normal. Marcada, os três passam a mostrar também o boleto (valor, vencimento e se está pago)."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"A mensagem por pedido segue o formato da mensagem normal do acerto (Total do pedido em Pix, Já enviado, Em aberto, Pix enviados) e já sai com o link do novo HTML: Gerar mensagem cria o link na hora, sem precisar clicar antes em Gerar link."}
