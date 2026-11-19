@@ -3,6 +3,16 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 18/11/2026 (Encomendas e reposições: link do pedido da revendedora)
+- **Fluxo:** a revendedora NÃO pede mais peças pelo WhatsApp. Ela recebe um link só dela (vale 48 h; 120 h depois de o setor publicar peças). Pede por ali (até 10 peças, foto ou descrição, dourado/prata/os dois). O setor importa no Funil, acha as peças e publica no MESMO link. Ela marca Quero ou Não quero em cada peça, com observação por peça e recado final.
+- **Duas abas no link das peças:** "Peças que encontramos" e "O que eu pedi" (fotos, descrições e recado do pedido dela, porque às vezes nem ela lembra). A barra de baixo (quero, não quero, faltam, total e limite) só aparece na aba das peças.
+- **Pedir mais peças:** no fim da aba das peças, no máximo 2 vezes por link (`MAX_EXTRAS` em `src/server/pedido-link.js`), até 10 peças por vez. Aparece na ficha do pedido, bloco "Pediu mais peças". Os pedidos extras ficam em `dados.extras` do link.
+- **Limite de valor:** vem do cadastro da revendedora (tabela de valores por média e quantidade por mês). Tabela de valores em `/pedido/<código>/tabela`. A barra bloqueia o envio acima do limite. PERGUNTA ABERTA: o pedido extra conta o limite de novo ou usa o que sobrou?
+- **Visual do link:** fundo preto com degradê dourado subindo de baixo, botões dourados, verdinho no Quero e vermelhinho no Não quero, borda da foto na cor do cartão, celular primeiro, letras pequenas, sem rolar para o lado. Peças sempre na ordem anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras. Nome de peça sem a palavra folheado/banhado.
+- **Links sempre com o endereço online** (https://sorelly-admin.vercel.app), nunca localhost.
+- **Teste:** nome "TESTE ... APAGAR"; nunca testar com cliente real; limpar depois. Mensagem de WhatsApp para as meninas testarem foi escrita em negrito, curta, só com o link.
+- **Pendências:** ligar o link da Taciana ao pedido no Funil (op `ped_dados` com o id do link) para a resposta aparecer na ficha; apagar o link antigo da Taciana e o pedido "Teste Marcus"; chave Pix da taxa vazia no servidor; decidir a regra do limite no pedido extra.
+
 ## 18/11/2026 (Kits: Fila de montagem e Preferências do kit saem do admin antigo)
 - **Pedido do Leonardo:** trazer do admin antigo (sorelly-admin) tudo de Preferências do kit e da Fila de montagem, servidor e telas, no padrão visual deste sistema e funcionando igual.
 - **Formulário do app:** este sistema serve `GET /api/kit/preferences` (público, mesmo formato `{version, blocks}` do antigo, só blocos ativos e na ordem). Os blocos são os do módulo `pk` (Formulário do app). O app só passa a ler daqui quando o backend do app tiver `kit` em `ADMIN_NOVO_MODULOS` e o celular apontar `EXPO_PUBLIC_KIT_API_URL` para este sistema (novo build).

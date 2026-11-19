@@ -16,6 +16,16 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 
 - **26/10/2026** (diário, linha 1188; · Revendedoras: expositores): Marcus: puxar as condicionais abertas até o ano 3000 (expositor). "Todas" continua só kits (2.106 revendedoras, R$ 20.665.969); aba Expositor e aba "Só expositor · sem kit" (59 esquecidas). Modelos agrupados: todos os dois andares juntos; abrir o grupo mostra os modelos e quem está com cada um (filtro por grupo/modelo). Média das 3 últimas vendas = acertos fechados (dmach, ach_valormerc) dos últimos 20 meses; objetivo: cobrar valor mínimo de venda de quem está com expositor (a regra de cobrança ainda NÃO existe). Esquecida: mais de 6 meses amarelo, mais de 1 ano vermelho. Itens do expositor com código fora de MP/EX/MU/PJ são joias e ficam no grupo "Peças de joia".
 
+## 18/11/2026 (Encomendas e reposições: link do pedido da revendedora)
+- **Fluxo:** a revendedora NÃO pede mais peças pelo WhatsApp. Ela recebe um link só dela (vale 48 h; 120 h depois de o setor publicar peças). Pede por ali (até 10 peças, foto ou descrição, dourado/prata/os dois). O setor importa no Funil, acha as peças e publica no MESMO link. Ela marca Quero ou Não quero em cada peça, com observação por peça e recado final.
+- **Duas abas no link das peças:** "Peças que encontramos" e "O que eu pedi" (fotos, descrições e recado do pedido dela, porque às vezes nem ela lembra). A barra de baixo (quero, não quero, faltam, total e limite) só aparece na aba das peças.
+- **Pedir mais peças:** no fim da aba das peças, no máximo 2 vezes por link (`MAX_EXTRAS` em `src/server/pedido-link.js`), até 10 peças por vez. Aparece na ficha do pedido, bloco "Pediu mais peças". Os pedidos extras ficam em `dados.extras` do link.
+- **Limite de valor:** vem do cadastro da revendedora (tabela de valores por média e quantidade por mês). Tabela de valores em `/pedido/<código>/tabela`. A barra bloqueia o envio acima do limite. PERGUNTA ABERTA: o pedido extra conta o limite de novo ou usa o que sobrou?
+- **Visual do link:** fundo preto com degradê dourado subindo de baixo, botões dourados, verdinho no Quero e vermelhinho no Não quero, borda da foto na cor do cartão, celular primeiro, letras pequenas, sem rolar para o lado. Peças sempre na ordem anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras. Nome de peça sem a palavra folheado/banhado.
+- **Links sempre com o endereço online** (https://sorelly-admin.vercel.app), nunca localhost.
+- **Teste:** nome "TESTE ... APAGAR"; nunca testar com cliente real; limpar depois. Mensagem de WhatsApp para as meninas testarem foi escrita em negrito, curta, só com o link.
+- **Pendências:** ligar o link da Taciana ao pedido no Funil (op `ped_dados` com o id do link) para a resposta aparecer na ficha; apagar o link antigo da Taciana e o pedido "Teste Marcus"; chave Pix da taxa vazia no servidor; decidir a regra do limite no pedido extra.
+
 ## 10/11/2026 (noite) — Palavras e setor
 - **Reposição** = peças levadas no meio do mês para a revendedora. **Encomenda** = peças separadas para levar no próximo kit. É um setor só; o Marcus permitiu o nome **"Reposições & Encomendas"** (renomear o menu fica para decidir). Pergunta aberta: unir os dois campos de R$ 15,00 em um e quem define o valor da reposição "especial".
 
