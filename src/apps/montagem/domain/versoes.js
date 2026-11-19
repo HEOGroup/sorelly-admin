@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.61", data:"2026-11-19", titulo:"Financeiro familiar: botão Encerrar conta", itens:[
+  {tipo:"novo", area:"Financeiro → Família → Contas a pagar", txt:"Novo botão Encerrar conta (ícone de proibido, ao lado de Editar e Excluir). Tira as parcelas em aberto da conta fixa ou parcelada e guarda as parcelas já pagas no histórico (Contas pagas). Diferente de Excluir, que apaga tudo. Conta sem nenhum pagamento sai por inteiro."}]},
  {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Cada combinado avulso ganhou o horário de início e de fim e o campo Bate ponto (Sim ou Não), para marcar se a pessoa precisa registrar o ponto naquele dia."}]},
  {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
