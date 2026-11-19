@@ -20,6 +20,7 @@ import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe, prazoDaDivida } from "@/apps/montagem/domain/financeiro-familiar";
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
+import { orientacaoDoDia } from "@/apps/montagem/domain/cerebro-financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
@@ -105,6 +106,14 @@ function contextoCnpj(s){
       amanha:soma(l.filter(function(i){ return i.venc===amanha; }).map(function(i){ return {valor:i.valor}; })), disp:r2(b.disp), saldo:r2(b.real)};
   });
 }
+
+// CÉREBRO DO FINANCEIRO v1 (18/11/2026): os avisos do dia por CNPJ (saldos + contas a pagar dia a dia). SÓ SUGERE; quem confirma é o Lucas. Regras: domain/cerebro-financeiro.js e docs/negocio/cerebro-financeiro/.
+function avisosCerebro(s){
+  setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
+  var itens = filtrar("", "", "", "apagar", "sorelly", "").filter(function(i){ return i.venc && i.venc>="2020-01-01" && i.venc<="2100-12-31"; }).map(function(i){ return {filial:i.filial, venc:i.venc, valor:i.valor}; });
+  return orientacaoDoDia(s.saldosContas, itens, hojeIsoCp());
+}
+var COLS_CEREBRO = [{k:"cnpj", t:"CNPJ"}, {k:"sit", t:"Urgência", cor:function(l){ return l.pri===1 ? "text-red-400 font-semibold" : l.pri===2 ? "text-amber-300 font-semibold" : ""; }}, {k:"tipo", t:"Tipo"}, {k:"texto", t:"Aviso"}, {k:"valor", t:"Valor", fmt:function(v){ return v>0 ? BKC(v) : "—"; }}, {k:"data", t:"Data"}];
 
 // Dívidas da família com PRAZO e saldo em aberto (Financeiro familiar, aba Prestadores). Só quem abre o Financeiro familiar vê (sócios). O destino é o prestador de mesmo nome em Controle de pagamentos.
 // Aba Família (12/11/2026, chamado do Marcus: "da família tudo errado"): mostrava só 2 dívidas de prestadores, uma delas de agosto. Agora traz o que a família tem a pagar: as CONTAS da casa não pagas do mês atual e do mês anterior (Financeiro familiar, fora pró-labore) mais as dívidas de prestadores com prazo no mesmo período (até o fim do mês atual: as parcelas dos próximos meses ficam no Financeiro familiar). Parcela mais velha fica no Financeiro familiar (muitas são de importação, pagas sem baixa).
@@ -430,6 +439,7 @@ function AbaDirecionar(){
     e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
+    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:50, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
     veFam && e("div",{className:"grid grid-cols-1 items-stretch gap-1.5"}, Painel("Pagamentos da Família", "", "", "#f5c14b", e("div",{className:"flex flex-1 flex-col"}, tabelaFam))),   // bloco da Família (12/11/2026): os botões Falta/Todos do mês/Família saíram do bloco dos fornecedores, então a Família ganhou bloco próprio, só para quem abre o Financeiro familiar
     // ── feitos

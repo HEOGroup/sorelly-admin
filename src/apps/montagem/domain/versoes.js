@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.28", data:"2026-11-18", titulo:"Cérebro do Financeiro v1: avisos do dia no Direcionar", itens:[
+  {tipo:"novo", area:"Financeiro → Direcionar", txt:"Bloco Avisos do dia, só sugere: por CNPJ, soma as contas a pagar dia a dia (com as atrasadas) contra o disponível (saldo mais cheque especial) e avisa com 1 a 2 dias de antecedência quando falta dinheiro. Também avisa quando conta tem pouco negativo (até R$ 2.000,00: mandar só o suficiente), quando o saldo positivo do Sicredi 34 deve amortizar o Rotativo, e a ordem de liquidar as contas negativas do 34 (Safra, depois Rotativo + Sicredi, depois Unicred). Vale o último saldo lançado."}
+ ]},
  {v:"0.21.27", data:"2026-11-18", titulo:"Link das peças: taxa de entrega por Pix depois de separar", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Depois que o setor separa as peças (a funcionária desmarca a que não foi separada), o mesmo link da revendedora ganha a aba Pagamento: lista das peças separadas com foto e total, taxa de entrega, chave Pix com botão Copiar e envio do comprovante. O pedido só é liberado para envio depois que a equipe confere. Na ficha do pedido, o bloco Mensagem mostra uma mensagem de cada vez (pedido, peças encontradas, peças separadas), já pronta para copiar com o link, e o bloco Taxa de entrega mostra o comprovante."},
  ]},
