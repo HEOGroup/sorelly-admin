@@ -229,9 +229,9 @@ function Hoje(p){
     dias.length ? e(Bloco,{t:"Fila por dia · clique no dia para ver as peças"},
       e(Plan,{linhas:linhasFila, aoClicar:function(l){ ss[1](l.dia); sv[1]("dia"); }, linhaCls:function(l){ return l.comece ? "fc-pulso" : ""; },
         cols:[{k:"dia", t:"Dia de cadastro", fmt:function(v, l){ return (v===diaAtual && vis==="dia" ? "▸ " : "")+formatarDia(v)+(l.comece ? " · comece aqui" : ""); }}, {k:"cad", t:"Cadastradas", fmt:N}, {k:"sem", t:"Falta fotografar", fmt:N}, {k:"ed2", t:"Falta editar", fmt:N}, {k:"env", t:"Falta enviar", fmt:N},
-          {k:"foto", t:"Foto", corTopo:COR.foto, fmt:N}, {k:"ed", t:"Editada", corTopo:COR.ed, fmt:N}, {k:"sub", t:"Sistema", corTopo:COR.sub, fmt:N},
+          {k:"sub", t:"Sistema", corTopo:COR.sub, fmt:N},   // só Sistema (Marcus, 19/11/2026): se foi para o sistema, a foto já foi tirada e editada
           {k:"esp", t:"Esperando", fmt:function(v){ return v===0 ? "hoje" : v+(v===1 ? " dia" : " dias"); }}, {k:"sit", t:"Situação", cor:function(l){ return l.late ? "text-destructive" : "text-success"; }}],
-        total:function(){ return ["Fila toda", N(somaFila("cad")), N(semFoto.length), N(edita.length), N(envia.length), N(somaFila("foto")), N(somaFila("ed")), N(somaFila("sub")), "—", atras ? N(atras)+" atrasadas" : "Em dia"]; }})) : null,
+        total:function(){ return ["Fila toda", N(somaFila("cad")), N(semFoto.length), N(edita.length), N(envia.length), N(somaFila("sub")), "—", atras ? N(atras)+" atrasadas" : "Em dia"]; }})) : null,
     e(Bloco,{t:(achados ? "Busca por "+busca : titulo)+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças")},
       e("div",{className:"mb-2 flex flex-wrap items-center justify-between gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Segmentado,{opcoes:[["dia", "Dia "+(diaAtual ? formatarDia(diaAtual).slice(0, 5) : "—")+" · "+N(doDia.length)], ["foto", "Fotografar · "+N(semFoto.length)], ["ed", "Editar · "+N(edita.length)], ["env", "Enviar · "+N(envia.length)], ["mes", "Mês · "+N(mes.length)]], atual:achados ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
       e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:achados ? "Nenhuma peça com esse código." : "Nenhuma peça nesta lista."})));
