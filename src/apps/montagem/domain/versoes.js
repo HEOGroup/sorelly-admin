@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.43", data:"2026-11-19", titulo:"Acesso: Amanda de Miranda com acesso total", itens:[
+  {tipo:"melhoria", area:"RH → Acessos", txt:"A Amanda de Miranda passa a ter acesso total: vê os salários dos funcionários e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia e Empréstimos), como a Priscila e os sócios. A exceção de 11/11/2026 acabou."}]},
+ {v:"0.21.42", data:"2026-11-19", titulo:"RH › Contratos refeitos no padrão do sistema", itens:[
+  {tipo:"melhoria", area:"RH → Contratos", txt:"Todas as telas de Contratos (Representantes, Funcionários CLT, Terceiros, Particulares do Marcus, Crédito bancário, Aluguéis, Consórcios e Modelos) usam a tabela com filtro e ordem em cada coluna. Saíram a busca e o filtro de status do topo, os blocos de totais e os chips. Status e escolhas viram menu suspenso, nomes de arquivo aparecem inteiros e o total (saldo, valor mensal) fica no fim da tabela."},
+  {tipo:"novo", area:"RH → Contratos → Terceiros", txt:"Terceiros e Particulares ganharam o Tipo do prestador (Advogado, Contador, Segurança do trabalho, Medicina do trabalho, Tecnologia, Marketing, Consultoria, Manutenção, Limpeza, Outros), o Registro (OAB, CRC...) e o Honorário mensal, para guardar contratos de advogados e outros prestadores e filtrar por tipo."},
+  {tipo:"melhoria", area:"RH → Contratos → Modelos", txt:"Modelos em tabela (modelo, tipo, variáveis, alterado em e por quem) e, no editor, a variável se insere por menu suspenso e a lista de variáveis vira tabela."}]},
  {v:"0.21.41", data:"2026-11-19", titulo:"Atendimento Sorelly: lista de hoje sem coluna extra (botão Cliente aguardando dentro da Situação)", itens:[
   {tipo:"correção", area:"Atendimento interno → Atendimento Sorelly", txt:"A coluna Chegada deixava a lista de hoje larga demais e cortava a Situação. Saiu a coluna: o botão Cliente aguardando agora fica dentro da Situação das agendadas e, depois do clique, a linha mostra Aguardando com a hora da chegada."}
  ]},

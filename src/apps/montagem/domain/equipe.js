@@ -32,10 +32,10 @@ var ATENDENTE_PECAS = {id:35, nome:"Leci"};
 // O que cada grupo abre fica em navigation/perfis.js e se ajusta em RH → Acessos por setor.
 var ACESSO_TOTAL = [{id:29, nome:"Anamaria"}, {id:37, nome:"Priscila"}, {id:38, nome:"Maria Claudia"}, {id:44, nome:"Leonardo"}];   // Priscila e Maria (RH): acesso igual ao do Marcus
 var AMANDA_M = {id:32, nome:"Amanda de Miranda"};
-// EXCEÇÃO POR PESSOA dentro do acesso total (Marcus, 11/11/2026): a Amanda de Miranda abre tudo, MENOS o salário dos funcionários e as telas de Contas a pagar.
+// EXCEÇÃO POR PESSOA dentro do acesso total (Marcus, 11/11/2026): a Amanda de Miranda abria tudo, MENOS o salário e as telas de Contas a pagar. ACABOU em 19/11/2026 (Marcus: acesso total): as duas listas ficam vazias e servem de modelo para uma exceção futura.
 // Ela continua no grupo "supervisao" (o resto do sistema segue igual para ela); aqui só se tira o que ela não vê. Pessoa nova com a mesma regra: acrescentar o id nas duas listas.
-var SEM_SALARIO = [AMANDA_M.id];
-var ABAS_VETADAS = {}; ABAS_VETADAS[AMANDA_M.id] = ["ctapagar", "ctalista", "pagaspordia", "emprestimos", "contaspagar"];   // Análise de custos, Contas a pagar, Pagas por dia, Empréstimos e a aba antiga de Contas a pagar
+var SEM_SALARIO = [];
+var ABAS_VETADAS = {};   // modelo: ABAS_VETADAS[id] = ["ctapagar", "ctalista", "pagaspordia", "emprestimos", "contaspagar"] (Análise de custos, Contas a pagar, Pagas por dia, Empréstimos e a aba antiga)
 function veSalarios(id){ return grupoDe(id)==="supervisao" && SEM_SALARIO.indexOf(id)<0; }   // salário, custo de hora extra e CPF na folha: só o acesso total sem a exceção
 function abasVetadas(id){ return ABAS_VETADAS[id] || []; }
 var DIRECAO_FAMILIA = [{id:17, nome:"Nickolas"}];

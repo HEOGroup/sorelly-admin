@@ -1,200 +1,192 @@
 // Sorelly Admin · montagem — pages/RHContratos.js
-// Contratos do RH, trazidos do SorellyAdmin: representantes, funcionários (CLT), terceiros, particulares do Marcus e os Modelos (texto com variáveis que vira .docx do Word).
+// Contratos do RH: representantes, funcionários (CLT), terceiros (prestadores, advogados, contador...), particulares do Marcus, crédito bancário, aluguéis, consórcios e os Modelos (texto com variáveis que vira .docx do Word).
+// Refeito em 19/11/2026 no padrão do sistema (pedido do Marcus): TabelaPlanilha com filtro e ordem em cada coluna, escolha em menu suspenso, sem blocos de totais no topo, sem chips, nada abreviado, campos de 32 px.
 // Regras em domain/rh.js; o .docx é gerado aqui no navegador (lib/docx-mini.js) e os arquivos anexados ficam no navegador (lib/arquivos.js). Só neste computador por enquanto.
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+import { Janela } from "@/apps/montagem/components/padrao";
+import { Botao, BotaoRemover, CAMPO, CampoSel, Rotulo, brl } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { nomeDe, veSalarios } from "@/apps/montagem/domain/equipe";
 import { REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
 import { STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, bancosDe, br, colaboradoresRh, hojeIso, diasEntre } from "@/apps/montagem/domain/rh";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { baixarBlob, htmlParaDocx, mesclarVariaveis } from "@/apps/montagem/lib/docx-mini";
-import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
-import { Btn } from "@/apps/montagem/ui/button";
-import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
-var int = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
 var num = function(t){ var n = Number(String(t||"").replace(/\./g,"").replace(",",".")); return isNaN(n) ? 0 : n; };
 var fmtN = function(v){ return v ? Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}) : ""; };
-var th = function(t, c){ return e("th",{key:t, className:"whitespace-nowrap border-b border-border px-3 py-2 text-left text-[11.5px] font-semibold uppercase tracking-wide "+(c||"")}, t); };
-var TD = "px-2 py-1.5 text-[13.5px] align-top";
-var CARD = "rounded-xl bg-linear-to-br from-[#8B5CF6]/20 via-card to-card px-4 py-3 ring-1 ring-[#8B5CF6]/40";
 var STATUS_COR = {antigo:"#EF4444", feito:"#F59E0B", assinado:"#22C55E", encerrado:"#94A3B8", nao_revisado:"#EF4444", em_revisao:"#F59E0B", atualizado:"#22C55E", ativo:"#22C55E", quitado:"#22C55E", contemplado:"#3B82F6"};
 var slugKey = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); };
+// tipos de prestador (Terceiros e Particulares): serve para filtrar a lista (advogado, contador...)
+var TIPOS_PRESTADOR = ["Advogado", "Contador", "Segurança do trabalho", "Medicina do trabalho", "Tecnologia", "Marketing", "Consultoria", "Manutenção", "Limpeza", "Outros"];
 
 function useRh(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), sensivel:veSalarios(s.usuario)}; }
 function acao(c, op, extra){ c.d(Object.assign({type:"RH", op:op, por:c.por}, extra)); }
-function Campo(p){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(p.className||"")}, p.rot, p.children); }
-function Sel(p){ return e("select",{value:p.value, "aria-label":p.label, className:INPUT+" h-10! cursor-pointer "+(p.className||"w-48"), onChange:function(ev){ p.onChange(ev.target.value); }}, p.children); }
-function Txt(p){ return e("input",{value:p.value, type:p.type||"text", placeholder:p.ph||"", "aria-label":p.label, className:INPUT+" h-10! "+(p.className||"w-full"), onChange:function(ev){ p.onChange(ev.target.value); }}); }
-function Tile(p){ return e("div",{className:CARD+" flex flex-col items-center text-center"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-[.12em] text-muted-foreground"}, p.t), e("b",{className:MONO+" text-[22px]", style:{color:p.cor}}, p.v)); }
-function Modal(p){
-  return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-4", onClick:p.fechar},
-    e("div",{className:"flex max-h-[92vh] w-full "+(p.largo ? "max-w-3xl" : "max-w-2xl")+" flex-col gap-3 overflow-y-auto rounded-2xl bg-card p-5 ring-1 ring-[#8B5CF6]/50", onClick:function(ev){ ev.stopPropagation(); }},
-      e("div",{className:"flex items-start justify-between gap-3"}, e("div",null, e("h2",{className:"font-heading text-xl font-bold"}, p.t), p.sub && e("p",{className:"text-[12.5px] text-muted-foreground"}, p.sub)), e("button",{onClick:p.fechar, "aria-label":"Fechar", className:"grid size-9 place-items-center rounded-lg bg-muted/50"}, e(Ph,{n:"x", s:16}))), p.children));
-}
-var chip = function(st){ var cor = STATUS_COR[st]||"#94A3B8"; return e("span",{className:"inline-flex w-fit whitespace-nowrap rounded-md px-2 py-0.5 text-[12px] font-bold", style:{background:cor+"26", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}}, STATUS_LB[st]||st); };
-function Texto(p){ return e("input",{key:p.v, defaultValue:p.v||"", placeholder:p.ph||"", className:INPUT+" h-9! "+(p.cls||"w-full min-w-[9rem]")+(p.mono ? " "+MONO : ""), onBlur:function(ev){ if(ev.target.value!==(p.v||"")) p.save(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }}); }
-function Dinheiro(p){ return e("input",{key:p.v, defaultValue:fmtN(p.v), placeholder:"0,00", className:INPUT+" h-9! w-32 "+MONO, onBlur:function(ev){ var v = num(ev.target.value); if(v!==(p.v||0)) p.save(v||null); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }}); }
-function CelulaStatus(p){ var c = p.c, ct = p.ct; return e("div",{className:"flex flex-col gap-1"}, e(Sel,{value:ct.status, label:"Status", className:"h-8! w-40", onChange:function(v){ acao(c, "contr_set", {id:ct.id, patch:{status:v}}); }}, STATUS_BY_TIPO[ct.tipo].map(function(k){ return e("option",{key:k, value:k}, STATUS_LB[k]); })), chip(ct.status)); }
+var save = function(c, ct, patch){ acao(c, "contr_set", {id:ct.id, patch:patch}); };
+var extra = function(ct, chave){ return (ct.extra||{})[chave]; };
+var avencer = function(ct){ if(ct.status!=="ativo" || !ct.vigenciaFim) return false; var d = diasEntre(hojeIso(), ct.vigenciaFim); return d>=0 && d<=30; };
+
+// ───────────────── campos que ficam dentro das células ─────────────────
+function Sel(p){ return e("select",{value:p.value, "aria-label":p.label, className:CAMPO+" cursor-pointer "+(p.cls||"min-w-[9rem]"), style:p.cor ? {color:p.cor} : undefined, onChange:function(ev){ p.onChange(ev.target.value); }}, p.children); }
+function Texto(p){ return e("input",{key:p.v, defaultValue:p.v||"", placeholder:p.ph||"", "aria-label":p.label||p.ph||"Campo", className:CAMPO+" "+(p.cls||"min-w-[10rem]")+(p.mono ? " "+MONO : ""), onBlur:function(ev){ if(ev.target.value!==(p.v||"")) p.save(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }}); }
+function Dinheiro(p){ return e("input",{key:p.v, defaultValue:fmtN(p.v), placeholder:"R$ 0,00", "aria-label":p.label||"Valor em reais", className:CAMPO+" w-32 "+MONO, onBlur:function(ev){ var v = num(ev.target.value); if(v!==(p.v||0)) p.save(v||null); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }}); }
+function CelulaStatus(p){ var c = p.c, ct = p.ct; return e(Sel,{value:ct.status, label:"Status", cls:"min-w-[10rem]", cor:STATUS_COR[ct.status], onChange:function(v){ acao(c, "contr_set", {id:ct.id, patch:{status:v}}); }}, STATUS_BY_TIPO[ct.tipo].map(function(k){ return e("option",{key:k, value:k}, STATUS_LB[k]); })); }
+var BTN_TXT = "inline-flex h-8 items-center rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10";
 function CelulaAnexo(p){
   var c = p.c, ct = p.ct, an = ct.anexos.find(function(a){ return a.tipo===p.tipo; });
   var enviar = function(ev){ var arq = ev.target.files[0]; ev.target.value = ""; if(!arq) return; if(arq.size>15*1048576){ c.d({type:"AVISO", txt:"Arquivo maior que 15 MB.", tom:"alerta"}); return; }
     var id = "ar"+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36); salvarArquivo(id, arq).then(function(){ if(an) apagarArquivo(an.id); acao(c, "contr_anexo_add", {id:ct.id, anexo:{id:id, tipo:p.tipo, nome:arq.name, tam:arq.size}}); }); };
-  if(an) return e("div",{className:"flex items-center gap-1.5"}, e("button",{onClick:function(){ baixarArquivo(an.id, an.nome).catch(function(){ c.d({type:"AVISO", txt:"Esse arquivo não está neste computador.", tom:"alerta"}); }); }, title:an.nome+" · "+br(new Date(an.em).toISOString().slice(0,10)), className:"max-w-[9rem] truncate rounded-lg bg-success/15 px-2 py-1 text-[12.5px] font-semibold text-success hover:bg-success/25"}, "📎 "+an.nome),
-    e("button",{onClick:function(){ if(window.confirm("Remover o arquivo \""+an.nome+"\"?")){ apagarArquivo(an.id); acao(c, "contr_anexo_del", {id:ct.id, anexoId:an.id}); } }, "aria-label":"Remover arquivo", className:"grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"x", s:13})));
-  if(p.dica) return e("span",{className:"text-[12px] text-muted-foreground"}, p.dica);
-  return e("label",{className:"inline-flex cursor-pointer items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1 text-[12.5px] font-semibold hover:bg-white/20"}, "＋ Anexar", e("input",{type:"file", className:"hidden", onChange:enviar}));
+  if(an) return e("div",{className:"flex items-center justify-center gap-2"}, e("button",{type:"button", onClick:function(){ baixarArquivo(an.id, an.nome).catch(function(){ c.d({type:"AVISO", txt:"Esse arquivo não está neste computador.", tom:"alerta"}); }); }, title:"Anexado em "+br(new Date(an.em).toISOString().slice(0,10)), className:"h-8 text-[13px] text-success underline hover:brightness-125"}, an.nome),
+    e(BotaoRemover,{label:"Remover arquivo", onClick:function(){ if(window.confirm("Remover o arquivo \""+an.nome+"\"?")){ apagarArquivo(an.id); acao(c, "contr_anexo_del", {id:ct.id, anexoId:an.id}); } }}));
+  if(p.dica) return e("span",{className:"text-[13px]"}, p.dica);
+  return e("label",{className:BTN_TXT+" cursor-pointer"}, "Anexar", e("input",{type:"file", className:"hidden", onChange:enviar}));
 }
-function CelulaGerado(p){ var ct = p.ct; return ct.documentoId ? e("button",{onClick:function(){ baixarArquivo(ct.documentoId, ct.nome+".docx").catch(function(){ p.c.d({type:"AVISO", txt:"Esse arquivo não está neste computador.", tom:"alerta"}); }); }, className:"rounded-lg bg-primary/15 px-2 py-1 text-[12px] font-bold text-primary hover:bg-primary/25"}, "⬇ .docx gerado") : null; }
-function BotaoExcluir(p){ var ct = p.ct; return e("button",{onClick:function(){ if(window.confirm("Remover "+ct.nome+"?")){ ct.anexos.forEach(function(a){ apagarArquivo(a.id); }); if(ct.documentoId) apagarArquivo(ct.documentoId); acao(p.c, "contr_del", {id:ct.id}); } }, "aria-label":"Remover", className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"trash", s:15})); }
+function CelulaGerado(p){ var ct = p.ct; return ct.documentoId ? e("button",{type:"button", onClick:function(){ baixarArquivo(ct.documentoId, ct.nome+".docx").catch(function(){ p.c.d({type:"AVISO", txt:"Esse arquivo não está neste computador.", tom:"alerta"}); }); }, className:"h-8 text-[13px] text-primary underline hover:brightness-125"}, "Baixar .docx gerado") : null; }
+function CelulaContrato(p){ return e("div",{className:"flex flex-col items-center gap-1"}, e(CelulaAnexo,{c:p.c, ct:p.ct, tipo:"CONTRATO"}), e(CelulaGerado,{c:p.c, ct:p.ct})); }
+function CelulaFim(p){ var c = p.c, ct = p.ct, dias = ct.vigenciaFim ? diasEntre(hojeIso(), ct.vigenciaFim) : null;
+  return e("div",{className:"flex items-center justify-center gap-2"}, e("input",{type:"date", value:ct.vigenciaFim||"", "aria-label":"Fim da vigência", className:CAMPO+" w-40", onChange:function(ev){ save(c, ct, {vigenciaFim:ev.target.value}); }}), avencer(ct) && e("span",{className:"text-[13px] font-bold text-destructive"}, "Vence em "+dias+(dias===1 ? " dia" : " dias"))); }
+
+// ───────────────── definição de coluna: {h, cel(ct), v(ct) = texto para filtrar e ordenar, soma(ct) = número para o total} ─────────────────
+function K(h, cel, v, soma){ return {h:h, cel:cel, v:v, soma:soma}; }
+function colTexto(c, h, campo, ph, mono){ return K(h, function(ct){ return e(Texto,{v:ct[campo], ph:ph||"", label:h, mono:mono, save:function(v){ save(c, ct, (function(){ var o = {}; o[campo] = v; return o; })()); }}); }, function(ct){ return ct[campo]||""; }); }
+function colExtra(c, h, chave, ph, mono){ return K(h, function(ct){ return e(Texto,{v:extra(ct, chave), ph:ph||"", label:h, mono:mono, save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }, function(ct){ return extra(ct, chave)||""; }); }
+function colDinExtra(c, h, chave){ return K(h, function(ct){ return e(Dinheiro,{v:extra(ct, chave), label:h, save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }, function(ct){ return extra(ct, chave) ? brl(Number(extra(ct, chave))) : ""; }, function(ct){ return Number(extra(ct, chave))||0; }); }
+function colValor(c, h, somar){ return K(h, function(ct){ return e(Dinheiro,{v:ct.valor, label:h, save:function(v){ save(c, ct, {valor:v}); }}); }, function(ct){ return ct.valor ? brl(Number(ct.valor)) : ""; }, somar || function(ct){ return Number(ct.valor)||0; }); }
+function colFim(c, h){ return K(h||"Fim da vigência", function(ct){ return e(CelulaFim,{c:c, ct:ct}); }, function(ct){ return ct.vigenciaFim ? br(ct.vigenciaFim) : ""; }); }
+function colStatus(c){ return K("Status", function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }, function(ct){ return STATUS_LB[ct.status]||ct.status; }); }
+function colContrato(c){ return K("Contrato", function(ct){ return e(CelulaContrato,{c:c, ct:ct}); }, function(ct){ return ct.anexos.some(function(a){ return a.tipo==="CONTRATO"; }) || ct.documentoId ? "Anexado" : "Falta anexar"; }); }
+function colAnexo(c, h, tipo, dica){ return K(h, function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:tipo, dica:dica && ct.status!=="encerrado" ? dica : null}); }, function(ct){ return ct.anexos.some(function(a){ return a.tipo===tipo; }) ? "Anexado" : "Falta anexar"; }); }
+function colArq(c){ return [colContrato(c), colExtra(c, "Drive", "drive", "Link do Drive")]; }
 
 // ───────────────── Assistente: gerar contrato de um modelo ─────────────────
+function CampoLinha(p){ return e("div",{className:"min-w-0 "+(p.cls||"")}, e(Rotulo,{t:p.t, id:p.id}), p.children); }
+function Entrada(p){ return e("input",{id:p.id, value:p.value, type:p.type||"text", placeholder:p.ph||"", className:CAMPO, onChange:function(ev){ p.onChange(ev.target.value); }}); }
+var ESTILO_DOC = ".contrato-doc h1{font-size:1.5rem;font-weight:700;margin:.6rem 0}.contrato-doc h2{font-size:1.25rem;font-weight:700;margin:.5rem 0}.contrato-doc h3{font-size:1.1rem;font-weight:700;margin:.4rem 0}.contrato-doc p{margin:.4rem 0}.contrato-doc ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0}.contrato-doc ol{list-style:decimal;padding-left:1.4rem;margin:.4rem 0}";
 function Gerar(p){
   var c = p.c, tipo = p.tipo, modelos = c.rh.modelos.filter(function(m){ return m.tipo===tipo; }), st = useState(p.modeloId ? "dados" : "modelo"), passo = st[0], setPasso = st[1], mi = useState(p.modeloId||""), modeloId = mi[0], setModeloId = mi[1];
   var dd = useState({status:STATUS_BY_TIPO[tipo][0], nome:"", cpf:"", cnpj:"", documento:"", valor:"", vigenciaInicio:"", vigenciaFim:"", obs:""}), d = dd[0], setD = function(o){ dd[1](Object.assign({}, d, o)); }, vv = useState({}), vals = vv[0], setVals = vv[1];
   var modelo = c.rh.modelos.find(function(m){ return m.id===modeloId; }), pj = tipo==="TERCEIRO" || tipo==="PARTICULAR";
   var gerar = function(){ var html = mesclarVariaveis(modelo.conteudo, vals), blob = htmlParaDocx(html), docId = "ar"+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36), nomeArq = (modelo.nome+" - "+d.nome.trim()+".docx").replace(/[\\/:*?"<>|]/g, "-");
     salvarArquivo(docId, blob).then(function(){ acao(c, "contr_gerar", {tipo:tipo, modeloId:modelo.id, docId:docId, dados:{status:d.status, nome:d.nome.trim(), cpf:d.cpf.trim(), cnpj:d.cnpj.trim(), documento:d.documento.trim(), valor:num(d.valor)||null, vigenciaInicio:d.vigenciaInicio, vigenciaFim:d.vigenciaFim, obs:d.obs.trim()}}); baixarBlob(blob, nomeArq); p.fechar(); }); };
-  return e(Modal,{t:"Gerar contrato a partir de um modelo", sub:passo==="modelo" ? "Escolha o modelo que serve de base." : passo==="dados" ? "Preencha os dados e as variáveis do modelo." : "Confira o texto antes de gerar o arquivo do Word.", largo:true, fechar:p.fechar},
-    passo==="modelo" && e("div",{className:"flex flex-col gap-2"}, modelos.length===0 ? e("p",{className:"text-[13.5px] text-muted-foreground"}, "Nenhum modelo para "+TIPOS_CONTRATO[tipo]+" ainda. Crie em Contratos → Modelos de contrato.") :
-      e(Sel,{value:modeloId, label:"Modelo", className:"w-full", onChange:setModeloId}, e("option",{value:""}, "Selecione um modelo…"), modelos.map(function(m){ return e("option",{key:m.id, value:m.id}, m.nome); }))),
-    passo==="dados" && modelo && e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-      e(Campo,{rot:"Nome", className:"sm:col-span-2"}, e(Txt,{value:d.nome, ph:"Nome completo", label:"Nome", onChange:function(v){ setD({nome:v}); }})),
-      e(Campo,{rot:"Status"}, e(Sel,{value:d.status, label:"Status", className:"w-full", onChange:function(v){ setD({status:v}); }}, STATUS_BY_TIPO[tipo].map(function(k){ return e("option",{key:k, value:k}, STATUS_LB[k]); }))),
-      e(Campo,{rot:"CPF"}, e(Txt,{value:d.cpf, label:"CPF", ph:"000.000.000-00", onChange:function(v){ setD({cpf:v}); }})), e(Campo,{rot:"CNPJ"}, e(Txt,{value:d.cnpj, label:"CNPJ", onChange:function(v){ setD({cnpj:v}); }})),
-      pj && e(React.Fragment,null, e(Campo,{rot:"Razão social (se PJ/MEI)"}, e(Txt,{value:d.documento, label:"Razão social", onChange:function(v){ setD({documento:v}); }})), e(Campo,{rot:"Valor (R$)"}, e(Txt,{value:d.valor, label:"Valor", onChange:function(v){ setD({valor:v.replace(/[^\d,.]/g,"")}); }})),
-        e(Campo,{rot:"Vigência — início"}, e(Txt,{value:d.vigenciaInicio, type:"date", label:"Início", onChange:function(v){ setD({vigenciaInicio:v}); }})), e(Campo,{rot:"Vigência — fim"}, e(Txt,{value:d.vigenciaFim, type:"date", label:"Fim", onChange:function(v){ setD({vigenciaFim:v}); }}))),
-      e(Campo,{rot:"Observações", className:"sm:col-span-2"}, e(Txt,{value:d.obs, label:"Observações", onChange:function(v){ setD({obs:v}); }})),
-      modelo.variaveis.length>0 && e("div",{className:"flex flex-col gap-2 border-t border-white/10 pt-3 sm:col-span-2"}, e("b",{className:"text-[13px]"}, "Variáveis do modelo"), e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"}, modelo.variaveis.map(function(v){
-        return e(Campo,{key:v.key, rot:v.label}, e(Txt,{value:vals[v.key]||"", label:v.label, onChange:function(x){ var o = Object.assign({}, vals); o[v.key] = x; setVals(o); }})); })))),
-    passo==="previa" && modelo && e("div",{className:"contrato-doc max-h-[420px] overflow-y-auto rounded-lg bg-white p-6 text-[14px] text-black", dangerouslySetInnerHTML:{__html:mesclarVariaveis(modelo.conteudo, vals)}}),
-    e("div",{className:"flex justify-end gap-2 pt-1"}, passo==="modelo" && e(React.Fragment,null, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", disabled:!modeloId, onClick:function(){ setPasso("dados"); }}, "Continuar →")),
-      passo==="dados" && e(React.Fragment,null, !p.modeloId && e(Btn,{v:"ghost", onClick:function(){ setPasso("modelo"); }}, "← Voltar"), e(Btn,{v:"primary", disabled:!d.nome.trim(), onClick:function(){ setPasso("previa"); }}, "Ver prévia →")),
-      passo==="previa" && e(React.Fragment,null, e(Btn,{v:"ghost", onClick:function(){ setPasso("dados"); }}, "← Voltar"), e(Btn,{v:"primary", onClick:gerar}, "Gerar contrato (.docx)"))));
+  var corpo = passo==="modelo" ? e("div",{key:"m", className:"flex flex-col gap-2"}, modelos.length===0 ? e("span",{className:"text-[13px]"}, "Nenhum modelo para "+TIPOS_CONTRATO[tipo]+" ainda. Crie em Contratos > Modelos de contrato.") :
+      e(CampoSel,{t:"Modelo", id:"ger-modelo", value:modeloId, onChange:setModeloId, opcoes:[["", "Selecione um modelo"]].concat(modelos.map(function(m){ return [m.id, m.nome]; }))}))
+    : passo==="dados" && modelo ? e("div",{key:"d", className:"grid grid-cols-1 gap-2 sm:grid-cols-2"},
+      e(CampoLinha,{t:"Nome", id:"ger-nome", cls:"sm:col-span-2"}, e(Entrada,{id:"ger-nome", value:d.nome, ph:"Nome completo", onChange:function(v){ setD({nome:v}); }})),
+      e(CampoSel,{t:"Status", id:"ger-status", value:d.status, onChange:function(v){ setD({status:v}); }, opcoes:STATUS_BY_TIPO[tipo].map(function(k){ return [k, STATUS_LB[k]]; })}),
+      e(CampoLinha,{t:"CPF", id:"ger-cpf"}, e(Entrada,{id:"ger-cpf", value:d.cpf, ph:"000.000.000-00", onChange:function(v){ setD({cpf:v}); }})), e(CampoLinha,{t:"CNPJ", id:"ger-cnpj"}, e(Entrada,{id:"ger-cnpj", value:d.cnpj, onChange:function(v){ setD({cnpj:v}); }})),
+      pj && e(React.Fragment,null, e(CampoLinha,{t:"Razão social (se PJ ou MEI)", id:"ger-doc"}, e(Entrada,{id:"ger-doc", value:d.documento, onChange:function(v){ setD({documento:v}); }})), e(CampoLinha,{t:"Valor (R$)", id:"ger-valor"}, e(Entrada,{id:"ger-valor", value:d.valor, ph:"R$ 0,00", onChange:function(v){ setD({valor:v.replace(/[^\d,.]/g,"")}); }})),
+        e(CampoLinha,{t:"Vigência: início", id:"ger-ini"}, e(Entrada,{id:"ger-ini", value:d.vigenciaInicio, type:"date", onChange:function(v){ setD({vigenciaInicio:v}); }})), e(CampoLinha,{t:"Vigência: fim", id:"ger-fim"}, e(Entrada,{id:"ger-fim", value:d.vigenciaFim, type:"date", onChange:function(v){ setD({vigenciaFim:v}); }}))),
+      e(CampoLinha,{t:"Observações", id:"ger-obs", cls:"sm:col-span-2"}, e(Entrada,{id:"ger-obs", value:d.obs, onChange:function(v){ setD({obs:v}); }})),
+      modelo.variaveis.length>0 && e("div",{className:"flex flex-col gap-2 border-t border-white/10 pt-2 sm:col-span-2"}, e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]"}, "Variáveis do modelo"), e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-2"}, modelo.variaveis.map(function(v){
+        return e(CampoLinha,{key:v.key, t:v.label, id:"ger-v-"+v.key}, e(Entrada,{id:"ger-v-"+v.key, value:vals[v.key]||"", onChange:function(x){ var o = Object.assign({}, vals); o[v.key] = x; setVals(o); }})); }))))
+    : passo==="previa" && modelo ? e("div",{key:"p", className:"contrato-doc max-h-[420px] overflow-y-auto rounded-lg bg-white p-6 text-[13px] text-black", dangerouslySetInnerHTML:{__html:mesclarVariaveis(modelo.conteudo, vals)}}) : null;
+  var rodape = passo==="modelo" ? [e(Botao,{key:"c", onClick:p.fechar}, "Cancelar"), e(Botao,{key:"n", principal:true, desabilitado:!modeloId, onClick:function(){ setPasso("dados"); }}, "Continuar")]
+    : passo==="dados" ? [!p.modeloId && e(Botao,{key:"v", onClick:function(){ setPasso("modelo"); }}, "Voltar"), e(Botao,{key:"p", principal:true, desabilitado:!d.nome.trim(), onClick:function(){ setPasso("previa"); }}, "Ver prévia")]
+    : [e(Botao,{key:"v", onClick:function(){ setPasso("dados"); }}, "Voltar"), e(Botao,{key:"g", principal:true, onClick:gerar}, "Gerar contrato (.docx)")];
+  return e(Janela,{t:"Gerar contrato de um modelo", sub:passo==="modelo" ? "Escolha o modelo." : passo==="dados" ? "Preencha os dados e as variáveis." : "Confira o texto antes de gerar o arquivo do Word.", fechar:p.fechar, colunas:[corpo], rodape:rodape});
 }
-var ESTILO_DOC = ".contrato-doc h1{font-size:1.5rem;font-weight:700;margin:.6rem 0}.contrato-doc h2{font-size:1.25rem;font-weight:700;margin:.5rem 0}.contrato-doc h3{font-size:1.1rem;font-weight:700;margin:.4rem 0}.contrato-doc p{margin:.4rem 0}.contrato-doc ul{list-style:disc;padding-left:1.4rem;margin:.4rem 0}.contrato-doc ol{list-style:decimal;padding-left:1.4rem;margin:.4rem 0}";
 
-// ───────────────── Página de lista (serve os 4 tipos) ─────────────────
+// ───────────────── Página de lista (serve todos os tipos de contrato) ─────────────────
 function Pagina(p){
-  var c = useRh(), rh = c.rh, tipo = p.tipo, es = useState({q:"", status:"todos", vinc:"todas"}), f = es[0], set = function(o){ es[1](Object.assign({}, f, o)); }, gm = useState(false), gerarAberto = gm[0], setGerar = gm[1];
-  if(p.restrito && !c.sensivel) return e("div",{className:"flex flex-col gap-3"}, e(PageHead,{t:p.titulo, sub:p.sub}), e("p",{className:"rounded-xl bg-muted/30 px-4 py-6 text-center text-[14px] text-muted-foreground"}, "Só os sócios abrem esta tela."));
-  var todos = rh.contratos.filter(function(x){ return x.tipo===tipo; }), q = f.q.trim().toLowerCase();
-  var lista = todos.filter(function(x){ return (f.status==="todos" || x.status===f.status) && (!q || (x.nome+" "+x.documento+" "+x.cnpj+" "+(x.obs||"")).toLowerCase().indexOf(q)>=0) && (!p.filtro || p.filtro(x, f)); });
+  var c = useRh(), rh = c.rh, tipo = p.tipo, gm = useState(false), gerarAberto = gm[0], setGerar = gm[1];
+  if(p.restrito && !c.sensivel) return e("div",{className:"flex flex-col gap-2"}, e(PageHead,{t:p.titulo}), e("span",{className:"text-[13px]"}, "Só os sócios abrem esta tela."));
+  var todos = rh.contratos.filter(function(x){ return x.tipo===tipo; });
   var novo = function(){ var nm = window.prompt(p.addPergunta||"Nome:"); if(nm && nm.trim()) acao(c, "contr_add", {tipo:tipo, nome:nm}); };
-  var cols = p.colunas(c);
-  return e("div",{className:"flex flex-col gap-4"},
-    e("div",{className:"flex flex-wrap items-start justify-between gap-3"}, e(PageHead,{t:p.titulo, sub:p.sub}), e("div",{className:"flex flex-wrap gap-2"}, p.lote && e(Btn,{v:"ghost", onClick:function(){ acao(c, "contr_lote", {tipo:tipo, itens:p.lote(c)}); }}, p.loteRotulo), e(Btn,{v:"secondary", onClick:function(){ setGerar(true); }}, "Gerar de modelo"), p.extraBotao && p.extraBotao(c), e(Btn,{v:"primary", onClick:novo}, p.addRotulo))),
-    p.topo && p.topo(c),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-5"}, e(Tile,{t:"Total", v:int(todos.length), cor:"#C4B5FD"}), STATUS_BY_TIPO[tipo].map(function(k){ return e(Tile,{key:k, t:STATUS_LB[k], v:int(todos.filter(function(x){ return x.status===k; }).length), cor:STATUS_COR[k]}); }), p.statExtra && p.statExtra(todos)),
-    e("div",{className:"flex flex-wrap items-center gap-3"}, e(Txt,{value:f.q, ph:"Buscar…", label:"Buscar", className:"w-64", onChange:function(v){ set({q:v}); }}),
-      e(Sel,{value:f.status, label:"Status", className:"w-52", onChange:function(v){ set({status:v}); }}, e("option",{value:"todos"}, "Todos os status"), STATUS_BY_TIPO[tipo].map(function(k){ return e("option",{key:k, value:k}, STATUS_LB[k]); })), p.filtros && p.filtros(f, set)),
-    e(BlocoBarra,{cor:"roxo", t:p.titulo, sub:lista.length+" na lista", dir:String(lista.length)}, lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13.5px] text-muted-foreground"}, todos.length===0 ? "Nenhum contrato cadastrado ainda." : "Nenhum contrato para esse filtro.") :
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, cols.map(function(k){ return th(k.h); }).concat([th("")]))),
-        e("tbody",null, lista.map(function(ct){ return e("tr",{key:ct.id, className:"border-b border-border/60 "+(p.alerta && p.alerta(ct) ? "bg-destructive/10" : "")}, cols.map(function(k){ return e("td",{key:k.h, className:TD}, k.cel(ct)); }), e("td",{className:TD}, e(BotaoExcluir,{c:c, ct:ct}))); }))))),
+  var colsDef = p.colunas(c);
+  var cols = colsDef.map(function(k, i){ return {k:"c"+i, t:k.h, render:function(v, l){ return k.cel(l.ct); }}; }).concat([{k:"rem", t:"Remover", render:function(v, l){ var ct = l.ct; return e(BotaoRemover,{label:"Remover "+ct.nome, onClick:function(){ if(window.confirm("Remover "+ct.nome+"?")){ ct.anexos.forEach(function(a){ apagarArquivo(a.id); }); if(ct.documentoId) apagarArquivo(ct.documentoId); acao(c, "contr_del", {id:ct.id}); } }}); }}]);
+  var linhas = todos.map(function(ct){ var l = {id:ct.id, ct:ct, rem:""}; colsDef.forEach(function(k, i){ l["c"+i] = k.v ? k.v(ct) : ""; }); return l; });
+  var somas = colsDef.some(function(k){ return k.soma; });
+  var totalRodape = somas ? function(ls){ return colsDef.map(function(k, i){ return i===0 ? "Total" : k.soma ? brl(ls.reduce(function(t, l){ return t+(k.soma(l.ct)||0); }, 0)) : ""; }).concat([""]); } : undefined;
+  return e("div",{className:"flex flex-col gap-2"},
+    e(PageHead,{t:p.titulo, sub:p.sub}, p.lote && e(Botao,{onClick:function(){ acao(c, "contr_lote", {tipo:tipo, itens:p.lote(c)}); }}, p.loteRotulo), e(Botao,{onClick:function(){ setGerar(true); }}, "Gerar de modelo"), p.extraBotao && p.extraBotao(c), e(Botao,{principal:true, onClick:novo}, p.addRotulo)),
+    e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", escura:true, grade:true, semMao:true, limite:100, totalRodape:totalRodape, linhaCls:function(l){ return p.alerta && p.alerta(l.ct) ? "bg-destructive/10" : ""; }, vazio:"Nenhum contrato cadastrado ainda."}),
+    p.depois && p.depois(c),
     gerarAberto && e(Gerar,{c:c, tipo:tipo, fechar:function(){ setGerar(false); }}),
     e("style",null, ESTILO_DOC));
 }
-var save = function(c, ct, patch){ acao(c, "contr_set", {id:ct.id, patch:patch}); };
 
+// ───────────────── Representantes ─────────────────
 function AbaRhContrRep(){
-  return e(Pagina,{tipo:"REPRESENTANTE", titulo:"Contratos de representantes", sub:"Controle da migração para o novo modelo de contrato (Axis): antigo → novo feito → assinado e anexado.", addRotulo:"+ Nova representante", loteRotulo:"Trazer as representantes da lista", addPergunta:"Nome da representante:",
+  return e(Pagina,{tipo:"REPRESENTANTE", titulo:"Contratos de representantes", sub:"Migração para o novo contrato (Axis): antigo, novo feito, assinado e anexado.", addRotulo:"Nova representante", loteRotulo:"Trazer as representantes da lista", addPergunta:"Nome da representante:",
     lote:function(){ return REPRESENTANTES.map(function(r){ return {nome:r.nome, extra:{}, obs:r.tambemFunc ? "Também é funcionária CLT" : ""}; }); },
-    filtro:function(x, f){ var clt = (x.obs||"").indexOf("CLT")>=0; return f.vinc==="todas" || (f.vinc==="clt" ? clt : !clt); },
-    filtros:function(f, set){ return e(React.Fragment,null, e(Sel,{value:f.vinc, label:"Vínculo", className:"w-44", onChange:function(v){ set({vinc:v}); }}, e("option",{value:"todas"}, "Todas"), e("option",{value:"clt"}, "Só também CLT"), e("option",{value:"sem"}, "Só sem vínculo")), null); },
-    topo:function(c){ return e("div",{className:CARD+" flex flex-wrap items-center justify-between gap-3"}, e("p",{className:"text-[13.5px]"}, e("b",{className:"text-primary"}, "⛽ Referência de combustível — ANP. "), "Preço médio de revenda da gasolina, direto no levantamento da ANP."),
-      e("a",{href:"https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas", target:"_blank", rel:"noreferrer", className:"rounded-lg bg-primary/15 px-3 py-1.5 text-[13px] font-bold text-primary hover:bg-primary/25"}, "Abrir painel da ANP")); },
-    extraBotao:function(c){ return e(Btn,{v:"ghost", onClick:function(){ var n = window.prompt("Nome da nova coluna:"); if(n && n.trim()) acao(c, "contr_coluna_add", {nome:n}); }}, "+ Nova coluna"); },
-    colunas:function(c){ var ex = [{h:"Testemunha 1", cel:function(ct){ return e(Texto,{v:ct.extra.testemunha1, ph:"a preencher", save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"testemunha1", valor:v}); }}); }}, {h:"Testemunha 2", cel:function(ct){ return e(Texto,{v:ct.extra.testemunha2, ph:"a preencher", save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"testemunha2", valor:v}); }}); }}];
-      return [{h:"Representante", cel:function(ct){ return e(Texto,{v:ct.nome, save:function(v){ save(c, ct, {nome:v}); }}); }}, {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(ex, [{h:"CNPJ", cel:function(ct){ return e(Texto,{v:ct.cnpj, mono:true, ph:"—", save:function(v){ save(c, ct, {cnpj:v}); }}); }},
-        {h:"Contrato", cel:function(ct){ return e("div",{className:"flex flex-col gap-1"}, e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}), e(CelulaGerado,{c:c, ct:ct})); }}, {h:"Termo Equip.", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"EQUIPAMENTO"}); }},
-        {h:"Link da conversa", cel:function(ct){ return e(Texto,{v:ct.extra.link, ph:"link", save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"link", valor:v}); }}); }}], (c.rh.colunasRep||[]).map(function(nome){ return {h:nome, cel:function(ct){ return e(Texto,{v:ct.extra[nome], save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:nome, valor:v}); }}); }}; })); }});
+    extraBotao:function(c){ return [e(Botao,{key:"anp", onClick:function(){ window.open("https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/levantamento-de-precos-de-combustiveis-ultimas-semanas-pesquisadas", "_blank", "noopener"); }}, "Gasolina (ANP)"), e(Botao,{key:"col", onClick:function(){ var n = window.prompt("Nome da nova coluna:"); if(n && n.trim()) acao(c, "contr_coluna_add", {nome:n}); }}, "Nova coluna")]; },
+    colunas:function(c){ return [colTexto(c, "Representante", "nome"), colStatus(c), colExtra(c, "Testemunha 1", "testemunha1", "A preencher"), colExtra(c, "Testemunha 2", "testemunha2", "A preencher"), colTexto(c, "CNPJ", "cnpj", "CNPJ", true),
+      colContrato(c), colAnexo(c, "Termo de equipamento", "EQUIPAMENTO"), colExtra(c, "Link da conversa", "link", "Link"),
+      K("Vínculo", function(ct){ return e("span",{className:"text-[13px]"}, (ct.obs||"").indexOf("CLT")>=0 ? "Também CLT" : "Sem vínculo"); }, function(ct){ return (ct.obs||"").indexOf("CLT")>=0 ? "Também CLT" : "Sem vínculo"; })]
+      .concat((c.rh.colunasRep||[]).map(function(nome){ return colExtra(c, nome, nome); })); }});
 }
+
+// ───────────────── Funcionários (CLT) ─────────────────
 function AbaRhContrFunc(){
   var emp = function(c){ return cnpjsDe(c.s.cnpjs).filter(function(x){ return x.num; }).map(function(x){ return x.nome; }); };
-  return e(Pagina,{tipo:"CLT", titulo:"Contratos de funcionários (CLT)", sub:"Revisão à luz da CCT 2026/2027 e das políticas internas.", addRotulo:"+ Novo funcionário", loteRotulo:"Trazer as funcionárias do cadastro", addPergunta:"Nome do funcionário:",
+  return e(Pagina,{tipo:"CLT", titulo:"Contratos de funcionários (CLT)", sub:"Revisão pela convenção coletiva 2026/2027 e pelas políticas internas.", addRotulo:"Novo funcionário", loteRotulo:"Trazer as funcionárias do cadastro", addPergunta:"Nome do funcionário:",
     lote:function(c){ var nomes = {}; cnpjsDe(c.s.cnpjs).forEach(function(x){ nomes[x.id] = x.nome; }); return colaboradoresRh(c.s).filter(function(x){ return x.status!=="DESLIGADO"; }).map(function(x){ return {nome:x.nome, documento:x.funcao||"", cnpj:nomes[x.cnpj]||"", valor:c.sensivel ? (x.salario||null) : null}; }); },
-    colunas:function(c){ return [{h:"Nome", cel:function(ct){ return e(Texto,{v:ct.nome, save:function(v){ save(c, ct, {nome:v}); }}); }}, {h:"Cargo", cel:function(ct){ return e(Texto,{v:ct.documento, ph:"Cargo", save:function(v){ save(c, ct, {documento:v}); }}); }},
-      {h:"Empresa", cel:function(ct){ return e(Sel,{value:ct.cnpj||"", label:"Empresa", className:"h-8! w-44", onChange:function(v){ save(c, ct, {cnpj:v}); }}, e("option",{value:""}, "Selecione"), emp(c).map(function(n){ return e("option",{key:n, value:n}, n); })); }}].concat(c.sensivel ? [{h:"Salário", cel:function(ct){ return e(Dinheiro,{v:ct.valor, save:function(v){ save(c, ct, {valor:v}); }}); }}] : [],
-      [{h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}, {h:"Observação", cel:function(ct){ return e(Texto,{v:ct.obs, save:function(v){ save(c, ct, {obs:v}); }}); }},
-       {h:"Contrato", cel:function(ct){ return e("div",{className:"flex flex-col gap-1"}, e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}), e(CelulaGerado,{c:c, ct:ct})); }}, {h:"Aditivos", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"ADITIVO"}); }}]); }});
+    colunas:function(c){ return [colTexto(c, "Nome", "nome"), colTexto(c, "Cargo", "documento", "Cargo"),
+      K("Empresa", function(ct){ return e(Sel,{value:ct.cnpj||"", label:"Empresa", cls:"min-w-[11rem]", onChange:function(v){ save(c, ct, {cnpj:v}); }}, e("option",{value:""}, "Selecione"), emp(c).map(function(n){ return e("option",{key:n, value:n}, n); })); }, function(ct){ return ct.cnpj||""; })]
+      .concat(c.sensivel ? [colValor(c, "Salário")] : [], [colStatus(c), colTexto(c, "Observação", "obs"), colContrato(c), colAnexo(c, "Aditivos", "ADITIVO")]); }});
 }
+
+// ───────────────── Terceiros e Particulares: prestadores, advogados, contador e outros ─────────────────
 // Terceiros que já temos (23/10/2026, pedido do Marcus): Leonardo (H&O Apps), Lucas Castilho (prestador dentro da empresa) e Igor (função a confirmar). Nomes só; o contrato assinado entra pelo Anexar.
-var TERCEIROS_INICIAIS = [{nome:"Leonardo", documento:"Desenvolvedor (H&O Apps)", cnpj:"H&O Apps"}, {nome:"Lucas Castilho", documento:"Prestador dentro da empresa"}, {nome:"Igor", documento:"A confirmar", obs:"Função e empresa a confirmar"}];
+var TERCEIROS_INICIAIS = [{nome:"Leonardo", documento:"Desenvolvedor (H&O Apps)", cnpj:"H&O Apps", extra:{tipo:"Tecnologia"}}, {nome:"Lucas Castilho", documento:"Prestador dentro da empresa"}, {nome:"Igor", documento:"A confirmar", obs:"Função e empresa a confirmar"}];
 function Terceiros(tipo, titulo, sub, addRotulo, restrito, lote){
-  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, restrito:restrito, lote:lote ? function(){ return lote; } : undefined, loteRotulo:"Trazer Leonardo, Castilho e Igor",
-    alerta:function(ct){ return avencer(ct); },
-    statExtra:function(todos){ return e(Tile,{key:"venc", t:"Vencendo (≤30 dias)", v:int(todos.filter(avencer).length), cor:"#EF4444"}); },
-    colunas:function(c){ return [{h:"Nome", cel:function(ct){ return e(Texto,{v:ct.nome, save:function(v){ save(c, ct, {nome:v}); }}); }}, {h:"Função", cel:function(ct){ return e(Texto,{v:ct.documento, ph:"Função", save:function(v){ save(c, ct, {documento:v}); }}); }},
-      {h:"CNPJ", cel:function(ct){ return e(Texto,{v:ct.cnpj, mono:true, ph:"—", save:function(v){ save(c, ct, {cnpj:v}); }}); }}].concat(c.sensivel ? [{h:"Valor", cel:function(ct){ return e(Dinheiro,{v:ct.valor, save:function(v){ save(c, ct, {valor:v}); }}); }}] : [],
-      [{h:"Vigência (fim)", cel:function(ct){ var dias = ct.vigenciaFim ? diasEntre(hojeIso(), ct.vigenciaFim) : null; return e("div",{className:"flex items-center gap-2"}, e("input",{type:"date", value:ct.vigenciaFim||"", "aria-label":"Fim da vigência", className:INPUT+" h-9! w-40", onChange:function(ev){ save(c, ct, {vigenciaFim:ev.target.value}); }}), avencer(ct) && e("span",{className:"text-[12.5px] font-bold text-destructive"}, "⚠ "+dias+"d")); }},
-       {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}, {h:"Contrato", cel:function(ct){ return e("div",{className:"flex flex-col gap-1"}, e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}), e(CelulaGerado,{c:c, ct:ct})); }},
-       {h:"Termo de encerramento", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"ENCERRAMENTO", dica:ct.status==="encerrado" ? null : "só se encerrado"}); }}]); }});
+  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, restrito:restrito, lote:lote ? function(){ return lote; } : undefined, loteRotulo:"Trazer Leonardo, Castilho e Igor", addPergunta:"Nome do prestador (pessoa ou escritório):",
+    alerta:avencer,
+    colunas:function(c){ return [colTexto(c, "Nome", "nome"),
+      K("Tipo", function(ct){ return e(Sel,{value:extra(ct, "tipo")||"", label:"Tipo de prestador", cls:"min-w-[12rem]", onChange:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"tipo", valor:v}); }}, e("option",{value:""}, "Escolha o tipo"), TIPOS_PRESTADOR.map(function(n){ return e("option",{key:n, value:n}, n); })); }, function(ct){ return extra(ct, "tipo")||"Sem tipo"; }),
+      colTexto(c, "Função", "documento", "Função"), colTexto(c, "CNPJ", "cnpj", "CNPJ", true), colExtra(c, "Registro (OAB, CRC...)", "registro", "Número", true)]
+      .concat(c.sensivel ? [colValor(c, "Honorário mensal")] : [], [colFim(c, "Vigência (fim)"), colStatus(c), colContrato(c), colAnexo(c, "Termo de encerramento", "ENCERRAMENTO", "Só se encerrado"), colExtra(c, "Drive", "drive", "Link do Drive")]); }});
 }
-var avencer = function(ct){ if(ct.status!=="ativo" || !ct.vigenciaFim) return false; var d = diasEntre(hojeIso(), ct.vigenciaFim); return d>=0 && d<=30; };
-function AbaRhContrTerc(){ return Terceiros("TERCEIRO", "Contratos de terceiros", "Prestadores de serviço e parceiros. O sistema avisa quando a vigência vence em até 30 dias.", "+ Novo terceiro", false, TERCEIROS_INICIAIS); }
-function AbaRhContrMarcus(){ return Terceiros("PARTICULAR", "Contratos particulares do Marcus", "Contratos pessoais (casa, prestadores particulares). Só os sócios abrem.", "+ Novo contrato", true); }
+function AbaRhContrTerc(){ return Terceiros("TERCEIRO", "Contratos de terceiros", "Prestadores, advogados, contador e parceiros. Avisa quando a vigência vence em até 30 dias.", "Novo terceiro", false, TERCEIROS_INICIAIS); }
+function AbaRhContrMarcus(){ return Terceiros("PARTICULAR", "Contratos particulares do Marcus", "Contratos pessoais (casa, prestadores particulares). Só os sócios abrem.", "Novo contrato", true); }
 
 // ───────────────── Crédito bancário, aluguéis e consórcios (23/10/2026) ─────────────────
 // Mesma tabela dos outros contratos; o PDF fica no Drive (link na coluna "Drive") e a tela guarda os números. Só os sócios abrem (tem valor).
-function colExtra(c, h, chave, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:(ct.extra||{})[chave], ph:ph||"", save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }}; }
-function colDin(c, h, chave){ return {h:h, cel:function(ct){ return e(Dinheiro,{v:(ct.extra||{})[chave], save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }}; }
-function colFim(c){ return {h:"Fim", cel:function(ct){ var dias = ct.vigenciaFim ? diasEntre(hojeIso(), ct.vigenciaFim) : null; return e("div",{className:"flex items-center gap-2"}, e("input",{type:"date", value:ct.vigenciaFim||"", "aria-label":"Fim", className:INPUT+" h-9! w-40", onChange:function(ev){ save(c, ct, {vigenciaFim:ev.target.value}); }}), avencer(ct) && e("span",{className:"text-[12.5px] font-bold text-destructive"}, "⚠ "+dias+"d")); }}; }
-function colNome(c, h, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.nome, ph:ph||"", save:function(v){ save(c, ct, {nome:v}); }}); }}; }
-function colDoc(c, h, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.documento, ph:ph||"", save:function(v){ save(c, ct, {documento:v}); }}); }}; }
-function colEmp(c, h){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.cnpj, ph:"Empresa ou pessoa", save:function(v){ save(c, ct, {cnpj:v}); }}); }}; }
-function colValor(c, h){ return {h:h, cel:function(ct){ return e(Dinheiro,{v:ct.valor, save:function(v){ save(c, ct, {valor:v}); }}); }}; }
-function colArq(c){ return [{h:"Contrato", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}); }}, colExtra(c, "Drive", "drive", "link")]; }
-var soma = function(todos, chave){ return todos.reduce(function(t, x){ return t + (Number((x.extra||{})[chave])||0); }, 0); };
-function Dinheiros(tipo, titulo, sub, addRotulo, addPergunta, colunas, extraStat, topo){
-  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, addPergunta:addPergunta, restrito:true, alerta:function(ct){ return avencer(ct); }, topo:topo,
-    statExtra:function(todos){ return [e(Tile,{key:"venc", t:"Vencendo (≤30 dias)", v:int(todos.filter(avencer).length), cor:"#EF4444"})].concat(extraStat ? extraStat(todos) : []); },
-    colunas:function(c){ return colunas(c); }});
+function Dinheiros(tipo, titulo, sub, addRotulo, addPergunta, colunas, depois){
+  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, addPergunta:addPergunta, restrito:true, alerta:avencer, depois:depois, colunas:colunas});
 }
 function Gerentes(c){
-  var lista = bancosDe(c.rh), campo = function(b, chave, ph, mono){ return e(Texto,{v:b[chave], ph:ph, mono:mono, cls:"w-full "+(chave==="telefone" ? "min-w-[11rem]" : chave==="banco" ? "min-w-[9rem]" : "min-w-[12rem]"), save:function(v){ acao(c, "banco_set", {id:b.id, patch:(function(){ var o = {}; o[chave] = v; return o; })()}); }}); };
-  return e(BlocoBarra,{cor:"roxo", t:"Gerentes dos bancos", sub:"contatos para pedir contrato, parcelas e saldo", dir:String(lista.length)},
-    e("div",{className:"flex flex-col gap-2 p-3"}, e("div",{className:"flex justify-end"}, e(Btn,{v:"ghost", onClick:function(){ var n = window.prompt("Nome do banco:"); if(n && n.trim()) acao(c, "banco_add", {banco:n}); }}, "+ Banco")),
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, ["Banco","Contato","Cargo","Telefone","Observação",""].map(function(h){ return th(h); }))),
-        e("tbody",null, lista.map(function(b){ return e("tr",{key:b.id, className:"border-b border-border/60"}, e("td",{className:TD}, campo(b,"banco","Banco")), e("td",{className:TD}, campo(b,"contato","Contato")), e("td",{className:TD}, campo(b,"cargo","Cargo")), e("td",{className:TD}, campo(b,"telefone","+55 …",true)), e("td",{className:TD}, campo(b,"obs","—")),
-          e("td",{className:TD}, e("button",{onClick:function(){ if(window.confirm("Remover "+b.banco+"?")) acao(c, "banco_del", {id:b.id}); }, "aria-label":"Remover", className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"trash", s:15})))); }))))));
+  var lista = bancosDe(c.rh), campo = function(b, chave, ph, mono){ return e(Texto,{v:b[chave], ph:ph, label:ph, mono:mono, cls:"min-w-[10rem]", save:function(v){ var o = {}; o[chave] = v; acao(c, "banco_set", {id:b.id, patch:o}); }}); };
+  var cols = [{k:"banco", t:"Banco", render:function(v, l){ return campo(l.b, "banco", "Banco"); }}, {k:"contato", t:"Contato", render:function(v, l){ return campo(l.b, "contato", "Contato"); }}, {k:"cargo", t:"Cargo", render:function(v, l){ return campo(l.b, "cargo", "Cargo"); }},
+    {k:"telefone", t:"Telefone", render:function(v, l){ return campo(l.b, "telefone", "+55", true); }}, {k:"obs", t:"Observação", render:function(v, l){ return campo(l.b, "obs", "Observação"); }},
+    {k:"rem", t:"Remover", render:function(v, l){ return e(BotaoRemover,{label:"Remover "+l.b.banco, onClick:function(){ if(window.confirm("Remover "+l.b.banco+"?")) acao(c, "banco_del", {id:l.b.id}); }}); }}];
+  var linhas = lista.map(function(b){ return {id:b.id, b:b, banco:b.banco||"", contato:b.contato||"", cargo:b.cargo||"", telefone:b.telefone||"", obs:b.obs||"", rem:""}; });
+  return e("div",{className:"flex flex-col gap-2"}, e(PageHead,{t:"Gerentes dos bancos", sub:"Contatos para pedir contrato, parcelas e saldo."}, e(Botao,{onClick:function(){ var n = window.prompt("Nome do banco:"); if(n && n.trim()) acao(c, "banco_add", {banco:n}); }}, "Novo banco")),
+    e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", escura:true, grade:true, semMao:true, limite:100, vazio:"Nenhum banco cadastrado."}));
 }
 function AbaRhContrCredito(){
-  return Dinheiros("CREDITO", "Crédito bancário", "Empréstimos e financiamentos. O PDF fica no Drive; aqui ficam os números e o link.", "+ Novo crédito", "Banco e tipo (ex.: Santander capital de giro):",
-    function(c){ return [colNome(c, "Banco", "Banco e tipo"), colDoc(c, "Nº contrato", "Número"), colEmp(c, "Empresa"), colValor(c, "Valor"), colDin(c, "Parcela", "parcela"), colDin(c, "Saldo devedor", "saldo"), colFim(c),
-      {h:"Pronampe", cel:function(ct){ return e(Sel,{value:(ct.extra||{}).pronampe||"", label:"Pronampe", className:"h-8! w-36", onChange:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"pronampe", valor:v}); }}, e("option",{value:""}, "A perguntar"), e("option",{value:"sim"}, "Sim"), e("option",{value:"nao"}, "Não"), e("option",{value:"analise"}, "Em análise")); }},
-      {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c), [colExtra(c, "Observação", "obs2", "—")]); },
-    function(todos){ return [e(Tile,{key:"saldo", t:"Saldo devedor", v:"R$ "+(fmtN(soma(todos, "saldo"))||"0,00"), cor:"#F59E0B"})]; }, Gerentes);
+  return Dinheiros("CREDITO", "Crédito bancário", "Empréstimos e financiamentos. O PDF fica no Drive; aqui ficam os números e o link.", "Novo crédito", "Banco e tipo (ex.: Santander capital de giro):",
+    function(c){ return [colTexto(c, "Banco", "nome", "Banco e tipo"), colTexto(c, "Número do contrato", "documento", "Número"), colTexto(c, "Empresa", "cnpj", "Empresa ou pessoa"), colValor(c, "Valor"), colDinExtra(c, "Parcela", "parcela"), colDinExtra(c, "Saldo devedor", "saldo"), colFim(c),
+      K("Pronampe", function(ct){ return e(Sel,{value:extra(ct, "pronampe")||"", label:"Pronampe", cls:"min-w-[9rem]", onChange:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"pronampe", valor:v}); }}, e("option",{value:""}, "A perguntar"), e("option",{value:"sim"}, "Sim"), e("option",{value:"nao"}, "Não"), e("option",{value:"analise"}, "Em análise")); }, function(ct){ return {sim:"Sim", nao:"Não", analise:"Em análise"}[extra(ct, "pronampe")] || "A perguntar"; }),
+      colStatus(c)].concat(colArq(c), [colExtra(c, "Observação", "obs2", "Observação")]); }, Gerentes);
 }
 function AbaRhContrAluguel(){
-  return Dinheiros("ALUGUEL", "Aluguéis", "Contratos de imóveis e salas. O sistema avisa quando a vigência vence em até 30 dias.", "+ Novo aluguel", "Imóvel ou sala:",
-    function(c){ return [colNome(c, "Imóvel", "Imóvel ou sala"), colDoc(c, "Locador", "Locador"), colEmp(c, "Empresa"), colValor(c, "Valor mensal"), colExtra(c, "Reajuste", "reajuste", "mês"), colFim(c), {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c)); },
-    function(todos){ return [e(Tile,{key:"mensal", t:"Total mensal", v:"R$ "+(fmtN(todos.filter(function(x){ return x.status==="ativo"; }).reduce(function(t, x){ return t+(Number(x.valor)||0); }, 0))||"0,00"), cor:"#F59E0B"})]; });
+  return Dinheiros("ALUGUEL", "Aluguéis", "Imóveis e salas. Avisa quando a vigência vence em até 30 dias. O total mensal conta só os ativos.", "Novo aluguel", "Imóvel ou sala:",
+    function(c){ return [colTexto(c, "Imóvel", "nome", "Imóvel ou sala"), colTexto(c, "Locador", "documento", "Locador"), colTexto(c, "Empresa", "cnpj", "Empresa ou pessoa"), colValor(c, "Valor mensal", function(ct){ return ct.status==="ativo" ? (Number(ct.valor)||0) : 0; }), colExtra(c, "Reajuste (mês)", "reajuste", "Mês"), colFim(c), colStatus(c)].concat(colArq(c)); });
 }
 function AbaRhContrConsorcio(){
-  return Dinheiros("CONSORCIO", "Consórcios", "Cotas de consórcio (Ademicon e outros). Marque quando a cota for contemplada.", "+ Novo consórcio", "Administradora e bem (ex.: Ademicon, celular do Marcus):",
-    function(c){ return [colNome(c, "Consórcio", "Administradora e bem"), colDoc(c, "Cota", "Nº da cota"), colEmp(c, "Quem contratou"), colValor(c, "Valor da carta"), colDin(c, "Parcela", "parcela"), colDin(c, "Saldo", "saldo"), colFim(c), {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c)); },
-    function(todos){ return [e(Tile,{key:"saldo", t:"Saldo a pagar", v:"R$ "+(fmtN(soma(todos, "saldo"))||"0,00"), cor:"#F59E0B"})]; });
+  return Dinheiros("CONSORCIO", "Consórcios", "Cotas de consórcio (Ademicon e outros). Marque quando a cota for contemplada.", "Novo consórcio", "Administradora e bem (ex.: Ademicon, celular do Marcus):",
+    function(c){ return [colTexto(c, "Consórcio", "nome", "Administradora e bem"), colTexto(c, "Cota", "documento", "Número da cota"), colTexto(c, "Quem contratou", "cnpj", "Empresa ou pessoa"), colValor(c, "Valor da carta"), colDinExtra(c, "Parcela", "parcela"), colDinExtra(c, "Saldo a pagar", "saldo"), colFim(c), colStatus(c)].concat(colArq(c)); });
 }
 
 // ───────────────── Modelos de contrato (editor) ─────────────────
 function Editor(p){
   var ref = useRef(null);
-  useEffect(function(){ if(ref.current) ref.current.innerHTML = p.inicial||""; }, [p.chave]);
+  useEffect(function(){ if(ref.current) ref.current.innerHTML = p.inicial||""; }, [p.chave]);   // eslint-disable-line react-hooks/exhaustive-deps
   var cmd = function(c, v){ return function(ev){ ev.preventDefault(); if(ref.current) ref.current.focus(); document.execCommand(c, false, v); }; };
-  var bt = function(rot, titulo, fn, cls){ return e("button",{key:rot, type:"button", title:titulo, onMouseDown:fn, className:"h-8 min-w-8 rounded-md bg-white/10 px-2 text-[13px] font-bold hover:bg-white/20 "+(cls||"")}, rot); };
-  var inserir = function(k){ if(ref.current) ref.current.focus(); document.execCommand("insertHTML", false, "<span data-variable-key=\""+k+"\" contenteditable=\"false\" style=\"background:#fde68a;color:#78350f;border-radius:4px;padding:0 4px;font-family:monospace\">{{"+k+"}}</span>&nbsp;"); };
+  var bt = function(rot, titulo, fn, cls){ return e("button",{key:rot, type:"button", title:titulo, "aria-label":titulo, onMouseDown:fn, className:"h-8 min-w-8 rounded-md border border-border bg-card px-2 text-[13px] font-bold hover:bg-white/10 "+(cls||"")}, rot); };
+  var inserir = function(k){ if(!k) return; if(ref.current) ref.current.focus(); document.execCommand("insertHTML", false, "<span data-variable-key=\""+k+"\" contenteditable=\"false\" style=\"background:#fde68a;color:#78350f;border-radius:4px;padding:0 4px;font-family:monospace\">{{"+k+"}}</span>&nbsp;"); };
   p.refExterno.current = function(){ return ref.current ? ref.current.innerHTML : ""; };
   return e("div",{className:"flex flex-col gap-2"},
-    e("div",{className:"flex flex-wrap items-center gap-1.5 rounded-xl bg-black/25 p-2"}, bt("N","Negrito", cmd("bold"), "font-black"), bt("I","Itálico", cmd("italic"), "italic"), bt("S","Sublinhado", cmd("underline"), "underline"), e("span",{className:"mx-1 h-5 w-px bg-white/20"}),
-      bt("T1","Título grande", cmd("formatBlock","h1")), bt("T2","Título médio", cmd("formatBlock","h2")), bt("T3","Título pequeno", cmd("formatBlock","h3")), bt("¶","Parágrafo normal", cmd("formatBlock","p")), e("span",{className:"mx-1 h-5 w-px bg-white/20"}),
-      bt("◧","Alinhar à esquerda", cmd("justifyLeft")), bt("☰","Centralizar", cmd("justifyCenter")), bt("▤","Justificar", cmd("justifyFull")), bt("• Lista","Lista com marcadores", cmd("insertUnorderedList")), bt("1. Lista","Lista numerada", cmd("insertOrderedList")), e("span",{className:"mx-1 h-5 w-px bg-white/20"}), bt("↶","Desfazer", cmd("undo")), bt("↷","Refazer", cmd("redo"))),
-    e("div",{className:"flex flex-wrap items-center gap-1.5 text-[12px]"}, e("span",{className:"font-semibold text-muted-foreground"}, "Inserir variável no texto:"), p.variaveis.length===0 ? e("span",{className:"text-muted-foreground"}, "crie uma variável abaixo") : p.variaveis.map(function(v){ return e("button",{key:v.key, type:"button", onMouseDown:function(ev){ ev.preventDefault(); inserir(v.key); }, className:"rounded-full bg-[#fde68a] px-2.5 py-0.5 font-mono font-bold text-[#78350f] hover:brightness-110"}, "{{"+v.key+"}}"); })),
-    e("div",{ref:ref, contentEditable:true, suppressContentEditableWarning:true, className:"contrato-doc min-h-[22rem] rounded-xl bg-white p-6 text-[14px] leading-relaxed text-black outline-none ring-2 ring-[#8B5CF6]/40 focus:ring-[#8B5CF6]"}));
+    e("div",{className:"flex flex-wrap items-center gap-2"}, bt("N","Negrito", cmd("bold"), "font-black"), bt("I","Itálico", cmd("italic"), "italic"), bt("S","Sublinhado", cmd("underline"), "underline"),
+      bt("T1","Título grande", cmd("formatBlock","h1")), bt("T2","Título médio", cmd("formatBlock","h2")), bt("T3","Título pequeno", cmd("formatBlock","h3")), bt("Texto","Parágrafo normal", cmd("formatBlock","p")),
+      bt("Esq.","Alinhar à esquerda", cmd("justifyLeft")), bt("Centro","Centralizar", cmd("justifyCenter")), bt("Justif.","Justificar", cmd("justifyFull")), bt("Lista","Lista com marcadores", cmd("insertUnorderedList")), bt("1. 2. 3.","Lista numerada", cmd("insertOrderedList")), bt("Desfazer","Desfazer", cmd("undo")), bt("Refazer","Refazer", cmd("redo")),
+      e("select",{value:"", "aria-label":"Inserir variável no texto", className:CAMPO+" w-56 cursor-pointer", onChange:function(ev){ inserir(ev.target.value); ev.target.value = ""; }}, e("option",{value:""}, p.variaveis.length ? "Inserir variável no texto" : "Crie uma variável abaixo"), p.variaveis.map(function(v){ return e("option",{key:v.key, value:v.key}, v.label); }))),
+    e("div",{ref:ref, contentEditable:true, suppressContentEditableWarning:true, className:"contrato-doc min-h-[22rem] rounded-xl bg-white p-6 text-[13px] leading-relaxed text-black outline-none ring-2 ring-primary/40 focus:ring-primary"}));
 }
 function AbaRhContrModelos(){
   var c = useRh(), rh = c.rh, ed = useState(null), edit = ed[0], setEdit = ed[1], gm = useState(null), gerar = gm[0], setGerar = gm[1], vs = useState([]), vars = vs[0], setVars = vs[1], nv = useState(""), novaVar = nv[0], setNovaVar = nv[1], lb = useState(""), nome = lb[0], setNome = lb[1], tp = useState("TERCEIRO"), tipo = tp[0], setTipo = tp[1];
@@ -204,22 +196,21 @@ function AbaRhContrModelos(){
   var salvar = function(){ var html = lerHtml.current ? lerHtml.current() : ""; acao(c, "modelo_save", {id:edit==="novo" ? null : edit, tipo:tipo, nome:nome, conteudo:html, variaveis:vars}); setEdit(null); };
   var modelo = edit && edit!=="novo" ? rh.modelos.find(function(m){ return m.id===edit; }) : null;
   if(edit){
-    return e("div",{className:"flex flex-col gap-4"},
-      e(PageHead,{t:edit==="novo" ? "Novo modelo de contrato" : "Editar modelo", sub:"Escreva o contrato e marque o que muda de pessoa para pessoa como variável (aparece em amarelo). Ao gerar, o sistema pergunta o valor de cada uma."}),
-      e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"Nome do modelo", className:"min-w-[16rem] flex-1"}, e(Txt,{value:nome, label:"Nome", ph:"Ex.: Prestação de serviço PJ", onChange:setNome})), e(Campo,{rot:"Para qual tipo de contrato"}, e(Sel,{value:tipo, label:"Tipo", className:"w-56", onChange:setTipo}, Object.keys(TIPOS_CONTRATO).map(function(k){ return e("option",{key:k, value:k}, TIPOS_CONTRATO[k]); })))),
-      e(BlocoBarra,{cor:"roxo", t:"Texto do contrato", sub:"clique no texto para escrever; use a barra para formatar"}, e("div",{className:"p-4"}, e(Editor,{chave:edit, inicial:modelo ? modelo.conteudo : "", variaveis:vars, refExterno:lerHtml}))),
-      e(BlocoBarra,{cor:"roxo", t:"Variáveis do modelo", sub:"ex.: Nome do contratado, Valor mensal, Data de início"}, e("div",{className:"flex flex-col gap-3 p-4"}, vars.length>0 && e("div",{className:"flex flex-wrap gap-2"}, vars.map(function(v){ return e("span",{key:v.key, className:"flex items-center gap-1.5 rounded-full bg-black/30 py-1 pr-1 pl-3 text-[13px]"}, e("span",{className:"font-mono text-muted-foreground"}, "{{"+v.key+"}}"), v.label,
-        e("button",{onClick:function(){ setVars(vars.filter(function(x){ return x.key!==v.key; })); }, "aria-label":"Remover variável", className:"grid size-6 place-items-center rounded-full hover:bg-destructive/25"}, e(Ph,{n:"x", s:12}))); })),
-        e("div",{className:"flex gap-2"}, e(Txt,{value:novaVar, ph:"Ex.: Nome do contratado", label:"Nova variável", className:"w-72", onChange:setNovaVar}), e(Btn,{v:"secondary", onClick:addVar}, "+ Variável")))),
-      e("div",{className:"flex justify-end gap-2"}, e(Btn,{v:"ghost", onClick:function(){ setEdit(null); }}, "Cancelar"), e(Btn,{v:"primary", disabled:!nome.trim(), onClick:salvar}, "Salvar modelo")),
+    var colsVar = [{k:"label", t:"Variável"}, {k:"cod", t:"Código no texto"}, {k:"rem", t:"Remover", render:function(v, l){ return e(BotaoRemover,{label:"Remover variável "+l.label, onClick:function(){ setVars(vars.filter(function(x){ return x.key!==l.id; })); }}); }}];
+    return e("div",{className:"flex flex-col gap-2"},
+      e(PageHead,{t:edit==="novo" ? "Novo modelo de contrato" : "Editar modelo", sub:"Marque o que muda de pessoa para pessoa como variável (aparece em amarelo)."}, e(Botao,{onClick:function(){ setEdit(null); }}, "Cancelar"), e(Botao,{principal:true, desabilitado:!nome.trim(), onClick:salvar}, "Salvar modelo")),
+      e("div",{className:"grid grid-cols-1 items-end gap-2 md:grid-cols-[1fr_16rem]"}, e(CampoLinha,{t:"Nome do modelo", id:"mod-nome"}, e(Entrada,{id:"mod-nome", value:nome, ph:"Ex.: Prestação de serviço PJ", onChange:setNome})), e(CampoSel,{t:"Para qual tipo de contrato", id:"mod-tipo", value:tipo, onChange:setTipo, opcoes:Object.keys(TIPOS_CONTRATO).map(function(k){ return [k, TIPOS_CONTRATO[k]]; })})),
+      e(Editor,{chave:edit, inicial:modelo ? modelo.conteudo : "", variaveis:vars, refExterno:lerHtml}),
+      e("div",{className:"flex items-end gap-2"}, e(CampoLinha,{t:"Nova variável", id:"mod-var", cls:"w-72"}, e(Entrada,{id:"mod-var", value:novaVar, ph:"Ex.: Nome do contratado", onChange:setNovaVar})), e(Botao,{onClick:addVar}, "Adicionar variável")),
+      vars.length>0 && e(TabelaPlanilha,{cols:colsVar, linhas:vars.map(function(v){ return {id:v.key, label:v.label, cod:"{{"+v.key+"}}", rem:""}; }), chave:"id", escura:true, grade:true, semMao:true, semContagem:true, semLimpar:true, vazio:"Nenhuma variável."}),
       e("style",null, ESTILO_DOC));
   }
-  return e("div",{className:"flex flex-col gap-4"},
-    e("div",{className:"flex flex-wrap items-start justify-between gap-3"}, e(PageHead,{t:"Modelos de contrato", sub:"Textos prontos com variáveis. Em cada lista de contratos, \"Gerar de modelo\" preenche e baixa o arquivo do Word."}), e(Btn,{v:"primary", onClick:function(){ abrir(null); }}, "+ Novo modelo")),
-    Object.keys(TIPOS_CONTRATO).map(function(k){ var ms = rh.modelos.filter(function(m){ return m.tipo===k; });
-      return e(BlocoBarra,{key:k, cor:"roxo", t:TIPOS_CONTRATO[k], sub:ms.length+(ms.length===1 ? " modelo" : " modelos"), dir:String(ms.length)}, ms.length===0 ? e("p",{className:"px-4 py-5 text-center text-[13px] text-muted-foreground"}, "Nenhum modelo para este tipo.") :
-        e("div",{className:"flex flex-col divide-y divide-white/10 px-4 py-1"}, ms.map(function(m){ return e("div",{key:m.id, className:"flex flex-wrap items-center justify-between gap-2 py-2.5"}, e("span",null, e("b",{className:"text-[14px]"}, m.nome), e("span",{className:"block text-[12px] text-muted-foreground"}, m.variaveis.length+" variável(is) · alterado em "+new Date(m.atualizadoEm).toLocaleDateString("pt-BR")+(m.por ? " por "+m.por : ""))),
-          e("span",{className:"flex items-center gap-2"}, e(Btn,{v:"secondary", sm:true, onClick:function(){ setGerar(m); }}, "Gerar contrato"), e(Btn,{v:"ghost", sm:true, onClick:function(){ abrir(m); }}, "Editar"), e(Btn,{v:"ghost", sm:true, onClick:function(){ if(window.confirm("Excluir o modelo \""+m.nome+"\"?")) acao(c, "modelo_del", {id:m.id}); }}, "Excluir"))); }))); }),
+  var cols = [{k:"nome", t:"Modelo"}, {k:"tipo", t:"Tipo de contrato"}, {k:"vars", t:"Variáveis"}, {k:"em", t:"Alterado em"}, {k:"por", t:"Alterado por"},
+    {k:"acoes", t:"Ações", render:function(v, l){ var m = l.m; return e("span",{className:"inline-flex gap-2"}, e(Botao,{onClick:function(){ setGerar(m); }}, "Gerar contrato"), e(Botao,{onClick:function(){ abrir(m); }}, "Editar"), e(Botao,{onClick:function(){ if(window.confirm("Excluir o modelo \""+m.nome+"\"?")) acao(c, "modelo_del", {id:m.id}); }}, "Excluir")); }}];
+  var linhas = rh.modelos.map(function(m){ return {id:m.id, m:m, nome:m.nome, tipo:TIPOS_CONTRATO[m.tipo]||m.tipo, vars:m.variaveis.length, em:m.atualizadoEm ? new Date(m.atualizadoEm).toLocaleDateString("pt-BR") : "", por:m.por||"", acoes:""}; });
+  return e("div",{className:"flex flex-col gap-2"},
+    e(PageHead,{t:"Modelos de contrato", sub:"Textos prontos com variáveis. Em cada lista, Gerar de modelo preenche e baixa o arquivo do Word."}, e(Botao,{principal:true, onClick:function(){ abrir(null); }}, "Novo modelo")),
+    e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", escura:true, grade:true, semMao:true, limite:100, vazio:"Nenhum modelo cadastrado."}),
     gerar && e(Gerar,{c:c, tipo:gerar.tipo, modeloId:gerar.id, fechar:function(){ setGerar(null); }}),
     e("style",null, ESTILO_DOC));
 }

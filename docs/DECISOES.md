@@ -3,6 +3,15 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 19/11/2026 · Amanda de Miranda: acesso total (Marcus: "a Amanda de Miranda acesso total também")
+- A exceção de 11/11/2026 acabou: a Amanda de Miranda passa a ver os salários dos funcionários e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia, Empréstimos). `SEM_SALARIO` e `ABAS_VETADAS` em `domain/equipe.js` ficam vazias.
+- A conta de login dela no servidor (perfil e setores) o Marcus ajusta em RH › Pessoas › Acessos e autorizações. Priscila (37) já era acesso total na tela.
+
+## 19/11/2026 · RH › Contratos refeitos (Marcus: "melhora as telas todas dos contratos")
+- As oito telas de Contratos seguem o padrão atual: `TabelaPlanilha` com filtro e ordem em cada coluna, menu suspenso, campos de 32 px, nada abreviado, sem busca no topo, sem blocos de totais e sem chips. Total (saldo devedor, valor mensal, honorário) fica no fim da tabela.
+- Terceiros e Particulares: novos campos **Tipo** (Advogado, Contador, Segurança do trabalho, Medicina do trabalho, Tecnologia, Marketing, Consultoria, Manutenção, Limpeza, Outros), **Registro (OAB, CRC...)** e **Honorário mensal**. Tipo e registro ficam em `extra` do contrato (`contr_extra`); o honorário usa o campo `valor`.
+- Teste: `node scripts/testar-tela-contratos.mjs` (27 verificações). Pendente: anexos ainda ficam só no navegador (falta o servidor de arquivos).
+
 ## 19/11/2026 (Link de pagamento: validade de 48 h e "Incluir link" nos Descontados)
 - **Pedido da Hellen:** os links ainda expiravam com 12 horas; no Admin eles precisam valer 48 horas. Causa: o servidor guardava `validadeHoras` = 12 (a mudança de 05/11 tinha ficado em 48, mas o valor salvo voltou a 12; a Hellen salvou as "Regras do link" em 17/11). Correção: versão 2 da regra (`validadeV` 2 em `lpMigrar`) grava 48 de novo uma vez. A Hellen pode mudar em Meios e acessos → Regras (Validade do link). O aviso à revendedora continua em 12 h. Se o link vence no próprio **e-SiTef** em 12 h, isso é regulado lá (Software Express/Fiserv), não no Admin.
 - **Descontados no acerto:** botão **Incluir link** (Link de pagamento → Descontados no acerto). Escolhe o link pago (busca pelo nome), a data do acerto e o valor usado (R$ 0,00 = valor inteiro; o que sobra vira crédito). Entra na lista com Origem "Lançado à mão"; clicando na linha dá para corrigir ou tirar. Regras: só link pago, que ainda não foi descontado; data do acerto não pode ser antes do pagamento; valor não passa do valor do link. Ações `sol_descontar` e `sol_descontar_desfazer` em `domain/link-pagamento.js`.
