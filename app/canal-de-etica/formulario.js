@@ -56,7 +56,7 @@ const CSS = `
 @media(max-width:520px){.ce .intro{padding:25px 20px}.ce .form{padding:5px 20px 24px}.ce .brand{font-size:32px}.ce .actions{flex-direction:column;align-items:stretch}.ce .actions button{width:100%}}
 `;
 
-const VAZIO = { categoria: "", setor: "", relacao: "", frequencia: "", periodo: "", envolvidos: "", relato: "", testemunhas: "", evidencia: "", risco: "", envolveDirecao: "", identificacao: IDENT[0], contato: "", site: "" };
+const VAZIO = { categoria: "", setor: "", relacao: "", frequencia: "", periodo: "", envolvidos: "", relato: "", testemunhas: "", evidencia: "", risco: "", envolveDirecao: "", identificacao: IDENT[0], contato: "", site: false };
 
 function Opcoes({ nome, itens, valor, aoMudar, obrigatorio }) {
   return itens.map((item) => (
@@ -167,7 +167,7 @@ export default function Formulario() {
                 {v.risco === "Sim" && <div className="warning">Em caso de perigo imediato, procure um local seguro e acione os serviços de emergência (190 ou 192). Este canal não é monitorado em tempo real.</div>}</fieldset>
               <fieldset><legend><span className="num">11</span>Você deseja se identificar?</legend><Opcoes nome="identificacao" itens={IDENT} valor={v.identificacao} aoMudar={muda} />
                 {identificada && <div style={{ marginTop: 16 }}><label htmlFor="ce-contato">Nome e contato (opcional)</label><input id="ce-contato" type="text" value={v.contato} maxLength={300} placeholder="Nome, telefone ou e-mail" onChange={(e) => muda("contato", e.target.value)} /><span className="help">Informe apenas se desejar receber contato da equipe responsável.</span></div>}</fieldset>
-              <input type="text" name="site" value={v.site} onChange={(e) => muda("site", e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+              <input type="checkbox" name="confirmo_robo" checked={v.site} onChange={(e) => muda("site", e.target.checked)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
               {falha && <div className="erro" role="alert">{falha}</div>}
               <div className="actions"><span className="quiet">* Campos obrigatórios</span><button type="submit" disabled={enviando}>{enviando ? "Enviando..." : "Enviar denúncia"}</button></div>
             </form>

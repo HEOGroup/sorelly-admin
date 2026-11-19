@@ -15,7 +15,7 @@ export const POST = rota(async (req) => {
   const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
   if (!limiteClima(ip)) return erro("Muitos envios por aqui. Tente de novo mais tarde.", 429);
   const b = await corpo(req, 32 * 1024);
-  if (b.site) return json({ ok: true }, 201);   // campo escondido anti-robô: pessoa de verdade nunca preenche; nada é gravado
+  if (b.site === true) return json({ ok: true }, 201);   // campo escondido anti-robô: pessoa de verdade nunca preenche; nada é gravado
   await gravarResposta(b);
   return json({ ok: true }, 201);
 }, { publica: true });

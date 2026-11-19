@@ -53,7 +53,7 @@ export default function Formulario() {
   const [setor, setSetor] = useState("");
   const [bom, setBom] = useState("");
   const [melhorar, setMelhorar] = useState("");
-  const [site, setSite] = useState("");
+  const [site, setSite] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [falha, setFalha] = useState("");
   const [enviado, setEnviado] = useState(false);
@@ -121,7 +121,7 @@ export default function Formulario() {
                 <select value={setor} aria-label="Setor" onChange={(e) => setSetor(e.target.value)}><option value="">Prefiro não informar</option>{info.setores.map((s) => <option key={s}>{s}</option>)}</select></fieldset>
               <fieldset><legend><span className="num">12</span>O que funciona bem na Sorelly?</legend><textarea rows={3} maxLength={2000} value={bom} aria-label="O que funciona bem" placeholder="Resposta opcional" onChange={(e) => setBom(e.target.value)} /></fieldset>
               <fieldset><legend><span className="num">13</span>O que precisa melhorar?</legend><textarea rows={3} maxLength={2000} value={melhorar} aria-label="O que precisa melhorar" placeholder="Resposta opcional. Não escreva o seu nome nem o de outras pessoas." onChange={(e) => setMelhorar(e.target.value)} /></fieldset>
-              <input type="text" name="site" value={site} onChange={(e) => setSite(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+              <input type="checkbox" name="confirmo_robo" checked={site} onChange={(e) => setSite(e.target.checked)} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
               {falha && <div className="erro" role="alert">{falha}</div>}
               <div className="actions"><span className="quiet">{faltam > 0 ? "Faltam " + faltam + " afirmações." : "* Todas as afirmações são obrigatórias"}</span><button type="submit" disabled={enviando || faltam > 0}>{enviando ? "Enviando..." : "Enviar respostas"}</button></div>
             </form>

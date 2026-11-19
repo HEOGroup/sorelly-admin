@@ -11,7 +11,7 @@ export const POST = rota(async (req) => {
   const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
   if (!limiteDenuncia(ip)) return erro("Muitos envios por aqui. Tente de novo mais tarde.", 429);
   const b = await corpo(req, 64 * 1024);
-  if (b.site) return json({ ok: true, protocolo: "DEN-00000000" }, 201);   // campo escondido anti-robô: pessoa de verdade nunca preenche; o robô "recebe" um protocolo falso e nada é gravado
+  if (b.site === true) return json({ ok: true, protocolo: "DEN-00000000" }, 201);   // campo escondido anti-robô: pessoa de verdade nunca preenche; o robô "recebe" um protocolo falso e nada é gravado
   const protocolo = await gravarDenuncia(validarDenuncia(b));
   return json({ ok: true, protocolo }, 201);
 }, { publica: true });
