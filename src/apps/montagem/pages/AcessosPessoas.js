@@ -31,14 +31,14 @@ var pessoasDoSistema = EQUIPE.map(function(p){ return {id:p.id, nome:p.nome}; })
 
 function AbaAcessosPessoas(){
   var cx = use(), s = cx.state, edita = EDITORES.indexOf(s.usuario)>=0;
-  var sc = useState(null), contas = sc[0], setContas = sc[1], se = useState(""), erro = se[0], setErro = se[1], sm = useState(""), modId = sm[0], setModId = sm[1];
+  var sc = useState(null), contas = sc[0], setContas = sc[1], se = useState(""), erro = se[0], setErro = se[1], sm = useState(""), modId = sm[0], setModId = sm[1], cf = useState(null), conf = cf[0], setConf = cf[1], av = useState(""), aviso = av[0], setAviso = av[1];
   useEffect(function(){ if(apiAtiva()) chamar("GET", "/contas").then(function(j){ setContas(j.contas || []); setErro(""); }).catch(function(x){ setErro(x.message || "Não consegui ler as contas."); }); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var muda = function(id, corpo){ chamar("PATCH", "/contas/"+id, corpo).then(function(j){ setContas(function(l){ return (l || []).map(function(c){ return c.id===id ? j.conta : c; }); }); setErro(""); }).catch(function(x){ setErro(x.message || "Não consegui salvar."); }); };
   var fazAcao = function(c, a){
     if(a==="bloquear") muda(c.id, {status:"bloqueado"});
     else if(a==="liberar") muda(c.id, {status:"ativo"});
-    else if(a==="copiar"){ try { navigator.clipboard.writeText(mensagemAcesso(c)); setErro(""); window.alert("Mensagem de acesso copiada. Cole no WhatsApp de "+c.nome.split(" ")[0]+"."); } catch(x){ setErro("Não consegui copiar. Tente de novo."); } }
-    else if(a==="senha"){ if(window.confirm("Gerar uma senha nova para "+c.nome+"? A senha atual deixa de valer. Depois use Copiar acesso para mandar a nova.")) muda(c.id, {senha:novaSenha()}); } };
+    else if(a==="copiar"){ try { navigator.clipboard.writeText(mensagemAcesso(c)); setErro(""); setAviso("Acesso de "+c.nome.split(" ")[0]+" copiado. Cole no WhatsApp."); } catch(x){ setErro("Não consegui copiar. Tente de novo."); } }
+    else if(a==="senha") setConf({tipo:"senha", c:c, nome:c.nome}); };
   var nomeDe = function(c){ var p = pessoasDoSistema.find(function(x){ return x.id===c.pessoaId; }); return p ? p.nome : c.nome; };
 
   // ACESSO em três níveis simples (Marcus, 19/11/2026: "arruma esse grupo de acessos, os nomes e o perfil, não dá assim"): Total, Direção ou Por grupo.
@@ -48,7 +48,7 @@ function AbaAcessosPessoas(){
   var nivelDe = function(g){ return g==="supervisao" ? "total" : g==="familia" ? "direcao" : "grupo"; };
   var rotNivel = function(n){ return NIVEIS.find(function(x){ return x[0]===n; })[1]; };
   var mudaNivel = function(c, n, nome){
-    if(n==="total"){ if(window.confirm("Dar ACESSO TOTAL a "+nome+"? Passa a ver tudo, como os sócios (dinheiro, salários e contratos).")) muda(c.id, {grupo:"supervisao", perfil:"ADMIN", abas:null, ocultar:null}); }
+    if(n==="total") setConf({tipo:"total", c:c, nome:nome});
     else if(n==="direcao") muda(c.id, {grupo:"familia", abas:null, ocultar:null});
     else muda(c.id, {grupo:GRUPOS_SETOR.indexOf(efetivo(c))>=0 ? efetivo(c) : "basico", perfil:"MEMBER"}); };
   var linhas = (contas || []).map(function(c){ var g = efetivo(c), n = nivelDe(g); return {id:"c_"+c.id, c:c, cor:(VISUAL[g] || [])[0] || "#64748B", nome:nomeDe(c), nivel:rotNivel(n), n:n, grupo:n==="grupo" ? (LB[g] || "Sem setor") : (SETOR_PESSOA[c.pessoaId] || "—"), modulos:c.perfil==="ADMIN" ? "Todos" : (c.setores || []).length+" de "+MODULOS.length, sit:SIT[c.status] || c.status, acao:""}; });
@@ -75,8 +75,11 @@ function AbaAcessosPessoas(){
     return e("label",{key:m[0], className:"flex h-8 items-center gap-1.5 text-[13px]"}, e("input",{type:"checkbox", checked:on, disabled:!edita, className:"size-4 accent-[var(--bloco-titulo)] disabled:cursor-not-allowed", onChange:function(ev){ muda(conta.id, {setores:ev.target.checked ? (conta.setores || []).concat([m[0]]) : (conta.setores || []).filter(function(x){ return x!==m[0]; })}); }}), m[1]); }));
   return e("div",{className:"flex min-h-0 flex-1 flex-col gap-2 [&_tbody_td]:!bg-[#16264a] [&_tbody_tr:hover_td]:!bg-[#1d3366] [&_tbody_button]:!border-0 [&_tbody_button]:!bg-[#4a6bb0]/45 [&_tbody_button]:!text-[11px]"},
     !edita && e("span",{className:"text-center text-[13px] font-semibold text-warning"}, "Só a diretoria, a Anamaria, a Amanda de Miranda e o Leonardo alteram os acessos. Você está só vendo."),
+    aviso && e("span",{role:"status", className:"text-center text-[13px] font-semibold text-success"}, aviso),
     erro && e("span",{role:"alert", className:"text-center text-[13px] font-semibold text-destructive"}, erro),
     contas===null && apiAtiva() && !erro ? e("span",{className:"text-center text-[13px]"}, "Carregando") : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", escura:true, grade:true, semMao:true, semContagem:true, semLimpar:true, cheia:true, alturaMax:"calc(100vh - 11rem)", limite:100, vazio:"Ninguém cadastrado."}),
+    conf && e(Janela,{t:conf.tipo==="total" ? "Dar acesso total a "+conf.nome+"?" : "Gerar senha nova para "+conf.nome+"?", sub:conf.tipo==="total" ? "Passa a ver tudo, como os sócios: dinheiro, salários e contratos." : "A senha atual deixa de valer. Depois use Copiar acesso para mandar a nova.", fechar:function(){ setConf(null); }, colunas:[e("span",{key:"x", className:"text-center text-[13px]"}, conf.tipo==="total" ? "Grupo Acesso total, perfil Diretoria e sem lista de telas presa na conta." : "O sistema cria uma senha nova na hora.")],
+      rodape:[e(Botao,{key:"n", onClick:function(){ setConf(null); }}, "Cancelar"), e(Botao,{key:"s", principal:true, onClick:function(){ var c2 = conf.c; setConf(null); setAviso(""); if(conf.tipo==="total") muda(c2.id, {grupo:"supervisao", perfil:"ADMIN", abas:null, ocultar:null}); else muda(c2.id, {senha:novaSenha()}); }}, "Confirmar")]}),
     conta && e(Janela,{t:"Módulos de "+nomeDe(conta), sub:"Esta pessoa abre só os módulos marcados. Vale na hora.", fechar:function(){ setModId(""); }, colunas:[corpoModulos], rodape:[e(Botao,{key:"f", principal:true, onClick:function(){ setModId(""); }}, "Concluir")]}));
 }
 
