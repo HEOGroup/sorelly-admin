@@ -1,9 +1,9 @@
 // Sorelly Admin · montagem — pages/encomendas/Top50.js
-// Encomendas e reposições › Top 50 (refeita em 17/11/2026, pedido do Marcus: igual às telas novas do Financeiro, sem letra em caixa alta, nomes padronizados).
-// Três visões na MESMA tela (menu na faixa azul): Top 50 (planilha das revendedoras com a situação do kit), Pedidos ao Marcus (entrar ou sair) e Entradas e saídas (histórico).
+// Encomendas e reposições › Top 100 (refeita em 17/11/2026, pedido do Marcus: igual às telas novas do Financeiro, sem letra em caixa alta, nomes padronizados).
+// Três visões na MESMA tela (menu na faixa azul): Top 100 (planilha das revendedoras com a situação do kit), Pedidos ao Marcus (entrar ou sair) e Entradas e saídas (histórico).
 // Filtro e ordem ficam no título de cada coluna (TabelaPlanilha). Lógica em domain/encomendas.js (estado s.er).
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
-import { Pagina } from "@/apps/montagem/components/padrao";
+import { degrade, ESTADO, Pagina } from "@/apps/montagem/components/padrao";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { formatarDataHora, formatarDia } from "@/apps/montagem/domain/encomendas";
@@ -35,18 +35,38 @@ function TabelaHistorico(p){
   return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", semCaixaAlta:true, grade:true, vazio:"Nenhuma mudança registrada."});
 }
 
+// Regras do Top 100 (Marcus, 18/11/2026): seis cartões em grade 3 x 2, na ordem da lista (posição 1 a 100, 101 a 150, fora do 150) e depois as proteções. Documento completo: docs/setores/encomendas-e-reposicoes/regras-top100.md
+var REGRAS_TOP100 = [
+  {k:"Posição 1 a 100", t:"Ativa", d:"Acesso completo a pedidos e reposições.", cor:"ok"},
+  {k:"Posição 101 a 150", t:"Protegida", d:"Mantém o acesso, só quem já tinha.", cor:"alerta"},
+  {k:"Fora do 150", t:"Saída", d:"Sai depois de 2 meses seguidos fora.", cor:"ruim"},
+  {k:"Dia 1º de cada mês", t:"Ranking", d:"Vendas dos últimos 3 meses decidem a lista.", cor:"info"},
+  {k:"Pedido aberto", t:"Nunca sai", d:"Pedido aberto ou peça separada protege a revendedora.", cor:"info"},
+  {k:"Exclusão e exceção", t:"Só a diretoria", d:"Equipe não exclui. Exceção com motivo e até 3 meses.", cor:"info"}
+];
+function BlocoRegras(){
+  return e(BlocoPainel,{titulo:"Regras do Top 100", compacto:true},
+    e("div",{className:"grid grid-cols-1 gap-2 p-2 md:grid-cols-3"},
+      REGRAS_TOP100.map(function(r){ var c = ESTADO[r.cor];
+        return e("div",{key:r.t, className:"flex min-h-[84px] flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-2 text-center", style:degrade(r.cor)},
+          e("span",{className:"text-[11px] font-semibold uppercase tracking-[.05em]", style:{color:c}}, r.k),
+          e("b",{className:"text-[13px] font-semibold text-foreground"}, r.t),
+          e("span",{className:"text-[13px] text-foreground"}, r.d)); })));
+}
+
 function AbaEncTop50(){
   var E = useEr(), er = E.er, md = useState(null), ir = function(m){ md[1](m); };
   var sv = useState(window.location.hash==="#pedidos" ? "pedidos" : "lista"), vista = sv[0];
   var pend = er.top50Sol.filter(function(x){ return x.status==="pendente"; }).length, snap = er.top50Snap[er.top50Snap.length-1];
-  var titulo = vista==="pedidos" ? "Pedidos ao Marcus" : vista==="historico" ? "Entradas e saídas" : "Top 50";
+  var titulo = vista==="pedidos" ? "Pedidos ao Marcus" : vista==="historico" ? "Entradas e saídas" : "Top 100";
   // mesma estrutura do Contas a pagar: bloco azul compacto, controles numa faixa azul e a tabela embaixo
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+    e(BlocoRegras,null),
     e(BlocoPainel,{titulo:titulo, compacto:true},
       e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1"},
         e("select",{value:vista, "aria-label":"Visão", onChange:function(ev){ sv[1](ev.target.value); }, className:"h-8 w-56 min-w-0 rounded-md border border-border bg-card px-2 text-[13px] font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"},
-          [["lista", "Top 50"], ["pedidos", "Pedidos ao Marcus"+(pend ? " ("+pend+")" : "")], ["historico", "Entradas e saídas"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-        e(Botao,{desabilitado:!E.pode, title:E.pode ? "Cola a lista da planilha do Top 50" : "Só a diretoria importa a lista", onClick:function(){ ir({tipo:"importar"}); }}, "Importar lista"),
+          [["lista", "Top 100"], ["pedidos", "Pedidos ao Marcus"+(pend ? " ("+pend+")" : "")], ["historico", "Entradas e saídas"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
+        e(Botao,{desabilitado:!E.pode, title:E.pode ? "Cola a lista da planilha do Top 100" : "Só a diretoria importa a lista", onClick:function(){ ir({tipo:"importar"}); }}, "Importar lista"),
         e(Botao,{onClick:function(){ ir({tipo:"solicitar"}); }}, "Pedir entrada"),
         e(Botao,{principal:true, desabilitado:!E.pode, title:E.pode ? "Registra a lista de hoje como aprovada"+(snap ? ". Última aprovação: "+formatarDataHora(snap.em)+" por "+snap.por : "") : "Só a diretoria aprova a lista", onClick:function(){ E.exec("top50_registrar", {}); }}, "Aprovar lista do mês")),
       vista==="pedidos" ? e(TabelaPedidos,{E:E, ir:ir}) : vista==="historico" ? e(TabelaHistorico,{E:E}) : e(TabelaRev,{E:E, grupo:"top50", ir:ir})),

@@ -41,7 +41,7 @@ function somaMeses(dia, n){
 // ---------- vocabulário ----------
 var TIPOS = [["reposicao", "Reposição"], ["expositor", "Expositor"], ["encomenda", "Encomenda"]];
 var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda", leilao:"Leilão", troca:"Troca", ecommerce:"E-commerce", modelo:"Modelo", brinde:"Brinde"};   // os 5 últimos só aparecem no histórico importado das planilhas do setor (05/11/2026)
-// Situação do kit de cada revendedora do Top 50 (17/11/2026, chamado da Agatha: marcar quais kits já foram finalizados e quais estão pendentes). Valor guardado em r.sitMont; os textos antigos da planilha entram pelo mapa.
+// Situação do kit de cada revendedora do Top 100 (17/11/2026, chamado da Agatha: marcar quais kits já foram finalizados e quais estão pendentes). Valor guardado em r.sitMont; os textos antigos da planilha entram pelo mapa.
 var KIT_STATUS = ["Pendente", "Urgente", "Montagem na empresa", "Finalizado"];
 var KIT_ANTIGO = {"finalizado":"Finalizado", "urgente":"Urgente", "finalizar":"Pendente", "montagem na empresa":"Montagem na empresa", "pendente":"Pendente"};
 function kitDe(r){ var t = String((r && r.sitMont) || "").trim(); if(!t) return "Pendente"; return KIT_ANTIGO[t.toLowerCase()] || t; }
@@ -84,11 +84,11 @@ var CONFIG_PADRAO = {
   faixas:FAIXAS_PADRAO,
   expositor:{media3m:1500, vendaMinima:1000, taxaEntrega:10, exigeFoto:true},
   bloqueio:{pctMinimo:30, meses:3},
-  // 21/10/2026: o setor Encomendas acabou; regras novas da reposição (taxa fixa, sem exceção). Pix e Top 50 reais só em encomendas.local.js
+  // 21/10/2026: o setor Encomendas acabou; regras novas da reposição (taxa fixa, sem exceção). Pix e Top 100 reais só em encomendas.local.js
   reposicao:{taxa:15, taxaRepresentante:15, mediaMinima:2000, mediaMinimaRep:500, repPorSemana:10, minutosEscolha:30},
-  // valor máximo de cada reposição pela média de vendas dos últimos 3 meses (abaixo da 1ª faixa = sem direito, exceto Top 50)
+  // valor máximo de cada reposição pela média de vendas dos últimos 3 meses (abaixo da 1ª faixa = sem direito, exceto Top 100)
   valores:[{de:500, max:2500}, {de:1000, max:3000}, {de:2000, max:3500}, {de:3000, max:4000}, {de:4000, max:5000}],
-  // quantas reposições por mês: média abaixo do limite = 1, a partir dele = 2; Top 50 = 2
+  // quantas reposições por mês: média abaixo do limite = 1, a partir dele = 2; Top 100 = 2
   qtd:{limiteMedia:2000, abaixo:1, acima:2, top50:2},
   top50:{mediaMinima:3000, mesInicial:"2026-07"},   // alerta quando a média cai abaixo; planilha de vendas começa em jul/2026
   atendentes:["Leci", "Amanda de Oliveira", "Geovanna Santos", "Isadora", "Kátia"],
@@ -112,7 +112,7 @@ function erMigrar(er){
   er.config = er.config || clone(CONFIG_PADRAO);
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(er.config[k]===undefined) er.config[k] = clone(CONFIG_PADRAO[k]); });
   if((er.v||1)<2){
-    // v2 (21/10/2026): Top 50 e Pix vêm do arquivo local (nada real no código)
+    // v2 (21/10/2026): Top 100 e Pix vêm do arquivo local (nada real no código)
     if(LOCAL){
       if(LOCAL.config && LOCAL.config.pix && !er.config.pix.chave) er.config.pix = clone(LOCAL.config.pix);
       (LOCAL.revendedoras||[]).forEach(function(x){ var ex = er.revendedoras.find(function(r){ return norm(r.nome)===norm(x.nome); });
@@ -131,19 +131,19 @@ function erMigrar(er){
   }
   ["top50"].forEach(function(k){ Object.keys(CONFIG_PADRAO[k]).forEach(function(c){ if(er.config[k]===undefined) er.config[k] = clone(CONFIG_PADRAO[k]); else if(er.config[k][c]===undefined) er.config[k][c] = CONFIG_PADRAO[k][c]; }); });
   er.revendedoras.forEach(function(r){ if(!r.vendas) r.vendas = {}; });
-  // lista oficial do Top 50 (planilha do Marcus, 29/10/2026): quem estava no Top 50 e não está na lista sai; quem está entra, com última venda, acerto, montagem e observações
-  if(LOCAL && LOCAL.listaVersao && er.top50Lista!==LOCAL.listaVersao){ aplicarLista(er, LOCAL.revendedoras || [], true, "sistema", agoraSP(), "Lista do Top 50 de "+LOCAL.listaVersao); er.top50Lista = LOCAL.listaVersao; }
+  // lista oficial do Top 100 (planilha do Marcus, 29/10/2026): quem estava no Top 100 e não está na lista sai; quem está entra, com última venda, acerto, montagem e observações
+  if(LOCAL && LOCAL.listaVersao && er.top50Lista!==LOCAL.listaVersao){ aplicarLista(er, LOCAL.revendedoras || [], true, "sistema", agoraSP(), "Lista do Top 100 de "+LOCAL.listaVersao); er.top50Lista = LOCAL.listaVersao; }
   er.v = 5; return er;
 }
-// Aplica uma lista de revendedoras como Top 50 (mesclando com o que já existe). linhas = [{nome, telefone?, representante?, ultimaVenda?, dataAcerto?, sitMont?, respMont?, obs?}]
-// substituir = quem está no Top 50 e não está na lista sai (fica no histórico). Telefone só preenche se estava vazio; os demais campos da planilha valem.
+// Aplica uma lista de revendedoras como Top 100 (mesclando com o que já existe). linhas = [{nome, telefone?, representante?, ultimaVenda?, dataAcerto?, sitMont?, respMont?, obs?}]
+// substituir = quem está no Top 100 e não está na lista sai (fica no histórico). Telefone só preenche se estava vazio; os demais campos da planilha valem.
 // mesma pessoa: nomes iguais, ou o nome mais curto (2 palavras ou mais) está inteiro dentro do mais longo (ex.: "Ana Souza" e "Ana Souza Lima")
 function mesmaPessoa(a, b){
   var x = norm(a).split(" ").filter(Boolean), y = norm(b).split(" ").filter(Boolean); if(!x.length || !y.length) return false;
   var c = x.length<=y.length ? [x, y] : [y, x]; return c[0].join(" ")===c[1].join(" ") || (c[0].length>=2 && c[0].every(function(t){ return c[1].indexOf(t)>=0; }));
 }
 function aplicarLista(er, linhas, substituir, por, agora, motivo){
-  var nomes = [], novos = 0, atuais = 0, saiu = 0, mot = motivo || "Lista do Top 50 (planilha do Marcus)";
+  var nomes = [], novos = 0, atuais = 0, saiu = 0, mot = motivo || "Lista do Top 100 (planilha do Marcus)";
   (linhas || []).forEach(function(l){
     var nome = trim(l.nome); if(!nome) return; nomes.push(nome);
     var r = (er.revendedoras.find(function(x){ return mesmaPessoa(x.nome, nome); })) || null;
@@ -154,7 +154,7 @@ function aplicarLista(er, linhas, substituir, por, agora, motivo){
     ["ultimaVenda", "dataAcerto", "sitMont", "respMont", "obs"].forEach(function(k){ if(l[k]!==undefined && l[k]!==null) r[k] = l[k]; });
     if(!r.vendas) r.vendas = {};
   });
-  if(substituir) er.revendedoras.forEach(function(r){ if(r.top50 && !nomes.some(function(n){ return mesmaPessoa(n, r.nome); })){ r.top50 = false; r.marcus = false; saiu++; er.top50Hist.push({em:agora, por:por, nome:r.nome, acao:"saiu", motivo:"Fora da lista oficial do Top 50"}); } });
+  if(substituir) er.revendedoras.forEach(function(r){ if(r.top50 && !nomes.some(function(n){ return mesmaPessoa(n, r.nome); })){ r.top50 = false; r.marcus = false; saiu++; er.top50Hist.push({em:agora, por:por, nome:r.nome, acao:"saiu", motivo:"Fora da lista oficial do Top 100"}); } });
   return {novos:novos, atuais:atuais, saiu:saiu};
 }
 // lê o texto colado do Excel (uma revendedora por linha, colunas separadas por tab ou ponto e vírgula).
@@ -215,7 +215,7 @@ function bloqueioReposicao(config, valorReposicao, vendas, dataBase){
 }
 var bloqueadaNaData = function(ate, data){ return !!ate && diaDe(ate) > diaDe(data || hojeSP()); };
 
-// ---------- vendas por mês, média e alerta do Top 50 (23/10/2026) ----------
+// ---------- vendas por mês, média e alerta do Top 100 (23/10/2026) ----------
 var ymDe = function(iso){ return String(iso||"").slice(0, 7); };
 // colunas da planilha: do mês inicial até o mês de hoje (no dia 1 do mês novo a coluna nova abre sozinha)
 function mesesColunas(config, hoje){
@@ -232,24 +232,24 @@ function mediaVendas(r, config, hoje){
   var soma = usados.reduce(function(t, m){ return t+num(v[m]); }, 0);
   return {media:usados.length ? r2(soma/usados.length) : null, meses:usados.length, usados:usados};
 }
-// alerta: está no Top 50, não foi selecionada pelo Marcus, tem venda lançada e a média ficou abaixo do mínimo
+// alerta: está no Top 100, não foi selecionada pelo Marcus, tem venda lançada e a média ficou abaixo do mínimo
 function abaixoDaMedia(config, r, hoje){
   var t = (config.top50 || CONFIG_PADRAO.top50), m = mediaVendas(r, config, hoje);
   return !!(r.top50 && !r.marcus && m.meses>0 && m.media<t.mediaMinima);
 }
 
 // ---------- acesso à reposição (21/10/2026) ----------
-// Top 50: entrega pelo João, taxa de R$ 15 paga ANTES (comprovante). Média de R$ 2.000 ou mais: ida na empresa (agendada) ou pela representante (R$ 15 é da representante, não da revendedora).
-var CANAIS = [["entrega", "Entrega pelo João (Top 50)"], ["empresa", "Ida na empresa"], ["representante", "Pela representante"]];
+// Top 100: entrega pelo João, taxa de R$ 15 paga ANTES (comprovante). Média de R$ 2.000 ou mais: ida na empresa (agendada) ou pela representante (R$ 15 é da representante, não da revendedora).
+var CANAIS = [["entrega", "Entrega pelo João (Top 100)"], ["empresa", "Ida na empresa"], ["representante", "Pela representante"]];
 var ROTULO_CANAL = {entrega:"Entrega", empresa:"Ida na empresa", representante:"Representante"};
 function acessoReposicao(config, rev, media){
   var c = config.reposicao || CONFIG_PADRAO.reposicao, top = !!(rev && rev.top50), ok = num(media)>=c.mediaMinima;
   var temRep = top || num(media)>=num(c.mediaMinimaRep);   // abaixo de R$ 500 não tem direito, nem pela representante
   var canais = top ? ["entrega", "empresa", "representante"] : ok ? ["empresa", "representante"] : temRep ? ["representante"] : [];
   return {top50:top, mediaOk:ok, canais:canais, tem:canais.length>0,
-    motivo:canais.length ? "" : "Sem direito à reposição na Sorelly: precisa estar no Top 50 ou ter média de vendas de "+formatarReais(c.mediaMinima)+" ou mais."};
+    motivo:canais.length ? "" : "Sem direito à reposição na Sorelly: precisa estar no Top 100 ou ter média de vendas de "+formatarReais(c.mediaMinima)+" ou mais."};
 }
-// valor máximo da reposição pela média (tabela editável). Top 50 sem média usa o maior teto; Top 50 abaixo da 1ª faixa usa o menor teto
+// valor máximo da reposição pela média (tabela editável). Top 100 sem média usa o maior teto; Top 100 abaixo da 1ª faixa usa o menor teto
 function valorMaximo(config, media, top){
   var v = (config.valores||[]).slice().sort(function(a, b){ return a.de-b.de; }), m = num(media), f = null;
   if(!v.length) return 0;
@@ -257,7 +257,7 @@ function valorMaximo(config, media, top){
   v.forEach(function(x){ if(m>=x.de) f = x; });
   return f ? f.max : (top ? v[0].max : 0);
 }
-// quantas reposições por mês: Top 50 usa o próprio limite; os demais, pela média
+// quantas reposições por mês: Top 100 usa o próprio limite; os demais, pela média
 function qtdMes(config, media, top){ var q = config.qtd || CONFIG_PADRAO.qtd; return top ? q.top50 : (num(media)>=q.limiteMedia ? q.acima : q.abaixo); }
 // segunda-feira da semana (limite semanal da representante)
 function inicioSemana(dia){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dia||"")); if(!m) return ""; var d = new Date(Date.UTC(+m[1], +m[2]-1, +m[3])), w = (d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-w); return d.toISOString().slice(0,10); }
@@ -353,7 +353,7 @@ function validarPedido(s, v, agora){
     if(rev && bloqueadaNaData(rev.bloqueadaAte, hoje)) return formal("Revendedora bloqueada para novas solicitações até "+formatarDia(rev.bloqueadaAte)+(rev.bloqueioMotivo ? " ("+rev.bloqueioMotivo+")" : "")+".");
     if(!ac.tem) return formal(ac.motivo);
     if(!v.canal) return dados("Escolha como a reposição será recebida.");
-    if(ac.canais.indexOf(v.canal)<0) return formal(v.canal==="entrega" ? "A entrega pelo João é só para o Top 50." : "Canal não liberado para esta revendedora.");
+    if(ac.canais.indexOf(v.canal)<0) return formal(v.canal==="entrega" ? "A entrega pelo João é só para o Top 100." : "Canal não liberado para esta revendedora.");
     var mx = valorMaximo(cfg, v.media3m, top), lim = qtdMes(cfg, v.media3m, top), usadas = reposicoesDoMes(er, v.revendedora, mes);
     if(usadas>=lim) return formal("Limite de "+lim+(lim===1 ? " reposição" : " reposições")+" por mês já atingido.");
     if(mx>0 && num(v.valor)>mx) return formal("Valor acima do máximo de "+formatarReais(mx)+" para esta média.");
@@ -370,7 +370,7 @@ function validarPedido(s, v, agora){
   }
   if(v.tipo==="encomenda"){
     var rvE = revPorNome(er, v.revendedora);
-    if(!(rvE && rvE.top50)) return formal("Encomenda só para o Top 50. As demais revendedoras pedem pelo aplicativo, somente para o novo kit.");
+    if(!(rvE && rvE.top50)) return formal("Encomenda só para o Top 100. As demais revendedoras pedem pelo aplicativo, somente para o novo kit.");
     if(!trim(v.descricao)) return dados("Descreva a encomenda.");
   }
   return null;
@@ -385,14 +385,14 @@ function taxaDoPedido(config, p){
 
 // valor que a EMPRESA paga à representante quando ela leva a reposição (a revendedora não paga nada)
 var taxaDaRepresentante = function(config, p){ return p.tipo==="reposicao" && p.canal==="representante" ? num((config.reposicao||CONFIG_PADRAO.reposicao).taxaRepresentante) : 0; };
-// sem comprovante a taxa não libera a reposição (Top 50 por entrega)
+// sem comprovante a taxa não libera a reposição (Top 100 por entrega)
 var faltaComprovante = function(p){ return p.tipo==="reposicao" && p.taxa>0 && !p.comprovante && !FINAIS[p.status]; };
 
 // ---------- mensagens para o WhatsApp (geradas das regras, nunca fixas) ----------
 function textoRegrasReposicao(config){
   var c = config.reposicao || CONFIG_PADRAO.reposicao, b = config.bloqueio || CONFIG_PADRAO.bloqueio;
   return ["*Reposição de semijoias*", "",
-    "• Top 50: a reposição é enviada por entrega e pode sair durante o mês.",
+    "• Top 100: a reposição é enviada por entrega e pode sair durante o mês.",
     "• Taxa de "+formatarReais(c.taxa)+" por reposição, paga antes por Pix, com o comprovante anexado. Sem o comprovante a reposição não é liberada, sem exceção.",
     "• Média de vendas de "+formatarReais(c.mediaMinima)+" ou mais: pode agendar a ida na empresa (até "+c.minutosEscolha+" minutos para escolher as peças).",
     "• Qualquer revendedora pode receber a reposição pela representante, que separa as peças na empresa (até "+c.repPorSemana+" por semana).",
@@ -413,17 +413,17 @@ function textoListagem(data, itens){
   var linhas = itens.length ? itens.map(function(x, i){ return (i+1)+". *"+(x.hora || "sem hora")+"* · "+x.revendedora+(x.tipo && x.tipo!=="ida" ? " · "+rotuloIda(x.tipo) : "")+(x.representante ? " · Rep.: "+x.representante : "")+(x.obs ? " ("+x.obs+")" : ""); }) : ["Nenhuma ida na empresa marcada."];
   return ["📅 *IDAS NA EMPRESA: "+formatarDia(data)+"*", "", linhas.join("\n"), "", "Setor de Encomendas e Reposições"].join("\n");
 }
-// pedido de autorização ao Marcus (entrada ou saída do Top 50), pronto para copiar
+// pedido de autorização ao Marcus (entrada ou saída do Top 100), pronto para copiar
 function mensagemSolicitacao(config, so, link){
   var R = formatarReais, ent = so.tipo==="entrar";
-  return [ent ? "📋 *PEDIDO DE ENTRADA NO TOP 50*" : "📋 *PEDIDO DE SAÍDA DO TOP 50*", "",
+  return [ent ? "📋 *PEDIDO DE ENTRADA NO TOP 100*" : "📋 *PEDIDO DE SAÍDA DO TOP 100*", "",
     "*Revendedora:* "+so.nome, "*Telefone:* "+(so.telefone || "—"), "*Representante:* "+(so.representante || "—"), "*Média de vendas:* "+(so.media>0 ? R(so.media) : "—"),
     "*Motivo:* "+so.motivo, "*Pedido por:* "+(so.por || "—"), "", "Marcus, você autoriza? ✅ Sim ou ❌ Não"].concat(link ? ["", "🔗 *Para analisar e autorizar (entre com o seu login):*", link] : []).join("\n");
 }
 
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
-  ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
+  ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 100"], ["recusa", "Recusa de reposição"],
   ["link_pedido", "Link do pedido da revendedora"], ["link_pecas", "Peças encontradas: aviso com o link"], ["link_separado", "Peças separadas: aviso da taxa com o link"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
   ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
@@ -435,9 +435,9 @@ function tabelaValoresTexto(c){
 function mensagemPadrao(config, k){
   var r = config.reposicao || CONFIG_PADRAO.reposicao, q = config.qtd || CONFIG_PADRAO.qtd, b = config.bloqueio || CONFIG_PADRAO.bloqueio, px = config.pix || {};
   var R = function(n){ return formatarReais(n); }, L = "━━━━━━━━━━━━━━━━━━━━", at = (config.atendentes||[]).join(", ");
-  var quant = "🟡 *Média abaixo de "+R(q.limiteMedia)+":* "+q.abaixo+(q.abaixo===1 ? " reposição" : " reposições")+" por mês\n🟢 *Média de "+R(q.limiteMedia)+" ou mais:* "+q.acima+" reposições por mês *(máximo)*\n⭐ *Top 50:* "+q.top50+" reposições por mês";
+  var quant = "🟡 *Média abaixo de "+R(q.limiteMedia)+":* "+q.abaixo+(q.abaixo===1 ? " reposição" : " reposições")+" por mês\n🟢 *Média de "+R(q.limiteMedia)+" ou mais:* "+q.acima+" reposições por mês *(máximo)*\n⭐ *Top 100:* "+q.top50+" reposições por mês";
   if(k==="setor") return ["📦 *SETOR DE ENCOMENDAS E REPOSIÇÕES: PROCEDIMENTO OFICIAL*", L, "",
-    "⭐ *TOP 50: revendedoras com direito a reposições e encomendas diretamente pelo setor de encomendas*", "• Reposição: máximo de *"+q.top50+" por mês*, sem exigir média mínima.", "• Encomenda: o Top 50 pode pedir que o setor *separe peças para o próximo kit*.",
+    "⭐ *TOP 100: revendedoras com direito a reposições e encomendas diretamente pelo setor de encomendas*", "• Reposição: máximo de *"+q.top50+" por mês*, sem exigir média mínima.", "• Encomenda: o Top 100 pode pedir que o setor *separe peças para o próximo kit*.",
     "• *Entrega pelo João:* taxa de "+R(r.taxa)+" *obrigatória*, paga *antes* por Pix, com o *comprovante anexado no sistema*. Sem comprovante, não separa. Sem exceção.",
     "• *Representante leva:* a revendedora não paga taxa. A representante recebe "+R(r.taxaRepresentante)+" por entrega.",
     "• *Ida na empresa:* com agendamento, até "+r.minutosEscolha+" minutos, sem taxa.", "", L, "",
@@ -515,7 +515,7 @@ function erReduz(s, a){
       }
       if(c.reposicao){ var rr0 = c.reposicao, rp = {taxa:r2(num(rr0.taxa)), taxaRepresentante:r2(num(rr0.taxaRepresentante)), mediaMinima:r2(num(rr0.mediaMinima)), repPorSemana:Math.round(num(rr0.repPorSemana)), minutosEscolha:Math.round(num(rr0.minutosEscolha))};
         if(rp.taxa<0 || rp.taxaRepresentante<0 || rp.mediaMinima<=0 || rp.repPorSemana<1 || rp.minutosEscolha<1) return recusa("Confira os valores da reposição."); novo.reposicao = rp; }
-      if(c.top50){ var t5 = {mediaMinima:r2(num(c.top50.mediaMinima)), mesInicial:/^\d{4}-\d{2}$/.test(String(c.top50.mesInicial)) ? c.top50.mesInicial : cfg.top50.mesInicial}; if(t5.mediaMinima<=0) return recusa("Confira a média mínima do Top 50."); novo.top50 = t5; }
+      if(c.top50){ var t5 = {mediaMinima:r2(num(c.top50.mediaMinima)), mesInicial:/^\d{4}-\d{2}$/.test(String(c.top50.mesInicial)) ? c.top50.mesInicial : cfg.top50.mesInicial}; if(t5.mediaMinima<=0) return recusa("Confira a média mínima do Top 100."); novo.top50 = t5; }
       if(c.valores){ var vs = c.valores.map(function(x){ return {de:r2(num(x.de)), max:r2(num(x.max))}; }).sort(function(m, n){ return m.de-n.de; });
         if(!vs.length || vs.some(function(x){ return x.de<=0 || x.max<=0; })) return recusa("Confira a tabela de valores."); novo.valores = vs; }
       if(c.qtd){ var qq = {limiteMedia:r2(num(c.qtd.limiteMedia)), abaixo:Math.round(num(c.qtd.abaixo)), acima:Math.round(num(c.qtd.acima)), top50:Math.round(num(c.qtd.top50))};
@@ -841,7 +841,7 @@ function erReduz(s, a){
       if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria marca “selecionada pelo Marcus”.");
       var rm = revDe(er, a.id); if(!rm) return recusa("Revendedora não encontrada."); rm.marcus = !!a.valor; return ok(rm.marcus ? "Marcada como selecionada pelo Marcus" : "Marca removida");
     }
-    case "rev_montagem": {   // situação do kit, quem monta e observação do Top 50 (qualquer pessoa do setor marca)
+    case "rev_montagem": {   // situação do kit, quem monta e observação do Top 100 (qualquer pessoa do setor marca)
       var rmo = revDe(er, a.id); if(!rmo) return recusa("Revendedora não encontrada.");
       if(a.kit!==undefined){ var kt = trim(a.kit); if(kt && KIT_STATUS.indexOf(kt)<0) return recusa("Situação do kit inválida."); rmo.sitMont = kt; }
       if(a.resp!==undefined) rmo.respMont = trim(a.resp);
@@ -849,18 +849,18 @@ function erReduz(s, a){
       rmo.montagemPor = por; rmo.montagemEm = agora; return ok("Kit atualizado");
     }
     case "top50_retirar": {
-      var rt = revDe(er, a.id); if(!rt) return recusa("Revendedora não encontrada."); if(!rt.top50) return recusa("Esta revendedora não está no Top 50.");
+      var rt = revDe(er, a.id); if(!rt) return recusa("Revendedora não encontrada."); if(!rt.top50) return recusa("Esta revendedora não está no Top 100.");
       if(!trim(a.motivo)) return recusa("Escreva o motivo.");
       if(!podeConfigurar(s.usuario)){   // ninguém do setor tira sozinha: sempre vira pedido para o Marcus analisar e autorizar
         er.top50Sol.push({id:"S"+(++er.seq), tipo:"sair", revendedoraId:rt.id, nome:rt.nome, telefone:rt.telefone || "", representante:rt.representante || "", media:rt.media3m || 0, motivo:trim(a.motivo), por:por, em:agora, status:"pendente"});
         return ok("Pedido de saída criado: envie a mensagem ao Marcus");
       }
-      rt.top50 = false; rt.marcus = false; er.top50Hist.push({em:agora, por:por, nome:rt.nome, acao:"saiu", motivo:trim(a.motivo)}); return ok("Retirada do Top 50");
+      rt.top50 = false; rt.marcus = false; er.top50Hist.push({em:agora, por:por, nome:rt.nome, acao:"saiu", motivo:trim(a.motivo)}); return ok("Retirada do Top 100");
     }
     case "top50_solicitar": {
       var nomeS = trim(a.nome); if(!nomeS) return recusa("Informe o nome da revendedora."); if(!trim(a.representante)) return recusa("Informe a representante.");
       if(!trim(a.motivo)) return recusa("Escreva o motivo.");
-      var jaS = revPorNome(er, nomeS); if(jaS && jaS.top50) return recusa("Esta revendedora já está no Top 50.");
+      var jaS = revPorNome(er, nomeS); if(jaS && jaS.top50) return recusa("Esta revendedora já está no Top 100.");
       er.top50Sol.push({id:"S"+(++er.seq), tipo:"entrar", revendedoraId:jaS ? jaS.id : "", nome:nomeS, telefone:trim(a.telefone), representante:trim(a.representante), media:vazioN(a.media) ? 0 : r2(num(a.media)), motivo:trim(a.motivo), por:por, em:agora, status:"pendente"});
       return ok("Pedido de entrada criado: envie a mensagem ao Marcus");
     }
@@ -892,15 +892,15 @@ function erReduz(s, a){
       rb.bloqueadaAte = somaMeses(hoje, mesesB); rb.bloqueioMotivo = trim(a.motivo); return ok("Revendedora bloqueada");
     }
     case "top50_importar": {
-      if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria importa a lista do Top 50.");
+      if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria importa a lista do Top 100.");
       var ln = (a.linhas || []).filter(function(l){ return trim(l.nome); }); if(!ln.length) return recusa("Cole ao menos uma revendedora.");
       var rs = aplicarLista(er, ln, !!a.substituir, por, agora, "Lista importada por "+por); er.top50Lista = "importada-"+hoje;
       return ok("Lista importada: "+rs.novos+" novas, "+rs.atuais+" atualizadas"+(rs.saiu ? ", "+rs.saiu+" saíram" : ""));
     }
     case "top50_registrar": {
-      if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria aprova a lista do Top 50.");
+      if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria aprova a lista do Top 100.");
       er.top50Snap.push({em:agora, por:por, lista:er.revendedoras.filter(function(r){ return r.top50; }).map(function(r){ return r.nome; })});
-      if(er.top50Snap.length>24) er.top50Snap = er.top50Snap.slice(-24); return ok("Lista do Top 50 aprovada");
+      if(er.top50Snap.length>24) er.top50Snap = er.top50Snap.slice(-24); return ok("Lista do Top 100 aprovada");
     }
     case "bloqueio_remover": {
       if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria libera uma revendedora bloqueada.");
@@ -910,7 +910,7 @@ function erReduz(s, a){
   }
 }
 
-// link direto para a tela onde o Marcus autoriza (Top 50, bloco Pedidos ao Marcus)
+// link direto para a tela onde o Marcus autoriza (Top 100, bloco Pedidos ao Marcus)
 function linkPedidos(){ return (typeof window!=="undefined" ? window.location.origin : "")+caminhoDaAba("enctop50")+"#pedidos"; }
 export { KIT_STATUS, kitDe, fotoDaRevendedora, aplicarLista, lerListaColada, linkPedidos, listagemDoDia, textoListagem, TIPOS_IDA, rotuloIda, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
   formatarReais, formatarDia, formatarDataHora, somaMeses, faixaDaMedia, proximaFaixa, direitoReposicao, direitoExpositor, bloqueioReposicao, bloqueadaNaData, calcularDireito,

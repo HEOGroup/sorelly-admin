@@ -3,7 +3,7 @@
 // títulos em letra normal e nomes padronizados. Uma linha por revendedora, uma coluna por mês (de jul/2026 até o mês de hoje; no dia 1 do mês novo a coluna nova abre sozinha).
 // VENDAS E MÉDIA VÊM DA DEVMASTER (17/11/2026, Marcus: "não pode editar ali"): nada se digita. Venda do mês = venda líquida (sem brinde); média = média das 3 últimas vendas pela regra da média (docs/negocio/MEDIA-DE-VENDAS.md).
 // Rota /api/encomendas/vendas (src/server/encomendas-vendas.js). Sem a leitura da DevMaster (servidor fora ou carga ainda rodando), a tela mostra os valores que estavam guardados.
-// No Top 50 há também a situação do kit (Pendente, Urgente, Montagem na empresa ou Finalizado), quem monta e a observação (chamado da Agatha, 16/11/2026). Usada no Funil (aba Revendedoras) e na tela Top 50.
+// No Top 100 há também a situação do kit (Pendente, Urgente, Montagem na empresa ou Finalizado), quem monta e a observação (chamado da Agatha, 16/11/2026). Usada no Funil (aba Revendedoras) e na tela Top 100.
 // "Selecionada pelo Marcus" não entra no alerta. Retirar pede o motivo; se a revendedora é do Marcus, vira pedido de autorização (mensagem pronta).
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
@@ -53,13 +53,15 @@ function TabelaRev(p){
     var vm = d ? d.vm : (r.vendas || {}), media = d ? d.media : (guardada.media!=null ? guardada.media : null), ult = d ? (d.v.length ? d.v[0].v : "") : (r.ultimaVenda>0 ? r.ultimaVenda : "");
     var alerta = !!(r.top50 && !r.marcus && media!=null && media<min);
     var semDm = carregou && !d;
-    var o = {id:r.id, nome:r.nome, rep:r.representante || "", tel:r.telefone || "", ult:ult, acerto:r.dataAcerto || "", kit:kitDe(r), resp:r.respMont || "", obs:r.obs || "",
-      media:media!=null ? media : "", sit:alerta ? "Média abaixo" : semDm ? "Sem cadastro na DevMaster" : r.top50 ? (r.marcus ? "Top 50 · Marcus" : "Top 50") : "Fora do Top 50", marcus:r.marcus ? "Sim" : "Não", acao:r.top50 ? "Retirar" : "Incluir", _r:r, _alerta:alerta, _semDm:semDm};
+    var tot3 = cols.slice(-3).reduce(function(t, m){ return t+(Number(vm[m]) || 0); }, 0);
+    var o = {id:r.id, pos:0, tot3:tot3, nome:r.nome, rep:r.representante || "", tel:r.telefone || "", ult:ult, acerto:r.dataAcerto || "", kit:kitDe(r), resp:r.respMont || "", obs:r.obs || "",
+      media:media!=null ? media : "", sit:alerta ? "Média abaixo" : semDm ? "Sem cadastro na DevMaster" : r.top50 ? (r.marcus ? "Top 100 · Marcus" : "Top 100") : "Fora do Top 100", marcus:r.marcus ? "Sim" : "Não", acao:r.top50 ? "Retirar" : "Incluir", _r:r, _alerta:alerta, _semDm:semDm};
     cols.forEach(function(m){ o["m_"+m] = vazio(vm[m]) ? "" : vm[m]; });
     return o;
   });
+  if(extra){ linhas.slice().sort(function(a, b){ return b.tot3-a.tot3 || a.nome.localeCompare(b.nome); }).forEach(function(l, i){ l.pos = i+1; }); linhas.sort(function(a, b){ return a.pos-b.pos; }); }   // classificação: total das vendas dos 3 últimos meses (regra do Top 100)
   var marca = function(id, campos){ E.exec("rev_montagem", Object.assign({id:id}, campos)); };
-  var C = [{k:"nome", t:"Revendedora", w:"15rem", fixa:true}, {k:"rep", t:"Representante", w:"8.5rem"}, {k:"tel", t:"Telefone", w:"8.5rem"}];
+  var C = (extra ? [{k:"pos", t:"Posição", w:"5rem", fixa:true}] : []).concat([{k:"nome", t:"Revendedora", w:"15rem", fixa:extra ? "5rem" : true}, {k:"rep", t:"Representante", w:"8.5rem"}, {k:"tel", t:"Telefone", w:"8.5rem"}]);
   if(extra) C = C.concat([
     {k:"ult", t:"Última venda", w:"8rem", fmt:function(v){ return formatarReais(v); }},
     {k:"acerto", t:"Acerto", w:"6rem", data:true, fmt:function(v){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v)); return m ? m[3]+"/"+m[2] : String(v); }},
@@ -70,7 +72,7 @@ function TabelaRev(p){
   C = C.concat([
     {k:"media", t:"Média", w:"8.5rem", fmt:function(v){ return formatarReais(v); }, cor:function(l){ return l._alerta ? "text-destructive font-semibold" : ""; }},
     {k:"sit", t:"Situação", w:"11rem", cor:function(l){ return l._alerta ? "text-destructive font-semibold" : l._semDm ? "text-warning" : l._r.top50 ? "text-success" : ""; }},
-    {k:"marcus", t:"Marcus", w:"5.5rem", render:function(v, l){ return e("input",{type:"checkbox", checked:!!l._r.marcus, disabled:!E.pode || !l._r.top50, "aria-label":"Selecionada pelo Marcus: "+l.nome, title:E.pode ? "Selecionada pelo Marcus: fica no Top 50 mesmo com média baixa" : "Só a diretoria marca",
+    {k:"marcus", t:"Marcus", w:"5.5rem", render:function(v, l){ return e("input",{type:"checkbox", checked:!!l._r.marcus, disabled:!E.pode || !l._r.top50, "aria-label":"Selecionada pelo Marcus: "+l.nome, title:E.pode ? "Selecionada pelo Marcus: fica no Top 100 mesmo com média baixa" : "Só a diretoria marca",
       className:"size-4 accent-[#E8B84B]", onChange:function(ev){ E.exec("rev_marcus", {id:l.id, valor:ev.target.checked}); }}); }},
     {k:"acao", t:"Ação", w:"7.5rem", render:function(v, l){ return e(Botao,{onClick:function(){ p.ir({tipo:l._r.top50 ? "retirar" : "solicitar", id:l.id}); }}, v); }}]);
   var total = function(ls){ return C.map(function(c, i){
@@ -85,6 +87,6 @@ function TabelaRev(p){
 
 // Planilha dentro do bloco azul do Financeiro (BlocoPainel compacto: letra de 11 px, linha baixa, campos como células). Funil › Revendedoras usa esta peça inteira.
 function PlanilhaRev(p){
-  return e("div",{className:PADRAO_BLOCOS}, e(BlocoPainel,{titulo:p.titulo || (p.grupo==="top50" ? "Top 50" : "Revendedoras"), compacto:true}, p.topo, e(TabelaRev,{E:p.E, grupo:p.grupo, ir:p.ir})));
+  return e("div",{className:PADRAO_BLOCOS}, e(BlocoPainel,{titulo:p.titulo || (p.grupo==="top50" ? "Top 100" : "Revendedoras"), compacto:true}, p.topo, e(TabelaRev,{E:p.E, grupo:p.grupo, ir:p.ir})));
 }
 export { PlanilhaRev, TabelaRev };
