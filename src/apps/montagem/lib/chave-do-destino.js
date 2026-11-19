@@ -28,13 +28,14 @@ export function prestFamDoDestino(s, d){
   return ps.find(function(x){ return compacto(x.nome)===compacto(d.nome); }) || null;
 }
 // a Greicy de cada sócio é o MESMO Pix (a tela Chaves Pix mostra uma só, "universal"): as outras duas usam a chave dela
-var IGUAL_AO = {"greicy anamaria":"greicy", "greyci ana beatriz":"greicy"};
+var IGUAL_AO = {"greicy anamaria":"greicy marcus", "greicy ana beatriz":"greicy marcus", "greyci ana beatriz":"greicy marcus"};
+var NOME_ANTIGO = {"greicy marcus":"greicy", "greicy ana beatriz":"greyci ana beatriz"};   // nome de antes da padronização: o arquivo local de chaves ainda usa ele
 var nomeSimples = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); };
 export function chaveDoPrestFam(s, x, fundo){
-  var sd = !x.chavePixEm ? extrasSeed().find(function(z){ return z[0]==="ffp|"+nomeSimples(x.nome); }) : null;   // chave do arquivo local vale enquanto ninguém editou a chave na tela (mesma regra da tela Chaves Pix)
+  var sd = !x.chavePixEm ? extrasSeed().find(function(z){ return z[0]==="ffp|"+nomeSimples(x.nome) || z[0]==="ffp|"+(NOME_ANTIGO[nomeSimples(x.nome)] || "#"); }) : null;   // chave do arquivo local vale enquanto ninguém editou a chave na tela (mesma regra da tela Chaves Pix)
   var cb = ((s.ff && s.ff.contasBanc) || []).find(function(b){ return b.prestadorId===x.id && b.ativo!==false && chaveValida(b.chavePix); });
   var chave = chaveValida(x.chavePix) ? String(x.chavePix).trim() : (sd && chaveValida(sd[6])) ? String(sd[6]).trim() : cb ? String(cb.chavePix).trim() : "";
-  if(!chave && !fundo && IGUAL_AO[nomeSimples(x.nome)]){ var base = ((s.ff && s.ff.prest) || []).find(function(z){ return nomeSimples(z.nome)===IGUAL_AO[nomeSimples(x.nome)]; }); if(base) return chaveDoPrestFam(s, base, true); }
+  if(!chave && !fundo && IGUAL_AO[nomeSimples(x.nome)]){ var base = ((s.ff && s.ff.prest) || []).find(function(z){ var nz = nomeSimples(z.nome); return nz===IGUAL_AO[nomeSimples(x.nome)] || nz==="greicy"; }); if(base) return chaveDoPrestFam(s, base, true); }
   if(!chave) return null;
   return {folha:"", banco:(sd && sd[3]) || (cb && (cb.banco || cb.nome)) || "", fav:(sd && sd[7]) || "", chave:chave, tipo:x.chavePixTipo || (sd && sd[5]) || tipoDe(chave)};
 }

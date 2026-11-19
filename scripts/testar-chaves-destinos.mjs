@@ -37,4 +37,8 @@ const h = (nome) => cd.chavesDoDestino(s2, {nome, tipo:"PRESTADOR", prestFamId:s
 t("Greicy de outro sócio usa a chave universal", h("Greicy Anamaria")[0] && h("Greicy Anamaria")[0].chave==="universal-chave" && h("Greyci Ana Beatriz")[0].chave==="universal-chave", JSON.stringify(h("Greicy Anamaria")));
 const gr = cd.chavesParaGravar(s2).map(x => x.nome).sort();
 t("chaves a gravar no servidor: só quem não tem chave válida e tem por outro caminho", JSON.stringify(gr)===JSON.stringify(["Greicy Anamaria","Greyci Ana Beatriz","Prestador Gama","Prestadora Alfa Dois"].filter(n => n!=="Prestadora Alfa Dois")), JSON.stringify(gr));
+// nomes padronizados em 19/11/2026: Greicy Marcus, Greicy Anamaria, Greicy Ana Beatriz (a chave universal e o arquivo local pelo nome antigo continuam valendo)
+const s3 = JSON.parse(JSON.stringify(s)); s3.ff.prest.push({id:"q5", nome:"Greicy Marcus", ativo:true, chavePix:"universal-nova", responsavelId:"a"}, {id:"q6", nome:"Greicy Anamaria", ativo:true, chavePix:"", responsavelId:"b"}, {id:"q7", nome:"Greicy Ana Beatriz", ativo:true, chavePix:"CPF", responsavelId:"c"});
+const h3 = (nome) => cd.chavesDoDestino(s3, {nome, tipo:"PRESTADOR", prestFamId:s3.ff.prest.find(x => x.nome===nome).id});
+t("nomes padronizados: Greicy Anamaria e Greicy Ana Beatriz usam a chave da Greicy Marcus", h3("Greicy Anamaria")[0] && h3("Greicy Anamaria")[0].chave==="universal-nova" && h3("Greicy Ana Beatriz")[0] && h3("Greicy Ana Beatriz")[0].chave==="universal-nova", JSON.stringify([h3("Greicy Anamaria"), h3("Greicy Ana Beatriz")]));
 console.log(ok+" ok, "+falha+" falha"); process.exit(falha ? 1 : 0);

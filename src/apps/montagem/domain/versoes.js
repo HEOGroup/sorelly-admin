@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.54", data:"2026-11-19", titulo:"Prestadores da família: Greicy padronizada, serviço Estética e Pix duplicado do 68 Gang", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Cadastro de prestadores", txt:"As três Greicy agora se chamam Greicy Marcus, Greicy Anamaria e Greicy Ana Beatriz, com serviço Estética. A busca da chave Pix (Direcionar e Atendimento) segue achando a chave pelos nomes novos e pelos antigos."},
+  {tipo:"correção", area:"Financeiro → Família → 68 Gang Performance", txt:"Pix de R$ 634,55 da Karine (18/11) estava duas vezes: o lançamento manual e o Pix lançado depois. Tirado o manual. Falta pagar R$ 3.000,00, só a 320i."},
+ ]},
  {v:"0.21.53", data:"2026-11-19", titulo:"Atendimento Sorelly: tela responsiva, nome em todo selo At. e isenção do desconto do brinde por atraso", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"A tela se adapta à largura: em bloco estreito o topo vira células com o nome em cima e o valor embaixo, o relógio usa 2 ou 3 colunas e Vendas e Acerto (e os dois brindes) ficam um embaixo do outro. Os rótulos quebram de linha em vez de passar por cima do campo. A lista da esquerda ficou mais larga em telas médias."},
   {tipo:"correção", area:"Atendimento interno → Listagem de hoje", txt:"O selo At. - Nome agora mostra o nome de quem iniciou o atendimento (antes só aparecia depois de enviar o pagamento ao financeiro)."},

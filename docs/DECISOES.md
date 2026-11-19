@@ -2970,3 +2970,9 @@ Marcus: mais duas pessoas fazem peças em casa, no mesmo cálculo (R$ 0,45 por p
 
 ## 19/11/2026 · Regra de sistema: blocos lado a lado
 Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a mesma altura e a mesma barra de título; o botão de ação do bloco vai no canto esquerdo da barra azul (acao do BlocoPainel). Anotado em docs/design/PADRAO-VISUAL.md e no CLAUDE.md.
+
+## 19/11/2026 — Greicy padronizada; 68 Gang sem pagamento duplicado; Tenda acertada
+- **Nomes:** os três prestadores Greicy viram **Greicy Marcus**, **Greicy Anamaria** e **Greicy Ana Beatriz**, todos com serviço **Estética** (pedido do Marcus). Os destinos do Direcionar ganharam os mesmos nomes. A chave Pix (`lib/chave-do-destino.js`) continua achando pelo nome antigo (arquivo local) e pela Greicy universal (chave de telefone gravada em 19/11).
+- **68 Gang:** o Pix de R$ 634,55 da Karine (18/11) apareceu duas vezes (o manual de 18/11 e o Pix lançado depois, que gera repasse sozinho). Tirado o manual: pago R$ 33.669,86, falta R$ 3.000,00. Regra: quando o Pix entra no Financeiro, não manter lançamento manual do mesmo valor.
+- **Tenda (FHC TENDA):** os Pix de 14/10 (R$ 217 + R$ 300 + R$ 300 + R$ 300) estavam certos; lançada a dívida de R$ 1.117,00 que faltava. Saldo R$ 0,00, finalizada.
+- **Bônus Diego:** os Pix da Karine (R$ 500,00 em 13/11) e outro Pix (R$ 338,30 em 13/11) entraram como Pix e viraram repasse; falta R$ 69,00 da dívida de R$ 1.300,00.
