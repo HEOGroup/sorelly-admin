@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.62", data:"2026-11-19", titulo:"Fila de montagem: azul, linhas finas e nomes em letra normal", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Fila de montagem", txt:"Blocos na barra azul, como Contas a pagar. Linhas baixas e letra menor (opção fina da tabela). Nomes em letra normal (Miryanne do Rocio, sem caixa alta) e títulos das colunas sem caixa alta. Em Listagens de hoje, a representante passou para a coluna 2."},
+ ]},
  {v:"0.21.61", data:"2026-11-19", titulo:"Financeiro familiar: botão Encerrar conta", itens:[
   {tipo:"novo", area:"Financeiro → Família → Contas a pagar", txt:"Novo botão Encerrar conta (ícone de proibido, ao lado de Editar e Excluir). Tira as parcelas em aberto da conta fixa ou parcelada e guarda as parcelas já pagas no histórico (Contas pagas). Diferente de Excluir, que apaga tudo. Conta sem nenhum pagamento sai por inteiro."}]},
  {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
