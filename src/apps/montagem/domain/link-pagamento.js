@@ -110,11 +110,25 @@ function aplicarListaMaq(lp){
   if(lp.log) lp.log.push({em:Date.now(), por:"importação", op:"lista_maq", txt:"Lista de maquininhas de "+MAQ.atualizadoEm+" aplicada."});
   return lp;
 }
+// 19/11/2026 (Hellen: "preciso fazer o trabalho duas vezes, e bagunça as métricas"): links gerados com 12 h ganham o prazo de 48 h (geradoEm + 48 h) e os que o SISTEMA marcou como Expirado
+// por 12 h, mas ainda estão dentro das 48 h, voltam para "Link gerado". Expirado de verdade (passou de 48 h, ou marcado à mão) não muda.
+function corrigirValidade48(lp){
+  var agora = agoraSP(), mAg = minutosDe(agora);
+  (lp.solicitacoes || []).forEach(function(x){
+    var mG = minutosDe(x.geradoEm); if(mG==null || mAg==null) return;
+    var nova = isoDeMinutos(mG+48*60), vivo = minutosDe(nova)>mAg;
+    if(x.status==="gerado" && x.expiraEm){ x.expiraEm = nova; return; }
+    if(x.status==="expirado" && vivo){
+      var h = x.historico || [], ult = h[h.length-1];
+      if(ult && ult.por==="sistema" && /^Validade de 12 h/.test(ult.nota || "")){ x.status = "gerado"; x.expiraEm = nova; h.push({em:agora, por:"sistema", de:"expirado", para:"gerado", nota:"Validade corrigida para 48 h"}); x.historico = h; }
+    }
+  });
+}
 function lpMigrar(lp){
   if(!lp) return lpDemo(); var maqV = lp.maqListaV, base = lpDemo(), traz = base.importV===1 && lp.importV!==1;   // traz = estado salvo antes da carga da planilha: acrescenta o que veio do arquivo local
   Object.keys(base).forEach(function(k){ if(lp[k]===undefined) lp[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(lp.config[k]===undefined) lp.config[k] = CONFIG_PADRAO[k]; });
-  if(lp.validadeV!==1){ lp.validadeV = 1; lp.config.validadeHoras = 48; lp.config.avisoHoras = 12; }   // 05/11/2026: o link vale 48 h no sistema de pagamento; a revendedora continua sendo avisada de 12 h
+  if(lp.validadeV!==2){ lp.validadeV = 2; lp.config.validadeHoras = 48; lp.config.avisoHoras = 12; corrigirValidade48(lp); }   // 05/11/2026: o link vale 48 h no sistema de pagamento; a revendedora continua sendo avisada de 12 h. 19/11/2026 (Hellen: "ainda expiram com 12 horas"): o servidor tinha voltado a 12 h; a versão 2 grava 48 de novo uma vez
   if(lp.regrasV!==2){ lp.regrasV = 2; ["minimo", "parcelaMinima", "maxParcelasSemJuros", "faixas"].forEach(function(k){ lp.config[k] = clone(CONFIG_PADRAO[k]); }); }   // regras por faixa de valor (19/10/2026): mínimo R$ 80 · 1x, 4x, 6x, 10x
   if(traz){ ["meios", "vinculos", "revendedoras", "solicitacoes"].forEach(function(k){ var ids = {}; lp[k].forEach(function(x){ ids[x.id] = 1; }); base[k].forEach(function(x){ if(!ids[x.id]) lp[k].push(x); }); }); lp.importV = 1; if(!(lp.config.bonus && lp.config.bonus.faixas && lp.config.bonus.faixas.length) && base.config.bonus) lp.config.bonus = base.config.bonus; }
   if(lp.demoVendasV!==1){ lp.demoVendasV = 1; if(!(lp.vendasApp||[]).some(function(v){ return v.demo; })) lp.vendasApp = (lp.vendasApp||[]).concat(demoVendasApp()); }   // 6 vendas de demonstração (Beatriz Nogueira)
@@ -500,7 +514,8 @@ function nomeProprio(n){ var peq = {da:1, de:1, do:1, das:1, dos:1, e:1}; return
 var STATUS_ESITEF = {CON:"pago", ABA:"abandonada", EXP:"expirado", NEG:"negada", PPN:"antifraude"};
 var ROT_ESITEF = {CON:"Confirmada", ABA:"Abandonada", EXP:"Expirada", NEG:"Negada", PPN:"Pendente (antifraude)"};
 function esitefPlanejar(lp, linhas, hoje){
-  hoje = hoje || hojeSP(); var vistos = {}, usados = {};
+  hoje = hoje || hojeSP(); var vistos = {}, usados = {}, ign = {};
+  (lp.esitefIgnorados || []).forEach(function(n){ ign[n] = 1; });   // Hellen, 19/11/2026: NSU que ela já deixou de fora (link gerado pela representante) vem desmarcado (fora:true)
   return (linhas || []).map(function(l){
     var para = STATUS_ESITEF[l.status], nsu = String(l.nsu || "").trim();
     if(!nsu || !para) return {linha:l, acao:"ignorar", motivo:!nsu ? "Linha sem NSU." : "Situação "+l.status+" não reconhecida."};
@@ -509,9 +524,9 @@ function esitefPlanejar(lp, linhas, hoje){
     if(!sol) sol = lp.solicitacoes.find(function(x){ return !x.esitefNsu && !usados[x.id] && r2(x.valor)===r2(l.valor) && diaDe(x.criadoEm)===diaDe(l.criadoEm) && nomeParecido(x.revendedora, l.pedido); });
     if(sol){ usados[sol.id] = 1;
       var aberto = sol.status==="solicitado" || sol.status==="gerado";
-      if(aberto || (para==="pago" && !foiPago(sol))) return {linha:l, acao:"atualizar", solId:sol.id, para:para};
-      return {linha:l, acao:sol.esitefNsu ? "igual" : "vincular", solId:sol.id, para:sol.status}; }
-    return {linha:l, acao:"nova", para:para, revisar:para==="pago" && diaDe(l.pagoEm || l.criadoEm)<hoje};
+      if(aberto || (para==="pago" && !foiPago(sol))) return {linha:l, acao:"atualizar", solId:sol.id, para:para, fora:!!ign[nsu]};
+      return {linha:l, acao:sol.esitefNsu ? "igual" : "vincular", solId:sol.id, para:sol.status, fora:!!ign[nsu]}; }
+    return {linha:l, acao:"nova", para:para, revisar:para==="pago" && diaDe(l.pagoEm || l.criadoEm)<hoje, fora:!!ign[nsu]};
   });
 }
 // RETENTATIVA (Marcus, 16/11/2026): a mesma cliente às vezes precisa de 2 ou 3 links até pagar. Para um link que NÃO deu certo (negada, abandonada, expirado, antifraude, bloqueada), diz o que aconteceu depois com a mesma revendedora:
@@ -666,7 +681,13 @@ function lpReduz(s, a){
     }
     case "esitef_importar": {
       var plano = esitefPlanejar(lp, a.linhas, hoje), meioL = lp.meios.find(function(m){ return m.tipo==="LINK" && m.cnpjId==="59"; }) || lp.meios.find(function(m){ return m.tipo==="LINK"; }), cN = 0, cA = 0, cI = 0;
-      plano.forEach(function(it){ var l = it.linha;
+      // a.nsus = as linhas que a Hellen marcou para incluir (sem a lista, entram todas, como antes). As que ela desmarcou ficam guardadas em lp.esitefIgnorados e voltam desmarcadas na próxima importação.
+      var marcadas = a.nsus ? a.nsus.map(String) : null, ignorados = (lp.esitefIgnorados || []).slice(), cF = 0;
+      plano.forEach(function(it){ var l = it.linha, ns0 = String(l.nsu || "").trim();
+        if(marcadas && it.acao!=="ignorar" && it.acao!=="igual"){
+          if(marcadas.indexOf(ns0)<0){ if(ignorados.indexOf(ns0)<0) ignorados.push(ns0); cF++; return; }
+          ignorados = ignorados.filter(function(n){ return n!==ns0; });
+        }
         if(it.acao==="nova"){
           var nm = nomeProprio(l.pedido), ns = {id:"E"+l.nsu, canal:"whatsapp", revendedora:nm, representante:repDaRevendedora(lp, nm), valor:r2(num(l.valor)), parcelas:Math.round(num(l.parcelas)) || 1, meioId:meioL ? meioL.id : "", bandeira:l.bandeira || "", status:it.para, emissor:"atendimento",
             criadoEm:l.criadoEm || agora, geradoEm:l.criadoEm || agora, geradoPor:"e-SiTef", expiraEm:"", pagoEm:it.para==="pago" ? (l.pagoEm || l.criadoEm) : "", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:1, observacao:"", cliente:"",
@@ -680,7 +701,8 @@ function lpReduz(s, a){
           (x.historico = x.historico || []).push({em:agora, por:por, de:de, para:x.status, nota:"Confirmado pelo relatório do e-SiTef (NSU "+l.nsu+")"}); cA++;
         } else cI++;
       });
-      return ok("e-SiTef: "+cN+" nova"+(cN===1 ? "" : "s")+", "+cA+" atualizada"+(cA===1 ? "" : "s")+", "+cI+" sem mudança");
+      lp.esitefIgnorados = ignorados.slice(-3000);
+      return ok("e-SiTef: "+cN+" nova"+(cN===1 ? "" : "s")+", "+cA+" atualizada"+(cA===1 ? "" : "s")+", "+cI+" sem mudança"+(cF ? ", "+cF+" deixada"+(cF===1 ? "" : "s")+" de fora" : ""));
     }
     case "sol_mover": {
       var x = sol1(); if(!x) return recusa("Solicitação não encontrada.");
@@ -715,6 +737,26 @@ function lpReduz(s, a){
       return ok("Solicitação atualizada");
     }
     case "sol_obs": { var y = sol1(); if(!y) return recusa("Solicitação não encontrada."); y.observacao = trim(a.observacao); return ok("Observação salva"); }
+    // Hellen, 19/11/2026: "como eu incluo os links que foram descontados na aba Descontados no acerto". Lançamento à mão de um link pago (acertoId "manual"); só ele pode ser desfeito.
+    case "sol_descontar": {
+      var dz = sol1(); if(!dz) return recusa("Solicitação não encontrada.");
+      if(!foiPago(dz)) return recusa("Só link pago pode ser descontado no acerto.");
+      if((dz.acertoId && dz.acertoId!=="manual") || dz.descontado) return recusa("Esse link já está nos descontados.");   // acertoId "manual" pode ser corrigido (mesma ação)
+      var dAc = String(a.dataAcerto || "").slice(0, 10); if(!/^\d{4}-\d{2}-\d{2}$/.test(dAc)) return recusa("Informe a data do acerto.");
+      if(dz.pagoEm && dAc<diaDe(dz.pagoEm)) return recusa("A data do acerto não pode ser antes do pagamento do link ("+formatarDia(diaDe(dz.pagoEm))+").");
+      var vlz = r2(num(dz.valor)), vz = r2(num(a.valor)); if(!(vz>0)) vz = vlz;
+      if(vz>vlz) return recusa("O valor descontado não pode passar do valor do link ("+formatarReais(vlz)+").");
+      dz.acertoId = "manual"; dz.usadoEm = dAc+"T12:00:00"; dz.usadoValor = vz; dz.excedente = Math.max(0, r2(vlz-vz)); dz.dataAcerto = dAc;
+      (dz.historico = dz.historico || []).push({em:agora, por:por, de:dz.status, para:dz.status, nota:"Descontado no acerto de "+formatarDia(dAc)+" (lançado à mão)"+(dz.excedente>0 ? " · sobrou "+formatarReais(dz.excedente)+" de crédito" : "")});
+      return ok("Link incluído nos descontados");
+    }
+    case "sol_descontar_desfazer": {
+      var dd = sol1(); if(!dd) return recusa("Solicitação não encontrada.");
+      if(dd.acertoId!=="manual") return recusa("Só dá para tirar o que foi lançado à mão.");
+      dd.acertoId = ""; dd.usadoEm = ""; dd.usadoValor = 0; dd.excedente = 0;
+      (dd.historico = dd.historico || []).push({em:agora, por:por, de:dd.status, para:dd.status, nota:"Lançamento à mão no acerto desfeito"});
+      return ok("Link tirado dos descontados");
+    }
     case "expirar": {
       var ids = expirados(lp, agora); if(!ids.length) return recusa("");
       lp.solicitacoes.forEach(function(z){ if(ids.indexOf(z.id)>=0){ (z.historico = z.historico || []).push({em:agora, por:"sistema", de:"gerado", para:"expirado", nota:"Validade de "+cfg.validadeHoras+" h vencida"}); z.status = "expirado"; } });

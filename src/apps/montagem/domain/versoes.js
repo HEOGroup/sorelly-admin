@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.36", data:"2026-11-19", titulo:"Link de pagamento: validade de 48 h, escolher o que importa do e-SiTef e Incluir link nos Descontados", itens:[
+  {tipo:"correção", area:"Link de pagamento → Meios e acessos", txt:"A validade do link tinha voltado a 12 h no servidor e os links marcavam Expirado cedo demais. Agora vale 48 h de novo (o aviso à revendedora segue em 12 h). Pedido da Hellen."},
+  {tipo:"correção", area:"Link de pagamento → Solicitações", txt:"Os links já gerados ganham as 48 h, e os que o sistema tinha marcado Expirado por 12 h (ainda dentro das 48 h) voltam para Link gerado, para a Hellen não refazer o trabalho e as métricas não ficarem erradas."},
+  {tipo:"novo", area:"Link de pagamento → Importar e-SiTef", txt:"Cada linha do relatório tem a caixa Incluir, mais Marcar todas e Desmarcar todas. O que ficar de fora não entra no setor (links das representantes) e volta desmarcado nas próximas importações."},
+  {tipo:"novo", area:"Link de pagamento → Descontados no acerto", txt:"Botão Incluir link: lança à mão um link pago que já abateu um acerto (escolhe o link, a data do acerto e o valor usado). A linha aparece com Origem Lançado à mão; clicando nela dá para corrigir ou tirar."}
+ ]},
  {v:"0.21.35", data:"2026-11-19", titulo:"Pagamentos a fornecedores: controle e relatório por pedido (Xangai)", itens:[
   {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores", txt:"Opção por fornecedor \"Permitir identificação de pagamentos e relatórios por pedido\" (desligada para todos; ligada só na Xangai). Os pedidos são as Negociações já lançadas, que formam a dívida do acerto: nada é somado de novo. No Lançar aparece \"Este pagamento se refere a\" (um pedido, mais de um ou sem identificação); o Pix continua um registro só, com o mesmo comprovante, e o que sobra fica \"Valor sem identificação de pedido\". Passar do saldo do pedido só marcando adiantamento/crédito."},
   {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores", txt:"Dentro do acerto, área Pedidos com valor original, ajustes, pago identificado, saldo e \"Valor ainda não identificado por pedido\". Pix já lançados ganham \"Identificar pedido\" (com histórico; não confere o pagamento). O desconto da maquininha pode ser marcado como do pedido ou do acerto geral."},
