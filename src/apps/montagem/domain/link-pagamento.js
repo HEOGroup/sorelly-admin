@@ -518,6 +518,7 @@ function esitefPlanejar(lp, linhas, hoje){
   (lp.esitefIgnorados || []).forEach(function(n){ ign[n] = 1; });   // Hellen, 19/11/2026: NSU que ela já deixou de fora (link gerado pela representante) vem desmarcado (fora:true)
   return (linhas || []).map(function(l){
     var para = STATUS_ESITEF[l.status], nsu = String(l.nsu || "").trim();
+    if(nsu && (l.status==="AGU" || l.status==="NOV")) return {linha:l, acao:"ignorar", espera:true, motivo:"Aguardando pagamento: entra quando o e-SiTef confirmar."};   // Hellen, 19/11/2026: AGU = aguardando, NOV = novo; só o que já foi pago (ou terminou sem pagar) é importado
     if(!nsu || !para) return {linha:l, acao:"ignorar", motivo:!nsu ? "Linha sem NSU." : "Situação "+l.status+" não reconhecida."};
     if(vistos[nsu]) return {linha:l, acao:"ignorar", motivo:"NSU repetido no arquivo."}; vistos[nsu] = 1;
     var sol = lp.solicitacoes.find(function(x){ return x.esitefNsu===nsu; });

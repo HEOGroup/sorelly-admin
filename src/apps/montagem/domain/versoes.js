@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.47", data:"2026-11-19", titulo:"Link de pagamento: tela A descontar e aviso Aguardando no e-SiTef", itens:[
+  {tipo:"novo", area:"Link de pagamento → Descontados no acerto", txt:"Nova visão A descontar: todos os links pagos e confirmados que ainda não abateram acerto, com a situação (Entra no acerto, ou Pago hoje: só no próximo acerto). Clicar numa linha abre o Incluir link já com ele escolhido. A outra visão, Descontados, continua igual."},
+  {tipo:"melhoria", area:"Link de pagamento → Importar e-SiTef", txt:"Linhas AGU e NOV (aguardando pagamento) aparecem como Aguardando, com o aviso \"entra quando o e-SiTef confirmar\", no lugar de \"Situação não reconhecida\"."}
+ ]},
  {v:"0.21.46", data:"2026-11-19", titulo:"Produção externa: Leci e Didi, estoque enviado em lote com preço da DevMaster e blocos de mesma altura", itens:[
   {tipo:"novo", area:"Produção › Produção externa", txt:"Mais duas pessoas fazem peças em casa, no mesmo cálculo da Dávila (R$ 0,45 por peça): Leci (funcionária) e Didi. A tela Produção externa ganhou o menu Pessoa (Dávila, Leci, Didi): resumo do mês, estoque, movimentações e pagamentos de UMA pessoa por vez. O botão + Estoque enviado anota o que a Sorelly mandou para a pessoa escolhida (cada envio guarda o nome; os antigos são da Dávila). A Didi fica fora do bônus e escondida das funcionárias, como a Dávila. A Leci continua com a produção interna normal: só as linhas de unidade Externa contam como casa, e na grade o valor dela soma o bônus das peças internas com o que recebe pela produção em casa."},
   {tipo:"melhoria", area:"Produção › Produção externa", txt:"Janela do Estoque enviado refeita: compacta, com título azul, fundo em degradê e uma linha só de campos alinhados (data, código, quantidade, observação); mostra quanto do código já está com a pessoa; botões Cancelar e Salvar embaixo à direita. Ao editar um envio só aparece o campo Feitas e o botão Apagar envio."},
