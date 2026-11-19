@@ -3,7 +3,6 @@
 // Vale na hora (state.acessos e state.acessosBlocos sobre o padrão de navigation/perfis.js e domain/equipe.js). Só os sócios e o Nickolas mexem.
 // Visual de 12/11/2026 (Marcus: "igual às abas do Financeiro, meio planilha, tudo azul"): blocos azuis (BlocoPainel) com TabelaPlanilha; filtro e ordem no título de cada coluna.
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
-import { ContasLogin } from "@/apps/montagem/components/contas-login";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, BLOCOS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
@@ -64,8 +63,7 @@ function AbaAcessos(){
     e(BlocoPainel,{titulo:"Quem abre o quê", compacto:true, fechado:fechados.matriz, aoTitulo:alterna("matriz")},
       e(TabelaPlanilha,{semContagem:true, grade:true, compacta:true, chave:"id", linhas:linhas, cols:cols, alturaMax:"calc(100vh - 12rem)", vazio:"Nenhuma tela"})),
     e(BlocoPainel,{titulo:"Quem está em cada setor", compacto:true, fechado:fechados.pessoas, aoTitulo:alterna("pessoas")},
-      e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", linhas:pessoas, cols:colsPessoas, vazio:"Nenhum setor"})),
-    e(ContasLogin,{fechado:fechados.contas, aoTitulo:alterna("contas")}));
+      e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", linhas:pessoas, cols:colsPessoas, vazio:"Nenhum setor"})),);
 }
 
 export { AbaAcessos };

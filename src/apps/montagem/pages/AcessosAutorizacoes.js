@@ -7,11 +7,10 @@ import { CATALOGO, listaDe } from "@/apps/montagem/domain/autorizacoes";
 import { BIPA_RETORNO_PADRAO, nomeDe } from "@/apps/montagem/domain/equipe";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { AbaAcessos } from "@/apps/montagem/pages/Acessos";
-import { AbaContas } from "@/apps/montagem/pages/ContasAcesso";
+import { AbaAcessosPessoas } from "@/apps/montagem/pages/AcessosPessoas";
 import { AbaConfigAvisos } from "@/apps/montagem/pages/ConfigAvisos";
-import { apiAtiva } from "@/apps/montagem/lib/api";
 import { use } from "@/apps/montagem/state/context";
-import { PageHead } from "@/apps/montagem/ui/page";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { e, useState } from "@/shared/react";
 
 var EDITORES = [16,17,28,29,32,44];   // quem altera: Marcus, Nickolas, Lucas, Anamaria e Amanda de Miranda (igual à matriz de acessos)
@@ -52,14 +51,16 @@ function AbaAutorizacoes(){
       e("div",{className:"p-2"}, e(Mosaico,{min:"20rem"}, CATALOGO.map(function(c){ return e(CartaoAutorizacao,{key:c.k, c:c, edita:edita}); })))));
 }
 
-var ABAS_BASE = [["ver","Quem vê o quê"], ["fazer","Quem pode fazer o quê"], ["avisos","Avisos"]];   // Avisos veio da Diretoria (Marcus, 12/11/2026): quem recebe cada alerta do sistema
+// Uma visão por vez, escolhida em menu suspenso (19/11/2026, Marcus: "diminuir e simplificar"). Pessoas = uma tabela, uma linha por pessoa, com a conta, as telas e as autorizações no detalhe.
+var VISOES = [["pessoas", "Pessoas"], ["telas", "Telas por grupo"], ["fazer", "Autorizações por tipo"], ["avisos", "Avisos"]];
+// Visual do Financeiro (19/11/2026, Marcus: "cadê as cores e os tamanhos de letra"): bloco com barra azul do sistema, título em maiúsculas, o menu de visões no canto esquerdo da barra e a planilha compacta (11 px) por dentro.
+var SEL_BARRA = "h-8 cursor-pointer rounded-md border border-white/30 bg-white/20 px-2 text-center text-[13px] text-white outline-none [text-align-last:center] hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white";
 function AbaAcessosAutorizacoes(){
-  var st = useState("ver"), aba = st[0], ABAS = apiAtiva() ? ABAS_BASE.concat([["contas","Contas"]]) : ABAS_BASE;   // "Contas" só existe com o servidor ligado (login)
-  return e("div",{className:"flex flex-col gap-2.5"},
-    // abas no azul do sistema (Marcus, 12/11/2026: tudo azul, igual ao Financeiro)
-    e("div",{className:"flex justify-center"}, e("div",{role:"group", className:"inline-flex overflow-hidden rounded-md border-2 border-[var(--bloco-titulo)]"}, ABAS.map(function(a, i){ var on = a[0]===aba;
-      return e("button",{key:a[0], type:"button", "aria-pressed":on, onClick:function(){ st[1](a[0]); }, className:"h-8 whitespace-nowrap px-4 text-[13px] "+(i ? "border-l border-white/30 " : "")+(on ? "bg-[var(--bloco-titulo)] font-semibold text-white" : "text-white hover:bg-white/10")}, a[1]); }))),
-    aba==="ver" ? e(AbaAcessos,null) : aba==="avisos" ? e(AbaConfigAvisos,null) : aba==="contas" ? e(React_Frag,null, e(PageHead,{t:"Contas de acesso", sub:"Quem criou conta no sistema: libere, escolha a pessoa e os setores."}), e(AbaContas,null)) : e(React_Frag,null, e(PageHead,{t:"Acessos e autorizações", sub:"Quem pode executar cada ação do sistema."}), e(AbaAutorizacoes,null)));
+  var st = useState("pessoas"), aba = st[0];
+  var seletor = e("select",{value:aba, "aria-label":"Visão", className:SEL_BARRA+" w-52", onChange:function(ev){ st[1](ev.target.value); }}, VISOES.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-card"}, o[1]); }));
+  return e("div",{className:PADRAO_BLOCOS+" flex min-h-[calc(100vh-6.5rem)] flex-col gap-1.5"},
+    aba==="pessoas" ? e("div",{className:"flex min-h-0 flex-1 flex-col [&>section]:flex-1"}, e(BlocoPainel,{titulo:"Acessos e autorizações", acao:seletor, alta:true, compacto:true}, e(AbaAcessosPessoas,null)))
+      : e(React_Frag,null, e(BlocoPainel,{titulo:"Acessos e autorizações", acao:seletor, alta:true, fechado:true}), aba==="telas" ? e(AbaAcessos,null) : aba==="avisos" ? e(AbaConfigAvisos,null) : e(AbaAutorizacoes,null)));
 }
-var React_Frag = function(p){ return e("div",{className:"flex flex-col gap-2.5"}, p.children); };
+var React_Frag = function(p){ return e("div",{className:"flex flex-col gap-1.5"}, p.children); };
 export { AbaAcessosAutorizacoes };

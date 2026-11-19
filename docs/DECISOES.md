@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 19/11/2026 · Acessos e autorizações simplificada (Marcus: "está muito complexa, simplifica no estilo do Cadastro de prestadores")
+- Visão Pessoas (`pages/AcessosPessoas.js`): UMA tabela com poucas colunas (Pessoa, Grupo de acesso, Perfil, Módulos, Situação e ação), uma linha por pessoa; grupo e perfil se mudam na própria linha; só edita quem está em `EDITORES`. Sem detalhe embaixo (o Marcus pediu "muito menos informações, como o Contas a pagar"). As visões antigas continuam num menu suspenso: Telas por grupo, Autorizações por tipo e Avisos.
+- O acesso continua por GRUPO (a pessoa só escolhe em qual grupo está). Perfil e módulos da conta de login são gravados no servidor pela rota `/api/contas`, só pela Diretoria.
+- Teste: `node scripts/testar-tela-acessos.mjs`.
+
 ## 19/11/2026 (Financeiro familiar: separado da empresa, aba Faturas e limpeza)
 - **Dois contas a pagar, separados:** o da Sorelly e o do familiar. Cada pagamento aparece em UM só. Pergunta 1: a despesa é de quem? (define onde aparece). Pergunta 2: de qual conta saiu o dinheiro? (só mostra a origem). Salário e adiantamento: despesa da empresa; no familiar é ENTRADA (pró-labore recebido), nunca gasto.
 - **68 Gang (M2 Competition) é 100% particular do Marcus**, pago com Pix de revendedora: fica no familiar. O financiamento do BMW M2 (boleto Banco Volkswagen, R$ 12.602,80, dia 28) também.
