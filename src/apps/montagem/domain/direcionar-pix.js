@@ -152,6 +152,14 @@ function dpReduz(s, a){
         x.pagos = (ctx.pagos||[]).filter(function(p){ return p.pid!==x.pid && !dp.pix.some(function(y){ return y.pid && y.pid===p.pid && y.status==="fila"; }); }).map(function(p){ return {forma:p.forma, valor:p.valor, cnpj:p.cnpj||"", parc:p.parc||0, obs:p.obs||""}; }); }); return ok(); }
     case "rep_comp": { dp.pix.forEach(function(x){ if(x.pid===a.pid) x.comprovante = {nome:a.nome}; }); return ok(); }   // a representante pagou na conta e anexou o comprovante
     case "rep_remover": { dp.pix = dp.pix.filter(function(x){ return !(x.pid===a.pid && x.status==="fila"); }); return ok(); }
+    // forma da DIFERENÇA DO BRINDE (Lucas, 19/11/2026): entra como Pix, mas a revendedora pode pagar no cartão ou no link. Troca só enquanto está na fila.
+    // a.n = posição da parte no pedido, a.forma = "pix" | "maquininha" | "link". As contas já escolhidas para a forma antiga saem.
+    case "parte_forma": { var pFm = pix(a.id); if(!pFm || pFm.status!=="fila") return recusa("Pedido não está mais na fila.");
+      var nFm = parseInt(a.n, 10), ptFm = (pFm.partes||[])[nFm]; if(!ptFm || !ptFm.brinde) return recusa("Só a diferença do brinde troca a forma de pagamento.");
+      if(["pix", "maquininha", "link"].indexOf(a.forma)<0) return recusa("Forma de pagamento inválida.");
+      var velhaFm = (ptFm.forma||"pix")+"#"+nFm; if((ptFm.forma||"pix")===a.forma) return ok();
+      ptFm.forma = a.forma; pFm.divisoes = (pFm.divisoes||[]).filter(function(d){ return d.parte!==velhaFm; }); pFm.forma = (pFm.partes[0] && pFm.partes[0].forma) || "pix";
+      return ok("Diferença do brinde agora em "+(a.forma==="maquininha" ? "cartão" : a.forma==="link" ? "link" : "Pix")); }
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
     case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
     case "fixa": { dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {}; if(a.destinoId){ dp.contasRep[a.rep] = a.destinoId; dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep] || {}, {conta:a.conta || ""}); } else { delete dp.contasRep[a.rep]; delete dp.contasRepExtra[a.rep]; } return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
@@ -162,11 +170,12 @@ function dpReduz(s, a){
     // pedido do ATENDIMENTO INTERNO (Marcus, 09/11/2026): a funcionária deu "OK, enviar ao financeiro" e algum pagamento ainda não tem conta (Pix, link).
     // Entra na fila do Direcionar para TODO o Financeiro (servidor, módulo "pag"); ao confirmar, a conta volta para a Atendimento Sorelly (reducer DP).
     // a.abertas = [{forma, valor, linha}] (linha = posição no lançamento s.lancFin), a.pagos = o que já está resolvido (dinheiro, cartão na maquininha única...)
+    // a forma do brinde escolhida no Direcionar continua quando o Atendimento reenvia (19/11/2026)
     case "int_pedir": { var idI = a.idPedido || "PI"+a.internoId, pI = pix(idI);
       if(!(a.abertas||[]).length){ if(pI && pI.status==="fila") dp.pix = dp.pix.filter(function(x){ return x.id!==idI; }); return ok(); }
       var valI = r2(a.abertas.reduce(function(t, l){ return t+l.valor; }, 0));
       var novoI = {id:idI, origem:"interno", internoId:a.internoId, atendente:a.atendente||"", quem:a.nome||"", vendas:a.vendas||0, aPagar:a.aPagar||valI, pagos:a.pagos||[], valor:valI,
-        partes:a.abertas.map(function(l){ return l.brinde ? {forma:l.forma, valor:l.valor, brinde:true} : {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
+        partes:a.abertas.map(function(l){ var bAnt = l.brinde && pI && pI.status==="fila" ? (pI.partes||[]).filter(function(z){ return z.brinde; })[0] : null; return l.brinde ? {forma:(l.forma||"pix")==="pix" && bAnt && bAnt.forma ? bAnt.forma : l.forma, valor:l.valor, brinde:true} : {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
       dp.pix = pI ? dp.pix.map(function(x){ return x.id===idI ? novoI : x; }) : dp.pix.concat([novoI]); return ok(); }
     // Pedido de kit novo (11/11/2026): média das vendas abaixo do mínimo no atendimento interno. A atendente pede; o Financeiro aceita ou não no Direcionar.
     // Fica em dp.kits (chave kp_<id> no módulo pag): a atendente grava o pedido e o Financeiro grava a decisão, cada um a sua vez, sem um apagar o outro.

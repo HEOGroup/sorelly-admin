@@ -3,6 +3,16 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.65", data:"2026-11-19", titulo:"Lançamento de pagamentos: o total do mês não muda e os Pix seguem o ciclo novo", itens:[
+  {tipo:"correção", area:"Financeiro → Lançamento de pagamentos", txt:"Tudo o que foi pago no mês quita primeiro a data MAIS ANTIGA do mês, sem mudar nenhum valor cadastrado (ex.: Higor, novembro continua R$ 2.000,00: os R$ 1.159,15 pagos quitam 06/11, que fica com R$ 40,85, e 20/11 fica com R$ 800,00). Só quando o mês inteiro está pago e ainda sobra entra o ajuste \"Diferença enviada a mais\" com desconto na próxima data. Aviso na linha: \"R$ X passou para dd/mm\" e \"veio de dd/mm\"."},
+  {tipo:"correção", area:"Financeiro → Fornecedores e Negociações", txt:"Ao mudar o ciclo de pagamento de um fornecedor (ou as datas do mês), os Pix já lançados nas datas antigas passam sozinhos para a data nova onde caem. Antes ficavam soltos e o mês aparecia em aberto (Higor: dia 5 → dia 6)."}
+ ]},
+ {v:"0.21.64", data:"2026-11-19", titulo:"Negociações: sai a Negociação do prestador da janela do pedido", itens:[
+  {tipo:"melhoria", area:"Financeiro → Negociações", txt:"A janela Novo pedido / Editar pedido não mostra mais o bloco Negociação do prestador (Pagar até e Valor mínimo de cada pix) e não exige mais esses campos. Pedidos antigos que já tinham esses valores ficam como estão."}
+ ]},
+ {v:"0.21.63", data:"2026-11-19", titulo:"Direcionar: forma de pagamento da diferença do brinde", itens:[
+  {tipo:"melhoria", area:"Financeiro → Direcionar", txt:"A diferença do brinde entrava sempre como Pix, sem como trocar. Agora, na linha \"Diferença do brinde\", escolhe-se a forma: Pix, Cartão ou Link; a lista de contas muda junto (Pix = contas, Cartão = maquininhas, Link = links). Só enquanto o pedido está na fila; se o Atendimento reenviar, a forma escolhida continua."}
+ ]},
  {v:"0.21.62", data:"2026-11-19", titulo:"Fila de montagem: azul, linhas finas e nomes em letra normal", itens:[
   {tipo:"melhoria", area:"Representantes & Kits → Fila de montagem", txt:"Blocos na barra azul, como Contas a pagar. Linhas baixas e letra menor (opção fina da tabela). Nomes em letra normal (Miryanne do Rocio, sem caixa alta) e títulos das colunas sem caixa alta. Em Listagens de hoje, a representante passou para a coluna 2."},
  ]},
