@@ -53,6 +53,8 @@ try {
   const ana = td.linhas.find((l) => l.nome==="Ana Paula Teste Joias"), ful = td.linhas.find((l) => l.nome==="Fulana Hora Extra");
   t("Negociações › Todas mostra quem só tem joias, com Forma = Joias", !!ana && ana.forma==="Joias" && /500/.test(ana.joias) && !ana.heId);
   t("Negociações › Todas: só hora extra = Dinheiro, com as colunas Forma, Hora extra e Joias", !!ful && ful.forma==="Dinheiro" && ["Forma", "Hora extra (dinheiro)", "Joias (combinado)"].every((n) => td.cols.some((c2) => c2.t===n)));
+  const td2 = jv.negTodas(cj, [{id:"x2", nome:"Beltrana Brinde", setor:"Agendamento", h1:20, h2:"", h3:"", sab:"", forma:"Dinheiro + joias"}]);
+  t("Negociações › Todas: a forma escolhida na ficha vale", td2.linhas.find((l) => l.nome==="Beltrana Brinde").forma==="Dinheiro + joias");
 } catch(x){ t("Negociações › Todas", false, String(x && x.stack || x).slice(0, 300)); }
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

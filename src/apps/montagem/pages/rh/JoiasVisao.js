@@ -46,7 +46,7 @@ function negTodas(c, heLinhas){
   var heTxt = function(l){ var f = function(v){ return v==="" || v===null || v===undefined ? "" : brl(v); }; return [["1 h", l.h1], ["2 h", l.h2], ["3 h", l.h3], ["Sáb", l.sab]].filter(function(x){ return f(x[1]); }).map(function(x){ return x[0]+" "+f(x[1]); }).join(" · ") || "—"; };
   heLinhas.forEach(function(l){
     var g = grupos.find(function(o){ return (o.colabId && o.colabId===l.id) || o.k===norm(l.nome); }); if(g) usados[g.k] = 1;
-    var he = temHe(l), jo = !!(g && (g.neg || g.itens.length)), forma = he && jo ? "Dinheiro + joias" : jo ? "Joias" : he ? "Dinheiro" : "Sem valor";
+    var he = temHe(l), jo = !!(g && (g.neg || g.itens.length)), forma = l.forma || (he && jo ? "Dinheiro + joias" : jo ? "Joias" : he ? "Dinheiro" : "Sem valor");   // a forma escolhida pela diretoria na ficha vale; sem escolha, sai do que está cadastrado
     linhas.push({id:l.id, heId:l.id, joiasK:g ? g.k : "", nome:l.nome, setor:l.setor, forma:forma, he:he ? heTxt(l) : "—", joias:g ? combinadoTxt(g.neg) : "—"});
   });
   grupos.forEach(function(g){ if(usados[g.k]) return;

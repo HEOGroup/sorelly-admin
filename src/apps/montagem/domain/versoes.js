@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.31", data:"2026-11-19", titulo:"RH › Colaboradores: faixa azul em menus suspensos e forma de pagamento por pessoa", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Na faixa azul, as escolhas viraram menu suspenso. O menu Visão continua curto (Cadastro, Advertências, Experiência, Horas extras, Negociações...). Ao escolher Negociações, abre ao lado o menu da forma, na ordem Dinheiro, Joias e Dinheiro + joias (e, em Joias, Por pessoa, Pagamentos e Resumo). Cada forma mostra só as pessoas dela."},
+  {tipo:"novo", area:"RH → Colaboradores", txt:"Na ficha da negociação de cada pessoa há o campo Forma de pagamento (Automática, Dinheiro, Joias ou Dinheiro + joias). O que for escolhido decide em qual lista a pessoa aparece (Dinheiro, Joias ou Dinheiro + joias), para registrar quem recebe a hora extra em joias."}]},
  {v:"0.21.30", data:"2026-11-19", titulo:"Canal de denúncias: alerta não repete", itens:[
   {tipo:"correção", area:"Canal de denúncias", txt:"O alerta de denúncia nova não volta mais a cada abertura da tela: a denúncia vira vista quando o leitor abre o Canal (em qualquer aparelho) e os alertas pendentes dão baixa sozinhos."}
  ]},
