@@ -52,6 +52,13 @@ function AbaDenuncias(){
     return chamar("GET", "/denuncias").then(function(j){ lista[1](j.denuncias || []); er[1](""); }).catch(function(x){ er[1](x && x.message || "Não consegui abrir o canal de denúncias."); });
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ carregar(); }, [carregar]);
+  // a lista se atualiza sozinha (19/11/2026: denúncia nova só aparecia depois de abrir a tela de novo): a cada 30 segundos com a tela à vista e ao voltar para a aba
+  useEffect(function(){
+    var iv = setInterval(function(){ if(!document.hidden) carregar(); }, 30000);
+    var volta = function(){ if(!document.hidden) carregar(); };
+    document.addEventListener("visibilitychange", volta);
+    return function(){ clearInterval(iv); document.removeEventListener("visibilitychange", volta); };
+  }, [carregar]);
   // abriu a tela = leu: os alertas "Nova denúncia" pendentes desta pessoa somem (18/11/2026: o alerta não parava de subir)
   useEffect(function(){
     if(!itens) return;

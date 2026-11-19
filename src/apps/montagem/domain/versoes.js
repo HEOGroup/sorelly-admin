@@ -5,6 +5,13 @@
 var VERSOES = [
  {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
   {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."}]},
+ ]},
+ {v:"0.21.59", data:"2026-11-19", titulo:"Canal de denúncias: a lista atualiza sozinha", itens:[
+  {tipo:"melhoria", area:"Canal de denúncias", txt:"A lista de denúncias recarrega sozinha a cada 30 segundos e ao voltar para a aba. Denúncia nova aparece sem precisar abrir a tela de novo."}
+ ]},
+ {v:"0.21.58", data:"2026-11-19", titulo:"NR-1: alerta de prazo", itens:[
+  {tipo:"novo", area:"RH → Segurança do trabalho", txt:"Marcus e Maria recebem um alerta quando uma ação da NR-1 vence em até 3 dias, vence hoje ou está atrasada. Concluir a ação encerra os alertas dela."}
+ ]},
  {v:"0.21.56", data:"2026-11-19", titulo:"Encomendas: botão Mudar para encomenda", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ficha do pedido", txt:"Pedido lançado como reposição que na verdade era encomenda: botão Mudar para encomenda na ficha. O pedido perde a taxa e o prazo de 24 horas e segue o caminho da encomenda (Novo, Conferindo, Separando, Concluído)."},
  {v:"0.21.55", data:"2026-11-19", titulo:"RH › Acessos e autorizações simplificada", itens:[
