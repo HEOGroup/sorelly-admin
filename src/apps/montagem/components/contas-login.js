@@ -1,21 +1,20 @@
 // Sorelly Admin — components/contas-login.js
 // Lista de todas as contas (você, a diretoria e os funcionários) com usuário e senha, por setor. Só a diretoria vê (tela Acessos, em RH).
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+// Visual de 12/11/2026: bloco azul com planilha (BlocoPainel + TabelaPlanilha), igual ao Financeiro.
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { SETORES_LOGIN } from "@/apps/montagem/components/seletor-acesso";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { SENHA_PADRAO, usuarioDe } from "@/apps/montagem/components/tela-login";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { MONO } from "@/apps/montagem/ui/input";
 import { e } from "@/shared/react";
 
-function ContasLogin(){
-  var grupos = SETORES_LOGIN().filter(function(g){ return g[1].length; }), total = grupos.reduce(function(t,g){ return t+g[1].length; },0);
-  return e(BlocoBarra,{t:"Contas de acesso", sub:total+" pessoas com usuário e senha · senha padrão "+SENHA_PADRAO+" (até o login real da produção)"},
-    e("div",{className:"grid grid-cols-1 gap-2 p-2 md:grid-cols-2 xl:grid-cols-3"}, grupos.map(function(g){
-      return e("div",{key:g[0], className:"flex flex-col gap-1 rounded-xl bg-black/25 p-2.5"},
-        e("b",{className:"text-[11px] uppercase tracking-wide text-primary"}, PAPEL_LB[g[0]]),
-        g[1].map(function(p){ return e("div",{key:p.id, className:"flex items-center justify-between gap-2 text-[12.5px]"},
-          e("span",{className:"min-w-0 truncate"}, p.nome), e("span",{className:MONO+" shrink-0 text-white/80"}, usuarioDe(p)+" · "+SENHA_PADRAO)); }));
-    })));
+var COLS = [{k:"setor", t:"Setor"}, {k:"pessoa", t:"Pessoa"}, {k:"usuario", t:"Usuário"}, {k:"senha", t:"Senha"}];
+
+function ContasLogin(p){
+  var grupos = SETORES_LOGIN().filter(function(g){ return g[1].length; }), linhas = [];
+  grupos.forEach(function(g){ g[1].forEach(function(p){ linhas.push({id:g[0]+"_"+p.id, setor:PAPEL_LB[g[0]], pessoa:p.nome, usuario:usuarioDe(p), senha:SENHA_PADRAO}); }); });
+  return e(BlocoPainel,{titulo:"Contas de acesso", compacto:true, fechado:p && p.fechado, aoTitulo:p && p.aoTitulo},
+    e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", linhas:linhas, cols:COLS, vazio:"Nenhuma conta"}));
 }
 
 export { ContasLogin };

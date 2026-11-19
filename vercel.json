@@ -10,8 +10,28 @@
       "schedule": "0 17 * * *"
     },
     {
+      "path": "/api/automatico/custo",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/automatico/custo",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/automatico/reposicao",
+      "schedule": "30 14 * * *"
+    },
+    {
       "path": "/api/automatico/fotos-dm",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/automatico/fotos-dm?antigas=1",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/app-rep/sincronizar",
+      "schedule": "* * * * *"
     }
   ]
 }

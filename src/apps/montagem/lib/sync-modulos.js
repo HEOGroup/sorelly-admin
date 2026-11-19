@@ -9,9 +9,9 @@ import { diff, aplicar } from "@/apps/montagem/lib/estado-patch";
 import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad", "mod", "bm", "avk"];   // bm = bônus da montagem de kits; avk = nota do kit por montadora (12/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad", "mod", "rc", "jp", "mr", "sg", "cpe", "dpc"];   // cpe = Contas a pagar (baixas, CNPJ trocado, marca Empresa/Família, contas à mão) e dpc = configuração do Direcionar (contas fixas das representantes, regras, valor fora do normal): passaram a ficar no servidor em 18/11/2026; antes cada pessoa só via o que ela mesma lançava   // jp = Pagamento em joias (17/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
-var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas", "comissaoFunc"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
+var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas", "comissaoFunc"], sc:["saldosContas"], rc:["prataRev"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 // pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
 // lf_<id> = lançamento do Controle de pagamentos (s.lancFin: atendimento interno, representante, cobrança); dp_<id> = pedido da fila do Direcionar (s.dp.pix). Pedidos de teste (demo) nunca sobem.
 // Pedido apagado vai como null (empurrar), e quem recebe null tira o pedido (reducer SYNC_MODULO "pag").
@@ -19,6 +19,12 @@ function fatiaPag(s){ var o = {}; (s.lancFin||[]).forEach(function(x){ if(x && x
 // int = atendimentos do Atendimento interno (10/11/2026, Marcus: "a menina está atendendo e no meu não aparece"): uma chave por atendimento (i_<id>), só dos últimos 3 dias e sem os de demonstração.
 // Quem tira o atendimento da lista (INT_REMOVER) apaga para todos; atendimento que só ficou velho demais NÃO é apagado do servidor (confere pelo id em s.internos).
 // aci = registros de acerto do atendimento interno (10/11/2026, Marcus: "porque não gerou o consolidado também?"): o Consolidado Sorelly lê internos (int), pagamentos (pag) e o registro do acerto (vendas, comissão, brinde, peças, assinatura). Uma chave por acerto (a_<id>), só os reais de 09/11 em diante.
+// cpe: o histórico não tinha id em cada linha; aqui cada linha ganha um id fixo (pela hora, ação e conta) para o servidor gravar linha por linha e duas pessoas não se apagarem
+var idHist = function(x){ return "h"+(x.ts||0)+"-"+String(x.acao||"").length+"-"+String(x.chave||"").slice(-12); };
+function fatiaCpe(s){ if(!s.cpe) return undefined; var h = s.cpe.hist; if(!Array.isArray(h) || h.every(function(x){ return x && x.id; })) return s.cpe; return Object.assign({}, s.cpe, {hist:h.map(function(x){ return x && !x.id ? Object.assign({id:idHist(x)}, x) : x; })}); }
+// dpc: só a CONFIGURAÇÃO do Direcionar (a fila de pedidos segue no módulo pag)
+var CHAVES_DPC = ["contasRep", "contasRepExtra", "regras", "limiteAlto", "limite3000", "maqV"];
+function fatiaDpc(s){ if(!s.dp) return undefined; var o = {}; CHAVES_DPC.forEach(function(k){ if(s.dp[k]!==undefined) o[k] = s.dp[k]; }); return o; }
 function fatiaAci(s){ var o = {}; (s.acertosConsignado||[]).forEach(function(x){ if(x && x.id && x.origem==="interno" && x.internoId && !x.demo && x.data && x.data>="2026-11-09") o["a_"+x.id] = x; }); return o; }
 function fatiaInt(s){ var o = {}, corte = new Date(Date.now()-2*86400000).toISOString().slice(0, 10); (s.internos||[]).forEach(function(x){ if(x && x.id && !x.demo && !x.demoHoje && x.data && x.data>=corte) o["i_"+x.id] = x; }); return o; }
 // fc = Fotos de catálogo (10/11/2026, 17 mil códigos): uma chave por código (c_<código>) e m = histórico/categorias/semeado. Assim duas pessoas marcando códigos diferentes não se apagam, e cada clique envia só o código mexido.
@@ -33,7 +39,7 @@ function fatiaFc(s){
 var SIG_IN = new WeakMap(), N_IN = 0;
 function sigInad(s){ if(!s.inad) return ""; var i = SIG_IN.get(s.inad); if(i===undefined){ i = ++N_IN; SIG_IN.set(s.inad, i); } return "inad#"+i; }
 function sigFc(s){ if(!s.fc) return ""; var i = SIG_FC.get(s.fc); if(i===undefined){ i = ++N_FC; SIG_FC.set(s.fc, i); } return "fc#"+i; }
-var fatia = function(s, c){ if(c==="fc") return fatiaFc(s); if(c==="inad") return inadFatia(s.inad); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
+var fatia = function(s, c){ if(c==="cpe") return fatiaCpe(s); if(c==="dpc") return fatiaDpc(s); if(c==="fc") return fatiaFc(s); if(c==="inad") return inadFatia(s.inad); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
@@ -74,15 +80,18 @@ var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ 
 function mostraAvisoVersao(){
   if(document.getElementById("aviso-versao")) return;
   var d = document.createElement("div"); d.id = "aviso-versao"; d.setAttribute("role", "alert");
-  d.style.cssText = "position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid #D6B25C;border-radius:8px;background:rgba(15,16,19,.97);color:#fff;font:13px Inter,system-ui,sans-serif";
-  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize para ver tudo em tempo real."; d.appendChild(t);
-  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif;cursor:pointer"; b.onclick = function(){ location.reload(); };
+  // 16/11/2026 (Edna, Emilli: o navegador ficou com a versão antiga e ela não viu o botão novo): o aviso agora é uma faixa dourada no TOPO, impossível de perder
+  d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 12px;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif";
+  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize agora para ver os botões e telas novas e não perder lançamentos."; d.appendChild(t);
+  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#1F1B12;color:#fff;font:600 13px Inter,system-ui,sans-serif;cursor:pointer";
+  // atualiza de verdade: limpa o cache guardado pelo navegador e abre de novo com um carimbo novo no endereço
+  b.onclick = function(){ var fim = function(){ try{ var u = new URL(location.href); u.searchParams.set("v", String(Date.now())); location.replace(u.toString()); }catch(x){ location.reload(); } }; try{ var ps = []; if(window.caches && caches.keys) ps.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })); if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ps.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })); Promise.all(ps).then(fim, fim); }catch(x){ fim(); } };
   d.appendChild(b); document.body.appendChild(d);
 }
 function vigiaVersao(){
   var minha = String(process.env.NEXT_PUBLIC_BUILD || ""); if(!minha) return undefined;
   var vivo = true, checa = function(){ if(!abaVisivel()) return; fetch("/api/saude", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){ if(vivo && j && j.versao && j.versao!==minha) mostraAvisoVersao(); }).catch(function(){}); };
-  checa(); var iv = setInterval(checa, 60000); return function(){ vivo = false; clearInterval(iv); };
+  checa(); var iv = setInterval(checa, 30000); var vis = function(){ if(abaVisivel()) checa(); }; document.addEventListener("visibilitychange", vis); return function(){ vivo = false; clearInterval(iv); document.removeEventListener("visibilitychange", vis); };
 }
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
 function useSyncModulos(s, d){
@@ -183,4 +192,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC };

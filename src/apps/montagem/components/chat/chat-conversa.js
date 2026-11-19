@@ -377,7 +377,11 @@ function ConversaBase(p){
   var itens = []; var anterior = null;
   msgs.forEach(function(m){
     if(!anterior || !mesmoDia(anterior.t, m.t)) itens.push(e("div",{key:"d"+m.id, className:"sticky top-1 z-10 my-2 flex justify-center"}, e("span",{className:"rounded-lg px-3 py-1 text-[11px] shadow", style:{background:W.cab, color:W.sec}}, diaRotulo(m.t))));
-    if(m.tipo==="sistema") itens.push(e("div",{key:m.id, className:"my-1.5 flex justify-center px-6"}, e("span",{className:"rounded-lg px-3 py-1 text-center text-[11px]", style:{background:W.cab, color:W.sec}}, m.texto)));
+    // AVISO DAS COMPRAS (18/11/2026, src/server/compras-chat.js): cartão com o texto do aviso e o botão "Abrir solicitação" (a tela de Compras confere o acesso de quem abre)
+    if(m.tipo==="sistema" && m.aviso && m.compra) itens.push(e("div",{key:m.id, className:"my-1.5 flex justify-center px-6"}, e("div",{className:"flex max-w-md flex-col items-center gap-1.5 rounded-lg px-3 py-2 text-center text-[13px]", style:{background:W.cab, color:W.texto}},
+      e("span",{className:"whitespace-pre-line break-words"}, m.texto),
+      e("button",{type:"button", onClick:function(){ window.location.assign("/materiais-estoque/compras-e-estoque?compra="+encodeURIComponent(m.compra.id)); }, className:"h-8 rounded-md bg-[#3B82F6] px-3 text-[11px] font-semibold text-white hover:bg-[#60A5FA]"}, "Abrir solicitação"))));
+    else if(m.tipo==="sistema") itens.push(e("div",{key:m.id, className:"my-1.5 flex justify-center px-6"}, e("span",{className:"rounded-lg px-3 py-1 text-center text-[11px]", style:{background:W.cab, color:W.sec}}, m.texto)));
     else itens.push(e(Bolha,{key:m.id, tema:tm, m:m, eu:eu, conv:conv, todas:todas, primeira:!anterior || anterior.de!==m.de || anterior.tipo==="sistema" || !mesmoDia(anterior.t, m.t) || m.t-anterior.t>5*MIN, destaque:destaque===m.id, somenteLeitura:somenteLeitura,
       responder:function(x){ setEditando(null); setResp({id:x.id, de:x.de, previa:textoPrevia(x)}); }, editar:function(x){ setResp(null); setEditando(x); }, apagar:setApagando, encaminhar:setEncaminhando, abrir:setVisor, irPara:irPara}));
     anterior = m;

@@ -107,16 +107,18 @@ function juntar(locais, doServidor, origemApp){
   return doServidor.concat((locais||[]).filter(function(x){ return x && !ids[x.id] && x.origem!==origemApp; }));
 }
 // devolve o patch do estado montado a partir de s.rpo e s.rpf (chamado no SYNC_MODULO)
-function aplicarAppNoEstado(s){
+// soApp (conta de REPRESENTANTE, 17/11/2026): as listagens, kits e acertos ficam SÓ com o que o servidor mandou (já filtrado por ela); nada de demonstração do navegador junto.
+function aplicarAppNoEstado(s, soApp){
   var p = {};
+  var juntar2 = function(locais, doServidor, origemApp){ return soApp ? doServidor : juntar(locais, doServidor, origemApp); };
   if(s.rpo){
-    p.listagens = juntar(s.listagens, montarListagens(s.rpo), "app");
-    p.kits = juntar(s.kits, montarKits(s.rpo), "app");
+    p.listagens = juntar2(s.listagens, montarListagens(s.rpo), "app");
+    p.kits = juntar2(s.kits, montarKits(s.rpo), "app");
     var en = montarEntregas(s.rpo); if(Object.keys(en).length) p.entregasKN = Object.assign({}, s.entregasKN, en);
     var eb = montarErrosBipagem(s.rpo); if(eb.length) p.errosBipagem = juntar(s.errosBipagem, eb, "app");
   }
   if(s.rpf){
-    p.acertosConsignado = juntar(s.acertosConsignado, montarAcertos(s.rpf), "app");
+    p.acertosConsignado = juntar2(s.acertosConsignado, montarAcertos(s.rpf), "app");
     // km enviado pela representante entra em comis.fech[data|rep].km (os pagamentos continuam do financeiro)
     var kms = Object.keys(s.rpf).filter(function(c){ return prefixo(c)==="km" && vivo(s.rpf[c]); });
     var gvs = Object.keys(s.rpf).filter(function(c){ return prefixo(c)==="gv" && vivo(s.rpf[c]); });

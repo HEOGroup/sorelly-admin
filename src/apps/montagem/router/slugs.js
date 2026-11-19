@@ -7,7 +7,7 @@
 // Para criar uma página nova: acrescente a aba em navigation/abas.js, o slug
 // aqui e a rota em router/rotas.js. Nada mais precisa ser tocado.
 
-import { SETORES, ondeEsta } from "@/apps/montagem/navigation/setores";
+import { SETORES, ondeEsta, primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 
 function noMenu(lista, aba) {
   return (lista || []).some(function (n) { return n.aba === aba || noMenu(n.itens, aba); });
@@ -39,10 +39,9 @@ export const SLUG_DA_ABA = {
   aghistorico: "agendamento-historico",
   agbonus: "comissoes-bonus-agendamento",
   agmetas: "comissoes-metas-agendamento",
-  cpagamentos: "controle-de-pagamentos",
   ctapagar: "contas-a-pagar-empresa-e-familia",
   ctalista: "contas-a-pagar",
-  pagaspordia: "pagas-por-dia",
+  pagaspordia: "contas-pagas",
   emprestimos: "emprestimos",
   chavespix: "chaves-pix-e-regras",
   chavespixbanco: "chaves-pix-dos-bancos",
@@ -63,8 +62,7 @@ export const SLUG_DA_ABA = {
   pfprest: "pf-prestadores",
   pfcadastro: "pf-cadastro",
   direcionar: "direcionar-pix",
-  dircontas: "pagamentos-contas-das-representantes",
-  dirregras: "pagamentos-regras-do-pix",
+  dirregras: "pagamentos-contas-das-representantes",
   ffhome: "ff-home",
   ffcontas: "ff-contas-a-pagar",
   ffpagas: "ff-contas-pagas",
@@ -78,7 +76,6 @@ export const SLUG_DA_ABA = {
   ffconfig: "ff-configuracoes",
   comdatas: "comissoes-datas-pagamento",
   meudesemp: "meu-desempenho",
-  calc: "calculadora",
   consolidado: "consolidado",
   relatorios: "relatorios",
   equipe: "equipe",
@@ -97,13 +94,13 @@ export const SLUG_DA_ABA = {
   controlekits: "controle-de-kits",
   inadfin: "inadimplencia-financeira",
   comissoes: "comissoes",
-  pixdireto: "pix-representantes",
   inadimp: "inadimplencia",
   comconfig: "configurador-comissoes",
   intlist: "atendimento-interno-listagens",
   intrevs: "atendimento-interno-revendedoras",
   intcalc: "atendimento-interno-calculadora",
   intcons: "atendimento-interno-consolidado",
+  intbipenv: "atendimento-interno-bipagem-envio",
   condicionais: "condicionais",
   kitnovo: "revendedoras-novas",
   knpendencias: "kits-novos-pendencias",
@@ -113,23 +110,47 @@ export const SLUG_DA_ABA = {
   knentregues: "kits-novos-entregues",
   knconfigurador: "kits-novos-configurador",
   config: "configurador",
-  avisos: "avisos",
-  padrao: "padrao-visual",
-  versoes: "versoes",
   aprovacaocad: "aprovacao-de-cadastros",
   indicacoes: "indicacoes",
+  indresgates: "indicacoes-resgates",
+  indretiradas: "indicacoes-retiradas",
+  indrevs: "indicacoes-revendedoras",
+  indhistorico: "indicacoes-historico",
   msgcad: "mensagens-prontas",
   regrasguias: "regras-guias",
   repcad: "representantes-do-setor",
   compras: "compras-e-estoque",
+  cequadro: "compras-quadro",
+  ceplanilha: "compras-planilha",
+  cevisao: "compras-visao-geral",
+  ceestoque: "compras-estoque-de-material",
+  cemov: "compras-movimentos",
+  cesol: "compras-pedidos-de-material",
+  ceprecos: "compras-tabela-de-precos",
+  cecad: "compras-cadastros",
+  cecfg: "compras-configuracoes",
+  gfpainel: "grafico-painel",
+  gfcompras: "grafico-compras",
+  gfprecos: "grafico-tabela-de-precos",
+  gfestoque: "grafico-estoque",
+  gfkits: "grafico-kits",
+  gfvendas: "grafico-vendas",
   linkpag: "link-de-pagamento",
   linkrel: "relatorio-de-links",
+  linkcomp: "link-comprovantes",
+  linkdesc: "link-descontados-no-acerto",
+  linkhist: "link-historico",
+  linkanal: "link-analises",
+  linktaxas: "link-taxas-e-recebimentos",
+  linkmeios: "link-meios-e-acessos",
+  linkreps: "link-representantes",
   melhorias: "chamados",   // a tela virou Chamados (Marcus, 02/11/2026); o link antigo /melhorias continua abrindo (ABA_DO_SLUG abaixo)
   garantia: "garantia",
   garantiacred: "creditos",
   posvendas: "pos-vendas",
   marketing: "marketing",
   fotoscat: "fotos-de-catalogo",
+  relmkt: "relatorio-diario",
   trafego: "trafego-pago",
   modelos: "modelos",
   inaddiv: "inadimplencia-dividas",
@@ -148,11 +169,17 @@ export const SLUG_DA_ABA = {
   avaliacoes: "avaliacoes",
   equipes: "equipes",
   estoquesorelly: "estoque-sorelly",
-  producao: "producao",
+  producao: "producao-resumo",   // setor Produção (16/11/2026): /producao/resumo, /producao/premiacao, /producao/casa, /producao/funcionarias; o link antigo /producao continua abrindo (ABA_DO_SLUG abaixo)
+  prodpremio: "producao-premiacao",
+  prodfunc: "producao-funcionarias",
+  prodcod: "producao-codigos",
+  prodpag: "producao-pagamentos",
+  prodcasa: "producao-casa",
   cpcompras: "cadastro-de-pecas-compras",
   cadpecas: "cadastro-de-pecas-pedidos",
   cpsol: "cadastro-de-pecas-solicitacoes",
-  cpctrl: "cadastro-de-pecas-controle-do-mes",
+  cpctrl: "cadastro-de-pecas-controle-de-compras",
+  cppecas: "cadastro-de-pecas-pecas",
   cpfp: "cadastro-de-pecas-faturas-pontual",
   cpfe: "cadastro-de-pecas-faturas-ellos",
   cpouro: "cadastro-de-pecas-retirar-ouro",
@@ -163,15 +190,17 @@ export const SLUG_DA_ABA = {
   cpdev: "cadastro-de-pecas-devmaster",
   cpcfg: "cadastro-de-pecas-configuracoes",
   prefkit: "preferencias-do-kit",
-  pedirpecas: "pedir-pecas",
+  filamont: "fila-de-montagem",   // Fila de montagem (migrada do admin antigo, 18/11/2026)
+  prodmont: "produtividade-da-montagem",   // bônus, regras e equipe da montagem (18/11/2026)
   desempenhocad: "desempenho-do-cadastro",
   celfunc: "app-funcionarias",
   celrep: "app-representante",
-  vendas: "vendas-vendas",
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
+  fffaturas: "ff-faturas-do-cartao",   // Financeiro › Faturas (19/11/2026)
+  findm: "arrumar-na-devmaster",   // Financeiro › Arrumar na DevMaster (19/11/2026)
+  finativ: "atividades-do-financeiro",   // Financeiro › Atividades (18/11/2026): só o Marcus
   resultado: "resultado-do-mes",
-  finativ: "financeiro-atividades",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
   revbase: "revendedoras-ativas",
@@ -207,6 +236,10 @@ export const SLUG_DA_ABA = {
   rhpresenca: "rh-presenca",
   rhrelatorio: "rh-relatorio",
   rhcolab: "rh-colaboradores",
+  rhseg: "rh-seguranca-trabalho",
+  segdocs: "pgr-pcmso",
+  denuncias: "rh-canal-denuncias",
+  clima: "rh-pesquisa-clima",
   rhadv: "rh-advertencias",
   rhexp: "rh-experiencia",
   rhsolic: "rh-solicitacoes",
@@ -216,6 +249,7 @@ export const SLUG_DA_ABA = {
   comcad: "comissoes-cadastro-revendedoras",
   cominad: "comissoes-inadimplencia",
   rhescala42: "rh-escala-42h",
+  joiaspag: "rh-pagamento-em-joias",
   rhconfig: "rh-configurador",
   rhcrep: "rh-contratos-representantes",
   rhcfunc: "rh-contratos-funcionarios",
@@ -226,7 +260,6 @@ export const SLUG_DA_ABA = {
   rhcconsor: "rh-contratos-consorcios",
   rhcmodelos: "rh-contratos-modelos",
   acessos: "acessos-por-setor",
-  fluxo: "fluxo-da-empresa",
   marcus: "marcus",
   marcusfat: "marcus-faturamento",
   marcuspat: "marcus-patrimonio",
@@ -244,7 +277,7 @@ export const SLUG_DA_ABA = {
 export const ABA_DO_SLUG = Object.keys(SLUG_DA_ABA).reduce(function (acc, aba) {
   acc[SLUG_DA_ABA[aba]] = aba;
   return acc;
-}, { melhorias: "melhorias" });   // endereço antigo dos Chamados (até 02/11/2026)
+}, { producao: "producao", "producao-painel": "producao", "producao-lancamento": "producao", "producao-configuracoes": "prodpremio", "producao-faixas": "prodpremio", melhorias: "melhorias", "pagamentos-regras-do-pix": "dirregras", "pix-representantes": "direcionar" });   // link antigo das Regras do Pix abre Contas das representantes (12/11/2026)   // endereço antigo dos Chamados (até 02/11/2026)
 
 export const ABA_INICIAL = "painel";
 
@@ -278,6 +311,12 @@ export const ABA_DO_ENDERECO = Object.keys(ENDERECO_DA_ABA).reduce(function (acc
   acc[ENDERECO_DA_ABA[aba]] = aba;
   return acc;
 }, {});
+// Só o nome do setor no endereço (ex.: /financeiro) abre a primeira tela do menu dele (Marcus, 12/11/2026: o Financeiro sempre abre no Direcionar).
+SETORES.forEach(function (st) {
+  if (st.direto) return;
+  var chave = slugTexto(st.nome), tela = primeiraTelaDoSetor(st);
+  if (chave && !RESERVADOS[chave] && !ABA_DO_ENDERECO[chave] && tela && tela.aba) ABA_DO_ENDERECO[chave] = tela.aba;
+});
 
 /** Caminho completo de uma aba. `breve` é o nome da tela ainda não construída. */
 export function caminhoDaAba(aba, breve) {

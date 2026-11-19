@@ -4,9 +4,9 @@
 import { MQ_MAQUINAS, dbr, forn, hojeIso, mesLabel, mqPassadasDoMes } from "@/apps/montagem/domain/pf";
 import { BKC } from "@/apps/montagem/lib/format";
 
-var BASE_LINK = "https://acertos.sorelly.com.br/f/";
-var tokens = {};   // um código por (conta|mês|maquininha), só nesta sessão (igual ao HTML)
-function tokenMq(k){ if(!tokens[k]) tokens[k] = Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8); return tokens[k]; }
+// Link (18/11/2026): /f/cartao/<código>, página pública do próprio sistema. O código fica guardado em pf.tokensAcerto com a chave "mq|fornecedor|mês|maquininha".
+var BASE_LINK = "/f/";
+function chaveMq(pf, mes, maq){ return "mq|"+pf.mqFornId+"|"+mes+"|"+(maq||""); }
 function esc(t){ return String(t==null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function slug(t){ return String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
 function nomeForn(pf){ var f = forn(pf, pf.mqFornId); return f ? f.nome : "Fornecedor"; }
@@ -18,7 +18,7 @@ function mqeGrupos(pf, mes, maq){
   var ordem = MQ_MAQUINAS.filter(function(m){ return g[m]; }).concat(Object.keys(g).filter(function(m){ return MQ_MAQUINAS.indexOf(m)<0; }));
   return ordem.map(function(m){ return {maq:m, itens:g[m], total:g[m].reduce(function(s,p){ return s+p.valor; }, 0)}; });
 }
-function mqeLink(pf, mes, maq){ return BASE_LINK+"cartao/"+tokenMq(pf.mqFornId+"|"+mes+"|"+(maq||"")); }
+function mqeLink(pf, mes, maq){ var t = (pf.tokensAcerto||{})[chaveMq(pf, mes, maq)]; return t ? (typeof window!=="undefined" ? window.location.origin : "")+BASE_LINK+"cartao/"+t : ""; }
 function mqeNomeArq(pf, mes, maq){ return "cartao-"+slug(nomeForn(pf))+"-"+mes+(maq ? "-"+slug(maq) : "")+".html"; }
 
 // o arquivo que o fornecedor recebe (página única, só leitura)
@@ -68,7 +68,7 @@ function htmlListagemMq(pf, mes, maq){
 }
 
 // mensagem pronta de WhatsApp
-function mqeMensagem(pf, mes, maq){
+function mqeMensagem(pf, mes, maq, link){
   var gs = mqeGrupos(pf, mes, maq), nome = nomeForn(pf);
   var tot = gs.reduce(function(s,g){ return s+g.total; }, 0), n = gs.reduce(function(s,g){ return s+g.itens.length; }, 0);
   return "Olá, *"+nome+"*! 👋\n\n"+
@@ -76,7 +76,7 @@ function mqeMensagem(pf, mes, maq){
     gs.map(function(g){ return "💳 *"+g.maq+"*: "+g.itens.length+" passada(s) — *"+BKC(g.total)+"*"; }).join("\n")+"\n\n"+
     "💰 Total passado: *"+BKC(tot)+"*\n"+
     "📄 Passadas: *"+n+"*\n\n"+
-    "Confira a listagem completa aqui:\n"+mqeLink(pf, mes, maq)+"\n\n"+
+    "Confira a listagem completa aqui:\n"+(link || mqeLink(pf, mes, maq))+"\n\n"+
     "Qualquer divergência, é só responder por aqui. Obrigado! 🙏";
 }
 
@@ -93,4 +93,4 @@ function copiar(texto, ok){
   var ta = document.createElement("textarea"); ta.value = texto; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(x){} ta.remove(); fim();
 }
 
-export { BASE_LINK, mqeGrupos, mqeLink, mqeNomeArq, htmlListagemMq, mqeMensagem, baixarHtml, abrirHtml, copiar };
+export { BASE_LINK, chaveMq, mqeGrupos, mqeLink, mqeNomeArq, htmlListagemMq, mqeMensagem, baixarHtml, abrirHtml, copiar };

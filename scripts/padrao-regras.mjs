@@ -22,7 +22,7 @@ var TAM_TEXTO = [11, 13];                       // corpo 13, rótulo e cabeçalh
 var TAM_NUMERO_MAX = 20;                        // número até 20 px (Indicador)
 var PISTA_NUMERO = /tabular-nums|brl\(|din\(|inteiro\(|Dinheiro|Indicador|\bMONO\b|n0\(|fmt\(|moeda\(|R\$/;
 var PISTA_CAMPO = /"(input|select|button|textarea|tr)"|Botao|CAMPO|INPUT|MoneyInput|NumInput|CampoSel|CampoBusca|BarraFiltros|Segmentado/;
-var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu|tabela-planilha)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
+var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu|tabela-planilha|bloco-painel)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
 
 // 2g. A PEÇA DE TABELA TEM QUE SER DOURADA DE VERDADE (Marcus, 03/11/2026: "tem que colocar na trava dura"). As regras 2e e 2e-bis mandam usar TabelaP/TabelaPlanilha/TabelaOuro "porque elas já trazem o topo dourado".
 // Esta conferência garante que é verdade: lê a própria peça (sempre, não só quando ela muda) e reprova se o degradê dourado sumir ou se o topo voltar a ser cinza (bg-white/5, bg-muted).
@@ -36,12 +36,44 @@ export function conferirPecaTabela(arquivo, conteudo){
   if(item[1] === "TabelaPlanilha"){   // 11/11/2026: a peça única de tabela é ESCURA (layout D) e tem filtro e ordem em cada coluna
     if(!/escura\s*=\s*!p\.dourada/.test(corpo)) erros.push("TabelaPlanilha: o padrão tem que ser o cabeçalho ESCURO (var escura = !p.dourada); o dourado só com dourada:true");
     if(!/1c1d21/i.test(corpo)) erros.push("TabelaPlanilha: o fundo escuro do layout D (#1c1d21) sumiu");
+    if(!/relative"\s*\+\s*\(p\.cheia\s*\?\s*" min-h-0 flex-1"/.test(conteudo)) erros.push("TabelaPlanilha: com cheia:true o contêiner da tabela precisa ocupar a altura toda (relative + min-h-0 flex-1); sem isso a tabela encolhe e sobra espaço preto embaixo do bloco (Visão geral das compras, 17/11/2026)");
     if(!/Ordenar de A a Z/.test(conteudo) || !/Ordenar de Z a A/.test(conteudo) || !/Limpar o filtro desta coluna/.test(conteudo)) erros.push("TabelaPlanilha: o menu de filtro e ordem em cada coluna (Ordenar de A a Z, de Z a A, buscar, lista de valores, Limpar o filtro) perdeu itens");
+    return erros;
+  }
+  if(item[1] === "TabelaP"){   // 12/11/2026 (Marcus: "tire o dourado"): a TabelaP antiga também tem topo ESCURO, sem dourado
+    if(!/1c1d21/i.test(corpo)) erros.push("TabelaP: o topo escuro (#1c1d21) sumiu; nada dourado desde 06/11/2026");
+    if(/9A6F1E|E8B84B/i.test(corpo)) erros.push("TabelaP: o topo voltou a ser dourado; nada dourado desde 06/11/2026");
     return erros;
   }
   var dourado = /9A6F1E/i.test(corpo) || (/\bBARRA_OURO\b/.test(corpo) && /BARRA_OURO\s*=\s*\{[^}]*9A6F1E/i.test(conteudo));   // o degradê pode estar numa constante do arquivo
   if(!dourado) erros.push(item[1] + ": o topo da tabela perdeu o degradê dourado (linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)); toda tabela tem topo dourado em degradê");
   if(/<th|"th"/.test(corpo) && /bg-white\/5|bg-muted|bg-sidebar/.test(corpo)) erros.push(item[1] + ": cabeçalho com fundo cinza (bg-white/5, bg-muted ou bg-sidebar): o topo é dourado em degradê, UM só na tabela inteira");
+  return erros;
+}
+
+// 2m. TELA TRAVADA: VISÃO GERAL DAS COMPRAS (Marcus, 17/11/2026: "trava as regras dessa visão geral sobre padronização"; antes ele reclamou de blocos quebrados, alturas diferentes e sobra preta embaixo da tabela).
+// Esta tela é uma GRADE DE FAIXAS. As regras abaixo são lidas do arquivo inteiro (sempre, no hook, em npm run padrao e no CI), não só das linhas novas:
+//  1. todo bloco nasce do componente Bloco (um único e(BlocoPainel) no arquivo): tamanho, letra e tabela iguais em todos;
+//  2. o Bloco usa a constante FAIXA ([&>section]:flex-1): o bloco estica até a altura da faixa e as bordas de cima e de baixo ficam alinhadas com o vizinho;
+//  3. a tabela do bloco é cheia por padrão (cheia:p.cheia!==false): as linhas esticam e a tabela fecha na borda de baixo, sem sobra preta;
+//  4. nenhuma grade de blocos usa items-start/center/end (isso deixa os blocos com alturas diferentes);
+//  5. nenhuma divisão de coluna desigual (grid-cols-[...]): a faixa é um bloco de largura inteira ou duas metades iguais, e as faixas não mudam de divisão entre si;
+//  6. só a peça TabelaPlanilha desenha tabela (nada de <table> à mão) e nada de faixa de números (Faixa, Indicador, FaixaTotais).
+export var TELAS_TRAVADAS = ["src/apps/montagem/pages/compras/VisaoCompras.js", "src/apps/montagem/pages/compras/CompraConfig.js"];   // a Configurações entrou em 17/11/2026 (Marcus: "aba de configurações sem nenhum padrão"): mesmas regras de grade; a regra 3 (tabela cheia) só vale na Visão geral
+export function conferirTelaTravada(arquivo, conteudo){
+  if(!TELAS_TRAVADAS.some(function(x){ return norm(arquivo).endsWith(x); })) return [];
+  var nome = /CompraConfig\.js$/.test(norm(arquivo)) ? "Configurações de compras" : "Visão geral das compras", ehVisao = nome==="Visão geral das compras";
+  var erros = [], sem = conteudo.replace(/\/\/[^\n]*/g, "");   // ignora comentários
+  var n = (sem.match(/\be\(\s*BlocoPainel\b/g) || []).length;
+  if(n !== 1) erros.push(nome + ": todo bloco tem que nascer do componente Bloco (achei " + n + " usos diretos de e(BlocoPainel), o certo é 1, dentro do Bloco); assim todos ficam com o mesmo tamanho, letra e tabela");
+  if(!/var\s+FAIXA\s*=\s*"[^"]*\[&>section\]:flex-1/.test(sem) || !/className\s*:\s*FAIXA\b/.test(sem)) erros.push(nome + ": o Bloco perdeu a constante FAIXA ([&>section]:flex-1); sem ela os blocos da mesma faixa ficam com alturas diferentes e as bordas desalinham");
+  if(ehVisao && !/cheia\s*:\s*p\.cheia\s*!==\s*false/.test(sem)) erros.push(nome + ": a tabela do Bloco tem que ser cheia por padrão (cheia:p.cheia!==false): as linhas esticam e a tabela fecha na borda de baixo do bloco, sem sobra preta");
+  (sem.match(/className\s*:\s*"[^"]*\bgrid\b[^"]*"/g) || []).forEach(function(c){
+    if(/\bitems-(start|center|end|baseline)\b/.test(c)) erros.push(nome + ": grade de blocos com items-start/center/end deixa os blocos com alturas diferentes; use o padrão (esticar): " + c.slice(0, 90));
+    if(/grid-cols-\[/.test(c)) erros.push(nome + ": divisão de coluna desigual (grid-cols-[...]); a faixa é um bloco de largura inteira ou duas metades iguais (lg:grid-cols-2): " + c.slice(0, 90));
+  });
+  if(/\be\(\s*"table"|<table\b/.test(sem)) erros.push(nome + ": tabela feita à mão; use só a TabelaPlanilha");
+  if(/\b(FaixaTotais|Faixa|Indicador)\b/.test(sem)) erros.push(nome + ": faixa de números ou Indicador no topo (proibido desde 02/11/2026); os números ficam em tabela");
   return erros;
 }
 

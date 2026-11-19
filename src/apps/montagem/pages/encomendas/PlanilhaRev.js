@@ -1,62 +1,92 @@
 // Sorelly Admin · montagem — pages/encomendas/PlanilhaRev.js
-// PLANILHA DAS REVENDEDORAS (23/10/2026): uma linha por revendedora, uma coluna por mês (de jul/2026 até o mês de hoje; no dia 1 do mês novo a coluna nova abre sozinha).
-// A equipe lança a venda de cada mês; o sistema calcula a média dos últimos 3 meses COM venda lançada (pode ser 1 ou 2 meses só) e avisa quando passa a ficar abaixo de R$ 3.000.
-// "Selecionada pelo Marcus" não entra no alerta. Retirar pede o motivo; se a revendedora é do Marcus, vira pedido de autorização (mensagem pronta). Usada no Funil (aba Revendedoras) e na tela Top 50.
-import { BlocoFiltros, Botao, CampoBusca, CampoSel, FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
-import { abaixoDaMedia, formatarDia, formatarReais, hojeSP, mediaVendas, mesesColunas, rotuloMes } from "@/apps/montagem/domain/encomendas";
-import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
-import { e, useState } from "@/shared/react";
+// PLANILHA DAS REVENDEDORAS (23/10/2026), refeita em 17/11/2026 no padrão do Financeiro (pedido do Marcus): bloco azul compacto, uma só peça de tabela (TabelaPlanilha), filtro e ordem no título de cada coluna,
+// títulos em letra normal e nomes padronizados. Uma linha por revendedora, uma coluna por mês (de jul/2026 até o mês de hoje; no dia 1 do mês novo a coluna nova abre sozinha).
+// VENDAS E MÉDIA VÊM DA DEVMASTER (17/11/2026, Marcus: "não pode editar ali"): nada se digita. Venda do mês = venda líquida (sem brinde); média = média das 3 últimas vendas pela regra da média (docs/negocio/MEDIA-DE-VENDAS.md).
+// Rota /api/encomendas/vendas (src/server/encomendas-vendas.js). Sem a leitura da DevMaster (servidor fora ou carga ainda rodando), a tela mostra os valores que estavam guardados.
+// No Top 100 há também a situação do kit (Pendente, Urgente, Montagem na empresa ou Finalizado), quem monta e a observação (chamado da Agatha, 16/11/2026). Usada no Funil (aba Revendedoras) e na tela Top 100.
+// "Selecionada pelo Marcus" não entra no alerta. Retirar pede o motivo; se a revendedora é do Marcus, vira pedido de autorização (mensagem pronta).
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { KIT_STATUS, formatarReais, hojeSP, kitDe, mediaVendas, mesesColunas, rotuloMes } from "@/apps/montagem/domain/encomendas";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { e, useEffect, useState } from "@/shared/react";
 
-var BTN = "h-6 rounded border border-border px-2 text-[12px] hover:bg-white/10 disabled:opacity-40";
+var COR_KIT = {"Finalizado":"text-success", "Urgente":"text-destructive", "Pendente":"text-warning", "Montagem na empresa":"text-foreground"};
+var vazio = function(x){ return x===undefined || x===null || x===""; };
 
-// célula de venda: digita e confirma ao sair do campo
-function Cel(p){
-  var st = useState(null), v = st[0], atual = p.v===undefined || p.v===null || p.v==="" ? "" : String(p.v), txt = v===null ? atual : v;
-  return e("input",{type:"number", min:0, step:"0.01", value:txt, placeholder:"—", "aria-label":p.rot, title:p.rot,
+// leitura das vendas da DevMaster, guardada por 10 minutos para não repetir ao trocar de tela
+var CACHE = null;
+function useVendasDm(){
+  var st = useState(CACHE ? CACHE.dados : null), dados = st[0];
+  useEffect(function(){
+    if(!apiAtiva() || (CACHE && Date.now()-CACHE.em<10*60*1000)) return;
+    var vivo = true;
+    chamar("GET", "/encomendas/vendas").then(function(j){ if(j && j.pronto){ CACHE = {em:Date.now(), dados:j}; } if(vivo) st[1](j); }).catch(function(){ if(vivo) st[1]({erro:true}); });
+    return function(){ vivo = false; };
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  return dados;
+}
+
+// campo de texto (observação): confirma ao sair do campo
+function CampoTxt(p){
+  var st = useState(null), v = st[0], atual = p.v || "", txt = v===null ? atual : v;
+  return e("input",{type:"text", value:txt, placeholder:"—", "aria-label":p.rot, title:p.rot,
     onChange:function(ev){ st[1](ev.target.value); },
     onBlur:function(){ if(v!==null && v!==atual) p.on(v); st[1](null); },
     onKeyDown:function(ev){ if(ev.key==="Enter") ev.currentTarget.blur(); },
-    className:"h-7 w-full min-w-0 rounded border bg-card px-1.5 text-right text-[13px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-primary "+(p.falta ? "border-warning" : "border-border")});
+    className:CAMPO+" text-center"});
+}
+// seleção dentro da célula; cor = classe de cor do texto
+function Escolha(p){
+  return e("select",{value:p.v, "aria-label":p.rot, title:p.rot, onChange:function(ev){ p.on(ev.target.value); }, className:CAMPO.replace("text-foreground", p.cor || "text-foreground")+" text-center"},
+    p.opcoes.map(function(o){ return e("option",{key:o, value:o}, o || "—"); }));
 }
 
-function PlanilhaRev(p){
-  var E = p.E, er = E.er, cfg = E.cfg, hoje = hojeSP(), cols = mesesColunas(cfg, hoje), ult = cols[cols.length-1], min = cfg.top50.mediaMinima;
-  var st = useState({busca:"", grupo:p.grupo || "", alerta:""}), f = st[0];
-  var set = function(k, v){ st[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
-  var tem = function(r){ return Object.assign({}, r, {m:mediaVendas(r, cfg, hoje), alerta:abaixoDaMedia(cfg, r, hoje)}); };
-  var todas = er.revendedoras.map(tem);
-  var lista = todas.filter(function(r){
-    if(f.grupo==="top50" && !r.top50) return false; if(f.grupo==="fora" && r.top50) return false; if(f.alerta && !r.alerta) return false;
-    return !f.busca || (r.nome+" "+(r.representante || "")+" "+(r.telefone || "")).toLowerCase().indexOf(f.busca.toLowerCase())>=0;
-  }).sort(function(a, b){ return (b.top50 ? 1 : 0)-(a.top50 ? 1 : 0) || a.nome.localeCompare(b.nome); });
-  var extra = p.grupo==="top50";
-  var top = todas.filter(function(r){ return r.top50; }), faltam = top.filter(function(r){ return vazio(r.vendas && r.vendas[ult]); });
-  function vazio(x){ return x===undefined || x===null || x===""; }
-  var alertas = todas.filter(function(r){ return r.alerta; });
-  return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"mx-auto w-full max-w-6xl"}, e(FaixaTotais,{itens:[
-      {t:"No Top 50", v:String(top.length)}, {t:"Abaixo de "+formatarReais(min), v:String(alertas.length), cor:alertas.length>0 ? "text-destructive" : ""},
-      {t:"Selecionadas Marcus", v:String(top.filter(function(r){ return r.marcus; }).length)},
-      {t:"Sem "+rotuloMes(ult), v:String(faltam.length), cor:faltam.length>0 ? "text-warning" : ""},
-      {t:"Pedidos ao Marcus", v:String(E.er.top50Sol.filter(function(x){ return x.status==="pendente"; }).length)}]})),
-    faltam.length>0 && e("div",{className:"rounded-lg border border-warning/60 bg-warning/10 px-3 py-2 text-[13px]"}, "Mês aberto: lance as vendas de "+rotuloMes(ult)+" ("+faltam.length+(faltam.length===1 ? " revendedora do Top 50 sem valor" : " revendedoras do Top 50 sem valor")+"). As células em amarelo estão vazias."),
-    alertas.length>0 && e("div",{className:"rounded-lg border border-destructive/60 bg-destructive/10 px-3 py-2 text-[13px]"}, "Alerta: a média de "+alertas.length+(alertas.length===1 ? " revendedora ficou" : " revendedoras ficou")+" abaixo de "+formatarReais(min)+": "+alertas.slice(0, 6).map(function(r){ return r.nome; }).join(", ")+(alertas.length>6 ? "…" : "")+"."),
-    e(BlocoFiltros,{onLimpar:(f.busca || f.grupo!==(p.grupo || "") || f.alerta) ? function(){ st[1]({busca:"", grupo:p.grupo || "", alerta:""}); } : undefined},
-      e(CampoBusca,{id:"pl-busca", t:"Buscar", value:f.busca, placeholder:"Nome, representante ou telefone", onChange:function(v){ set("busca", v); }}),
-      e(CampoSel,{id:"pl-grupo", t:"Grupo", value:f.grupo, onChange:function(v){ set("grupo", v); }, opcoes:[["", "Todas"], ["top50", "Top 50"], ["fora", "Fora do Top 50"]]}),
-      e(CampoSel,{id:"pl-alerta", t:"Alerta", value:f.alerta, onChange:function(v){ set("alerta", v); }, opcoes:[["", "Todas"], ["sim", "Abaixo de "+formatarReais(min)]]}),
-      e("div",{className:"flex items-end justify-end gap-2"}, e(Botao,{onClick:function(){ p.ir({tipo:"solicitar"}); }}, "Pedir entrada"), e(Botao,{principal:true, onClick:function(){ p.ir({tipo:"revs"}); }}, "Nova revendedora"))),
-    lista.length ? e(TabelaP,{minW:910+cols.length*96+(extra ? 480 : 0), cols:[{t:"Revendedora", w:210}, {t:"Telefone", w:118}, {t:"Representante", w:120}].concat(extra ? [{t:"Última venda", w:110, n:true}, {t:"Acerto", w:80}, {t:"Montagem", w:290}] : [], cols.map(function(m){ return {t:rotuloMes(m), w:96, n:true}; }), [{t:"Média", w:132, n:true}, {t:"Situação", w:150}, {t:"Marcus", w:64, c:true}, {t:"", w:84}])},
-      lista.map(function(r){
-        return e(Tr,{key:r.id, alerta:r.alerta},
-          e(Td,{forte:true, title:r.nome}, r.nome), e(Td,null, r.telefone || "—"), e(Td,null, r.representante || "—"),
-          extra && e(Td,{n:true}, r.ultimaVenda>0 ? formatarReais(r.ultimaVenda) : "—"), extra && e(Td,null, r.dataAcerto ? formatarDia(r.dataAcerto).slice(0, 5) : "—"),
-          extra && e(Td,{title:[r.sitMont, r.respMont, r.obs].filter(Boolean).join(" · ")}, [r.sitMont, r.respMont ? "Resp.: "+r.respMont : "", r.obs].filter(Boolean).join(" · ") || "—"),
-          cols.map(function(m){ return e("td",{key:m, className:"h-8 border-b border-border px-1.5"}, e(Cel,{v:r.vendas && r.vendas[m], rot:r.nome+" · "+rotuloMes(m), falta:r.top50 && m===ult && vazio(r.vendas && r.vendas[m]), on:function(v){ E.exec("rev_venda", {id:r.id, mes:m, valor:v}); }})); }),
-          e(Td,{n:true, cor:r.alerta ? "text-destructive" : "", title:r.m.meses ? "Média de "+r.m.meses+(r.m.meses===1 ? " mês" : " meses")+": "+r.m.usados.map(rotuloMes).join(", ") : ""}, r.m.media!=null ? formatarReais(r.m.media)+(r.m.meses<3 ? " ("+r.m.meses+"m)" : "") : "—"),
-          e(Td,{cor:r.alerta ? "text-destructive" : r.top50 ? "text-success" : "", title:r.bloqueadaAte ? "Bloqueada até "+r.bloqueadaAte : ""}, r.alerta ? "Média abaixo" : r.top50 ? (r.marcus ? "Top 50 · Marcus" : "Top 50") : "Fora do Top 50"),
-          e(Td,{c:true}, e("input",{type:"checkbox", checked:!!r.marcus, disabled:!E.pode || !r.top50, title:E.pode ? "Selecionada pelo Marcus: fica no Top 50 mesmo com média baixa" : "Só a diretoria marca", onChange:function(ev){ E.exec("rev_marcus", {id:r.id, valor:ev.target.checked}); }})),
-          e(Td,null, r.top50 ? e("button",{type:"button", className:BTN, onClick:function(){ p.ir({tipo:"retirar", id:r.id}); }}, "Retirar") : e("button",{type:"button", className:BTN, onClick:function(){ p.ir({tipo:"solicitar", id:r.id}); }}, "Incluir")));
-      })) : e(Vazio,{ic:"table"}, "Nenhuma revendedora encontrada."));
+function TabelaRev(p){
+  var E = p.E, er = E.er, cfg = E.cfg, hoje = hojeSP(), cols = mesesColunas(cfg, hoje), extra = p.grupo==="top50", min = cfg.top50.mediaMinima;
+  var dm = useVendasDm(), carregou = !!(dm && dm.pronto);
+  var resps = (cfg.atendentes || []).concat(["Setor de Montagem"]);
+  var lista = er.revendedoras.filter(function(r){ return extra ? r.top50 : true; }).sort(function(a, b){ return (b.top50 ? 1 : 0)-(a.top50 ? 1 : 0) || a.nome.localeCompare(b.nome); });
+  var linhas = lista.map(function(r){
+    var d = carregou ? dm.itens[r.id] : null, guardada = mediaVendas(r, cfg, hoje);
+    var vm = d ? d.vm : (r.vendas || {}), media = d ? d.media : (guardada.media!=null ? guardada.media : null), ult = d ? (d.v.length ? d.v[0].v : "") : (r.ultimaVenda>0 ? r.ultimaVenda : "");
+    var alerta = !!(r.top50 && !r.marcus && media!=null && media<min);
+    var semDm = carregou && !d;
+    var tot3 = cols.slice(-3).reduce(function(t, m){ return t+(Number(vm[m]) || 0); }, 0);
+    var o = {id:r.id, pos:0, tot3:tot3, nome:r.nome, rep:r.representante || "", tel:r.telefone || "", ult:ult, acerto:r.dataAcerto || "", kit:kitDe(r), resp:r.respMont || "", obs:r.obs || "",
+      media:media!=null ? media : "", sit:alerta ? "Média abaixo" : semDm ? "Sem cadastro na DevMaster" : r.top50 ? (r.marcus ? "Top 100 · Marcus" : "Top 100") : "Fora do Top 100", marcus:r.marcus ? "Sim" : "Não", acao:r.top50 ? "Retirar" : "Incluir", _r:r, _alerta:alerta, _semDm:semDm};
+    cols.forEach(function(m){ o["m_"+m] = vazio(vm[m]) ? "" : vm[m]; });
+    return o;
+  });
+  if(extra){ linhas.slice().sort(function(a, b){ return b.tot3-a.tot3 || a.nome.localeCompare(b.nome); }).forEach(function(l, i){ l.pos = i+1; }); linhas.sort(function(a, b){ return a.pos-b.pos; }); }   // classificação: total das vendas dos 3 últimos meses (regra do Top 100)
+  var marca = function(id, campos){ E.exec("rev_montagem", Object.assign({id:id}, campos)); };
+  var C = (extra ? [{k:"pos", t:"Posição", w:"5rem", fixa:true}] : []).concat([{k:"nome", t:"Revendedora", w:"15rem", fixa:extra ? "5rem" : true}, {k:"rep", t:"Representante", w:"8.5rem"}, {k:"tel", t:"Telefone", w:"8.5rem"}]);
+  if(extra) C = C.concat([
+    {k:"ult", t:"Última venda", w:"8rem", fmt:function(v){ return formatarReais(v); }},
+    {k:"acerto", t:"Acerto", w:"6rem", data:true, fmt:function(v){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v)); return m ? m[3]+"/"+m[2] : String(v); }},
+    {k:"kit", t:"Kit", w:"11.5rem", render:function(v, l){ return e(Escolha,{v:v, opcoes:KIT_STATUS, cor:COR_KIT[v], rot:"Situação do kit de "+l.nome, on:function(x){ marca(l.id, {kit:x}); }}); }},
+    {k:"resp", t:"Responsável", w:"9.5rem", render:function(v, l){ return e(Escolha,{v:v, opcoes:[""].concat(resps, v && resps.indexOf(v)<0 ? [v] : []), rot:"Quem monta o kit de "+l.nome, on:function(x){ marca(l.id, {resp:x}); }}); }},
+    {k:"obs", t:"Observação", w:"13rem", render:function(v, l){ return e(CampoTxt,{v:v, rot:"Observação de "+l.nome, on:function(x){ marca(l.id, {obs:x}); }}); }}]);
+  C = C.concat(cols.map(function(m){ return {k:"m_"+m, t:rotuloMes(m), w:"7rem", fmt:function(v){ return formatarReais(v); }}; }));
+  C = C.concat([
+    {k:"media", t:"Média", w:"8.5rem", fmt:function(v){ return formatarReais(v); }, cor:function(l){ return l._alerta ? "text-destructive font-semibold" : ""; }},
+    {k:"sit", t:"Situação", w:"11rem", cor:function(l){ return l._alerta ? "text-destructive font-semibold" : l._semDm ? "text-warning" : l._r.top50 ? "text-success" : ""; }},
+    {k:"marcus", t:"Marcus", w:"5.5rem", render:function(v, l){ return e("input",{type:"checkbox", checked:!!l._r.marcus, disabled:!E.pode || !l._r.top50, "aria-label":"Selecionada pelo Marcus: "+l.nome, title:E.pode ? "Selecionada pelo Marcus: fica no Top 100 mesmo com média baixa" : "Só a diretoria marca",
+      className:"size-4 accent-[#E8B84B]", onChange:function(ev){ E.exec("rev_marcus", {id:l.id, valor:ev.target.checked}); }}); }},
+    {k:"acao", t:"Ação", w:"7.5rem", render:function(v, l){ return e(Botao,{onClick:function(){ p.ir({tipo:l._r.top50 ? "retirar" : "solicitar", id:l.id}); }}, v); }}]);
+  var total = function(ls){ return C.map(function(c, i){
+    if(i===0) return "Total";
+    if(c.k==="rep") return ls.length.toLocaleString("pt-BR")+(ls.length===1 ? " revendedora" : " revendedoras");
+    if(c.k==="kit") return ls.filter(function(l){ return l.kit==="Pendente" || l.kit==="Urgente"; }).length+" pendentes";
+    if(c.k==="sit") return ls.filter(function(l){ return l._alerta; }).length+" abaixo da média";
+    if(c.k==="marcus") return String(ls.filter(function(l){ return l._r.marcus; }).length);
+    return ""; }); };
+  return e(TabelaPlanilha,{cols:C, linhas:linhas, chave:"id", semCaixaAlta:true, grade:true, semContagem:true, barraGrossa:true, alturaMax:"calc(100vh - 9rem)", totalRodape:total, vazio:"Nenhuma revendedora encontrada."});
 }
-export { PlanilhaRev };
+
+// Planilha dentro do bloco azul do Financeiro (BlocoPainel compacto: letra de 11 px, linha baixa, campos como células). Funil › Revendedoras usa esta peça inteira.
+function PlanilhaRev(p){
+  return e("div",{className:PADRAO_BLOCOS}, e(BlocoPainel,{titulo:p.titulo || (p.grupo==="top50" ? "Top 100" : "Revendedoras"), compacto:true}, p.topo, e(TabelaRev,{E:p.E, grupo:p.grupo, ir:p.ir})));
+}
+export { PlanilhaRev, TabelaRev };

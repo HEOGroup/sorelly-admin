@@ -46,6 +46,27 @@ function fornecedoresDoMesPf(pf, cp, todos){
   });
   return out.sort(function(a, b){ return (a.ate||"9999").localeCompare(b.ate||"9999") || b.saldo-a.saldo; });
 }
+// Prestadores de serviço com conta em aberto (Lucas, 18/11/2026: a Dávila tinha R$ 520,00 para pagar e não aparecia no Direcionar).
+// Mesma conta e mesmo período dos fornecedores (mês atual e 3 meses antes); um item por prestador, com a soma do que falta e a data mais próxima.
+// O destino (Controle de pagamentos, tipo PRESTADOR) é achado pelo primeiro nome: "Dávila Aline Freire de Araujo" = "Dávila Aline", "Higor Segurança" = "Higor (segurança)".
+var semAcento = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[()]/g, " ").replace(/s+/g, " ").trim(); };
+function prestadoresAbertosPf(pf, cp){
+  if(!pf || !pf.fornecedores || !pf.pedidos) return [];
+  var atual = mesAtual(), desde = mesMais(atual, -3), out = [];
+  pf.fornecedores.forEach(function(f){
+    if(!ehPrestador(f)) return;
+    var falta = 0, ate = "";
+    janelasDoForn(pf, f.id).forEach(function(j){
+      if(j.mes>atual || j.mes<desde) return;
+      var fl = Math.max(0, j.total-Math.min(pagoJanela(pf, j.chave), j.total)); if(!(fl>0.005)) return;
+      falta += fl; if(!ate || j.limite<ate) ate = j.limite;
+    });
+    if(!(falta>0.005)) return;
+    var pri = semAcento(f.nome).split(" ")[0], dest = cp && cp.destinos ? cp.destinos.filter(function(z){ return z.ativo && z.tipo==="PRESTADOR" && semAcento(z.nome).split(" ")[0]===pri; })[0] : null;
+    out.push({nome:f.nome, saldo:Math.round(falta*100)/100, ate:ate, destinoId:dest ? dest.id : ""});
+  });
+  return out.sort(function(a, b){ return a.ate.localeCompare(b.ate); });
+}
 // Devedores (24/10/2026): quem mais recebe da Sorelly no mês e ainda falta pagar — prestadores pequenos e sócios. Mesma planilha, linhas que não são fornecedor de peça.
 function devedoresDoMes(cp){
   trazer(); if(!LOCAL) return [];
@@ -59,4 +80,4 @@ var mesDosDados = function(){ trazer(); return LOCAL ? LOCAL.mes : ""; };
 var geradoEm = function(){ trazer(); return LOCAL ? LOCAL.geradoEm : ""; };
 // desconto estimado do cartão da Pontual (média dos 3 últimos meses da aba de negociações)
 var descontoCartao = function(){ trazer(); return LOCAL && LOCAL.cartao ? LOCAL.cartao.mediaUltimos3 : 10; };
-export { definirPfMes, devedoresDoMes, fornecedoresDoMes, fornecedoresDoMesPf, descontoCartao, mesDosDados, geradoEm };
+export { definirPfMes, devedoresDoMes, fornecedoresDoMes, fornecedoresDoMesPf, prestadoresAbertosPf, descontoCartao, mesDosDados, geradoEm };

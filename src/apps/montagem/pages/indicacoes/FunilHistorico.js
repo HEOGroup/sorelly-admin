@@ -11,9 +11,13 @@ import { ETAPAS_FUNIL, SITUACOES_TRABALHO, buscarRevendedoras, diasEntre, estado
   indicacaoDe, indicadoresFunil, legendaDaTaxa, linkWhatsapp, nomeRev, proximaEtapa, rotuloFunil, semDdi, taxaFormatada, textoDaPaginacao } from "@/apps/montagem/domain/indicacoes";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
-import { Alternar, Avatar, BarraFiltros, Bt, BtMini, Busca, Chip, Colunas, FiltroData, Janela, Painel, Passos, Resumo, Secao, Selo, cap1 } from "@/apps/montagem/pages/indicacoes/visual";
+import { Alternar, Avatar, Bt, BtMini, Busca, BuscaFaixa, Chip, Colunas, FaixaBloco, FiltroData, Janela, Painel, Passos, Resumo, Secao, Selo, cap1 } from "@/apps/montagem/pages/indicacoes/visual";
+import { Botao } from "@/apps/montagem/components/padrao-fin";
+import { COMPACTO } from "@/apps/montagem/components/bloco-painel";
+import { PageHead } from "@/apps/montagem/ui/page";
 import { Kanban } from "@/shared/kanban";
-import { e, useState } from "@/shared/react";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { e, useMemo, useState } from "@/shared/react";
 
 var COR_ETAPA = {criado:"#94A3B8", em_andamento:"#60A5FA", cadastro_aprovado:"#F97316", finalizado:"#4ADE80", cancelado:"#EF4444"};
 function Campo(p){ return e("label",{className:"flex min-w-0 flex-col gap-1 text-center text-[12px] font-bold "+(p.className||"")}, p.rot, p.children); }
@@ -163,6 +167,16 @@ function DialogoDetalhe(p){
 }
 
 // ───────────── Funil (Kanban) ─────────────
+// Menu ⋯ do cartão (mesmo do quadro de Kits novos): lista as outras etapas
+function MenuMoverInd(p){
+  var st = useState(false), aberto = st[0];
+  return e("span",{className:"relative inline-flex", onClick:function(ev){ ev.stopPropagation(); }},
+    e("button",{type:"button", "aria-label":"Mover para outra etapa", title:"Mover para outra etapa", onClick:function(){ st[1](!aberto); }, className:"-my-1.5 h-8 w-7 rounded-md text-[13px] leading-none hover:bg-white/10"}, "⋯"),
+    aberto && e("span",{className:"fixed inset-0 z-30", onClick:function(){ st[1](false); }}),
+    aberto && e("span",{className:"absolute right-0 top-7 z-40 flex min-w-40 flex-col rounded-lg border border-border bg-card p-1 shadow-xl"},
+      e("span",{className:"px-2 py-1 text-[11px] font-semibold uppercase tracking-[.05em]"}, "Mover para"),
+      p.destinos.map(function(x){ return e("button",{key:x.k, type:"button", onClick:function(){ st[1](false); p.mover(p.it, x.k); }, className:"h-8 rounded-md px-2 text-left text-[13px] hover:bg-white/10"}, x.titulo); })));
+}
 function AbaIndFunil(){
   var cx = use(), s = cx.state, d = cx.dispatch, por = nomeDe(s.usuario), ind = s.ind;
   var st = useState({q:"", nova:false, ver:null, mover:null}), v = st[0], setV = st[1];
@@ -179,70 +193,103 @@ function AbaIndFunil(){
   };
   var avancar = function(it){ var pr = proximaEtapa(it.etapa); if(!pr) return; if(pr==="finalizado") set("mover", {item:it, para:pr}); else d({type:"IND", op:"ind_avancar", por:por, id:it.id}); };
   var voltar = function(it){ var an = etapaAnterior(it); if(!an) return; if(it.etapa==="finalizado") set("mover", {item:it, para:an}); else d({type:"IND", op:"ind_voltar", por:por, id:it.id}); };
-  var card = function(it){
-    var link = linkWhatsapp(it.indicadaWhatsapp), dias = Math.max(0, diasEntre(diaDe(it.etapaAlteradaEm), hoje)), pr = it.etapa!=="cancelado" ? proximaEtapa(it.etapa) : null, an = etapaAnterior(it), cc = COR_ETAPA[it.etapa], aberta = it.etapa!=="finalizado" && it.etapa!=="cancelado";
-    // fundo em degradê leve na cor da coluna (sem aumentar a altura do cartão)
-    return e("div",{className:"flex flex-col items-center gap-1", style:{margin:"-10px -10px 0 -7px", padding:"10px 10px 4px 7px", borderRadius:"8px 8px 0 0", background:"linear-gradient(160deg, "+cc+"2E 0%, "+cc+"0A 70%, transparent 100%)"}},
-      e("div",{className:"flex max-w-full items-center justify-center gap-1.5"}, e(Avatar,{nome:it.nome, cor:cc, s:26}),
-        e("button",{type:"button", onClick:function(){ set("ver", it.id); }, title:"Abrir os detalhes", className:"min-w-0 break-words text-left text-[13.5px] font-bold leading-tight hover:underline"}, it.nome)),
-      e("div",{className:"flex flex-wrap items-center justify-center gap-x-2 text-[11.5px] text-white/70"},
-        it.indicadaWhatsapp && (link ? e("a",{href:link, target:"_blank", rel:"noopener noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:"inline-flex items-center gap-1 text-[#4ADE80] hover:underline"}, e(Ph,{n:"whatsapp-logo", s:13}), formatarTelefone(it.indicadaWhatsapp)) : e("span",null, formatarTelefone(it.indicadaWhatsapp))),
-        it.cidade && e("span",{className:"inline-flex items-center gap-0.5"}, e(Ph,{n:"map-pin", s:12}), it.cidade)),
-      e("span",{className:"text-[11.5px] text-white/65"}, "Indicada por ", e("b",{className:"text-white/90"}, it.nomeRevendedora)),
-      e("div",{className:"flex flex-wrap items-center justify-center gap-1"},
-        e(Selo,{cor:aberta ? corTempo(dias) : "#94A3B8", ic:"clock", titulo:"Tempo nesta etapa"}, dias===0 ? "Hoje" : dias+(dias===1 ? " dia" : " dias")),
-        it.moedasCreditadas>0 && e(Selo,{cor:"#4ADE80", ic:"coins"}, formatarMoedas(it.moedasCreditadas)),
-        an && e(BtMini,{onClick:function(){ voltar(it); }, titulo:"Voltar para "+rotuloFunil(an)}, e(Ph,{n:"arrow-left", s:11}), "Voltar"),
-        pr && e(BtMini,{forte:true, onClick:function(){ avancar(it); }, titulo:"Avançar para "+rotuloFunil(pr)}, "Avançar", e(Ph,{n:"arrow-right", s:11}))));
+  // 17/11/2026 (Marcus: "pegue o funil do cadastro de Kits novos, melhore e compacte"): mesmo desenho do quadro de Kits novos: cartão baixo de duas linhas (nome e dias na etapa; quem indicou e cidade),
+  // barra na lateral (verde no prazo, âmbar de 3 a 6 dias, vermelha com 7 ou mais), menu ⋯ para mover. Sem faixa de números no topo (regra de 02/11/2026).
+  var destinosDe = function(col){ return colunas.filter(function(x){ return x.k!==col.k; }); };
+  var card = function(it, col){
+    var link = linkWhatsapp(it.indicadaWhatsapp), dias = Math.max(0, diasEntre(diaDe(it.etapaAlteradaEm), hoje)), aberta = it.etapa!=="finalizado" && it.etapa!=="cancelado";
+    var linha2 = ["Indicada por "+it.nomeRevendedora, it.cidade].filter(Boolean).join(" · ");
+    return e("div",{className:"flex cursor-pointer flex-col"},
+      e("div",{className:"flex items-start justify-between gap-2"},
+        e("b",{className:"min-w-0 break-words text-[13px] leading-tight"}, it.nome),
+        e("span",{className:"flex shrink-0 items-center gap-0.5"},
+          aberta && e("span",{className:"text-[11px] font-semibold tabular-nums", style:{color:corTempo(dias)}, title:"Tempo nesta etapa"}, dias===0 ? "hoje" : dias+" d"),
+          e(MenuMoverInd,{it:it, col:col, destinos:destinosDe(col), mover:mover}))),
+      e("span",{className:"text-[11px] leading-tight text-white/70", title:"Quem indicou e cidade"}, linha2),
+      (it.indicadaWhatsapp || it.moedasCreditadas>0) && e("div",{className:"mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]"},
+        it.indicadaWhatsapp && (link ? e("a",{href:link, target:"_blank", rel:"noopener noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:"inline-flex items-center gap-1 text-[#4ADE80] hover:underline"}, e(Ph,{n:"whatsapp-logo", s:12}), formatarTelefone(it.indicadaWhatsapp)) : e("span",null, formatarTelefone(it.indicadaWhatsapp))),
+        it.moedasCreditadas>0 && e("span",{className:"inline-flex items-center gap-1 text-[#4ADE80]"}, e(Ph,{n:"coins", s:12}), formatarMoedas(it.moedasCreditadas))));
   };
+  var corBarra = function(it, col){ var dias = Math.max(0, diasEntre(diaDe(it.etapaAlteradaEm), hoje)); return it.etapa==="finalizado" || it.etapa==="cancelado" ? col.cor : corTempo(dias); };
   return e(Pagina,null,
-    e(Resumo,{itens:[
-      {t:rotuloFunil("criado"), v:t.criado, cor:"info"}, {t:rotuloFunil("em_andamento"), v:t.em_andamento, cor:"aberto"}, {t:rotuloFunil("cadastro_aprovado"), v:t.cadastro_aprovado, cor:"laranja"},
-      {t:rotuloFunil("finalizado"), v:t.finalizado, cor:"ok"}, {t:rotuloFunil("cancelado"), v:t.cancelado, cor:"cancelado"},
-      {t:"Conversão", v:taxaFormatada(c.taxa), cor:"ouro", sub:legendaDaTaxa(c), titulo:"Kit entregue ÷ (Kit entregue + Canceladas)"}]}),
-    e(BarraFiltros,{limpar:v.q ? function(){ set("q", ""); } : null},
-      e(Busca,{v:v.q, ph:"Buscar por nome, WhatsApp ou indicadora", set:function(x){ set("q", x); }}),
-      e(Bt,{tipo:"forte", ic:"user-plus", onClick:function(){ set("nova", true); }, className:"h-9 py-0!"}, "Nova indicação")),
-    e(Secao,{ic:"funnel", t:"Funil das indicações", sub:"Arraste o cartão para outra coluna ou use Avançar", dir:total+(total===1 ? " indicação" : " indicações")},
-      total===0 && e("p",{className:"py-2 text-center text-[13px] text-white/70"}, "Nenhuma indicação registrada. Use \"Nova indicação\" para lançar a primeira."),
-      e(Kanban,{colunas:colunas, card:card, onMover:mover, vazio:v.q.trim() ? "Nenhuma indicação encontrada nesta etapa." : "Nenhuma indicação nesta etapa."})),
+    e(Secao,{t:"Funil das indicações", dir:"Conversão "+taxaFormatada(c.taxa)+" · "+total.toLocaleString("pt-BR")+(total===1 ? " indicação" : " indicações"), semPad:true,
+      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:v.q, ph:"Buscar por nome, WhatsApp ou indicadora", set:function(x){ set("q", x); }}), e("span",{className:"flex-1"}), e(Botao,{principal:true, onClick:function(){ set("nova", true); }}, "Nova indicação"))},
+      total===0 && e("p",{className:"py-2 text-center text-[13px]"}, "Nenhuma indicação registrada. Use \"Nova indicação\" para lançar a primeira."),
+      e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:card, onMover:function(it, de, para){ mover(it, para); }, compacto:true, cabecaFina:true, semMover:true, corBarra:corBarra, onAbrir:function(it){ set("ver", it.id); }, unidade:["indicação","indicações"], vazio:v.q.trim() ? "Nenhuma indicação encontrada nesta etapa." : "Nenhuma indicação nesta etapa."}))),
     v.nova && e(DialogoNova,{s:s, por:por, dispatch:d, fechar:function(){ set("nova", false); }}),
     v.ver!=null && e(DialogoDetalhe,{s:s, id:v.ver, por:por, dispatch:d, fechar:function(){ set("ver", null); }}),
     v.mover && e(DialogoMover,{s:s, item:v.mover.item, para:v.mover.para, por:por, dispatch:d, fechar:function(){ set("mover", null); }}));
 }
 
 // ───────────── Histórico ─────────────
-var ORIGENS = [{k:"todas", t:"Todas"}, {k:"planilha", t:"Planilha antiga"}, {k:"sistema", t:"Sistema"}];
+// 17/11/2026 (Marcus: "melhore, 3 blocos no topo: quem mais indica, representantes que mais indicam e algo útil; melhore as páginas"): bloco azul com tabela única (TabelaPlanilha), filtro e ordem no cabeçalho de cada coluna e páginas de 50 em 50.
+// Planilha antiga e kits entregues no sistema juntos; "Origem" separa. Os 3 blocos do topo são LISTAS (não faixa de números): Top 10 revendedoras, Top 10 representantes e Aguardando documentos (indicadas paradas, da mais antiga para a mais nova).
+var limpaNome = function(n){ return String(n || "").replace(/^\s*(rev|rep|revendedora|representante)\s+/i, "").trim(); };
+var chaveNome = function(n){ return limpaNome(n).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " "); };
+var corSituacao = function(l){ var s = String(l.situacao || "").toLowerCase(); return s==="kit entregue" ? "text-emerald-400 font-semibold" : /documentos/.test(s) ? "text-amber-300 font-semibold" : /reprovad|sem interesse|cancelad/.test(s) ? "text-red-400" : ""; };
+var COLS_HIST = [
+  {k:"quando", t:"Quando", fmt:function(v){ return formatarDataHora(v) || "—"; }}, {k:"nomeRevendedora", t:"Revendedora"}, {k:"categoria", t:"Categoria"}, {k:"nomeIndicada", t:"Indicada"}, {k:"telefone", t:"Telefone da indicada"},
+  {k:"situacao", t:"Situação", cor:corSituacao}, {k:"origem", t:"Origem"}, {k:"moedas", t:"Moedas", cor:function(l){ return l.moedas!=="—" ? "text-primary font-semibold" : ""; }}, {k:"aVerificar", t:"A verificar"}, {k:"detalhe", t:"Detalhe"}];
+// lista de ranking: posição, nome e dois números (indicações e kits entregues)
+// 17/11/2026 (Marcus: "fonte bem menor, sobe os blocos e joga para a esquerda"): letra de 11 px, linha baixa, blocos estreitos encostados à esquerda.
+var COL_TOP = "grid grid-cols-[1.25rem_minmax(0,1fr)_4.5rem_2.75rem] items-center gap-1.5 px-2 text-[11px]";
+function ListaTop(p){
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:COL_TOP+" bg-[var(--bloco-colunas)] py-0.5 font-bold uppercase tracking-[.05em] text-white"}, e("span",{className:"text-center"},"#"), e("span",null,"Nome"), e("span",{className:"text-center"},p.c1), e("span",{className:"text-center"},p.c2)),
+    p.itens.length===0 && e("p",{className:"px-2 py-2 text-[11px]"}, "Nada para mostrar ainda."),
+    p.itens.map(function(x, i){ return e("div",{key:x.k, className:COL_TOP+" border-t border-white/30 py-0.5 "+(i%2 ? "bg-white/[0.04]" : "")},
+      e("span",{className:"text-center tabular-nums"}, i+1), e("span",{className:"min-w-0 break-words"}, x.nome), e("b",{className:"text-center tabular-nums"}, x.a), e("span",{className:"text-center tabular-nums "+(x.b>0 ? "font-semibold text-emerald-400" : "")}, x.b)); }));
+}
+// uma linha por situação (Aguardando documentos, Cadastradas, Aprovadas no funil...) com a quantidade
+function ListaSituacao(p){
+  var G = "grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-1.5 px-2 text-[11px]";
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:G+" bg-[var(--bloco-colunas)] py-0.5 font-bold uppercase tracking-[.05em] text-white"}, e("span",null,"Situação"), e("span",{className:"text-center"},"Indicadas")),
+    p.itens.map(function(x, i){ return e("div",{key:x.t, className:G+" border-t border-white/30 py-0.5 "+(i%2 ? "bg-white/[0.04]" : "")}, e("span",{className:x.cor||""}, x.t), e("b",{className:"text-center tabular-nums "+(x.cor||"")}, x.n.toLocaleString("pt-BR"))); }));
+}
 function AbaIndHistorico(){
-  var cx = use(), ind = cx.state.ind;
-  var st = useState({origem:"todas", soMoedas:false, q:"", from:"", to:"", pg:0}), v = st[0], setV = st[1];
-  var set = function(k, x){ var n = Object.assign({}, v, {pg:0}); n[k] = x; setV(n); };
-  var h = historico(ind, {origem:v.origem, soMoedas:v.soMoedas, q:v.q, from:v.from||null, to:v.to||null, pagina:v.pg}), pg = estadoDaPaginacao(h.paginacao, h.itens.length), r = h.resumo;
-  var vazioGeral = r.planilha+r.sistema===0, filtrado = v.from || v.to || v.q || v.soMoedas || v.origem!=="todas";
-  var linhas = h.itens.map(function(x){
-    return e("tr",{key:x.id, className:LINHA},
-      e(Td,null, formatarDataHora(x.quando) || "—"),
-      e(Td,{forte:true}, x.nomeRevendedora, x.categoria && e("span",{className:"block text-[11px] font-normal text-white/55"}, x.categoria)),
-      e(Td,null, x.nomeIndicada || "—", x.telefoneIndicada && e("span",{className:"block text-[11px] text-white/55"}, formatarTelefone(x.telefoneIndicada))),
-      e(Td,null, e(Selo,{cor:x.situacao==="Kit entregue" ? "#4ADE80" : "#94A3B8"}, x.situacao), x.aVerificar && e("span",{className:"ml-1"}, e(Selo,{cor:"#FBBF24"}, "A verificar"))),
-      e(Td,null, e(Selo,{cor:x.origem==="sistema" ? "#F97316" : "#60A5FA"}, x.origem==="sistema" ? "Sistema" : "Planilha")),
-      e(Td,{dinheiro:true, cor:x.contaMoedas ? "ok" : undefined}, x.contaMoedas ? formatarMoedas(x.moedas) : "—"),
-      e(Td,{className:"max-w-[16rem] whitespace-normal!"}, x.detalhe || "—"));
-  });
+  var cx = use(), ind = cx.state.ind, hoje = hojeSP();
+  var base = useMemo(function(){
+    var out = [], pg = 0;
+    for(;;){ var h = historico(ind, {origem:"todas", pagina:pg, limite:100}); out = out.concat(h.itens); if(!h.paginacao.hasMore || pg>300) break; pg++; }
+    return out;
+  }, [ind]);
+  var linhas = useMemo(function(){
+    return base.map(function(x){ return {id:x.id, quando:x.quando||"", nomeRevendedora:limpaNome(x.nomeRevendedora), categoria:x.categoria||"—", nomeIndicada:x.nomeIndicada||"—", telefone:x.telefoneIndicada ? formatarTelefone(x.telefoneIndicada) : "—", situacao:x.situacao,
+      origem:x.origem==="sistema" ? "Sistema" : "Planilha antiga", moedas:x.contaMoedas ? formatarMoedas(x.moedas) : "—", aVerificar:x.aVerificar ? "Sim" : "Não", detalhe:x.detalhe || "—"}; });
+  }, [base]);
+  var tops = useMemo(function(){
+    var agrupa = function(filtro){ var m = {}; base.filter(filtro).forEach(function(x){ var k = chaveNome(x.nomeRevendedora); if(!k || k==="revendedora sem nome") return; var g = m[k] || (m[k] = {k:k, nome:limpaNome(x.nomeRevendedora), a:0, b:0}); g.a++; if(x.contaMoedas || x.situacao==="Kit entregue") g.b++; });
+      return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return b.a-a.a || b.b-a.b || a.nome.localeCompare(b.nome, "pt-BR"); }).slice(0, 12); };
+    var ehRep = function(x){ return String(x.categoria||"").toLowerCase()==="rep"; }, ehFunc = function(x){ return /funcion/i.test(x.categoria||""); };
+    // 17/11/2026 (Marcus: "menos coisas, agrupado, no máximo 10"): 8 linhas. Planilha antiga e funil de hoje juntos, agrupados pelo que importa para a Michele.
+    var cont = {}; base.forEach(function(x){ var s = String(x.situacao||"").toLowerCase(); cont[s] = (cont[s]||0)+1; });
+    var g = function(ks){ return ks.reduce(function(n, k){ return n+(cont[k]||0); }, 0); };
+    var tf = indicadoresFunil(ind).totais;
+    // 12 linhas (igual aos Top 12): o que estava junto em "Em andamento" (244) era quase tudo "Contato feito" da planilha antiga, parado há mais de 60 dias; agora fica em linha própria.
+    var aprov = ind.indicacoes.filter(function(x){ return x.etapa==="cadastro_aprovado"; }), aprovLongo = aprov.filter(function(x){ return diasEntre(diaDe(x.etapaAlteradaEm), hoje)>30; }).length;
+    var sit = [
+      {t:"Novas", n:g(["entrar em contato", "solicitado"])+(tf.criado||0)},
+      {t:"Em andamento (funil de hoje)", n:(tf.em_andamento||0)+g(["contatos de referência"])},
+      {t:"Contato feito (planilha antiga)", n:g(["contato feito"])},
+      {t:"Aguardando documentos", n:g(["aguardando documentos"]), cor:"text-amber-300"},
+      {t:"Aprovadas sem kit · até 30 dias", n:aprov.length-aprovLongo, cor:"text-primary"},
+      {t:"Aprovadas sem kit · mais de 30 dias", n:aprovLongo, cor:"text-amber-300"},
+      {t:"Cadastradas", n:g(["cadastrada"])},
+      {t:"Bipadas e liberadas", n:g(["bipado", "liberado", "retornando"])},
+      {t:"Kit entregue", n:g(["kit entregue"]), cor:"text-emerald-400"},
+      {t:"Reprovadas", n:g(["reprovada"]), cor:"text-red-400"},
+      {t:"Sem interesse", n:g(["sem interesse"]), cor:"text-red-400"},
+      {t:"Canceladas", n:g(["cancelado"])+(tf.cancelado||0), cor:"text-red-400"}];
+    return {revs:agrupa(function(x){ return !ehRep(x) && !ehFunc(x); }), reps:agrupa(ehRep), sit:sit};
+  }, [base]);
   return e(Pagina,null,
-    e(Resumo,{itens:[{t:"Na planilha antiga", v:r.planilha, cor:"info"}, {t:"Planilha com moedas", v:r.planilhaComMoedas, cor:"ouro"}, {t:"Kits entregues no sistema", v:r.sistema, cor:"ok"}, {t:"Repetidas no sistema", v:r.repetidasNoSistema, cor:"aberto", sub:"mostradas só uma vez em Todas"}]}),
-    e(BarraFiltros,{limpar:filtrado ? function(){ setV({origem:"todas", soMoedas:false, q:"", from:"", to:"", pg:0}); } : null},
-      ORIGENS.map(function(o){ return e(Chip,{key:o.k, on:v.origem===o.k, onClick:function(){ set("origem", o.k); }}, o.t, e("span",{className:"font-mono text-[11.5px] opacity-80"}, h.contagem[o.k])); }),
-      e(Alternar,{on:v.soMoedas, set:function(x){ set("soMoedas", x); }, ic:"coins"}, "Só com moedas"),
-      e(Busca,{v:v.q, ph:"Buscar por nome, telefone ou situação", set:function(x){ set("q", x); }}),
-      e(FiltroData,{rot:"De", v:v.from, set:function(x){ set("from", x); }}), e(FiltroData,{rot:"Até", v:v.to, set:function(x){ set("to", x); }})),
-    e(Secao,{ic:"clock-counter-clockwise", t:"Histórico de indicações", sub:"Planilha antiga e kits entregues no sistema", dir:h.paginacao.total+(h.paginacao.total===1 ? " registro" : " registros")},
-      h.itens.length ? e(Tab,{cols:["Quando", "Revendedora", "Indicada", "Situação", "Origem", "Moedas", "Detalhe"]}, linhas)
-        : e("p",{className:"py-4 text-center text-[13px] text-white/70"}, vazioGeral ? "Nenhum registro no histórico ainda. Os kits entregues pelo funil aparecem aqui automaticamente." : "Nenhum registro encontrado com esses filtros."),
-      h.itens.length>0 && e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
-        e(Bt,{ic:"arrow-left", disabled:!pg.podeVoltar, onClick:function(){ setV(Object.assign({}, v, {pg:v.pg-1})); }}, "Anterior"),
-        e("span",{className:"text-[12.5px] text-white/75"}, textoDaPaginacao(pg)+" · página "+pg.paginaAtual+" de "+pg.totalDePaginas),
-        e(Bt,{disabled:!pg.podeAvancar, onClick:function(){ setV(Object.assign({}, v, {pg:v.pg+1})); }}, "Próxima", e(Ph,{n:"arrow-right", s:15})))));
+    e("div",{className:"-mt-3 grid grid-cols-1 items-start gap-1.5 lg:grid-cols-3"},
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Top 12 · revendedoras que mais indicam", semPad:true}, e(ListaTop,{itens:tops.revs, c1:"Indicações", c2:"Kits"}))),
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Top 12 · representantes que mais indicam", semPad:true}, e(ListaTop,{itens:tops.reps, c1:"Indicações", c2:"Kits"}))),
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Situação das indicadas", semPad:true}, e(ListaSituacao,{itens:tops.sit})))),
+    e("div",{className:"-mt-1.5 "+COMPACTO}, e(Secao,{t:"Histórico de indicações", dir:linhas.length.toLocaleString("pt-BR")+" registros", semPad:true},
+      e(TabelaPlanilha,{cols:COLS_HIST, linhas:linhas, chave:"id", escura:true, grade:true, limite:50, paginas:true, semContagem:true, semLimpar:true, vazio:"Nenhum registro no histórico ainda. Os kits entregues pelo funil aparecem aqui automaticamente."}))));
 }
 
 export { AbaIndFunil, AbaIndHistorico };

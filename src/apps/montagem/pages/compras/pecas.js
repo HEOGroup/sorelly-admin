@@ -4,26 +4,29 @@
 //   useCompras()  quem está logado, papel, "pode?" e "exec" (confere a regra antes e mostra o aviso formal quando recusa)
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { degrade, ESTADO } from "@/apps/montagem/components/padrao";
+import { COMPACTO } from "@/apps/montagem/components/bloco-painel";
 import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
-import { ceReduz, diasEntre, hojeSP, papelCompras, podeAprovarCompra, podeCompras, podeEfetuarCompra, veFunilCompleto } from "@/apps/montagem/domain/compras-estoque";
+import { ceReduz, diasEntre, formatarDataHora, hojeSP, papelCompras, podeAprovarCompra, podeCompras, podeEfetuarCompra, veFunilCompleto } from "@/apps/montagem/domain/compras-estoque";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect } from "@/shared/react";
 
 var AZUL = "#3B82F6";
+// letras normais (Marcus, 17/11/2026): texto em caixa alta (60% das letras ou mais) vira "Tag coração | média"; texto que já tem minúsculas não muda
+function normal(t){ var x = String(t==null ? "" : t).trim(), L = x.replace(/[^A-Za-zÀ-ÿ]/g, ""), U = L.replace(/[^A-ZÀ-Ý]/g, ""); return L.length>1 && U.length/L.length>=0.6 ? x.charAt(0)+x.slice(1).toLowerCase() : x; }
 var norm = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var DECIDE_MSG = "Só quem tem a autorização \"Aprovar, reprovar e liberar para compra\" pode fazer isso.";
 var EFETUA_MSG = "Só quem tem a autorização \"Efetuar compras liberadas\" pode efetuar a compra.";
 
 // ───────────── botões, selos e avatar ─────────────
-var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#3B82F6] text-white hover:bg-[#60A5FA]", perigo:"bg-[#EF4444]/20 text-[#F87171] ring-1 ring-[#EF4444]/50 hover:bg-[#EF4444]/30", ok:"bg-[#22C55E]/25 text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35", marca:"bg-[#3B82F6]/25 text-[#BFDBFE] ring-1 ring-[#3B82F6]/60 hover:bg-[#3B82F6]/35"};
+var BT = {normal:"border border-white/30 bg-transparent hover:bg-white/10", forte:"border border-white/40 bg-[var(--bloco-titulo)] text-white hover:bg-[#3a64ad]", perigo:"border border-[var(--negativo)] bg-transparent text-[var(--negativo)] hover:bg-[var(--negativo)]/15", ok:"border border-[var(--positivo)] bg-transparent text-[var(--positivo)] hover:bg-[var(--positivo)]/15", marca:"border border-white/40 bg-[var(--bloco-colunas)] text-white hover:bg-[var(--bloco-titulo)]"};
 function Bt(p){
   return e("button",{type:p.type || "button", onClick:p.onClick, disabled:p.disabled, title:p.disabled && p.semAut ? "Sem autorização" : p.titulo, "aria-label":p.aria,
-    className:"inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-bold transition disabled:opacity-40 "+BT[p.tipo || "normal"]+" "+(p.className || "")}, p.ic && e(Ph,{n:p.ic, s:15}), p.children);
+    className:"inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[11px] font-semibold transition disabled:opacity-40 "+BT[p.tipo || "normal"]+" "+(p.className || "")}, p.ic && e(Ph,{n:p.ic, s:15}), p.children);
 }
 function Selo(p){
-  var c = ESTADO[p.cor] || p.cor || "#94A3B8";
-  return e("span",{title:p.titulo, className:"inline-flex w-fit max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold", style:{background:c+"26", color:c, boxShadow:"inset 0 0 0 1px "+c+"55"}}, p.ic && e(Ph,{n:p.ic, s:12}), p.children);
+  var c = ESTADO[p.cor] || p.cor || "#FFFFFF";
+  return e("span",{title:p.titulo, className:"inline-flex w-fit max-w-full items-center gap-1 whitespace-nowrap text-[11px] font-bold", style:{color:c}}, p.ic && e(Ph,{n:p.ic, s:12}), p.children);
 }
 var iniciais = function(nome){ var t = String(nome || "?").trim().split(/\s+/).filter(Boolean); return ((t[0] || "?").charAt(0)+(t.length>1 ? t[t.length-1].charAt(0) : "")).toUpperCase(); };
 function Avatar(p){
@@ -45,27 +48,53 @@ function Ind(p){
 // ───────────── colunas da janela larga ─────────────
 // estado "feito" = já concluído (verde), "atual" = em destaque (azul), sem estado = neutro
 function Painel(p){
-  var feito = p.estado==="feito", atual = p.estado==="atual";
-  return e("section",{className:"flex min-w-0 flex-col gap-2 rounded-xl p-2.5 text-center transition "+(p.className || ""),
-      style:atual ? {background:"linear-gradient(160deg, "+AZUL+"33, rgba(0,0,0,.25))", boxShadow:"inset 0 0 0 2px "+AZUL+"AA"} : feito ? {background:"linear-gradient(160deg, #22C55E1F, rgba(0,0,0,.22))", boxShadow:"inset 0 0 0 1px #22C55E55"} : {background:"rgba(0,0,0,.22)", boxShadow:"inset 0 0 0 1px rgba(255,255,255,.1)"}},
-    p.t && e("div",{className:"flex items-center justify-center gap-1.5 text-[12px] font-bold uppercase tracking-wide "+(feito ? "text-[#4ADE80]" : atual ? "text-[#BFDBFE]" : "text-white/75")}, e(Ph,{n:feito ? "check-circle" : (p.ic || "circle"), s:15, fill:feito}), p.t),
-    p.children);
+  return e("section",{className:"flex min-w-0 flex-col overflow-hidden rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 "+COMPACTO+" "+(p.className || "")},
+    p.t && e("div",{className:"flex items-center justify-center gap-1.5 bg-[var(--bloco-titulo)] py-0.5 text-[11px] font-bold uppercase leading-tight"}, p.ic && e(Ph,{n:p.ic, s:12}), p.t),
+    e("div",{className:"flex min-w-0 flex-col gap-1.5 p-1.5 text-center text-[11px]"}, p.children));
 }
 // dado: rótulo pequeno + valor (centralizado)
 function Dado(p){
   if(p.v==null || p.v==="") return null;
-  return e("div",{className:"flex min-w-0 flex-col items-center rounded-lg bg-black/25 px-2 py-1 text-center"},
-    e("span",{className:"flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-white/60"}, p.ic && e(Ph,{n:p.ic, s:12}), p.t),
-    e("span",{className:"break-words text-[13px] font-semibold "+(p.mono ? MONO : "")}, p.v));
+  return e("div",{className:"flex min-w-0 flex-col items-center rounded-md border border-white/20 px-2 py-0.5 text-center"},
+    e("span",{className:"flex items-center gap-1 text-[11px] font-semibold uppercase leading-tight"}, p.ic && e(Ph,{n:p.ic, s:11}), p.t),
+    e("span",{className:"break-words text-[11px] font-bold leading-tight "+(p.mono ? "tabular-nums " : "")+(p.cor || "")}, p.v));
 }
 function Campo(p){ return e("label",{className:"flex min-w-0 flex-col gap-1 text-center text-[12px] font-bold "+(p.className || "")}, p.rot, p.children); }
+
+// ───────────── janela larga (nova solicitação, ficha da compra) ─────────────
+// Padrão azul do Financeiro (Marcus, 17/11/2026): moldura de 2 px no azul do bloco, barra de título azul em maiúsculas, linhas brancas finas; colunas = blocos (Painel).
+function Janela(p){
+  useEffect(function(){ var f = function(ev){ if(ev.key==="Escape" && !p.bloqueado) p.fechar(); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [p.bloqueado]);
+  return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-3", onClick:p.fechar},
+    e("div",{role:"dialog", "aria-label":p.t, onClick:function(ev){ ev.stopPropagation(); }, className:"[--border:rgba(255,255,255,0.3)] flex max-h-[94vh] w-full max-w-[88rem] flex-col overflow-hidden rounded-lg border-2 border-[var(--bloco-titulo)] bg-card"},
+      e("div",{className:"relative flex flex-col items-center bg-[var(--bloco-titulo)] px-10 py-1 text-center"},
+        e("h2",{className:"text-[13px] font-bold uppercase leading-tight"}, p.t), p.sub && e("p",{className:"text-[11px] leading-tight"}, p.sub),
+        e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-1 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-md border border-white/40 hover:bg-white/15"}, e(Ph,{n:"x", s:14}))),
+      e("div",{className:"flex min-h-0 flex-col gap-1.5 overflow-y-auto p-1.5"}, p.topo, e("div",{className:"grid items-start gap-1.5", style:{gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 21rem), 1fr))"}}, p.colunas)),
+      p.rodape && e("div",{className:"flex flex-wrap justify-center gap-2 border-t border-white/30 p-2"}, p.rodape)));
+}
+
+// ESTOQUE NO MOMENTO DA SOLICITAÇÃO (pedido do Nickolas, 17/11/2026): o estoque quando a compra foi pedida e o de hoje, lado a lado. snaps = lista de estoqueDaSolicitacao(); um bloco por material.
+function EstoqueMomento(p){
+  var lista = (p.snaps || []).filter(Boolean); if(!lista.length) return null;
+  return e(Painel,{t:"Estoque no momento da solicitação", ic:"warehouse"}, lista.map(function(sn, i){
+    var nm = function(v){ return Number(v || 0).toLocaleString("pt-BR")+(sn.unidade ? " "+sn.unidade : ""); };
+    return e("div",{key:i, className:"flex flex-col gap-1.5"},
+      e("b",{className:"text-[13px] leading-tight"}, sn.material),
+      e("div",{className:"grid grid-cols-2 gap-1.5"},
+        e(Dado,{t:"Saldo no momento", v:nm(sn.saldoMomento), mono:true}), e(Dado,{t:"Mínimo no momento", v:nm(sn.minimoMomento), mono:true}),
+        e(Dado,{t:"Quantidade solicitada", v:sn.quantidadeTxt || nm(sn.quantidade), mono:true}), e(Dado,{t:"Origem", v:sn.origem}),
+        e(Dado,{t:"Solicitado em", v:sn.em ? formatarDataHora(sn.em) : "—"}), e(Dado,{t:"Responsável", v:sn.por || "—"}),
+        e(Dado,{t:"Saldo atual (hoje)", v:nm(sn.saldoAtual), mono:true, cor:sn.saldoAtual<sn.minimoAtual ? "text-destructive" : "text-success"}), e(Dado,{t:"Mínimo atual (hoje)", v:nm(sn.minimoAtual), mono:true})));
+  }));
+}
 
 // ───────────── janela pequena (confirmações e dados de uma etapa) ─────────────
 function Dialogo(p){
   useEffect(function(){ var f = function(ev){ if(ev.key==="Escape") p.fechar(); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, []);
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/65 p-3", onClick:p.fechar},
-    e("div",{role:"dialog", "aria-label":p.t, onClick:function(ev){ ev.stopPropagation(); }, className:"flex max-h-[92vh] w-full "+(p.tam || "max-w-md")+" flex-col gap-3 overflow-y-auto rounded-2xl bg-card p-4 text-center ring-2 ring-[#3B82F6]/50"},
-      e("div",{className:"relative px-9"}, e("h2",{className:"font-heading text-lg font-bold"}, p.t), p.sub && e("p",{className:"break-words text-[12.5px] text-white/70"}, p.sub),
+    e("div",{role:"dialog", "aria-label":p.t, onClick:function(ev){ ev.stopPropagation(); }, className:"flex max-h-[92vh] w-full "+(p.tam || "max-w-md")+" flex-col gap-3 overflow-y-auto rounded-lg border-2 border-[var(--bloco-titulo)] bg-card p-3 text-center"},
+      e("div",{className:"relative px-9"}, e("h2",{className:"text-[13px] font-bold uppercase"}, p.t), p.sub && e("p",{className:"break-words text-[11px]"}, p.sub),
         e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-0 top-0 grid size-8 place-items-center rounded-lg bg-muted/50 hover:bg-white/15"}, e(Ph,{n:"x", s:15}))),
       p.children,
       p.rodape && e("div",{className:"flex flex-wrap justify-center gap-2 border-t border-white/10 pt-3"}, p.rodape)));
@@ -102,4 +131,4 @@ var corTempo = function(n){ return n<=2 ? "ok" : n<=6 ? "alerta" : "ruim"; };
 var textoDias = function(n){ return n===0 ? "hoje" : n===1 ? "1 dia" : n+" dias"; };
 var cnpjCurto = function(p){ var i = p.cnpjId; return !i ? "" : i==="outro" ? "Outro CNPJ" : i==="sem_nota" ? "Sem nota" : i==="ho" ? "H&O" : "CNPJ "+i; };
 
-export { AZUL, norm, DECIDE_MSG, EFETUA_MSG, Bt, Selo, Avatar, Ind, Painel, Dado, Campo, Dialogo, useCompras, diasNaEtapa, corTempo, textoDias, cnpjCurto, iniciais };
+export { EstoqueMomento, Janela, AZUL, normal, norm, DECIDE_MSG, EFETUA_MSG, Bt, Selo, Avatar, Ind, Painel, Dado, Campo, Dialogo, useCompras, diasNaEtapa, corTempo, textoDias, cnpjCurto, iniciais };

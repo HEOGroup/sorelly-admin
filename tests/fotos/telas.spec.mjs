@@ -10,7 +10,6 @@ var TELAS = [
   ["contas-a-pagar", "Contas a pagar (segunda referência do Financeiro)"],
   // Só a aba "Padrão visual" (as peças ao vivo). A outra aba mostra o texto inteiro dos documentos (PADRAO-VISUAL.md e PROMPT-MESTRE.md):
   // a foto mudaria a cada frase editada e o CI ficaria vermelho sem tela errada. O terceiro item é o botão a clicar antes da foto.
-  ["padrao-visual", "Padrão visual (peças ao vivo)", /^Padrão visual$/],
 ];
 var DATA_FIXA = new Date("2026-10-15T10:00:00-03:00");
 

@@ -126,6 +126,20 @@ export function ultimasVendasDaMedia(vendas) {
   return [...porDia.values()].filter((o) => o.v > 0.005).sort((a, b) => b.d.localeCompare(a.d)).slice(0, 3).map((o) => ({ d: o.d, v: r2(o.v), b: r2(o.b) }));
 }
 
+// Vendas da média de ALGUMAS revendedoras (16/11/2026, valor automático do kit na listagem): {cliente: [{d, v, b}]}, da mais nova para a mais antiga, mesma regra de ultimasVendasDaMedia.
+export async function ultimasVendasDeClientes(clientes) {
+  const lista = [...new Set((clientes || []).map((c) => String(c)))];
+  const saida = {};
+  lista.forEach((c) => { saida[c] = []; });
+  if (!lista.length) return saida;
+  await garantirTabelas();
+  const r = await consulta(`select cliente, to_char(coalesce(faturada, emissao), 'YYYY-MM-DD') as dia, vendedor, ${LIQ} as liquida, brinde from sorelly.venda_composicao where cliente = any($1::text[])`, [lista]);
+  const por = new Map();
+  r.rows.forEach((x) => { const l = por.get(x.cliente) || por.set(x.cliente, []).get(x.cliente); l.push({ data: x.dia, valor: Number(x.liquida), brinde: Number(x.brinde), vendedor: x.vendedor }); });
+  por.forEach((vendas, cliente) => { saida[cliente] = ultimasVendasDaMedia(vendas); });
+  return saida;
+}
+
 // Totais por revendedora: venda sem brinde, brinde, nº de acertos e valor dos acertos por mês; e as vendas da média (ultimasVendasDaMedia). Só 2026.
 export async function composicaoGeral() {
   await garantirTabelas();   // a coluna vendedor precisa existir antes de filtrar o Leilão

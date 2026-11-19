@@ -39,9 +39,9 @@ const antes = s.fc.codigos.length; s = FC(s, {op:"cod_add", texto:"BB1620"});
 t("código repetido é recusado", s.fc.codigos.length===antes);
 
 let r = FC(s, {op:"etapa", cod:"BB1620", etapa:"ed"});
-t("não edita sem foto", r.fc.codigos.find(c=>c.cod==="BB1620").edEm==="");
+t("OK em Editada sem foto marca a foto junto", r.fc.codigos.find(c=>c.cod==="BB1620").edEm!=="" && r.fc.codigos.find(c=>c.cod==="BB1620").fotoEm!=="");
 r = FC(s, {op:"etapa", cod:"BB1620", etapa:"sub"});
-t("não sobe sem editar", r.fc.codigos.find(c=>c.cod==="BB1620").subEm==="");
+t("OK na DevMaster sem editar marca foto e edição juntas", F.statusDe(r.fc.codigos.find(c=>c.cod==="BB1620"))==="Na DevMaster" && !!r.fc.codigos.find(c=>c.cod==="BB1620").edEm && !!r.fc.codigos.find(c=>c.cod==="BB1620").fotoEm);
 
 s = FC(s, {op:"etapa", cod:"BB1620", etapa:"foto"});
 let c = s.fc.codigos.find(x=>x.cod==="BB1620");
@@ -63,7 +63,7 @@ s = FC(s, {op:"cod_add", texto:"BB1700 BB1701 BB1702"});
 s = FC(s, {op:"etapa_lote", etapa:"foto", texto:"BB1700 BB1701 NAOEXISTE9 BB1620"});
 t("lote marca só quem estava pronto", F.statusDe(s.fc.codigos.find(x=>x.cod==="BB1700"))==="Fotografada" && F.statusDe(s.fc.codigos.find(x=>x.cod==="BB1702"))==="Sem foto");
 r = FC(s, {op:"etapa_lote", etapa:"sub", texto:"BB1702"});
-t("lote respeita a ordem das etapas", F.statusDe(r.fc.codigos.find(x=>x.cod==="BB1702"))==="Sem foto");
+t("lote: OK na DevMaster marca as etapas de antes", F.statusDe(r.fc.codigos.find(x=>x.cod==="BB1702"))==="Na DevMaster");
 
 const h = F.resumoHoje(s.fc, hoje);
 t("resumo de hoje", h.cadastrados===5 && h.fotografados===3 && h.semFoto===2 && h.faltaEditar===2 && h.faltaSubir===1, JSON.stringify(h));
@@ -135,8 +135,18 @@ let lt = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], semeado:
 lt = FC(lt, {op:"etapa_lote", etapa:"foto", texto:"a2357014 cl2771\nzz9999"});
 t("lote: grade marca o modelo e as outras grades; código que não existe é ignorado", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.fotoEm) && !!lt.fc.codigos.find(c=>c.cod==="CL2771").fotoEm && !lt.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
 const lr = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"M0802"});
-t("lote: editar exige a foto antes", !lr.fc.codigos.find(c=>c.cod==="M0802").edEm);
+t("lote: Editadas sem foto marca a foto junto", !!lr.fc.codigos.find(c=>c.cod==="M0802").edEm && !!lr.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
 lt = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"A2357"});
 t("lote: editada marca o modelo e as grades que já têm foto", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.edEm));
+// meta em degraus: 300 = 150, 350 = 200, 400 = 250
+const MD = Object.assign({}, M, {alvo:4, degraus:[{alvo:2, bonus:100}, {alvo:3, bonus:200}, {alvo:4, bonus:300}]});
+const md = F.metaProgresso(fm, MD, "2026-11-11");
+t("meta em degraus: 3 fotos conquistam o degrau de 200 e falta 1 para o último", md.bonusAtual===200 && md.proximo.alvo===4 && md.proximo.falta===1 && md.degraus.filter(g=>g.feito).length===2);
+t("meta em degraus: sem foto nenhuma não há bônus e o próximo é o primeiro", F.metaProgresso({codigos:[]}, MD, "2026-11-11").bonusAtual===0 && F.metaProgresso({codigos:[]}, MD, "2026-11-11").proximo.alvo===2);
+t("meta em degraus: depois do prazo com degrau conquistado fica Encerrada", F.metaProgresso(fm, MD, "2026-11-14").situacao==="Encerrada");
+// a foto vale no dia da PRIMEIRA prova: se chegou na DevMaster dia 12 e só dia 16 alguém deu OK na tela, conta dia 12 (o total da meta antiga não pode cair)
+const fp = {codigos:[{cod:"P1", dia:"2026-11-05", fotoEm:"2026-11-16T10:00:00", dmFoto:"2026-11-12T10:00:00"}, {cod:"P2", dia:"2026-11-05", fotoEm:"2026-11-12T09:00:00", dmFoto:"2026-11-14T10:00:00"}]};
+const mpP = F.metaProgresso(fp, {id:"p", nome:"P", ini:"2026-11-10", fim:"2026-11-13", alvo:5, bonus:0, dmDesde:"2026-11-11T10:20:00"}, "2026-11-20");
+t("meta: a foto conta no dia da primeira prova (DevMaster dia 12 antes do OK da tela dia 16)", mpP.feitas===2 && mpP.linhas.find(l=>l.dia==="2026-11-12").fotos===2, JSON.stringify(mpP.linhas));
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

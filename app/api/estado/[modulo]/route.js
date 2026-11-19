@@ -11,6 +11,8 @@ import { podeModulo } from "@/server/permissoes";
 import { donoDaChave, ehModuloItens, gravarItens, versaoItens, respostaItens } from "@/server/estado-itens";
 import { gravarModulo } from "@/server/estado-modulo";
 import { protegerSaldos } from "@/server/trava-saldos";
+import { respostaItensRep } from "@/server/rep-filtro";
+import { entregarAvisos } from "@/server/compras-chat";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 const nega = () => erro("Você não tem acesso a este módulo.", 403);
@@ -36,6 +38,7 @@ export const GET = rota(async (req, { eu, params, url }) => {
   if (q !== null && !/^-?\d+$/.test(q)) throw invalido("desde");
   const desde = q === null ? undefined : Number(q);
   if (!podeModulo(eu, modulo)) return nega();
+  if (eu.repCod) return json(await respostaItensRep(modulo, desde, eu.repCod));   // conta de representante: só o que é dela
   if (ehModuloItens(modulo)) return getItens(modulo, desde);
   const v = await consulta("select versao from sorelly.estado_modulo where modulo = $1", [modulo]);
   const versao = v.rows[0] ? v.rows[0].versao : 0;
@@ -51,7 +54,7 @@ export const PUT = rota(async (req, { eu, params }) => {
   const b = await corpo(req, 20 * 1024 * 1024);
   const obj = (v) => v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length;
   if (b.patches !== undefined ? !obj(b.patches) : !obj(b.chaves)) throw invalido("chaves");
-  if (!podeModulo(eu, modulo)) return nega();
+  if (!podeModulo(eu, modulo) || eu.repCod) return nega();   // conta de representante não grava módulos
   if (ehModuloItens(modulo)) { if (!b.chaves) throw invalido("chaves"); return putItens(modulo, b.chaves, eu); }
   if (eu.perfil !== "ADMIN" && modulo !== "mel" && modulo !== "kn" && modulo !== "pag" && modulo !== "int" && modulo !== "aci" && modulo !== "agrev" && modulo !== "rhsol" && modulo !== "finativ") {   // mel e kn: qualquer funcionário pode criar o módulo ao enviar o 1º pedido / 1º kit novo
     const ja = await consulta("select 1 from sorelly.estado_modulo where modulo = $1", [modulo]);
@@ -77,8 +80,20 @@ export const PUT = rota(async (req, { eu, params }) => {
     const devolvidos = protegerSaldos(velho, b.chaves.saldosContas);
     if (devolvidos) console.warn("[trava sc] gravação de " + eu.id + " não trazia " + devolvidos + " item(ns) de saldo já guardados; devolvidos");
   }
+  // FORMULÁRIO DO APP (18/11/2026): os blocos do módulo pk são o que o app da revendedora mostra (GET /api/kit/preferences). Como no admin antigo,
+  // só a Diretoria muda: de quem não é, o servidor descarta blocos, Observações e versão (o resto do módulo grava normalmente).
+  if (modulo === "pk" && eu.perfil !== "ADMIN") {
+    const pedido = b.patches || b.chaves;
+    ["blocos", "obs", "config"].forEach((k) => { if (k in pedido) { delete pedido[k]; console.warn("[pk] " + eu.id + " tentou mudar o formulário do app (" + k + "); descartado"); } });
+    if (!Object.keys(pedido).length) return erro("Só a Diretoria edita o formulário do app.", 403);
+  }
   // GRAVAÇÃO SEGURA (11/11/2026, src/server/estado-modulo.js): tela nova manda só a diferença ({patches}); tela antiga ({chaves}) junta sem apagar itens que ela não traz.
   // As duas ficam registradas em sorelly.estado_modulo_log.
   const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id) : await gravarModulo(modulo, b.chaves, "chaves", eu.id);
+  // AVISOS DAS COMPRAS NO SORELLYCHAT (18/11/2026, src/server/compras-chat.js): DEPOIS de gravar, entrega os avisos novos dos pedidos. Nunca duplica (id fixo) e
+  // nunca desfaz a gravação: se o chat falhar, o pedido continua salvo e o aviso fica pendente (o pedido mostra "Tentar de novo").
+  if (modulo === "ce" && ((b.patches && b.patches.pedidos) || (b.chaves && b.chaves.pedidos))) {
+    try { await entregarAvisos(null); } catch (e) { console.warn("[compras-chat] " + (e && e.message)); }
+  }
   return json({ ok: true, versao });
 });

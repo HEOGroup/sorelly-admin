@@ -231,7 +231,6 @@ function PixRepresentante(p){
     e("div",{className:"flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2"},
       e("h2",{className:"font-heading text-[14px] font-bold"},"Pix representante", nMarcar>0 && e("span",{className:"ml-2 rounded-md bg-warning/20 px-1.5 py-0.5 text-[11.5px] font-bold text-warning"}, nMarcar+" a marcar")),
       e("div",{className:"flex items-center gap-2"},
-        e(Btn,{v:"secondary", sm:true, ic:"wallet", onClick:function(){ d({type:"ABA", aba:"pixdireto"}); }}, "Metas do Pix direto"),
         e("select",{value:filtro, "aria-label":"Filtro do Pix representante", className:INPUT+" h-8! w-36 cursor-pointer text-[12.5px]!", onChange:function(ev){ setFiltro(ev.target.value); }},
           e("option",{value:"todos"},"Todos"), e("option",{value:"marcar"},"Pendentes")))),
     metas.length>0 && e("div",{className:"flex flex-wrap gap-1.5 border-b border-border px-3 py-2"}, metas.map(function(x){ return e("span",{key:x.rep, title:textoNegociacao(x.neg), className:"inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold "+(x.falta<=0.009 ? "bg-success/15 text-success" : "bg-warning/15 text-warning")}, x.rep+" · meta "+BK(x.meta)+" · "+(x.falta<=0.009 ? "completo" : "falta "+BK(x.falta))); })),

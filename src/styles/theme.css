@@ -92,3 +92,45 @@
 .sombra-baixo { box-shadow: inset 0 -1px 0 rgba(232,184,75,.22), 0 10px 20px -12px rgba(0,0,0,.75); }
 :root[data-theme="light"] .sombra-lado, :root:not(.dark):not([data-theme="dark"]) .sombra-lado { box-shadow: inset -1px 0 0 rgba(0,0,0,.12), 8px 0 20px -12px rgba(0,0,0,.25); }
 :root[data-theme="light"] .sombra-baixo, :root:not(.dark):not([data-theme="dark"]) .sombra-baixo { box-shadow: inset 0 -1px 0 rgba(0,0,0,.12), 0 8px 18px -12px rgba(0,0,0,.25); }
+
+/* CORES DO SISTEMA PARA BLOCOS E TABELAS (Marcus, 12/11/2026: "uma cor que vamos definir para o sistema inteiro"). Duas cores da MESMA família, a de baixo um pouco mais fraca:
+   --bloco-titulo  = barra de título do bloco (ex.: Aguardando na Fila, Contas negativas);
+   --bloco-colunas = faixa dos nomes das colunas (ex.: Revendedora, Origem, Conta). Para mudar a cor do sistema inteiro, troque só estas duas linhas. Texto sempre branco. */
+:root { --bloco-titulo: #2d5190; --bloco-colunas: #1f3358; }
+/* VERDE E VERMELHO DO ESTADO (Marcus, 12/11/2026: "um vermelho padrão para a tela inteira"): positivo/pago = --positivo, negativo/atrasado = --negativo. Trocar aqui muda a tela inteira (hoje só o Direcionar usa). */
+:root { --positivo: #4ade80; --negativo: #f87171; }
+
+/* SEM BARRA DE ROLAGEM EM LUGAR NENHUM (Marcus, 12/11/2026: "eu não quero essa barra em nada"): a rolagem continua com a roda do mouse, o toque e o arrastar das tabelas; só a barra cinza some. */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Barra de rolagem grossa e visível (Marcus, 12/11/2026): planilhas largas, como Contas bancárias. A regra geral acima esconde as outras. */
+.barra-grossa { scrollbar-width: auto !important; scrollbar-color: rgba(255,255,255,.55) rgba(255,255,255,.12); }
+.barra-grossa::-webkit-scrollbar { display: block !important; width: 18px !important; height: 18px !important; }
+.barra-grossa::-webkit-scrollbar-track { background: rgba(255,255,255,.12); }
+.barra-grossa::-webkit-scrollbar-thumb { background: rgba(255,255,255,.55); border-radius: 9px; border: 3px solid transparent; background-clip: padding-box; }
+.barra-grossa::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.75); background-clip: padding-box; }
+
+/* Barra de rolagem FINA e visível (Marcus, 16/11/2026): listas pequenas dentro de um bloco, como as peças de brinde no Resumo do acerto. */
+.barra-fina { scrollbar-width: thin !important; scrollbar-color: rgba(255,255,255,.6) rgba(255,255,255,.1); }
+.barra-fina::-webkit-scrollbar { display: block !important; width: 6px !important; height: 6px !important; }
+.barra-fina::-webkit-scrollbar-track { background: rgba(255,255,255,.1); }
+.barra-fina::-webkit-scrollbar-thumb { background: rgba(255,255,255,.6); border-radius: 9999px; }
+
+/* Contas bancárias (Marcus, 12/11/2026): na edição, a célula de HOJE pulsa bem de leve para mostrar onde digitar */
+@keyframes pulso-leve { 0%,100% { background-color: rgba(251,191,36,0); } 50% { background-color: rgba(251,191,36,.16); } }
+.pulso-leve { animation: pulso-leve 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pulso-leve { animation: none; background-color: rgba(251,191,36,.10); } }
+/* Lançamento do dia (Marcus, 16/11/2026): só o NÚMERO da conta ainda sem OK pisca em amarelo (sem quadrado); depois do OK volta à cor normal */
+@keyframes pisca-amarelo { 0%,100% { opacity: 1; text-shadow: 0 0 8px rgba(251,191,36,.9); } 50% { opacity: .3; text-shadow: none; } }
+.pisca-amarelo { color: #FBBF24; animation: pisca-amarelo 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pisca-amarelo { animation: none; } }
+/* Mover coluna segurando o título (Contas a pagar, 16/11/2026): a coluna que está sendo levada fica CHEIA (cor sólida, sem transparência) e o lugar onde ela vai cair ganha uma barra branca grossa. */
+th[data-arrasto="1"] { box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 200px #2563eb !important; }
+th[data-arrasto="1"] * { color: #fff !important; }
+th[data-alvo="1"] { box-shadow: inset 6px 0 0 #fff, inset 0 0 0 200px #3b4a6b !important; }
+
+/* Fichas (FichaMoldura, 17/11/2026, pedido do Marcus): todos os campos centralizados e com fundo azul clarinho. Vale só dentro da ficha. */
+.ficha-azul input:not([type=checkbox]):not([type=radio]), .ficha-azul select, .ficha-azul textarea { background-color: rgba(147,197,253,.24) !important; border-color: rgba(191,219,254,.5) !important; text-align: center; text-align-last: center; }
+.ficha-azul input::placeholder { color: rgba(255,255,255,.6); }
+.ficha-azul select option { background-color: #1f3a75; color: #fff; }

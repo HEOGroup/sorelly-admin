@@ -52,13 +52,15 @@ var CONTAS_PAGAMENTO = {
     "PIX CHARME","PIX - SICREDI - SHOPPING 46","PIX ELLOS BRUTOS","PIX - CAIXA ECONÔMICA - ANAMARIA","PIX ART ELLO",
     "PIX - SANTANDER - ANAMARIA","PIX - MADEIRA COR","PIX - LUCAS - PF","PIX PRESTADORES DE SERVIÇOS","PIX - ANA BEATRIZ - PF",
     "PIX LINDA","PIX - MARCUS HESS - PF","PIX - OFFICE GRAF LTDA","PIX - ITAÚ PJ - MARCO","PIX REPRESENTANTES",
-    "PIX - ITAÚ PF - MARCO ANTÔNIO","PIX - SICREDI - AXIS","PIX SAFRA 34","PIX - SICREDI - SERENITY - 59","CAIXA ECONÔMICA HABITAÇÃO"].map(function(l){return {id:l, label:l};}),
+    "PIX - ITAÚ PF - MARCO ANTÔNIO","PIX - SICREDI - AXIS","PIX SAFRA 34","PIX - SICREDI - SERENITY - 59","CAIXA ECONÔMICA HABITAÇÃO",
+    // 12/11/2026: contas que estavam em Chaves Pix dos bancos e faltavam na calculadora
+    "PIX - ITAÚ - 34","PIX - CAIXA - 34","PIX - UNICRED - 34","PIX - BRADESCO - 46","PIX - BRADESCO - SERENITY - 59"].map(function(l){return {id:l, label:l};}),
   // Pix que a revendedora mandou direto para a representante: sem conta da empresa. O financeiro diz de qual representante é (Comissões) e já dá como pago.
   pix_representante: ["PIX REPRESENTANTE"].map(function(l){return {id:l, label:l};}),
   link: ["LINK - SICREDI - SERENITY - 59","LINK - SICREDI - SORELLY - 46","LINK - SICREDI - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
   credito: ["CRÉDITO - SICREDI - SERENITY - 59","CRÉDITO - BRADESCO CIELO - SERENITY - 59","CRÉDITO - SAFRA - SERENITY 59",
     "CRÉDITO - ITAÚ - SERENITY","CRÉDITO - SAFRA - 46","CRÉDITO - GETNET - P","CRÉDITO - CIELO - P",
-    "CRÉDITO - SICREDI - SORELLY - 34","CRÉDITO - SAFRA - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
+    "CRÉDITO - SICREDI - SORELLY - 34","CRÉDITO - SAFRA - SORELLY - 34","CRÉDITO - SICREDI - AXIS - 67"].map(function(l){return {id:l, label:l};}),
   debito: ["DÉBITO - CIELO - P","DÉBITO - SICREDI - SERENITY - 59","DÉBITO - BRADESCO CIELO - SERENITY - 59",
     "DÉBITO - ITAÚ - SERENITY","DÉBITO - SAFRA - SERENITY 59","DÉBITO - SAFRA - 46","DÉBITO - GETNET - P",
     "DÉBITO - SAFRA - SORELLY - 34"].map(function(l){return {id:l, label:l};}),
@@ -103,7 +105,8 @@ var NOVAS_PADRAO = {
   // venda do acerto abaixo de minimoRepresentante (R$ 500, Marcus 29/10/2026): a representante precisa registrar o MOTIVO antes de finalizar; "Outro" pede texto livre
   motivosVendaBaixa:["Não tem muitos clientes", "Pouca habilidade com vendas", "Não teve tempo", "Problema de saúde ou pessoal", "Não gostou das peças", "Outro"],
   multaPendentePct:10,                          // multa sobre o VALOR PENDENTE do acerto, qualquer valor
-  prazoQuitarDias:15,                           // prazo máximo para quitar o que faltou
+  prazoQuitarDias:30,                           // prazo máximo para quitar o que faltou: 30 dias corridos e antes do próximo acerto (regra de 11/11/2026, 2ª parte)
+  parcelasMax:2, parcelaMinima:200, parcelaUnicaAbaixo:400,   // negociação na hora: até 2 parcelas de no mínimo R$ 200,00; dívida abaixo de R$ 400,00 = parcela única
   atrasoQuitacaoPctDia:1, atrasoQuitacaoTetoPct:10,   // depois do prazo: +1% do pendente por dia, teto 10%
   // REGRA DE 11/11/2026 (Marcus): o atraso do acerto conta em DIAS ÚTEIS (segunda a sexta, sem feriado) desde o primeiro dia marcado. Até prazoAcertoDiasUteis não há acréscimo;
   // depois, atrasoPctDiaUtil por dia a mais (comissão e brinde, SOMANDO à multa da remarcação); passou de juridicoDiasUteis: perde tudo, Jurídico, sem kit. Com estes campos a escada antiga (atrasoAcerto) não é usada.
@@ -127,6 +130,26 @@ function atrasoAcerto(dias, N){
   if(dias>=(N.juridicoDias||60)) return {comissaoPct:100, brindePct:100, tudo:true};
   var l = N.atrasoAcerto.slice().sort(function(a,b){ return a.ate-b.ate; }), x = l.find(function(y){ return dias<=y.ate; }) || l[l.length-1];
   return {comissaoPct:x.comissaoPct, brindePct:x.brindePct, tudo:false};
+}
+// COMISSÃO ANTIGA (Marcus, 16/11/2026): se a revendedora questionar, a funcionária usa a tabela de antes (folder "Atualização das regras de comissão e brindes").
+// Só muda o brinde da faixa de R$ 500,00 a R$ 699,99 (antiga: Normal R$ 48 e Select R$ 68; nova: Normal R$ 44 e Select R$ 32); as % de comissão são as mesmas. Multas e atraso seguem as novas. Vale só no acerto marcado; o próximo volta à regra nova.
+var BRINDE_FAIXA_500_ANTIGA = {bn:48, bb:68};
+function versaoComissaoAntiga(v){
+  if(!v || !v.faixas) return v;
+  return Object.assign({}, v, {faixas:v.faixas.map(function(f){ return f.min===500 ? Object.assign({}, f, BRINDE_FAIXA_500_ANTIGA) : f; })});
+}
+// Linhas [rótulo, texto] do atraso do acerto, para qualquer tela mostrar a regra em vigor (dias úteis desde 11/11/2026; escada antiga só em versão sem esse campo)
+function linhasAtraso(N){
+  if(!N) return [];
+  if(N.prazoAcertoDiasUteis!=null){ var p = N.prazoAcertoDiasUteis, j = N.juridicoDiasUteis||30, pc = N.atrasoPctDiaUtil||1;
+    return [["Até o "+p+"º dia útil","sem acréscimo"], ["Do "+(p+1)+"º ao "+j+"º dia útil","−"+pc+"% de comissão e −"+pc+"% de brinde por dia"], ["Depois do "+j+"º dia útil","perde tudo · Jurídico"]]; }
+  var ant = 0, l = N.atrasoAcerto.slice().sort(function(a,b){ return a.ate-b.ate; }).map(function(x){ var t = [(ant+1)+" a "+x.ate+" dias", "−"+x.comissaoPct+"% de comissão e −"+x.brindePct+"% de brinde"]; ant = x.ate; return t; });
+  return l.concat([[N.juridicoDias+" dias ou mais", "perde tudo · Jurídico"]]);
+}
+// Negociação do valor pendente (regra de 11/11/2026): até 2 parcelas de no mínimo R$ 200,00; abaixo de R$ 400,00 é parcela única; tudo em até 30 dias corridos e antes do próximo acerto
+function textoNegociacao(N){
+  var m = N.parcelasMax||2, pm = N.parcelaMinima||200, un = N.parcelaUnicaAbaixo||400;
+  return "Para levar o kit novo, pague "+(N.kitNovoMinPct||80)+"% ou mais e negocie o resto na hora, em até "+m+" parcelas de no mínimo "+reais(pm)+" (dívida abaixo de "+reais(un)+" é parcela única), tudo em até "+N.prazoQuitarDias+" dias corridos e antes do próximo acerto.";
 }
 // média das últimas vendas = (n-1) vendas anteriores (a lista vem da mais antiga para a mais nova) + a venda do dia do acerto
 var MEDIA_N = 4;   // média das últimas 4 vendas (3 anteriores + a de hoje); vale mesmo para regras salvas com 3
@@ -190,7 +213,8 @@ var PRATA_PADRAO = {
 };
 var MODALIDADE_LB = {padrao:"Kit padrão", prata:"Kit 100% Prata"};
 // modalidade da revendedora (fica no cadastro dela, não precisa marcar a cada acerto)
-function modalidadeDe(s, rev){ return ((s.perfisRev||{})[rev]||{}).modalidade === "prata" ? "prata" : "padrao"; }
+// 12/11/2026: quem é Kit 100% Prata fica em s.prataRev (módulo "rc", igual em todos os computadores); a marca antiga da ficha (perfisRev) só vale quando não há marca nova.
+function modalidadeDe(s, rev){ var m = (s.prataRev||{})[rev]; if(m==="prata" || m==="padrao") return m; return ((s.perfisRev||{})[rev]||{}).modalidade === "prata" ? "prata" : "padrao"; }
 
 // Peças liberadas para o próximo mês: quantidade-base pelo VALOR DA VENDA, reduzida pelo % do acerto que ficou em aberto.
 // O valor das peças escolhidas não entra na conta, só a quantidade.
@@ -207,7 +231,7 @@ function pecasProximoMes(venda, valorAcerto, emAberto, cfg){
   if(emAberto>0.01){ var r = cfg.reducao.slice().sort(function(a,b){return a.ate-b.ate;}).find(function(x){return pct<=x.ate;}); fator = r ? r.fator : 0; }
   return {base:base, pctAberto:pct, fator:fator, liberadas:Math.floor(base*fator+1e-9)};
 }
-var SCHEMA_REGRAS = 9;   // 9 = atraso do acerto em dias úteis (11/11/2026)   // 8 = regras de 27/10/2026 (campo novas); 7 = taxa só abaixo de R$ 300 (R$ 35); antes 6 = faixa de R$ 20 de 300 a 499,99
+var SCHEMA_REGRAS = 10;   // 10 = prazo de quitar 30 dias e negociação em até 2 parcelas (16/11/2026)   // 9 = atraso do acerto em dias úteis (11/11/2026)   // 8 = regras de 27/10/2026 (campo novas); 7 = taxa só abaixo de R$ 300 (R$ 35); antes 6 = faixa de R$ 20 de 300 a 499,99
 
 function copia(x){ return JSON.parse(JSON.stringify(x)); }
 function novaVersaoRegras(campos, anteriorId){
@@ -231,7 +255,8 @@ function novaVersaoRegras(campos, anteriorId){
 // Antes disso as versões eram só o padrão, então são trocadas inteiras pelo padrão atual.
 function normalizarVersao(v){
   if(v && v.schema===SCHEMA_REGRAS) return v;
-  if(v && v.schema===8) return Object.assign({}, v, {schema:SCHEMA_REGRAS, novas:v.novas ? Object.assign({}, v.novas, {prazoAcertoDiasUteis:NOVAS_PADRAO.prazoAcertoDiasUteis, atrasoPctDiaUtil:NOVAS_PADRAO.atrasoPctDiaUtil, juridicoDiasUteis:NOVAS_PADRAO.juridicoDiasUteis}) : v.novas});   // versão sem 'novas' continua no cálculo antigo
+  if(v && v.schema===9) return Object.assign({}, v, {schema:SCHEMA_REGRAS, novas:v.novas ? Object.assign({}, v.novas, {prazoQuitarDias:NOVAS_PADRAO.prazoQuitarDias, parcelasMax:NOVAS_PADRAO.parcelasMax, parcelaMinima:NOVAS_PADRAO.parcelaMinima, parcelaUnicaAbaixo:NOVAS_PADRAO.parcelaUnicaAbaixo}) : v.novas});
+  if(v && v.schema===8) return Object.assign({}, v, {schema:SCHEMA_REGRAS, novas:v.novas ? Object.assign({}, v.novas, {prazoAcertoDiasUteis:NOVAS_PADRAO.prazoAcertoDiasUteis, atrasoPctDiaUtil:NOVAS_PADRAO.atrasoPctDiaUtil, juridicoDiasUteis:NOVAS_PADRAO.juridicoDiasUteis, prazoQuitarDias:NOVAS_PADRAO.prazoQuitarDias, parcelasMax:NOVAS_PADRAO.parcelasMax, parcelaMinima:NOVAS_PADRAO.parcelaMinima, parcelaUnicaAbaixo:NOVAS_PADRAO.parcelaUnicaAbaixo}) : v.novas});   // versão sem 'novas' continua no cálculo antigo
   var corrigeTaxa = function(x){ return Object.assign({}, x, {taxaBaixa:copia(TAXA_BAIXA_VENDA), gerais:Object.assign({}, x.gerais, {taxaAbaixoDe:300})}); };
   if(v && v.schema===7) return Object.assign({}, v, {schema:SCHEMA_REGRAS});   // versão antiga: continua sem 'novas' (cálculo antigo)
   if(v && v.schema===6) return corrigeTaxa(Object.assign({}, v, {schema:SCHEMA_REGRAS}));
@@ -442,7 +467,7 @@ function textoRegrasNovas(v, modalidade){
     {t:"Acerto na data", x:N.prazoAcertoDiasUteis!=null ? "O acerto e a devolução são na data marcada. Depois dela a revendedora tem "+N.prazoAcertoDiasUteis+" dias úteis (segunda a sexta, sem feriado) para fazer o acerto. Do "+(N.prazoAcertoDiasUteis+1)+"º ao "+N.juridicoDiasUteis+"º dia útil perde "+N.atrasoPctDiaUtil+"% de comissão e "+N.atrasoPctDiaUtil+"% de brinde por dia. Depois do "+N.juridicoDiasUteis+"º dia útil perde toda a comissão e todo o brinde, não recebe novo kit, e o valor integral do kit pode ser cobrado pela nota promissória."
       : "O acerto e a devolução são na data marcada. Acerto fora da data perde parte da comissão e do brinde — "+escTxt+". Com "+N.juridicoDias+" dias de atraso perde toda a comissão e todo o brinde, e o valor integral do kit pode ser cobrado pela nota promissória."},
     {t:"Remarcação", x:"Remarcar em cima da hora, cancelar ou não vir tira comissão e brinde — "+rem+". Pedido feito com 10 dias ou mais de antecedência não tem multa (uma vez por kit). A nova data fica em até 5 dias úteis. Motivo sério com prova não conta."},
-    {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente, e o prazo para quitar é de "+N.prazoQuitarDias+" dias. Depois do prazo soma "+N.atrasoQuitacaoPctDia+"% ao dia, até "+N.atrasoQuitacaoTetoPct+"%. Quem está devendo um acerto anterior só recebe novo kit depois de quitar tudo, e o que pagar no acerto seguinte quita primeiro a dívida mais antiga."},
+    {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente. "+textoNegociacao(N)+" Parcela atrasada soma "+N.atrasoQuitacaoPctDia+"% ao dia sobre ela, até "+N.atrasoQuitacaoTetoPct+"%. Quem está devendo um acerto anterior só recebe novo kit depois de quitar tudo, e o que pagar no acerto seguinte quita primeiro a dívida mais antiga."},
     {t:"Brinde", x:"Existem o brinde Normal e o Select (BB). BB não é só brinco: toda peça cujo código começa com BB (brinco, anel, colar, pulseira…) é Select. O brinde só é entregue depois do pagamento e precisa ser retirado NA HORA DO ACERTO: peça que não estiver nesse momento é considerada vendida. Com valor pendente o brinde diminui — "+(pag||"sem desconto")+" · faltou mais de "+teto+"%: sem brinde. O que passar do valor liberado soma no total a pagar."},
     {t:"Kit novo", x:"Com "+g.kitNovoMinPct+"% ou mais do acerto pago e média de vendas acima do mínimo, o kit novo é liberado. Abaixo disso precisa de autorização do financeiro."},
     {t:"Peças", x:(g.pecaSemEtiquetaVendida ? "Peça sem etiqueta é considerada vendida. " : "")+"Cada tag riscada ou extraviada custa "+reais(g.taxaTagExtraviada)+". O que não foi vendido volta para a empresa."}
@@ -483,6 +508,6 @@ function diffVersoes(atual, anterior){
   return {faixas:faixas, gerais:gerais};
 }
 
-export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, PRATA_FAIXAS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
+export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, linhasAtraso, textoNegociacao, versaoComissaoAntiga, BRINDE_FAIXA_500_ANTIGA, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, PRATA_FAIXAS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
   faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
   formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, aplicarComissaoEspecial, comissaoEspecialDe, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };

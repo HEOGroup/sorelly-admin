@@ -9,10 +9,12 @@ import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
+import * as sons from "@/apps/montagem/lib/sons";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 // sons feitos pelo próprio navegador (não precisa de arquivo)
 function tocar(notas, tipo, volume){
+  if(sons.config().mudo) return;   // botão "Som" do menu da conta
   try{ var C = window.AudioContext || window.webkitAudioContext; if(!C) return; var ac = new C(), t0 = ac.currentTime;
     notas.forEach(function(n, i){ var o = ac.createOscillator(), g = ac.createGain(); o.type = tipo; o.frequency.value = n[0]; o.connect(g); g.connect(ac.destination);
       var ini = t0+n[1]; g.gain.setValueAtTime(0.0001, ini); g.gain.exponentialRampToValueAtTime(volume, ini+0.02); g.gain.exponentialRampToValueAtTime(0.0001, ini+n[2]);

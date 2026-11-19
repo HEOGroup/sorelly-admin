@@ -51,7 +51,7 @@ var PH = {gem:"diamond", grid:"clipboard-text", chart:"chart-bar", wallet:"walle
   lista:"clipboard-text", arquivo:"archive", config:"gear-six", celular:"device-mobile", kitnovo:"sparkle", caixa:"package",
   ia:"robot", calc:"calculator", espera:"hourglass-medium", grid4:"squares-four", chamado:"envelope-simple-open", coroa:"crown-simple", banco:"bank",
   cubos:"cube", cadastro:"identification-card", agenda:"calendar-check", escudo:"shield-check", maleta:"briefcase", vassoura:"broom", m_admin:"database", m_pronto:"stack", m_integ:"seal-check", m_criar:"hammer", m_proto:"flask", megafone:"megaphone", caminhao:"truck", fechar:"x", dashboard:"gauge",
-  seta:"arrow-right", pontilhado:"circle-dashed", sino:"bell", copiar:"copy"};
+  seta:"arrow-right", pontilhado:"circle-dashed", sino:"bell", copiar:"copy", volume2:"speaker-high", volumex:"speaker-slash"};
 function Icon(p){
   var nm = PH[p.n];
   if(nm) return e("i",{className:"ph-"+(p.peso||"duotone")+" ph-"+nm+" inline-block shrink-0 leading-none "+(p.className||""), style:{fontSize:(p.s||16)+2}, "aria-hidden":true});

@@ -84,7 +84,7 @@ function BarraMenu(p){
 }
 
 // ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
-var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
+var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 22;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
 var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")+"_"+(window.__sorellyAtuando||"")) || "[]").filter(function(a){ return !(a.breve && a.nome==="Uso do app"); }); }catch(x){ return []; } };   // "Uso do app" (em breve) saiu do menu em 02/11/2026: some também das abas que ficaram guardadas
 // Favoritar (27/10/2026; desde 02/11/2026 é com 3 CLIQUES na própria aba, pedido do Marcus): 3 cliques fixam a aba (trava, sem ✕) e 3 cliques de novo soltam. Não existe mais botão na tela.
 // Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
@@ -131,15 +131,18 @@ function AbasAbertas(p){
     if(eFav(de) && eFav(alvo.k)){ var nf = ordena(favs); setFavs(nf); gravarFavoritas(visao, nf); }
     else if(!eFav(de) && !eFav(alvo.k)) grava(ordena(abas));
   };
+  // largura IGUAL em todas as abas, do tamanho do MAIOR nome que está aberto agora (Marcus, 13/11/2026: mais compacto para o lado, cabem as 8 telas); o ✕ continua no mesmo lugar em todas
+  var maiorNome = lista.reduce(function(m, x){ return x.aba==="inicio" ? m : Math.max(m, String(x.nome||"").length); }, 0), largAba = Math.max(6.5, Math.round((maiorNome*0.42+2.6)*10)/10)+"rem";
   return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
     lista.map(function(a){ var on = a.k===kAtual, fixo = a.aba==="inicio", fav = eFav(a.k);
-      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, draggable:!fixo, title:fixo ? undefined : "Segure e arraste para mudar de lugar. Clique 3 vezes para "+(fav ? "soltar dos favoritos" : "fixar nos favoritos"),
+      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, draggable:!fixo, title:fixo ? undefined : (a.setor ? a.setor+" · "+a.nome+". " : "")+"Segure e arraste para mudar de lugar. Clique 3 vezes para "+(fav ? "soltar dos favoritos" : "fixar nos favoritos"),
           onDragStart:function(ev){ setArrastando(a.k); try{ ev.dataTransfer.setData("text/plain", a.k); ev.dataTransfer.effectAllowed = "move"; }catch(x){} },
           onDragOver:function(ev){ if(arrastando) ev.preventDefault(); }, onDrop:function(ev){ soltar(a, ev); }, onDragEnd:function(){ setArrastando(null); },
-          className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50")+(arrastando===a.k ? " opacity-40" : ""), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
-        e("button",{type:"button", onClick:function(ev){ if(ev.detail===3 && !fixo){ alternaFav(a); return; } p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
-          (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
-        (!fixo && !fav) && e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕"),
+          className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50")+(arrastando===a.k ? " opacity-40" : ""), style:{height:LINA, width:fixo ? undefined : largAba, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},   // largura IGUAL em toda aba (Marcus, 13/11/2026): ao fechar a primeira, o ✕ da próxima cai no mesmo lugar e dá para fechar todas sem mexer o mouse
+
+        e("button",{type:"button", onClick:function(ev){ if(ev.detail===3 && !fixo){ alternaFav(a); return; } p.abrir(a, ev); }, className:"flex h-full min-w-0 flex-1 items-center whitespace-nowrap pl-2 pr-1 text-left leading-none"},
+          e("span",{className:"text-[11px] "+(on ? "font-bold" : "")}, a.nome)),
+        (!fixo && !fav) && e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pl-1 pr-2 text-[11px] hover:text-destructive"}, "✕"),
         (fixo || fav) && e("span",{className:"pr-2"})); }));
 }
 
@@ -204,7 +207,7 @@ function MenuSetor(p){
     var de = retangulo(ev && ev.currentTarget);
     var r = p.abrir(n, ev); voar(n.nome, de); return r;
   };
-  return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:73}},
+  return e("div",{className:"sticky "+(p.topo || "top-9")+" z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:53}},
     !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor, cor:p.cor, visao:p.visao}),
     e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
       e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo})),

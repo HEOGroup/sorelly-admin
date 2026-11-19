@@ -1,3 +1,4 @@
+import { MODULOS_REP } from "./rep-filtro.js";
 // Quem pode abrir cada módulo (provisório: por SETOR da pessoa; ajustar aqui com o Marcus).
 // A Diretoria (perfil ADMIN) abre tudo. Os demais abrem o módulo se um dos setores da pessoa (usuario_login.setores) estiver na lista dele; "*" = todo mundo logado.
 // ATENÇÃO: neste atalho a permissão é por MÓDULO inteiro. "Ver só os próprios pedidos" dentro de um módulo continua sendo regra da tela, não do servidor; por isso dados sensíveis ficam em módulos de setor restrito.
@@ -16,10 +17,14 @@ export const SETORES_DO_MODULO = {
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],
   fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
+  sg: ["*"],   // PGR e PCMSO por CNPJ (17/11/2026): todo colaborador logado lê e abre os documentos; a tela mostra só os do CNPJ de cada um, e só RH e diretoria anexam (autorização sg_gerir)
+  jp: ["rh", "pecas"],   // RH › Pagamento em joias (17/11/2026): RH e cadastro de peças (separa as joias); a Diretoria abre tudo; quem autoriza é a autorização joias_autoriza
+  mr: ["marketing"],   // Marketing › Relatório diário (17/11/2026): só Marketing e Diretoria
   mod: [],   // Marketing › Modelos (veio das Encomendas em 12/11/2026): Diretoria e as pessoas de PESSOAS_DO_MODULO (Castilho); a tela também confere a autorização modelos_ver
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
-  avk: ["cadastro", "rh", "financeiro"],   // nota do kit por montadora (12/11/2026): leitura das avaliações das revendedoras; a aba Avaliações › Kits mostra e o bônus da montagem lê
-  bm: ["financeiro"],   // bônus da montagem de kits (12/11/2026): kits por dia e colaboradora, nota e valor a pagar; só Financeiro e Diretoria (montadora não vê valor)
+  rc: ["*"],   // quem é Kit 100% Prata (12/11/2026): todo mundo logado lê (atendimento, agendamento, representantes) e a marcação vale igual em todos os computadores
+  cpe: ["financeiro"],   // Contas a pagar (18/11/2026): baixas dadas no sistema, CNPJ trocado, marca Empresa/Família, contas lançadas à mão e histórico; Financeiro e Diretoria
+  dpc: ["financeiro"],   // configuração do Direcionar (18/11/2026): contas fixas das representantes, regras e valor fora do normal
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   es: ["financeiro"],   // Estoque Sorelly (Financeiro, 09/11/2026): posição mensal do estoque de peças, números altos; só Financeiro e Diretoria
   fx: ["financeiro"],   // Fiscal (Financeiro, 09/11/2026): notas de entrada, saídas e contas por CNPJ, carregados do admin antigo; só Financeiro e Diretoria
@@ -37,7 +42,6 @@ export const SETORES_DO_MODULO = {
   inicio: ["*"],   // comunicados da página inicial (27/10/2026): todo mundo logado lê; quem publica é a Diretoria (regra da tela)
   revdia: ["*"],   // total de revendedoras do dia (automático, DevMaster): todo mundo logado pode ler
   contasreceber: ["financeiro"],   // tela Contas a receber (DevMaster, só leitura): Financeiro e Diretoria (27/10/2026)
-  finativ: ["financeiro"],   // Financeiro › Atividades (03/11/2026): lista do que fica para fazer depois, escrita pela equipe do Financeiro
   fd: ["financeiro"],   // faturamento e contas pagas por dia lançados pela equipe (corte do admin antigo, 29/10/2026): Financeiro e Diretoria
   fatdia: ["financeiro"],   // faturamento do dia anterior (automático, DevMaster): só financeiro (e Diretoria, que já abre tudo)
   // App real da representante (05/11/2026, src/server/estado-itens.js): uma linha por item, o app grava pelo servidor e a equipe pelo navegador.
@@ -46,9 +50,10 @@ export const SETORES_DO_MODULO = {
 };
 
 // Módulos que uma PESSOA específica abre além da Diretoria e dos setores da lista (Marcus, 12/11/2026): Castilho (47, Marketing) abre Modelos e Metas.
-export const PESSOAS_DO_MODULO = { mod: [47], metas: [47] };
+export const PESSOAS_DO_MODULO = { mod: [47, 61], metas: [47] };
 
 export function podeModulo(usuario, modulo) {
+  if (usuario?.repCod) return MODULOS_REP.includes(modulo);   // conta de representante (rep_cod): só rpo e rpf (filtrados por ela no servidor), comunicados e a marca do Kit Prata
   if (usuario?.perfil === "ADMIN") return true;
   if ((PESSOAS_DO_MODULO[modulo] || []).includes(usuario?.pessoaId)) return true;
   const lista = SETORES_DO_MODULO[modulo];
@@ -68,6 +73,7 @@ export const ehSomenteLeitura = (usuario) => usuario?.perfil !== "ADMIN" && usua
 export function bloqueiaEscrita(usuario, caminho) {
   if (!ehSomenteLeitura(usuario)) return false;
   if (/^\/api\/(chat|perfil|auth)\//.test(caminho)) return false;
+  if (caminho === "/api/copia-navegador") return false;   // cópia de segurança do que só está no navegador (17/11/2026): vale para todos, até quem só visualiza
   const podem = SOMENTE_LEITURA[usuario.pessoaId];
   const m = /^\/api\/estado\/([^/]+)/.exec(caminho);
   if (m) {

@@ -30,8 +30,16 @@ function ligarArrastar(){
   document.addEventListener("mouseup", fim, true);
   window.addEventListener("blur", fim);
   // sinaliza que dá para arrastar (mãozinha) nas áreas largas
-  document.addEventListener("mouseover", function(ev){ var el = rolavel(ev.target); if(el && !alvo && !(ev.target.closest && ev.target.closest("input, textarea, select, button, a, label"))) el.style.cursor = "grab"; }, true);
-  document.addEventListener("mouseout", function(ev){ var el = rolavel(ev.target); if(el && !alvo) el.style.cursor = ""; }, true);
+  // 18/11/2026: o Painel do material gráfico (81 cards) travava o mouse porque cada elemento por onde o mouse passava refazia rolavel() (lê scrollWidth e força o navegador a calcular a tela de novo).
+  // Agora só procura de novo quando o mouse sai da área que já foi achada.
+  var ultRol = null;
+  document.addEventListener("mouseover", function(ev){
+    if(alvo || (ultRol && ultRol.contains(ev.target))) return;
+    var el = rolavel(ev.target);
+    if(el && !(ev.target.closest && ev.target.closest("input, textarea, select, button, a, label"))){ if(ultRol && ultRol!==el) ultRol.style.cursor = ""; el.style.cursor = "grab"; ultRol = el; }
+    else if(ultRol && !ultRol.contains(ev.target)){ ultRol.style.cursor = ""; ultRol = null; }
+  }, true);
+  document.addEventListener("mouseout", function(ev){ if(alvo || !ultRol) return; if(!ev.relatedTarget || !ultRol.contains(ev.relatedTarget)){ ultRol.style.cursor = ""; ultRol = null; } }, true);
 }
 
 function iniciarAtalhos(){

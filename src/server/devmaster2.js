@@ -78,6 +78,16 @@ export async function consultarTabela(codigo, opcoes = {}) {
   throw Object.assign(new Error(r.status === 403 ? "O token da DevMaster não libera a tabela " + codigo + "." : String(msg)), { statusCode: r.status === 403 ? 403 : r.status === 404 ? 404 : r.status === 400 ? 400 : 503 });
 }
 
+// Foto de UM produto (13/11/2026, Encomendas › Separar peças): GET /dmaaa/fotos com corpo {codigo}. Devolve {base64, mime} da primeira foto, ou null se o produto não tem foto. Só leitura.
+export async function fotoDoProduto(codigo) {
+  const cod = String(codigo || "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{2,20}$/.test(cod)) return null;
+  const r = await pedir("/dmaaa/fotos", { codigo: cod });
+  if (r.status !== 200 || !Array.isArray(r.json)) return null;
+  const f = r.json.find((x) => x && x.foto);
+  return f ? { base64: String(f.foto), mime: /^\/9j\//.test(String(f.foto)) ? "image/jpeg" : /^iVBOR/.test(String(f.foto)) ? "image/png" : "image/jpeg" } : null;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Revendedoras com KIT ATIVO. Na DevMaster, o kit consignado é o CONDICIONAL (tabela dmafi): status "A" = aberto (tem saldo, sem fechamento), "F" = fechado.
 // Uma revendedora pode ter vários condicionais abertos (o kit vem em 1 a 4 condicionais). Cada revendedora é o cliente (dmaam, aam_codigo = afi_cliente).
@@ -85,12 +95,13 @@ export async function consultarTabela(codigo, opcoes = {}) {
 const TTL_KIT = 10 * 60 * 1000;
 const G = globalThis;
 
-export async function todasAsPaginas(codigo, base) {
+// maxPaginas (19/11/2026): o limite de 60 páginas (30.500 linhas) cortava tabelas maiores em silêncio (produtos dmaaa tem 37.518). Quem precisa da tabela inteira passa um limite maior.
+export async function todasAsPaginas(codigo, base, maxPaginas = 60) {
   let pagina = 0, tudo = [];
   for (;;) {
     const r = await consultarTabela(codigo, { ...base, pagina, registros: 500, ordem: "dm_id" });
     tudo = tudo.concat(r.itens);
-    if (r.registros < 500 || pagina >= 60) return tudo;
+    if (r.registros < 500 || pagina >= maxPaginas) return tudo;
     pagina++;
   }
 }

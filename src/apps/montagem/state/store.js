@@ -11,7 +11,7 @@ import { pkSemearDemo } from "@/apps/montagem/domain/preferencias-rev";
 import { VERSAO_INTERNOS, feitos19, internosDemo, termosDemo } from "@/apps/montagem/domain/internos-demo";
 import { COMIS0 } from "@/apps/montagem/domain/comissoes";
 import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
-import { formasPagamentoPadrao, normalizarVersao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { formasPagamentoPadrao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { espelharAdmin } from "@/apps/montagem/domain/app-rep";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
@@ -33,10 +33,9 @@ import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { tpMigrar } from "@/apps/montagem/domain/trafego";
 import { modMigrar } from "@/apps/montagem/domain/modelas";
-import { bmMigrar } from "@/apps/montagem/domain/bonus-montagem";
-import { LOCAL_BM } from "@/apps/montagem/domain/bonus-montagem-local";
-import { avkSemear } from "@/apps/montagem/domain/avaliacoes-kits";
-import { LOCAL_AVK } from "@/apps/montagem/domain/avaliacoes-kits-local";
+import { jpMigrar } from "@/apps/montagem/domain/joias-pagamento";
+import { sgMigrar } from "@/apps/montagem/domain/seguranca-docs";
+import { mrMigrar } from "@/apps/montagem/domain/relatorio-marketing";
 import { inadMigrar, inadVazio } from "@/apps/montagem/domain/inadimplencia";
 import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
@@ -227,6 +226,15 @@ function aplicaFatNov(s){
   if(s.fatHoje && s.fatHoje.data<="2026-11-09") s.fatHoje = null;
   return s;
 }
+// 12/11/2026 (Marcus): PREVISTO e CARREGAR de cada dia de novembro. Previsto = acertos feitos + Carregar + a realizar. Dia 12: 646 feitos + 3 no Carregar + 1.312 a realizar = 1.961. Os outros dias repetem 1.961, menos o dia 10 (1.969, valor que o Marcus passou). Carregar informado: 09/11 = 13, 10/11 = 4, 12/11 = 3; nos demais dias não foi informado e fica 0 (11/11 ainda falta o Marcus informar). Os acertos e o recebido de cada dia entram por valor em state/fd-patches.js. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFatNov2(s){
+  var DIAS = [["2026-11-03", 22, 0, 1961], ["2026-11-04", 58, 0, 1961], ["2026-11-05", 99, 0, 1961], ["2026-11-06", 207, 0, 1961], ["2026-11-07", 207, 0, 1961], ["2026-11-08", 207, 0, 1961], ["2026-11-09", 325, 13, 1961], ["2026-11-10", 467, 4, 1969], ["2026-11-11", 523, 0, 1961], ["2026-11-12", 646, 3, 1961]];
+  s.carregarDia = Object.assign({}, s.carregarDia); s.restanteDia = Object.assign({}, s.restanteDia);
+  DIAS.forEach(function(d){ s.carregarDia[d[0]] = d[2]; s.restanteDia[d[0]] = {feitos:d[1], carregar:d[2], aRealizar:d[3]-d[1]-d[2]}; });
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-11":{aRealizar:1312, carregar:3}});
+  if(s.fatHoje && s.fatHoje.data<="2026-11-12") s.fatHoje = null;
+  return s;
+}
 // 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
 function aplicaAgendReal(s){
   if(!AG_REAL || !s.agend || !s.agend.config) return s;
@@ -340,6 +348,7 @@ function inicial(){
     if(s.demoListagens!==VERSAO_LISTAGENS){ var dn = novoDia(); s.listagens = dn.listagens; s.kits = dn.kits; s.retPend = []; s.entregasKN = {}; s.abertas = {L1:true, L2:true}; s.kitAberto = null; s.demoListagens = VERSAO_LISTAGENS; s.perfisRev = Object.assign({}, s.perfisRev, {"Beatriz Nogueira":{profissao:"Nail Designer", enderecoCasa:"Rua Fictícia S, 210 - Centro, Curitiba - PR", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR", fone1:"(41) 00000-0088", fone2:"(41) 99900-0088", refs:[{nome:"Maria Aparecida", rel:"Mãe", fone:"(41) 99812-3344"}, {nome:"João Carlos", rel:"Esposo", fone:"(41) 98745-6120"}, {nome:"Rosângela Silva", rel:"Irmã", fone:"(41) 99133-8870"}]}}); }
     // campos novos da configuração entram com o padrão em dados já salvos
     ["tabelaAtiva","tabelaKitBaixo","minVendaApp","limiteMelhores","categorias","pecasKit","pecasSugCat","reposicaoMax","limiteMarcus","limiteAnaliseVendas","comissoesRev","limiteEncomendas","limiteMesaMaior"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = JSON.parse(JSON.stringify(CFG0[f])); });
+    s.cfg.comissoesRev = JSON.parse(JSON.stringify(CFG0.comissoesRev));   // 12/11/2026: a régua de comissão e brinde vale só a do código (nenhuma cópia velha de R$ 48/68 salva no navegador)
     // 20/10/2026: setor Encomendas acabou; as 3 montam de R$ 3.000 para cima e a mesa maior (Agatha) fica com vendas acima de R$ 4.000 (uma vez só, depois o Configurador manda)
     if(!s.cfg.encMesa20){ s.cfg.limiteEncomendas = CFG0.limiteEncomendas; s.cfg.limiteMesaMaior = CFG0.limiteMesaMaior; s.cfg.encMesa20 = true; }
     aplicaFaixas(s.cfg);   // 20/10/2026: anéis em faixa (mínimo a máximo)
@@ -366,6 +375,8 @@ function inicial(){
       s.retPend = (s.retPend||[]).filter(function(r){ return !TESTE_L[r.lid]; });
       s.entregasKN = Object.keys(s.entregasKN||{}).reduce(function(o, id){ if(!kitsFora[id]) o[id] = s.entregasKN[id]; return o; }, {});
       s.avalRep = []; s.recusas = []; s.virada = {}; s.bloqueioNovas = {}; s.filaSimulada = 0; s.abertas = {}; s.kitAberto = null; }
+    // 16/11/2026: Só Encomendas e Mesa maior desligados também em quem já tem estado salvo no navegador (limite 0 = sem limite)
+    if(s.encomendasOffV!==1){ s.encomendasOffV = 1; s.cfg.limiteEncomendas = 0; s.cfg.limiteMesaMaior = 0; }
     if(!s.avalRep){ s.avalRep = avalRepDemo(); s.recusas = RECUSAS0.slice(); s.virada = JSON.parse(JSON.stringify(VIRADA0)); s.bloqueioNovas = {Jessica:true}; }
     if(!s.contasPagar){ s.contasPagar = JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO)); s.verFinanceiro = "total"; }
     if(!s.faturamentoDiario) s.faturamentoDiario = JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO));
@@ -417,6 +428,7 @@ function inicial(){
     if(s.fecha10V!==3){ s.fecha10V = 3; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
     if(s.nov26V!==2){ s.nov26V = 2; aplicaAbreNov(s); }
     if(s.fatNov1V!==2){ s.fatNov1V = 2; aplicaFatNov(s); }   // 09/11/2026: faturamento de 01 a 09/11 (321 acertos e R$ 240.392,16 acumulados, 13 no Carregar)   // 01/11/2026: novembro abre com 2.047 revendedoras, 1.975 previstos e Carregar 0
+    if(s.fatNov2V!==1){ s.fatNov2V = 1; aplicaFatNov2(s); }   // 12/11/2026: previsto e Carregar de cada dia de novembro (03 a 12/11)
     aplicaAgendPatches(s);   // 01/11/2026: abertura de novembro, metas 96/97/98% e viagens do Agendamento (ajustes guardados dentro do próprio agend: state/agend-patches.js)
     aplicaFdFixos(s);   // 01/11/2026: setembro e outubro fechados e abertura de novembro, por valor (state/fd-patches.js)
     if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
@@ -486,10 +498,11 @@ function inicial(){
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
     s.inad = inadMigrar(s.inad);   // Inadimplência: cria vazio ou completa campos novos
+    s.sg = sgMigrar(s.sg);   // PGR e PCMSO por CNPJ (17/11/2026): cria vazio
+    s.jp = jpMigrar(s.jp);   // RH › Pagamento em joias (17/11/2026): cria vazio
+    s.mr = mrMigrar(s.mr);   // Marketing › Relatório diário (17/11/2026): cria com as atividades de partida
     s.mod = modMigrar(s.mod);   // Encomendas › Modelos: cria vazio (ou com os dados reais locais)
     s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
-    s.bm = bmMigrar(s.bm, LOCAL_BM);   // Bônus da montagem de kits (12/11/2026): cria vazio (ou com o mês real local) ou completa campos novos
-    s.avk = avkSemear(s.avk, LOCAL_AVK);   // Nota do kit por montadora (12/11/2026): cria vazio ou põe a leitura real local se for mais nova
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos
     s.inf = infMigrar(s.inf);   // Folders e informativos: cria com as regras do acerto ou completa campos novos
@@ -514,13 +527,12 @@ function inicial(){
     if(s.lysieNovasV!==1){ s.lysieNovasV = 1; var nv0 = (s.novas||[]).slice(); NOVAS0.filter(function(n){ return n.rep==="Lysie" && !nv0.some(function(x){ return x.id===n.id; }); }).forEach(function(n){ nv0.push(JSON.parse(JSON.stringify(n))); }); s.novas = nv0; }
     if(s.lysieDemoV!==1){ s.lysieDemoV = 1; var dSim = new Date(); dSim.setDate(dSim.getDate()+2); s.perfisRev = Object.assign({}, s.perfisRev, {"Simone Prestes":Object.assign({}, (s.perfisRev||{})["Simone Prestes"], {agendado:{data:isoDia(dSim), hora:"10:00"}, profissao:"Manicure", fone1:"(41) 00000-0041"})}); }
     if(!s.negPix) s.negPix = {Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}};   // negociação do Pix direto: Thalita recebe 100% da comissão por Pix direto
-    if(!s.regrasConsignado){ var rv0b = novaVersaoRegras(); s.regrasConsignado = {versoes:[rv0b], atualId:rv0b.id}; }
-    else {
-      // a versão de 27/10/2026 (campo novas) entra ao lado das antigas; antes dessa data a vigente continua a antiga (versaoVigente usa vigenciaDesde)
-      var vsRc = (s.regrasConsignado.versoes||[]).map(normalizarVersao);
-      if(!vsRc.some(function(v){ return v.novas; })) vsRc = vsRc.concat([novaVersaoRegras({id:"rv20261027", vigenciaDesde:"2026-10-27"}, vsRc.length ? vsRc[vsRc.length-1].id : null)]);
-      s.regrasConsignado = Object.assign({}, s.regrasConsignado, {versoes:vsRc});
-    }
+    // REGRAS DO CONSIGNADO SÓ NO CÓDIGO (Marcus, 12/11/2026: "exclui essa tela, tudo para editar vai ser com código"): a cada abertura o sistema refaz a versão a partir de domain/consignado.js,
+    // então todos os computadores usam a mesma tabela e nenhuma cópia velha salva no navegador manda mais. Versão carimbada em kit antigo que não existe mais cai na vigente (versaoDoKit).
+    s.regrasConsignado = {versoes:[novaVersaoRegras({id:"rv20261027", vigenciaDesde:"2026-10-27"})], atualId:"rv20261027"};
+    // quem é Kit 100% Prata vai para o servidor (módulo "rc"); marcas antigas da ficha deste computador sobem junto, sem apagar nada (12/11/2026)
+    s.prataRev = Object.assign({}, s.prataRev);
+    Object.keys(s.perfisRev || {}).forEach(function(n){ if(s.prataRev[n]===undefined && (s.perfisRev[n]||{}).modalidade==="prata") s.prataRev[n] = "prata"; });
     // exemplo de condicionais em aberto (demonstração) para a Andrielle, caso o estado salvo seja anterior a ele
     if(s.perfisRev && s.perfisRev["Andrielle Taborda"] && !s.perfisRev["Andrielle Taborda"].condicionaisAbertas)
       s.perfisRev["Andrielle Taborda"].condicionaisAbertas = [{numero:"091719", pecas:131},{numero:"092240", pecas:6},{numero:"099999", pecas:100}];

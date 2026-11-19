@@ -541,8 +541,8 @@ function KitsNovosParaAgendar(p){
     {k:"ag", t:"", semFiltro:true, v:function(){ return ""; }, exib:function(){ return "Agendar"; }, cel:function(r){ return e("button",{type:"button", title:"Abrir a ficha da revendedora para agendar", onClick:function(){ p.abrir(r.id); }, className:"h-6 rounded-md px-2 text-[13px] font-bold", style:BTN_OURO2}, "Agendar"); }}   // padrao-ok: botão menor, pedido do Marcus (03/11/2026)
   ];
   return e("div",{className:"flex flex-col"},
-    e(Etiqueta,{nome:"Kits novos", info:lista.length+" para agendar", extra:"Vêm direto do setor Kits novos"+(ex && !reais.length ? " · EXEMPLO, nada é gravado" : "")}),
-    lista.length===0 ? null : e(GradeFiltro,{chave:"kitsnovos", rows:linhas, cols:colunas, vazio:"Nenhum kit novo para agendar. Quando a Michele mandar um kit para a Sorelly, ele aparece aqui."}));
+    e(Etiqueta,{nome:"Kits novos", info:lista.length+" para agendar", extra:ex && !reais.length ? "EXEMPLO, nada é gravado" : null}),
+    lista.length===0 ? e("div",{className:"flex h-8 items-center justify-center rounded-b-lg rounded-tr-lg border text-[13px] "+BORDA}, "Nenhum kit novo para agendar") : e(GradeFiltro,{chave:"kitsnovos", rows:linhas, cols:colunas, vazio:"Nenhum kit novo para agendar. Quando a Michele mandar um kit para a Sorelly, ele aparece aqui."}));
 }
 
 // INCLUIR CLIENTE (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não aparece na lista.
@@ -620,8 +620,8 @@ function AbaRevendedorasInternas(){
   var sdm = useState(""), msgDm = sdm[0], setMsgDm = sdm[1], cdm = useState(false), buscandoDm = cdm[0], setBuscandoDm = cdm[1];
   var buscarDm = function(auto){
     if(!apiAtiva()){ if(auto!==true) setMsgDm("Precisa do servidor ligado (veja com o Leonardo)."); return; }
-    setBuscandoDm(true); setMsgDm(auto===true ? "Atualizando da DevMaster…" : "Buscando na DevMaster…");
-    sincronizarDm(cx.dispatch, auto===true).then(function(r){ setMsgDm(r.itens.length+" revendedoras do vendedor Sorelly (02)"+(r.brinde && r.brinde.pronto===false ? " · vendas ainda calculando, busque de novo em 1 minuto" : ""));
+    setBuscandoDm(true); setMsgDm(auto===true ? "" : "Buscando na DevMaster…");
+    sincronizarDm(cx.dispatch, auto===true).then(function(r){ setMsgDm(r.brinde && r.brinde.pronto===false ? "Vendas ainda calculando, busque de novo em 1 minuto" : (auto===true ? "" : "Atualizado"));
     }).catch(function(x){ setMsgDm(x.message); }).finally(function(){ setBuscandoDm(false); });
   };
   var todas = s.revInternas || [];
@@ -637,20 +637,22 @@ function AbaRevendedorasInternas(){
   var irParaDia = function(iso){ escolherDia(iso); setVisao("lista"); };
   var segBtn = function(k, t){ var on = visao===k; return e("button",{key:k, type:"button", onClick:function(){ setVisao(k); }, "aria-pressed":on, className:"h-8 px-3.5 text-[13px] font-semibold "+(on ? "" : "hover:bg-white/10"), style:on ? BTN_OURO2 : null}, t); };
   // Lista/Calendário e Buscar da DevMaster ficam no lado esquerdo, em cima do calendário; a coluna dos horários sobe até o alto da tela (Marcus, 03/11/2026)
-  var cabecalho = e("div",{className:"flex flex-col gap-2"},
-    e(PageHead,{t:"Revendedoras internas", sub:"203 revendedoras do vendedor Sorelly · agenda, registro de contatos e multa de remarcação"}),
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-        e("div",{className:"inline-flex overflow-hidden rounded-lg border "+BORDA}, segBtn("lista","Lista"), segBtn("calendario","Calendário")),
-        e("button",{type:"button", disabled:buscandoDm, onClick:function(){ buscarDm(); }, title:"Busca na DevMaster as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra as que faltam", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold disabled:opacity-50", style:BTN_OURO2}, "↻ Buscar da DevMaster"),
-        e("button",{type:"button", onClick:function(){ setIncluindo(true); }, title:"Para quem vem à Sorelly e não está na lista (kit retornando, kit novo, brinde de indicação)", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold", style:BTN_OURO2}, "+ Incluir cliente"),
-        msgDm && e("span",{className:"text-[13px]"}, msgDm)));
+  // 12/11/2026 (Marcus: "simplifique, só o título e a quantidade, borda, está desalinhado"): título + quantidade à esquerda, botões à direita, tudo numa barra com borda
+  var cabecalho = e("div",{className:"rounded-xl border bg-[#131315] px-3 py-2 "+BORDA},
+    e(PageHead,{t:e("span",{className:"flex items-baseline gap-3"}, "Revendedoras internas", e("b",{className:"text-[20px] font-bold tabular-nums text-primary"}, todas.length)),
+      children:[
+        msgDm && e("span",{key:"m", className:"flex h-8 items-center text-[13px]"}, msgDm),
+        e("div",{key:"s", className:"inline-flex overflow-hidden rounded-lg border "+BORDA}, segBtn("lista","Lista"), segBtn("calendario","Calendário")),
+        e("button",{key:"b", type:"button", disabled:buscandoDm, onClick:function(){ buscarDm(); }, "aria-label":"Buscar da DevMaster", title:"Buscar da DevMaster: traz as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra as que faltam. Também roda sozinho ao abrir a tela e a cada 10 minutos.", className:"h-8 w-8 rounded-lg text-[13px] font-bold disabled:opacity-50", style:BTN_OURO2}, "↻"),
+        e("button",{key:"i", type:"button", onClick:function(){ setIncluindo(true); }, title:"Para quem vem à Sorelly e não está na lista (kit retornando, kit novo, brinde de indicação)", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold", style:BTN_OURO2}, "+ Incluir cliente")]}));
   return e(React.Fragment,null,
     incluindo && e(JanelaIncluirCliente,{lista:todas, hojeIso:hojeIso, dispatch:cx.dispatch, abrir:setAberto, irParaDia:irParaDia, fechar:function(){ setIncluindo(false); }}),
     visao==="lista"
       ? e("div",{className:"flex flex-col gap-3"},
-          e("div",{className:"grid gap-3 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]"},
-            e("div",{className:"flex flex-col gap-2"}, cabecalho, e("div",{className:"flex-1", style:{minHeight:ALTURA_AGENDA}}, e(CalendarioTopo,{lista:todas, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso}))),
-            e("div",{className:"min-h-[560px] overflow-hidden"}, e(HorariosDoDia,{lista:todas, dia:dia, hojeIso:hojeIso, abrir:setAberto, dispatch:cx.dispatch}))),
+          cabecalho,
+          e("div",{className:"grid items-stretch gap-3 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]"},
+            e("div",{className:"min-h-[560px]", style:{minHeight:ALTURA_AGENDA}}, e(CalendarioTopo,{lista:todas, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso})),
+            e("div",{className:"min-h-[560px] overflow-hidden rounded-xl border bg-[#131315] p-2 "+BORDA}, e(HorariosDoDia,{lista:todas, dia:dia, hojeIso:hojeIso, abrir:setAberto, dispatch:cx.dispatch}))),
           e(KitsNovosParaAgendar,{lista:todas, hojeIso:hojeIso, abrir:setAberto}),
           e("div",{className:"flex flex-col"}, e(Etiqueta,{nome:"Revendedoras internas", info:todas.length+" total"}), e(TabelaAgenda,{lista:todas, hojeIso:hojeIso, s:s, abrir:setAberto})))
       : e(React.Fragment,null, cabecalho, e(CalendarioGrande,{lista:todas, mes:mesG, setMes:setMesG, hojeIso:hojeIso, abrir:setAberto, irParaDia:irParaDia})),

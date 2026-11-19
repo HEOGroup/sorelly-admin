@@ -96,9 +96,32 @@ var baixaDividas = function(ff, prestId){
   return {porId:por, falta:falta, sobra:sobra, liga:liga, lista:dvs};
 };
 var saldoPrestador = function(ff, id){ return baixaDividas(ff, id).falta; };
+// Prazo da dívida de prestador (18/11/2026, Marcus: "data de pagamento até o final do mês"): o prazo gravado vale; sem prazo, vale o ÚLTIMO DIA DO MÊS DE HOJE. Assim a dívida em aberto sempre aparece em Contas a pagar.
+var prazoDaDivida = function(d, hoje){ if(d && d.prazo) return d.prazo; var h = String(hoje || hojeIso()).slice(0, 7).split("-").map(Number); return h[0]+"-"+String(h[1]).padStart(2, "0")+"-"+String(new Date(h[0], h[1], 0).getDate()).padStart(2, "0"); };
 var vigenciaEm = function(ff, pid, ym){ var pr = ff.prolabore[pid]; if(!pr) return null; return (pr.vigencias||[]).filter(function(v){ return v.desde<=ym; }).sort(function(a, b){ return b.desde.localeCompare(a.desde); })[0] || null; };
 var liquidoDe = function(bruto, inss, irrf){ return r2((bruto||0)-(inss||0)-(irrf||0)); };
 
+// DÍVIDAS DOS PRESTADORES DA FAMÍLIA (Greicy, Rebel Mode, 68 Gang...) como linhas da lista (Marcus, 18/11/2026: "todos poderiam estar no contas a pagar, de cada sócio, com data... e conforme vai entrando pagamento vai liquidando a dívida").
+// Cada dívida é UMA linha: Dono = sócio responsável pelo prestador; vence no prazo gravado (sem prazo, no último dia do mês); o valor é o que AINDA FALTA depois dos repasses (Pix do Direcionar e lançados no Financeiro familiar); quitada vira Paga. SÓ LEITURA.
+function itensDividasPrestadores(ff, hj){
+  if(!ff || !ff.dividas || !ff.prest) return [];
+  var pers = {}; (ff.personas || []).forEach(function(p){ pers[p.id] = p.nome; });
+  hj = hj || hojeIso(); var out = [];
+  ff.prest.forEach(function(pr){
+    var bx = baixaDividas(ff, pr.id);
+    if(!pr.ativo && !(bx.falta>0.005)) return;   // prestador desativado com dívida em aberto continua aparecendo
+    (bx.lista || []).forEach(function(d){
+      var b = bx.porId[d.id]; if(!b) return;
+      var falta = Math.round((b.falta || 0)*100)/100, quitada = falta<=0.005, venc = prazoDaDivida(d, hj), ult = quitada ? (b.fechouEm || d.data) : "";
+      // comprovantes dos pagamentos que abateram esta dívida (Marcus, 19/11/2026: o comprovante aparece também em Contas a pagar): do Pix (ff.pix) ou do próprio repasse
+      var comps = (b.cred || []).filter(function(c){ return c.tipo==="pix"; }).map(function(c){ var rp = ff.repasses.find(function(q){ return q.id===c.rid; }) || {}, px = rp.origemPixLancId ? (ff.pix || []).find(function(q){ return q.id===rp.origemPixLancId; }) : null, f = px || rp; return f.compKey ? {key:f.compKey, valor:c.v, data:c.d} : null; }).filter(Boolean);
+      var atraso = !quitada && venc<hj ? Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(venc+"T00:00:00")) / 86400000)) : 0;
+      out.push({id:"ffd|"+d.id, chave:"ffd|"+d.id, ff:true, ffAba:"ffprest", nome:pr.nome+" · "+(d.titulo || d.descricao || d.codigo || "Dívida"), nat:"", natNome:"Prestador"+(pr.servico ? " · "+pr.servico : ""), filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família",
+        venc:venc, emissao:d.data || "", valor:quitada ? d.valor : falta, valorTitulo:d.valor, status:quitada ? "pago" : "apagar", baixa:ult, mes:String(quitada ? ult : venc).slice(0, 7), atraso:atraso, rateioTxt:pers[pr.responsavelId] || "", saidaTxt:"—", formaTxt:"Pix", comps:comps, pagoPorPix:(b.cred || []).some(function(c){ return c.tipo==="pix"; })});
+    });
+  });
+  return out;
+}
 // alertas (só do mês corrente) e regras
 function alertasDe(ff, hoje){
   var h = hoje||hojeIso(), ym = h.slice(0,7), out = [], nome = function(id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.nome : "—"; };
@@ -158,6 +181,7 @@ function ffReduz(s, a){
       return ok("Conta lançada", "Contas a pagar", "Lançou conta", ds, nomeP(a.personaId)+" · "+money(vl)+(rec==="unica" ? "" : rec==="fixa" ? " · fixa (24 meses)" : " · parcelada até "+nomeMes(fim))); }
     case "conta_set": { var cs = conta(a.id); if(!cs) return recusa("Conta não encontrada."); var pch = Object.assign({}, a.patch); if(pch.personaId!==undefined){ var dst2 = destinoConta(ff, pch.personaId); pch.personaId = dst2.personaId; pch.rateio = dst2.rateio; } Object.assign(cs, pch); return ok("Conta atualizada", "Contas a pagar", "Editou conta", cs.descricao); }
     case "conta_del": { var cdl = conta(a.id); if(!cdl) return recusa("Conta não encontrada."); ff.contas = ff.contas.filter(function(c){ return c.id!==a.id; }); delete ff.parcelas[a.id]; return ok("Conta excluída", "Contas a pagar", "Excluiu conta", cdl.descricao, "com todas as parcelas"); }
+    case "conta_encerrar": { var cen = conta(a.id); if(!cen) return recusa("Conta não encontrada."); var pen = ff.parcelas[a.id] || {}, restam = [], tiradas = 0; Object.keys(pen).sort().forEach(function(m){ var pp = pen[m]; if((pp.pagamentos||[]).length){ restam.push(m); } else { delete pen[m]; tiradas++; } }); if(!tiradas) return recusa("Não há parcela em aberto para tirar."); if(!restam.length){ ff.contas = ff.contas.filter(function(c){ return c.id!==a.id; }); delete ff.parcelas[a.id]; return ok("Conta encerrada", "Contas a pagar", "Encerrou conta", cen.descricao, tiradas+" parcelas em aberto tiradas · sem pagamento anterior, a conta saiu"); } cen.encerraEm = restam[restam.length-1]; return ok("Conta encerrada", "Contas a pagar", "Encerrou conta", cen.descricao, tiradas+" parcelas em aberto tiradas · histórico pago mantido ("+restam.length+")"); }
     case "conta_estender": { var ce = conta(a.id); if(!ce) return recusa("Conta não encontrada."); var ps = Object.keys(ff.parcelas[a.id]||{}).sort(), ult = ps[ps.length-1], vv = r2(a.valor); if(!(vv>0)) return recusa("Informe o valor das novas parcelas.");
       var ate = a.ateMes || somaMes(ult, 24); if(ate<=ult) return recusa("O mês final precisa ser depois da última parcela ("+nomeMes(ult)+")."); for(var m2=somaMes(ult, 1); m2<=ate; m2=somaMes(m2, 1)) ff.parcelas[a.id][m2] = {valor:vv, pagamentos:[]}; ce.encerraEm = a.ateMes ? ate : null;
       return ok("Conta estendida", "Contas a pagar", "Estendeu conta", ce.descricao, "até "+nomeMes(ate)); }
@@ -200,8 +224,38 @@ function ffReduz(s, a){
     case "pix_meta": { ff.pixMeta[a.personaId+"|"+a.ym] = r2(a.valor); return ok("Meta salva", "PIX revendedoras", "Definiu meta de PIX", nomeP(a.personaId)+" · "+nomeMes(a.ym), money(a.valor)); }
     case "pix_add": { var pv2 = r2(a.valor); if(!a.personaId || !a.data || !(pv2>0)) return recusa("Informe data, valor e pessoa."); var l = {id:uid("px"), personaId:a.personaId, data:a.data, valor:pv2, origem:String(a.origem||"").trim(), contaId:a.contaId||"", forma:a.forma||"PIX", auditoria:"PENDENTE", auditadoPor:""}; ff.pix.push(l); syncRepasse(l);
       return ok("PIX anotado (aguardando conferência)", "PIX revendedoras", "Lançou PIX", (l.origem||"sem nome")+" · "+nomeP(a.personaId), money(pv2)); }
-    case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
-    case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
+    case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); if((ff.pixUsados||{})[lx.id] && a.patch && a.patch.valor!==undefined && r2(a.patch.valor)!==r2(lx.valor)) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[lx.id].rev||"uma revendedora")+": o valor não muda."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
+    // editar o PIX anotado (Lucas, 18/11/2026): só enquanto estiver "Aguardando" a conferência
+    case "pix_editar": { var le = ff.pix.find(function(x){ return x.id===a.id; }); if(!le) return recusa("PIX não encontrado.");
+      if((le.auditoria||"PENDENTE")!=="PENDENTE") return recusa("PIX já conferido não pode ser alterado.");
+      var pe = a.patch||{}, ve = pe.valor!==undefined ? r2(pe.valor) : le.valor;
+      if(!(ve>0)) return recusa("Informe o valor do PIX.");
+      if((ff.pixUsados||{})[le.id] && r2(ve)!==r2(le.valor)) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[le.id].rev||"uma revendedora")+": o valor não muda.");
+      if(pe.data!==undefined && !/^\d{4}-\d{2}-\d{2}$/.test(pe.data)) return recusa("Informe a data do PIX.");
+      var antesE = money(le.valor)+" · "+(le.origem||"sem nome")+" · "+le.data;
+      if(pe.data!==undefined) le.data = pe.data;
+      if(pe.origem!==undefined) le.origem = String(pe.origem).trim();
+      if(pe.contaId!==undefined) le.contaId = pe.contaId||"";
+      le.valor = ve;
+      (le.hist = le.hist||[]).push({em:new Date().toISOString().slice(0,10), por:por, antes:antesE});
+      syncRepasse(le);
+      return ok("PIX alterado", "PIX revendedoras", "Editou PIX", (le.origem||"sem nome")+" (antes: "+antesE+")", money(le.valor)); }
+    // COMPROVANTE do Pix (Marcus, 19/11/2026): a imagem fica no servidor (/api/anexos, módulo ff); aqui só a chave. Vale em Pix já conferido também (anexar não muda valor nem conta). a.key vazio = tirar o comprovante.
+    case "pix_comp": { var lc = ff.pix.find(function(x){ return x.id===a.id; }); if(!lc) return recusa("PIX não encontrado.");
+      if(a.key && !/^an_[a-z0-9]{6,40}$/.test(String(a.key))) return recusa("Comprovante inválido.");
+      if(a.key){ lc.compKey = String(a.key); lc.compNome = String(a.nome||"").slice(0, 120); lc.compTipo = String(a.tipo||"").slice(0, 60); } else { delete lc.compKey; delete lc.compNome; delete lc.compTipo; }
+      return ok(a.key ? "Comprovante anexado" : "Comprovante retirado", "PIX revendedoras", a.key ? "Anexou comprovante" : "Retirou comprovante", lc.origem||"sem nome", money(lc.valor)); }
+    // soltar o PIX de um acerto cancelado (a marca "usado no acerto" sai e o PIX volta à lista da revendedora). Só Diretoria/sócios chegam aqui (módulo ff).
+    case "pix_soltar": { var lt = ff.pix.find(function(x){ return x.id===a.id; }); if(!lt) return recusa("PIX não encontrado."); if(!(ff.pixUsados||{})[lt.id]) return recusa("");
+      var revT = ff.pixUsados[lt.id].rev || ""; delete ff.pixUsados[lt.id]; return ok("PIX solto do acerto", "PIX revendedoras", "Soltou PIX do acerto", (lt.origem||"sem nome")+(revT ? " · acerto de "+revT : ""), money(lt.valor)); }
+    // o mesmo para um pago lançado à mão ou vindo do Direcionar (não vem de PIX do ff): o comprovante fica no próprio repasse
+    case "repasse_comp": { var rc = ff.repasses.find(function(x){ return x.id===a.id; }); if(!rc) return recusa("Não encontrado.");
+      if(rc.origemPixLancId) return recusa("Esse pago veio de um PIX: o comprovante fica no PIX.");
+      if(a.key && !/^an_[a-z0-9]{6,40}$/.test(String(a.key))) return recusa("Comprovante inválido.");
+      if(a.key){ rc.compKey = String(a.key); rc.compNome = String(a.nome||"").slice(0, 120); rc.compTipo = String(a.tipo||"").slice(0, 60); } else { delete rc.compKey; delete rc.compNome; delete rc.compTipo; }
+      return ok(a.key ? "Comprovante anexado" : "Comprovante retirado", "Prestadores", a.key ? "Anexou comprovante" : "Retirou comprovante", rc.origem, money(rc.valor)); }
+    case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado.");
+      if((ff.pixUsados||{})[ld.id]) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[ld.id].rev||"uma revendedora")+": não se exclui. Se o acerto não vale mais, o Atendimento solta o PIX no próprio acerto."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
     case "pix_div": { var lv = ff.pix.find(function(x){ return x.id===a.id; }); if(!lv) return recusa("PIX não encontrado."); var tp = a.tipo==="conta" ? "conta" : a.tipo==="data" ? "data" : "valor";
       if(tp==="valor"){ var nv = r2(a.valor); if(!(nv>0)) return recusa("Informe o valor que entrou de verdade."); if(lv.valorOriginal==null) lv.valorOriginal = lv.valor; lv.valor = nv; }
       else if(tp==="data"){ if(!a.data) return recusa("Informe a data em que entrou."); if(lv.dataOriginal==null) lv.dataOriginal = lv.data; lv.data = a.data; }
@@ -212,7 +266,7 @@ function ffReduz(s, a){
     case "prest_add": { var pn = String(a.nome||"").trim(); if(!pn) return recusa("Informe o nome."); ff.prest.push({id:uid("pr"), nome:pn, servico:a.servico||"", chavePix:a.chavePix||"", obs:"", responsavelId:a.responsavelId||"", ativo:true}); return ok("Prestador criado", "Prestadores", "Criou prestador", pn); }
     case "prest_set": { var pt = ff.prest.find(function(x){ return x.id===a.id; }); if(!pt) return recusa("Prestador não encontrado."); Object.assign(pt, a.patch); return ok("Salvo", "Prestadores", a.patch.ativo===false ? "Finalizou prestador" : a.patch.ativo===true ? "Reabriu prestador" : "Editou prestador", pt.nome); }
     case "prest_del": { var px = ff.prest.find(function(x){ return x.id===a.id; }); if(!px) return recusa("Prestador não encontrado."); ff.prest = ff.prest.filter(function(x){ return x.id!==a.id; }); ff.dividas = ff.dividas.filter(function(x){ return x.prestId!==a.id; }); ff.repasses = ff.repasses.filter(function(x){ return x.prestId!==a.id; }); ff.contasBanc.forEach(function(c){ if(c.prestadorId===a.id) c.prestadorId = ""; }); return ok("Prestador excluído", "Prestadores", "Excluiu prestador", px.nome, "com dívidas e repasses"); }
-    case "divida_add": { var dv = r2(a.valor); if(!a.prestId || !a.data || !(dv>0)) return recusa("Informe prestador, data e valor."); var dnovo = {id:uid("dv"), prestId:a.prestId, valor:dv, data:a.data, prazo:a.prazo||"", descricao:String(a.descricao||"").trim(), codigo:String(a.codigo||"").trim(), titulo:String(a.titulo||"").trim()}; if(a.arquivoId){ dnovo.arquivoId = a.arquivoId; dnovo.arquivoNome = a.arquivoNome||""; } ff.dividas.push(dnovo); var pd = ff.prest.find(function(x){ return x.id===a.prestId; }); return ok("Dívida lançada", "Prestadores", "Lançou dívida", pd ? pd.nome : "", (dnovo.codigo ? dnovo.codigo+" · " : "")+money(dv)); }
+    case "divida_add": { var dv = r2(a.valor); if(!a.prestId || !a.data || !(dv>0)) return recusa("Informe prestador, data e valor."); var dnovo = {id:uid("dv"), prestId:a.prestId, valor:dv, data:a.data, prazo:a.prazo||"", descricao:String(a.descricao||"").trim(), codigo:String(a.codigo||"").trim(), titulo:String(a.titulo||"").trim()}; if(a.arquivoId){ dnovo.arquivoId = a.arquivoId; dnovo.arquivoNome = a.arquivoNome||""; } ff.dividas.push(dnovo); var pd = ff.prest.find(function(x){ return x.id===a.prestId; }); if(pd && pd.ativo===false) pd.ativo = true; return ok("Dívida lançada", "Prestadores", "Lançou dívida", pd ? pd.nome : "", (dnovo.codigo ? dnovo.codigo+" · " : "")+money(dv)); }
     case "divida_import": { var dvi = r2(a.valor); if(!a.prestId || !a.data || !(dvi>0)) return recusa("Informe prestador, data e valor."); var cod = String(a.codigo||"").trim(); var ja = cod ? ff.dividas.find(function(y){ return y.prestId===a.prestId && y.codigo===cod; }) : null; var did = ja ? ja.id : uid("dv");
       if(!ja) ff.dividas.push({id:did, prestId:a.prestId, valor:dvi, data:a.data, prazo:"", descricao:String(a.descricao||"").trim(), codigo:cod, titulo:String(a.titulo||"").trim(), arquivoId:a.arquivoId||"", arquivoNome:a.arquivoNome||""}); else { ja.valor = dvi; if(a.titulo) ja.titulo = a.titulo; if(a.descricao) ja.descricao = a.descricao; if(a.arquivoId){ ja.arquivoId = a.arquivoId; ja.arquivoNome = a.arquivoNome||""; } }
       var novos = 0; (a.pagamentos||[]).forEach(function(pg){ var v = r2(pg.valor); if(!(v>0) || !pg.data) return; if(ff.repasses.some(function(r){ return r.prestId===a.prestId && r.divId===did && Math.abs(r.valor-v)<0.005 && r.data===pg.data; })) return; var pxi = ff.prest.find(function(x){ return x.id===a.prestId; }); ff.repasses.push({id:uid("rp"), prestId:a.prestId, valor:v, data:pg.data, origem:String(pg.origem||"Não informado"), forma:"PIX", conta:"", chavePixDestino:pxi ? pxi.chavePix : "", origemPixPersonaId:"", socioId:a.socioId||"", divId:did}); novos++; });
@@ -220,9 +274,18 @@ function ffReduz(s, a){
     case "divida_set": { var ds = ff.dividas.find(function(x){ return x.id===a.id; }); if(!ds) return recusa("Dívida não encontrada."); var pa = a.patch||{}; ["data", "prazo", "codigo", "titulo", "descricao"].forEach(function(k){ if(pa[k]!==undefined) ds[k] = String(pa[k]).trim(); }); if(pa.valor!==undefined){ var vn = r2(pa.valor); if(!vn) return recusa("Valor inválido."); ds.valor = ds.valor<0 ? -Math.abs(vn) : Math.abs(vn); } return ok("Salvo", "Prestadores", "Editou dívida", ds.codigo||ds.descricao||"", money(ds.valor)); }
     case "divida_fechar": { var dfz = ff.dividas.find(function(x){ return x.id===a.id; }); if(!dfz) return recusa("Dívida não encontrada."); var bx = baixaDividas(ff, dfz.prestId).porId[dfz.id]; var sf0 = bx ? bx.falta : 0; if(!(sf0>0.005)) return recusa("Não há valor a fechar."); ff.dividas.push({id:uid("dv"), prestId:dfz.prestId, valor:-sf0, data:hojeIso(), prazo:"", descricao:"Fechada no valor atual", divId:dfz.id, fechamento:true}); return ok("Dívida fechada", "Prestadores", "Fechou dívida", dfz.codigo||dfz.descricao||"", money(sf0)); }
     case "divida_del": { var dd = ff.dividas.find(function(x){ return x.id===a.id; }); if(!dd) return recusa("Não encontrada."); ff.dividas = ff.dividas.filter(function(x){ return x.id!==a.id; }); return ok("Dívida excluída", "Prestadores", "Excluiu dívida", money(dd.valor)); }
+    // Pix confirmado no Direcionar para um prestador da família (18/11/2026): vira repasse sozinho (abate a dívida). Chave origemDirecionar = id do Pix#n: não duplica; reabrir o Pix retira.
+    case "repasse_dir": { if(!a.origemDirecionar) return recusa("Pix sem identificação."); if(ff.repasses.some(function(x){ return x.origemDirecionar===a.origemDirecionar; })) return recusa("");
+      var pxd = ff.prest.find(function(x){ return x.id===a.prestId; }), vd = r2(a.valor); if(!pxd || !(vd>0)) return recusa("");
+      // o mesmo Pix já lançado à mão (mesmo prestador, valor, dia e quem pagou) não conta duas vezes (revisão de 18/11/2026)
+      var nmO = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }, dtD = a.data||hojeIso();
+      if(ff.repasses.some(function(x){ return x.prestId===pxd.id && !x.origemDirecionar && Math.abs(x.valor-vd)<0.005 && x.data===dtD && nmO(x.origem)===nmO(a.origem) && nmO(a.origem)!=="" && nmO(a.origem)!=="pix revendedora"; })) return recusa("");
+      ff.repasses.push({id:uid("rp"), prestId:pxd.id, valor:vd, data:a.data||hojeIso(), origem:String(a.origem||"").trim()||"PIX revendedora", forma:"PIX", conta:a.contaTxt||"", chavePixDestino:pxd.chavePix||"", origemPixPersonaId:pxd.responsavelId||"", socioId:"", divId:"", origemDirecionar:a.origemDirecionar});
+      return ok("Pix do Direcionar lançado como repasse", "Prestadores", "Repasse do Direcionar", pxd.nome, money(vd)); }
+    case "repasse_dir_desfaz": { var antesR = ff.repasses.length; ff.repasses = ff.repasses.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.repasses.length===antesR) return recusa(""); return ok("Repasse do Direcionar retirado"); }
     case "repasse_add": { var rv = r2(a.valor); if(!a.prestId || !a.data || !(rv>0)) return recusa("Informe prestador, data e valor."); if(!String(a.origem||"").trim()) return recusa("Informe quem pagou."); var pxr = ff.prest.find(function(x){ return x.id===a.prestId; });
       if(a.pixRevendedora && (!pxr || !pxr.responsavelId)) return recusa("Defina o sócio responsável do prestador para contar como PIX de revendedora.");
-      ff.repasses.push({id:uid("rp"), prestId:a.prestId, valor:rv, data:a.data, origem:String(a.origem).trim(), forma:a.forma||"PIX", conta:a.contaTxt||"", chavePixDestino:a.chavePixDestino||(pxr ? pxr.chavePix : ""), origemPixPersonaId:a.pixRevendedora ? pxr.responsavelId : "", socioId:a.socioId||"", divId:a.divId||""}); return ok("Repasse lançado", "Prestadores", "Lançou repasse", pxr ? pxr.nome : "", money(rv)); }
+      ff.repasses.push({id:uid("rp"), prestId:a.prestId, valor:rv, data:a.data, origem:String(a.origem).trim(), forma:a.forma||"PIX", conta:a.contaTxt||"", chavePixDestino:a.chavePixDestino||(pxr ? pxr.chavePix : ""), origemPixPersonaId:a.pixRevendedora ? pxr.responsavelId : "", socioId:a.socioId||"", divId:a.divId||"", origemDirecionar:a.origemDirecionar||""}); return ok("Repasse lançado", "Prestadores", "Lançou repasse", pxr ? pxr.nome : "", money(rv)); }
     case "repasse_set": { var rs = ff.repasses.find(function(x){ return x.id===a.id; }); if(!rs) return recusa("Não encontrado."); var pr2 = a.patch||{}; if(pr2.divId!==undefined) rs.divId = pr2.divId; if(!rs.origemPixLancId){ ["data", "origem", "forma"].forEach(function(k){ if(pr2[k]!==undefined) rs[k] = String(pr2[k]).trim(); }); if(pr2.valor!==undefined){ var vr = r2(pr2.valor); if(!(vr>0)) return recusa("Valor inválido."); rs.valor = vr; } } return ok("Salvo", "Prestadores", "Editou envio", rs.origem, money(rs.valor)); }
     case "repasse_del": { var rd = ff.repasses.find(function(x){ return x.id===a.id; }); if(!rd) return recusa("Não encontrado."); if(rd.origemPixLancId) return recusa("Esse repasse veio de um PIX: edite ou exclua o PIX."); ff.repasses = ff.repasses.filter(function(x){ return x.id!==a.id; }); return ok("Repasse excluído", "Prestadores", "Excluiu repasse", money(rd.valor)); }
     // ---- alertas, fechamento
@@ -235,5 +298,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };

@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — pages/ComissaoLink.js
-// Financeiro → Comissões → Link de pagamento: bônus do setor (Hellen) pelas faixas do valor pago em links no mês. As faixas ficam em Link de pagamento → Análises.
+// Financeiro → Comissões → Link de pagamento: bônus do setor (Helen) pelas faixas do valor pago em links no mês. As faixas ficam em Link de pagamento → Análises.
 // Os links pagos contam pelo dia do pagamento, mesmo que o kit/revendedora ainda não tenha chegado; os links já descontados em acertos aparecem à parte.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Faixa, Indicador, LINHA, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
@@ -17,7 +17,7 @@ function AbaComissaoLink(){
   var usados = lp.solicitacoes.filter(function(x){ return x.usadoEm && mesDe(x.pagoEm || x.criadoEm)===mes; });
   var totalUsado = usados.reduce(function(t, x){ return t+(x.usadoValor||0); }, 0);
   return e(Pagina,null,
-    e(PageHead,{t:"Comissão do Link de pagamento", sub:"Bônus do setor (Hellen) pelo valor pago em links no mês. Faixas editáveis em Link de pagamento → Análises."},
+    e(PageHead,{t:"Comissão do Link de pagamento", sub:"Bônus do setor (Helen) pelo valor pago em links no mês. Faixas editáveis em Link de pagamento → Análises."},
       e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) st[1](ev.target.value); }, className:"h-9 rounded-lg bg-black/30 px-3 text-[13px] ring-1 ring-white/15"})),
     e(Faixa,{n:4}, e(Indicador,{t:"Valor pago em links", v:formatarReais(ind.valorCoorte), cor:"ok", sub:ind.pagosCoorte+" links pagos"}), e(Indicador,{t:"Bônus do mês", v:formatarReais(b.valor), cor:"total", sub:b.min!=null ? "Faixa a partir de "+formatarReais(b.min) : "Abaixo da primeira faixa"}),
       e(Indicador,{t:"Próxima faixa", v:prox ? formatarReais(prox.min) : "—", cor:"info", sub:prox ? "Faltam "+formatarReais(prox.min-ind.valorCoorte)+" para "+formatarReais(prox.valor) : "Já está na última faixa"}),

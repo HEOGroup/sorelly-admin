@@ -5,7 +5,7 @@
 //   · Regras internas: prazos e bloqueios das representantes (representante NÃO tem bônus, decisão de 19/10/2026)
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { formasPagamentoPadrao } from "@/apps/montagem/domain/consignado";
-import { Din, EditorRegrasConsignado } from "@/apps/montagem/pages/RegrasConsignado";
+import { Din } from "@/apps/montagem/pages/RegrasConsignado";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO, NumInput } from "@/apps/montagem/ui/input";
@@ -99,15 +99,14 @@ function EditorInternas(p){
   }));
 }
 
-var ABAS_CFG = [["consignado","Regras do consignado"],["formas","Formas de pagamento"],["internas","Regras internas"]];
+var ABAS_CFG = [["formas","Formas de pagamento"],["internas","Regras internas"]];   // 12/11/2026: a tela "Regras do consignado" foi excluída; essas regras agora só se mudam no código (domain/consignado.js)
 function AbaConfigRepresentantes(){
-  var ta = useState("consignado"), aba = ta[0], setAba = ta[1];
+  var ta = useState("formas"), aba = ta[0], setAba = ta[1];
   return e(React.Fragment,null,
-    e(PageHead,{t:"Configurações das representantes", sub:"Aqui se edita tudo. A tela Regras só mostra o que está configurado, e o app da representante lê dos mesmos números."}),
+    e(PageHead,{t:"Configurações das representantes", sub:"Formas de pagamento e regras internas. Comissão, brinde e multas são definidas no código."}),
     e("div",{className:"flex flex-wrap gap-1.5"}, ABAS_CFG.map(function(a){
       return e("button",{key:a[0], onClick:function(){ setAba(a[0]); },
         className:"rounded-lg px-4 py-2 text-[13.5px] font-semibold ring-1 "+(aba===a[0] ? "bg-primary/15 text-primary ring-2 ring-primary" : "bg-card ring-border hover:bg-muted/40")}, a[1]); })),
-    aba==="consignado" && e(EditorRegrasConsignado,null),
     aba==="formas" && e(EditorFormasPagamento,null),
     aba==="internas" && e(EditorInternas,null));
 }

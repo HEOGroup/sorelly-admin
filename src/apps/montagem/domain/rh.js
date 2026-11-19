@@ -5,6 +5,7 @@ import { globLocal } from "@/lib/glob-local";
 // A lista de colaboradores é a lista de funcionários CLT de domain/pessoas.js (sócios e PJ não entram no controle de presença); o RH completa o cadastro (admissão, escala, salário...).
 import { funcionarios, REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
 import { fichaCfg, fichaDe } from "@/apps/montagem/domain/rh-ficha";
+import { nr1Op } from "@/apps/montagem/domain/nr1";
 
 var CODIGOS = [["P","Presença","#22C55E"], ["F","Falta sem justificativa","#EF4444"], ["AJ","Falta com aviso","#F59E0B"], ["AT","Atestado","#A855F7"], ["FE","Férias","#3B82F6"], ["FO","Folga","#94A3B8"], ["AF","Afastamento","#EC4899"]];
 var AUSENTES = ["F","AJ","AT","AF"];
@@ -71,7 +72,9 @@ function colaboradoresRh(s){
   return base.concat(saiu, novos).map(function(b){ var o = rh.colab[b.id]||{}, l = LOCAL_POR_ID[b.id] ? dadosLocal(LOCAL_POR_ID[b.id]) : {}, esc = cfg.escalas.find(function(x){ return x.id===(o.escalaId||l.escalaId||cfg.escalaPadrao); }) || cfg.escalas[0];
     return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {setor:o.setor||b.setor, escalaId:esc.id, escalaDias:esc.dias}); });
 }
-var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
+// número completo de cada CNPJ e a cor da LETRA (só a cor muda, sem negrito; mesmas cores do Contas a pagar), 18/11/2026
+var CNPJ_NUMERO = {"34":"34.753.252/0001-03", "46":"46.873.285/0001-76", "59":"59.146.403/0001-96", "67":"67.702.461/0001-87"}, CNPJ_COR = {"34":"#D8C48F", "46":"#DBAAC3", "59":"#92CBC2", "67":"#9FBBE3"};
+var rotuloCnpj = function(c){ return c ? (CNPJ_NUMERO[c] || c) : "A informar"; };
 
 // ---------- presença lida do admin antigo (arquivo local rh-atualizacao.local.js, gerado todo dia 3h30 pela tarefa agendada) ----------
 // formato: {stamp, presenca:{"AAAA-MM-DD":{"NOME COMPLETO":"P" | "P|08:43" | "F" ...}}}. O nome do admin é casado com o do sistema (igual, ou 60% das palavras em comum).
@@ -236,7 +239,7 @@ function experienciaAlertas(s, hoje){
   var h = hoje||hojeIso(), out = [];
   experienciaLista(s, h).forEach(function(x){
     [["1ª", x.a1], ["2ª", x.a2]].forEach(function(m){ var dias = diasEntre(m[1], h);
-      if(dias>=0 && dias<=3) out.push({tipo:"exp_avaliacao", chave:"exp_av:"+x.c.id+":"+m[0], titulo:"Chegou a "+m[0]+" avaliação: "+x.c.nome, texto:"Abra a ficha, veja a pontuação e as notas e decida se efetiva. Setor: "+x.c.setor+".", aba:"rhexp", dados:{ficha:x.c.id}}); }); });
+      if(dias>=0 && dias<=3) out.push({tipo:"exp_avaliacao", chave:"exp_av:"+x.c.id+":"+m[0], titulo:"Chegou a "+m[0]+" avaliação: "+x.c.nome, texto:"Abra a ficha, veja a pontuação e as notas e decida se efetiva. Setor: "+x.c.setor+".", aba:"rhcolab", dados:{ficha:x.c.id}}); }); });
   return out;
 }
 
@@ -278,7 +281,9 @@ function rhReduz(s, a){
       if(st==="DESLIGADO" && cs.status!=="DESLIGADO") pt.desligPor = por;
       rh.colab[a.id] = Object.assign({}, rh.colab[a.id], pt); return ok("Cadastro de "+cs.nome+" salvo"); }
     case "colab_add": { var nm = String(a.nome||"").trim(); if(!nm || !a.setor) return recusa("Informe nome e setor."); var id = novoId("n-");
-      rh.novos.push({id:id, nome:nm, setor:a.setor, cnpj:a.cnpj||""}); rh.colab[id] = {admissao:a.admissao||""}; return ok(nm+" cadastrada"); }
+      rh.novos.push({id:id, nome:nm, setor:a.setor, cnpj:a.cnpj||""}); rh.colab[id] = {admissao:a.admissao||""};
+      var dd = a.dados || {}; ["admissao","escalaId","entrada","saida","salario","planoId","funcao","telefone","cidade","nascimento","folha","vt","termoPeca","cpf","aviso","email","cep","rua","numero","complemento","bairro","uf","emergNome","emergFone","emergParentesco","estadoCivil","escolaridade","nomeMae","naturalidade","dependentes","rg","rgOrgao","pis","ctpsNumero","ctpsSerie","tituloEleitor","cnh","cnhCategoria","tipoContrato","jornadaSemanal","cbo","asoData","asoVencimento","banco","agencia","conta","tipoConta","pix"].forEach(function(k){ if(dd[k]!==undefined && dd[k]!==null && dd[k]!=="") rh.colab[id][k] = dd[k]; });   // ficha completa: tudo de uma vez (18/11/2026)
+      return ok(nm+" cadastrada"); }
     case "colab_del": { if(!rh.novos.some(function(n){ return n.id===a.id; })) return recusa("Só se exclui quem foi cadastrado aqui. Para quem saiu, use Desligado."); rh.novos = rh.novos.filter(function(n){ return n.id!==a.id; }); delete rh.colab[a.id];
       Object.keys(rh.presenca).forEach(function(d){ delete rh.presenca[d][a.id]; }); rh.adv = rh.adv.filter(function(x){ return x.colabId!==a.id; }); rh.horas = rh.horas.filter(function(x){ return x.colabId!==a.id; }); return ok("Colaboradora excluída"); }
     case "pres_set": { rh.presenca[a.data] = rh.presenca[a.data]||{}; var pr = rh.presenca[a.data][a.id] || {}; if(a.codigo) pr.c = a.codigo; else delete pr.c;
@@ -341,8 +346,21 @@ function rhReduz(s, a){
     case "neg_pessoa_set": { rh.negoc = rh.negoc || negocPadrao(); var pn = rh.negoc.pessoas.find(function(x){ return x.id===a.id; }); if(!pn) return recusa("Pessoa não encontrada."); Object.assign(pn, a.patch); return ok(); }
     case "neg_pessoa_add": { rh.negoc = rh.negoc || negocPadrao(); var nm2 = String(a.nome||"").trim(); if(!nm2 || !a.grupoId) return recusa("Escolha a pessoa e o grupo."); var id2 = a.id || slug(nm2); if(rh.negoc.pessoas.some(function(x){ return x.id===id2; })) return recusa("Esta pessoa já tem negociação.");
       rh.negoc.pessoas.push({id:id2, nome:nm2, grupoId:a.grupoId, h1:null, h2:null, h3:null, sab:null, maxDia:null, vezesSem:null, sabMes:null, obs:""}); return ok(nm2+" incluída"); }
+    case "pag_lote": { var itens = Array.isArray(a.itens) ? a.itens : []; if(!itens.length) return recusa("Nada para gravar."); rh.pagamentos = rh.pagamentos || {}; var gravados = 0;
+      itens.forEach(function(it){ if(!/^\d{4}-\d{2}$/.test(String(it.mes||"")) || !it.id) return; var mL = rh.pagamentos[it.mes] = rh.pagamentos[it.mes] || {}; var oL = mL[it.id] = mL[it.id] || {}; var pt = it.patch || {};
+        ["bonus","comissao","adicionais","beneficios","descontos","advValor","salValor"].forEach(function(k){ if(k in pt){ var n = Number(pt[k]); oL[k] = isFinite(n) && n>0 ? Math.round(n*100)/100 : null; } });
+        ["advData","salData"].forEach(function(k){ if(k in pt) oL[k] = /^\d{4}-\d{2}-\d{2}$/.test(String(pt[k]||"")) ? String(pt[k]) : ""; }); gravados++; });
+      return ok(gravados+" lançamentos de remuneração gravados"); }   // Salário e bônus: gravação em lote (Puxar do Financeiro, vários meses de uma vez)
+    case "pag_set": { if(!/^d{4}-d{2}$/.test(String(a.mes||"")) || !a.id) return recusa("Escolha o mês e a pessoa."); rh.pagamentos = rh.pagamentos || {}; var mPag = rh.pagamentos[a.mes] = rh.pagamentos[a.mes] || {}; var oPag = mPag[a.id] = mPag[a.id] || {};
+      var pt = a.patch || {}; ["bonus","comissao","adicionais","beneficios","descontos","advValor","salValor"].forEach(function(k){ if(k in pt){ var n = Number(pt[k]); oPag[k] = isFinite(n) && n>0 ? Math.round(n*100)/100 : null; } }); if("obs" in pt) oPag.obs = String(pt.obs||"").slice(0, 200); ["advData","salData"].forEach(function(k){ if(k in pt) oPag[k] = /^d{4}-d{2}-d{2}$/.test(String(pt[k]||"")) ? String(pt[k]) : ""; }); return ok("Remuneração do mês salva"); }   // Salário e bônus (RH › Colaboradores, 17/11/2026)
+    case "neg_joia_set": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.joias = rh.negoc.joias || []; var nj = rh.negoc.joias.find(function(x){ return x.id===a.id; });
+      if(!nj){ var nomeJ = String(a.nome||"").trim(); if(!a.id || !nomeJ) return recusa("Escolha a pessoa."); nj = {id:a.id, nome:nomeJ, colabId:"", motivo:"", valor:null, custoPct:20, periodo:"", obs:""}; rh.negoc.joias.push(nj); }
+      Object.assign(nj, a.patch||{}); return ok(); }   // Negociações › Joias: combinado de cada pessoa (motivo, valor a preço de venda, custo %, periodicidade)
+    case "neg_joia_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.joias = (rh.negoc.joias||[]).filter(function(x){ return x.id!==a.id; }); return ok("Combinado em joias removido"); }
     case "neg_pessoa_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.pessoas = rh.negoc.pessoas.filter(function(x){ return x.id!==a.id; }); return ok("Negociação removida"); }
     // configurador: listas simples (escalas, planos, tiposAdv, motivosAdv, tiposHE, feriados)
+    // Segurança do trabalho (NR-1, 17/11/2026): regra em domain/nr1.js
+    case "nr1_set": case "nr1_nota": case "nr1_anexo_add": case "nr1_anexo_del": case "nr1_cnpj": case "nr1_at_add": case "nr1_at_set": case "nr1_at_del": case "nr1_pessoa": { var rn = nr1Op(rh, a, por, novoId); return rn.erro ? recusa(rn.erro) : ok(rn.msg); }
     case "cfg_add": { var li = cfg[a.lista]; if(!li) return recusa("Lista desconhecida."); li.push(Object.assign({id:novoId(a.lista.slice(0,2)+"-")}, a.item)); return ok("Adicionado"); }
     case "cfg_set": { var l2 = cfg[a.lista]; var it = l2 && l2.find(function(x){ return x.id===a.id; }); if(!it) return recusa("Item não encontrado."); Object.assign(it, a.patch); return ok(); }
     case "cfg_del": { var l3 = cfg[a.lista]; if(!l3) return recusa("Lista desconhecida.");
@@ -409,6 +427,6 @@ function presencaChat(s, nome, hoje){
   return {dias:dias, mes:mes};
 }
 
-export { relatorioAdvertencias, bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
+export { CNPJ_NUMERO, CNPJ_COR, relatorioAdvertencias, bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
   advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, experienciaAlertas, ocorrenciasDaPresenca, rhReduz };

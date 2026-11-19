@@ -11,6 +11,9 @@ export async function register() {
   // 10/11/2026: Marketing › Fotos de catálogo lê os produtos novos da DevMaster a cada 5 minutos, sem precisar de tela aberta
   const { agendarFotosDm } = await import("./src/server/fotos-dm.js");
   agendarFotosDm();
+  // 16/11/2026: custo das saídas (Pedidos › resumo por mês) relido da DevMaster às 11h e às 12h (no site publicado quem chama é o agendador da Vercel)
+  const { agendarCustoSaidas } = await import("./src/server/custo-saida.js");
+  agendarCustoSaidas();
   // App real da representante (05/11/2026): kits novos para o app, respostas de volta e aviso "kit pronto", a cada 60 s.
   // Só liga com APP_REP_SINCRONIZAR=1 (o .env de desenvolvimento aponta para a API de produção do app).
   const { agendarSincronizacao } = await import("./src/server/app-rep/sincronizar.js");

@@ -5,7 +5,7 @@ import { corpo, erro, invalido, json, rota } from "@/server/http";
 import { consulta } from "@/server/db";
 
 const SITUACOES = ["disponivel", "reuniao", "ausente"];
-const LIMITE_FOTO = 60000;   // a tela reduz a foto para 160 px (uns 10 KB); acima disso é recusada
+const LIMITE_FOTO = 110000;   // a tela salva a foto em 360 px (uns 40 KB, enquadrada pela própria pessoa); acima disso é recusada
 
 export const PATCH = rota(async (req, { eu }) => {
   if (!eu.conta) return erro("Esta conta não permite mudar a foto.", 400);

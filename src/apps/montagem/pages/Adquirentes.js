@@ -6,6 +6,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Faixa, Indicador, LINHA, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { ADQ } from "@/apps/montagem/domain/adquirentes";
 import { formatarReais } from "@/apps/montagem/domain/link-pagamento";
+import { rotuloCnpj } from "@/apps/montagem/lib/nome-conta";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e } from "@/shared/react";
 
@@ -27,12 +28,12 @@ function Comparativo(){
     linhas.push({k:f.id+t.rot, cnpj:f.cnpj, nome:f.nome+(f.tabelas.length>1 ? " · "+t.rot.toLowerCase() : ""), d:d, c:c}); }); });
   return e(BlocoBarra,{cor:"azul", t:"Comparativo por CNPJ", sub:"Taxa de transação em débito e crédito à vista (sem antecipação)", compacto:true}, e("div",{className:"p-2"},
     e(Tab,{cols:["CNPJ", "Débito Visa/Master", "Débito demais", "Crédito à vista Visa/Master", "Crédito à vista demais"]}, linhas.map(function(l){ return e("tr",{key:l.k, className:LINHA},
-      e(Td,{forte:true}, "CNPJ "+l.cnpj+" · "+l.nome), e(Td,null, l.d ? pc(l.d.vm) : "—"), e(Td,null, l.d ? pc(l.d.dem) : "—"), e(Td,null, l.c ? pc(l.c.vm) : "—"), e(Td,null, l.c ? pc(l.c.dem) : "—")); }))));
+      e(Td,{forte:true}, rotuloCnpj(l.cnpj, l.nome)), e(Td,null, l.d ? pc(l.d.vm) : "—"), e(Td,null, l.d ? pc(l.d.dem) : "—"), e(Td,null, l.c ? pc(l.c.vm) : "—"), e(Td,null, l.c ? pc(l.c.dem) : "—")); }))));
 }
 
 function Ficha(p){
   var f = p.f, cor = f.pontual ? "laranja" : "azul";
-  return e(BlocoBarra,{cor:cor, t:(f.cnpj ? "CNPJ "+f.cnpj+" · " : "")+f.nome, sub:f.adq+(f.identificador ? " · "+f.identificador : ""), compacto:true}, e("div",{className:"flex flex-col gap-3 p-3"},
+  return e(BlocoBarra,{cor:cor, t:(f.cnpj ? rotuloCnpj(f.cnpj, f.nome) : f.nome), sub:f.adq+(f.identificador ? " · "+f.identificador : ""), compacto:true}, e("div",{className:"flex flex-col gap-3 p-3"},
     e("section",{className:"flex flex-col gap-1.5"}, Sub("Taxas de transação"),
       f.tabelas.length ? f.tabelas.map(function(t){ return e("div",{key:t.rot, className:"flex flex-col gap-1"}, f.tabelas.length>1 || t.rot!=="Taxas" ? e("b",{className:"text-center text-[12.5px] text-[#93C5FD]"}, t.rot) : null,
           e(Tab,{cols:["Modalidade", "Visa/Master", "Demais", "Prazo"]}, t.linhas.map(function(l){ return e("tr",{key:l.mod, className:LINHA}, e(Td,{forte:true}, l.mod), e(Td,null, pc(l.vm)), e(Td,null, pc(l.dem)), e(Td,null, l.prazo || "—")); })),

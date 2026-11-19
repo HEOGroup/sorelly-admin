@@ -27,3 +27,6 @@ test-results/
 playwright-report/
 tests/fotos/referencia/*-win32.png
 tests/fotos/referencia/*-darwin.png
+
+# log do servidor local (iniciar-servidor-unico.cmd)
+logs/

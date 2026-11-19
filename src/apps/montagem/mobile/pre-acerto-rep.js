@@ -2,7 +2,7 @@
 // Pré-acerto (02/11/2026, Marcus): a representante preenche ANTES do acerto as remarcações (com multa ou isentas) e os dias de atraso.
 // No acerto esses dados chegam TRAVADOS ("é o sistema, não fui eu que coloquei"). Layout aprovado em docs/rascunhos/pre-acerto-compacto.html.
 // Remarcações ficam no kit (KIT_REMARCAR, a mesma lista do acerto); os dias de atraso ficam em kit.preAcerto (KIT_PRE_ACERTO).
-import { MOTIVOS_ISENCAO, atrasoAcerto, vezCobravel } from "@/apps/montagem/domain/consignado";
+import { MOTIVOS_ISENCAO, atrasoAcerto, linhasAtraso, vezCobravel } from "@/apps/montagem/domain/consignado";
 import { MONO } from "@/apps/montagem/ui/input";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useState } from "@/shared/react";
@@ -52,8 +52,7 @@ function PreAcertoRep(p){
       escada.map(function(t, i, arr){ return e("div",{key:"e"+i, className:LINHA}, e("span",{className:"text-[11px]"}, (i+1)+"ª remarcação"+(i===arr.length-1 ? " em diante" : "")), e("span",{className:nums}, "−"+t.comissaoPct+"% · −"+t.brindePct+"%")); }),
       e("p",{className:"py-1 text-[11px]"}, "A remarcação isenta, com motivo, não pesa."),
       N && e("p",{className:"pt-1 text-[11px] font-bold uppercase"}, "Atraso do acerto · Comissão · Brinde"),
-      N && (N.atrasoAcerto||[]).slice().sort(function(a, b){ return a.ate-b.ate; }).map(function(t, i){ return e("div",{key:"a"+i, className:LINHA}, e("span",{className:"text-[11px]"}, "Até "+t.ate+" dias"), e("span",{className:nums}, "−"+t.comissaoPct+"% · −"+t.brindePct+"%")); }),
-      N && e("div",{className:LINHA}, e("span",{className:"text-[11px]"}, (N.juridicoDias||60)+" dias ou mais"), e("span",{className:nums}, "Perde tudo"))),
+      N && linhasAtraso(N).map(function(t, i){ return e("div",{key:"a"+i, className:LINHA}, e("span",{className:"text-[11px]"}, t[0]), e("span",{className:nums}, t[1])); })),
     e("div",{className:"rounded-xl border border-[#E4E0D6] bg-white px-3 pb-2"},
       e("div",{className:"flex min-h-8 items-center justify-between"},
         e("p",{className:"text-[11px] font-bold uppercase tracking-wide"}, "Remarcações"),
@@ -81,7 +80,7 @@ function PreAcertoRep(p){
         e("span",null), ["Remarcação","Atraso","Total"].map(function(t){ return e("span",{key:t, className:"py-1.5 text-[11px] font-bold uppercase"}, t); })),
       perda(["Comissão", "−"+rem.comissaoPct+"%", at.tudo ? "Tudo" : "−"+at.comissaoPct+"%", totC]),
       perda(["Brinde", "−"+rem.brindePct+"%", at.tudo ? "Tudo" : "−"+at.brindePct+"%", totB]),
-      at.tudo && e("p",{className:"py-1.5 text-center text-[11px] font-bold"}, (N.juridicoDias||60)+" dias ou mais: perde toda a comissão e todo o brinde (jurídico).")),
+      at.tudo && e("p",{className:"py-1.5 text-center text-[11px] font-bold"}, "Depois do "+(N.prazoAcertoDiasUteis!=null ? (N.juridicoDiasUteis||30)+"º dia útil" : (N.juridicoDias||60)+" dias")+": perde toda a comissão e todo o brinde (jurídico).")),
     e("button",{onClick:function(){ p.d({type:"KIT_PRE_ACERTO", id:kit.id, atrasoDias:dias}); p.onSalvar(); }, className:"h-8 rounded-2xl bg-[#C9A13B] text-[11px] font-bold txt-branco"}, p.textoSalvar || "Salvar pré-acerto"));
 }
 export { PreAcertoRep };

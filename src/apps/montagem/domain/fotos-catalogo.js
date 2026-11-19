@@ -179,24 +179,49 @@ function quadroCodigos(fc){
 }
 function minutosDesde(iso, agora){ return minutos(iso, agora); }
 
+// ---------- FOTOS FEITAS (Marcus, 17/11/2026: "você precisa saber quais são as peças") ----------
+// Cada modelo com foto desde o início da meta: quando, quem marcou na tela (ou DevMaster, quando a foto chegou lá sozinha), a descrição e se já está no sistema.
+function fotosFeitas(fc, desde){
+  var corte = (METAS[0] && METAS[0].dmDesde) || "", out = [];
+  unidades(fc).forEach(function(u){
+    var q = "", quem = "", origem = "", x = String(u.fotoEm||""), tela = ehDia(parteDia(x)) ? x : "", dm = u.dmFoto && String(u.dmFoto)>=corte ? String(u.dmFoto) : "";
+    if(tela && (!dm || tela<=dm)){ q = tela; quem = u.fotoQuem || "Sem nome"; origem = "Marcada na tela"; }
+    else if(dm){ q = dm; quem = "DevMaster"; origem = "Chegou na DevMaster"; }
+    if(!q || parteDia(q)<desde) return;
+    out.push({id:u.cod, cod:u.cod, quando:q, dia:parteDia(q), quem:quem, origem:origem, desc:u.desc||"", cadastro:u.dia||"", sistema:u.subEm ? "Sim" : "Não"});
+  });
+  return out.sort(function(a, b){ return a.quando<b.quando ? 1 : a.quando>b.quando ? -1 : 0; });
+}
+
 // ---------- META DE FOTOS (Marcus, 10/11/2026) ----------
 // Primeira meta: 500 fotos até sexta-feira (13/11) = bônus de R$ 250,00 para o setor. A próxima meta entra aqui quando o Marcus definir.
 // Foto contada = marcada na tela (Foto, com data) OU foto que passou a existir na DevMaster depois do início do sistema (dmFoto, gravado na hora em que a leitura da DevMaster vê a foto).
 // dmDesde: foto que a leitura da DevMaster viu ANTES dessa hora não conta: em 11/11 a leitura carimbou 877 fotos de uma vez às 09:45 e 1.184 às 10:19 (ao abrir a janela de 120 dias); depois disso os carimbos vêm um a um, com o trabalho da equipe.
-var METAS = [{id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250, dmDesde:"2026-11-11T10:20:00"}];
+var METAS = [
+  {id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250, dmDesde:"2026-11-11T10:20:00"},
+  // Meta da semana de 16 a 20/11/2026 (Marcus, 17/11/2026): degraus ajustados em 17/11/2026 (Marcus): 250 = R$ 150, 300 = R$ 200, 350 = R$ 250 (antes 300, 350 e 400); meta de partida era 80 fotos por dia, pago em dinheiro até quinta 26/11 (Marcus, 18/11/2026), só para quem trabalhar. Conta a segunda (55).
+  {id:"2026-11-20", nome:"Meta da semana", ini:"2026-11-16", fim:"2026-11-20", alvo:350, bonus:250, degraus:[{alvo:250, bonus:150}, {alvo:300, bonus:200}, {alvo:350, bonus:250}], dmDesde:"2026-11-11T10:20:00"}
+];
 var diasEntre = function(a, b){ return Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/86400000); };
 var somaDia = function(d, n){ var x = new Date(d+"T12:00:00Z"); x.setUTCDate(x.getUTCDate()+n); return x.toISOString().slice(0, 10); };
 // A meta conta toda foto nova de QUALQUER peça, de qualquer mês (Marcus, 11/11/2026). A leitura da DevMaster também acha fotos ANTIGAS que ninguém tinha marcado: essas ficam de fora pela hora de corte (dmDesde).
 var INICIO_PECAS = "2026-11-01";
-var diaDaFoto = function(c, dmDesde){ var d = parteDia(c.fotoEm); if(ehDia(d)) return d; if(dmDesde && String(c.dmFoto||"")<dmDesde) return ""; d = parteDia(c.dmFoto); return ehDia(d) ? d : ""; };
+var diaDaFoto = function(c, dmDesde){
+  var a = parteDia(c.fotoEm), b = ""; a = ehDia(a) ? a : "";
+  if(!(dmDesde && String(c.dmFoto||"")<dmDesde)){ b = parteDia(c.dmFoto); b = ehDia(b) ? b : ""; }
+  return a && b ? (a<b ? a : b) : (a || b);
+};
 function metaProgresso(fc, m, hoje){
   var por = {}, feitas = 0, dias = [], d;
   unidades(fc).forEach(function(c){ var x = diaDaFoto(c, m.dmDesde); if(x && x>=m.ini && x<=m.fim){ por[x] = (por[x]||0)+1; feitas++; } });
   for(d = m.ini; d<=m.fim; d = somaDia(d, 1)) dias.push(d);
   var acum = 0, linhas = dias.map(function(x){ acum += por[x]||0; return {dia:x, fotos:por[x]||0, acum:acum}; });
   var falta = Math.max(0, m.alvo-feitas), restam = dias.filter(function(x){ return x>=hoje; }).length;
-  var situacao = feitas>=m.alvo ? "Batida" : hoje>m.fim ? "Não batida" : "Em andamento";
-  return {meta:m, feitas:feitas, falta:falta, pct:Math.min(100, feitas/m.alvo*100), linhas:linhas, restam:restam, porDia:restam ? Math.ceil(falta/restam) : 0, situacao:situacao};
+  // degraus de bônus (a meta antiga tem um só): de cada um, se já foi conquistado, quanto falta e quanto por dia
+  var graus = (m.degraus || [{alvo:m.alvo, bonus:m.bonus}]).map(function(g){ var f = Math.max(0, g.alvo-feitas); return {alvo:g.alvo, bonus:g.bonus, feito:feitas>=g.alvo, falta:f, porDia:restam ? Math.ceil(f/restam) : 0}; });
+  var conquistados = graus.filter(function(g){ return g.feito; }), bonusAtual = conquistados.length ? conquistados[conquistados.length-1].bonus : 0, proximo = graus.filter(function(g){ return !g.feito; })[0] || null;
+  var situacao = feitas>=m.alvo ? "Batida" : hoje>m.fim ? (bonusAtual ? "Encerrada" : "Não batida") : "Em andamento";
+  return {meta:m, feitas:feitas, falta:falta, pct:Math.min(100, feitas/m.alvo*100), linhas:linhas, restam:restam, porDia:restam ? Math.ceil(falta/restam) : 0, situacao:situacao, degraus:graus, bonusAtual:bonusAtual, proximo:proximo};
 }
 
 // ---------- entrada de códigos (colar do Excel: um por linha ou separados por espaço, vírgula ou ponto e vírgula) ----------
@@ -212,6 +237,11 @@ function lerCodigos(texto){
 
 // ---------- ação FC (reducer) ----------
 var ETAPAS = {foto:["fotoEm","fotoQuem","Fotografada"], ed:["edEm","edQuem","Editada"], sub:["subEm","subQuem","Na DevMaster"]};
+// OK em uma etapa mais adiante vale para as de antes (quem dá OK na DevMaster não precisa ter marcado a foto e a edição)
+function preencheAntes(c, etapa, agora, por){
+  if((etapa==="ed" || etapa==="sub") && !c.fotoEm){ c.fotoEm = agora; c.fotoQuem = por; }
+  if(etapa==="sub" && !c.edEm){ c.edEm = agora; c.edQuem = por; }
+}
 function fcReduz(s, a){
   var fc = clone(fcMigrar(s.fc)), por = a.por || "—", agora = a.agora || agoraSP(), hoje = hojeSP();
   var recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{fc:fc}, msg:msg}; };
@@ -231,24 +261,24 @@ function fcReduz(s, a){
     case "etapa": {
       var al = alvos(a.cod); if(!al.length) return recusa("Código não encontrado.");
       var e = ETAPAS[a.etapa]; if(!e) return recusa("Etapa inválida.");
-      var mudou = 0, motivo = "Essa etapa já foi marcada.";
-      al.forEach(function(c){ if(c[e[0]]) return; if(a.etapa==="ed" && !c.fotoEm){ motivo = "Marque a foto antes de editar."; return; } if(a.etapa==="sub" && !c.edEm){ motivo = "Marque a edição antes de subir na DevMaster."; return; } c[e[0]] = agora; c[e[1]] = por; mudou++; });
-      if(!mudou) return recusa(motivo);
+      var mudou = 0;
+      al.forEach(function(c){ if(c[e[0]]) return; preencheAntes(c, a.etapa, agora, por); c[e[0]] = agora; c[e[1]] = por; mudou++; });
+      if(!mudou) return recusa("Essa etapa já foi marcada.");
       return ok(a.cod+": "+e[2]);
     }
     case "etapa_lote": {   // marcar uma etapa em vários códigos de uma vez (o Castilho tira 200 fotos e a Ana edita 50: cada um marca o seu lote); grade e modelo valem o mesmo
       var lote = lerCodigos(a.texto), e2 = ETAPAS[a.etapa]; if(!e2) return recusa("Etapa inválida.");
       if(!lote.validos.length) return recusa("Informe os códigos.");
-      var feitos = 0, naoAchou = 0, fora = 0, vistosM = {};
+      var feitos = 0, naoAchou = 0, ja = 0, vistosM = {};
       lote.validos.forEach(function(cod){
         var mo = modeloDe(cod); if(vistosM[mo]) return; vistosM[mo] = true;
         var al2 = alvos(mo); if(!al2.length){ naoAchou++; return; }
         var mudou2 = 0;
-        al2.forEach(function(c2){ if(c2[e2[0]] || (a.etapa==="ed" && !c2.fotoEm) || (a.etapa==="sub" && !c2.edEm)) return; c2[e2[0]] = agora; c2[e2[1]] = por; mudou2++; });
-        if(mudou2) feitos++; else fora++;
+        al2.forEach(function(c2){ if(c2[e2[0]]) return; preencheAntes(c2, a.etapa, agora, por); c2[e2[0]] = agora; c2[e2[1]] = por; mudou2++; });
+        if(mudou2) feitos++; else ja++;
       });
-      if(!feitos) return recusa(naoAchou && !fora ? "Nenhum código foi encontrado." : "Nenhuma peça estava pronta para essa etapa (já marcada ou falta a etapa anterior).");
-      return ok(feitos+(feitos===1 ? " peça marcada" : " peças marcadas")+" como "+e2[2].toLowerCase()+(naoAchou ? " ("+naoAchou+" não encontradas)" : "")+(fora ? " ("+fora+" já marcadas ou fora da ordem)" : ""));
+      if(!feitos) return recusa(naoAchou && !ja ? "Nenhum código foi encontrado." : "Essas peças já estavam com OK nessa etapa.");
+      return ok(feitos+(feitos===1 ? " peça marcada" : " peças marcadas")+" como "+e2[2].toLowerCase()+(naoAchou ? " ("+naoAchou+" não encontradas)" : "")+(ja ? " ("+ja+" já estavam marcadas)" : ""));
     }
     case "tem": {   // peça de meses anteriores: o Marketing marca se TEM a peça (o cadastro separou) ou NÃO TEM (sem estoque); valor vazio tira a marcação (Marcus, 11/11/2026)
       var at = alvos(a.cod); if(!at.length) return recusa("Código não encontrado.");
@@ -285,4 +315,4 @@ function fcReduz(s, a){
   }
 }
 
-export { modeloDe, unidades, INICIO_PECAS, METAS, metaProgresso, diasEntre, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
+export { fotosFeitas, modeloDe, unidades, INICIO_PECAS, METAS, metaProgresso, diasEntre, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };

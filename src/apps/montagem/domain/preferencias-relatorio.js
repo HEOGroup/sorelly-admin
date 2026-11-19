@@ -3,6 +3,7 @@
 // com o valor de venda e se a preferência foi preenchida ou não. Também monta o relatório para baixar (CSV, abre no Excel).
 import { listagemDe } from "./regras";
 import { vendidoNoApp } from "./link-pagamento";
+import { prefDoApp } from "../lib/prefs-app";
 import { hojeSP } from "./preferencias-kit";
 import { pkBlocos, pkExibirResposta, pkResumoRevendedora, pkSituacao, formatarDataHora } from "./preferencias-kit";
 
@@ -49,14 +50,20 @@ function pkRelatorioCSV(s, linhas){
       l.atualizadoEm ? formatarDataHora(l.atualizadoEm) : "", l.fonte||""].concat(blocos.map(function(b){ return resumoResposta(b, rs[b.key]); }), [l.rev && l.rev.preferencias ? l.rev.preferencias.observacoes||"" : ""]); });
   return "﻿"+[cab].concat(rows).map(function(r){ return r.map(csv).join(";"); }).join("\r\n");
 }
+// 16/11/2026: fotos que a revendedora mandou no bloco (até 3, só em bloco que aceita imagem); a janela de montagem mostra
+// (16/11/2026: vale qualquer bloco que tenha foto no app, não só os marcados como allowImages: o app tem foto até em Anéis)
+function fotosDoBloco(b, r){ var im = pkExibirResposta(b, r).imagens; return Array.isArray(im) ? im.filter(function(u){ return typeof u==="string" && u.trim(); }).slice(0, 3) : []; }
 // preferências já respondidas de uma revendedora, em texto corrido e sem abreviar, para quem monta o kit: [{titulo, texto}]
+// Lê primeiro do app (todas as revendedoras, lib/prefs-app.js); o que estiver só no módulo local s.pk serve de reserva.
 function pkResumoParaMontagem(s, nome){
-  var pk = s.pk, rv = pk && (pk.revendedoras||[]).find(function(r){ return norm(r.nome)===norm(nome); });
+  var pk = s.pk, rv = prefDoApp(nome) || (pk && (pk.revendedoras||[]).find(function(r){ return norm(r.nome)===norm(nome); }));
   if(!rv || !temPrefs(rv)) return [];
   var rs = (rv.preferencias && rv.preferencias.respostas) || {}, out = [];
   pkBlocos(s, {apenasAtivos:true}).forEach(function(b){
     if(b.type==="observacoes"){ var o = String(rv.preferencias.observacoes||"").trim(); if(o) out.push({titulo:"Observações", texto:o}); return; }
-    var t = resumoResposta(b, rs[b.key]); if(t) out.push({titulo:b.title, texto:t.split(" | ").join(". ")});
+    var t = resumoResposta(b, rs[b.key]), fotos = fotosDoBloco(b, rs[b.key]);
+    // dados: a resposta já separada (vende, % de ouro, linhas) para o celular mostrar de forma visual, sem texto corrido
+    if(t || fotos.length) out.push({titulo:b.title, texto:t ? t.split(" | ").join(". ") : "", fotos:fotos, dados:pkExibirResposta(b, rs[b.key])});
   });
   return out;
 }

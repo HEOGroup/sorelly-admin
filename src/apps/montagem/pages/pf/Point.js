@@ -7,7 +7,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { mesLabel, ptDados } from "@/apps/montagem/domain/pf";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e } from "@/shared/react";
-import { CARD, IconBtn, Tile, TD, brl, op, th } from "./ui";
+import { CARD, IconBtn, Tile, TD, brl, op, opc, th } from "./ui";
 
 var r2 = function(v){ return Math.round((Number(v)||0)*100)/100; };
 // campo de número que só grava ao sair do campo ou apertar Enter (como o onchange do HTML); a chave refaz o campo quando o valor muda por fora
@@ -34,7 +34,9 @@ function PointPainel(p){
       e("td",{className:TD+" text-right "+MONO}, m.nItens || "—"),
       e("td",{className:TD+" text-right "+MONO}, e("b",null, brl(m.soma))),
       e("td",{className:TD+" text-right "+MONO+" text-muted-foreground"}, brl(m.acumulado)),
-      e("td",{className:TD}, ed && e("button",{type:"button", onClick:function(){ op(c,"pt_item_add",{id:m.id}); }, className:"inline-flex items-center gap-1 rounded-lg bg-linear-to-br from-[#3B82F6] to-[#1D4ED8] px-2.5 py-1 text-[12px] font-bold text-white"}, e(Ph,{n:"plus", s:13}), "pedido"))));
+      e("td",{className:TD}, ed && e("div",{className:"flex items-center justify-center gap-1.5"},
+        e("button",{type:"button", onClick:function(){ op(c,"pt_item_add",{id:m.id}); }, className:"inline-flex h-8 items-center gap-1 rounded-lg bg-linear-to-br from-[#3B82F6] to-[#1D4ED8] px-2.5 text-[13px] font-bold text-white"}, e(Ph,{n:"plus", s:13}), "pedido"),
+        e(IconBtn,{ic:"trash", titulo:"Apagar o mês (sai dos pedidos sem NF e do acerto mensal)", perigo:true, onClick:function(){ opc(c,"pt_mes_del",{id:m.id, data:m.data}); }})))));   // apagar o mês inteiro (Nickolas, 12/11/2026)
     if(!m.aberto) return;
     var itens = m.itens.map(function(it, i){
       return e("tr",{key:"i"+m.id+"-"+i, className:"border-b border-border/40"},

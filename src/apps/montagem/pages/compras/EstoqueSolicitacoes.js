@@ -3,7 +3,8 @@
 // Só quem pode aprovar compras decide (autorização "Aprovar compras"). Arrastar ou "Mover para…" abre a janela da solicitação já com a etapa escolhida.
 // Regras no domínio: sol_decidir (uma decisão só, a partir de Pendente) e sol_set (dados da compra e recebimento; o recebimento dá entrada no estoque).
 import { BarraFiltros, Dinheiro, ESTADO, Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { FORMAS_PAGAMENTO, ROTULO_FORMA, ROTULO_SOL, formatarDia, formatarReais, hojeSP, listarSolicitacoes } from "@/apps/montagem/domain/compras-estoque";
+import { FORMAS_PAGAMENTO, ROTULO_FORMA, ROTULO_SOL, formatarDia, formatarReais, hojeSP, estoqueDaSolicitacao, listarSolicitacoes, padronizarUnidade } from "@/apps/montagem/domain/compras-estoque";
+import { EstoqueMomento, Janela as JanelaAzul } from "@/apps/montagem/pages/compras/pecas";
 import { Bt, Busca, Campo, Painel, Sel, Selo, Vazio, useCe } from "@/apps/montagem/pages/compras/visualCompras";
 import { Kanban } from "@/shared/kanban";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -46,12 +47,14 @@ function JanelaSol(p){
   var receber = function(){ if(!v.rec){ er[1]("Informe a data do recebimento."); return; } if(x.exec("sol_set", Object.assign(dadosCompra(), {dataRecebimento:v.rec}))) p.fechar(); };
   var cx = "w-full text-center "+INPUT;
   var forn = s.fornecedorId!=null ? (ce.fornecedores.filter(function(z){ return String(z.id)===String(s.fornecedorId); })[0]||{}).nome : "";
+  var blocoEstoque = e(EstoqueMomento,{key:"est", snaps:[estoqueDaSolicitacao(x.s, s)]});   // pedido do Nickolas (17/11/2026): estoque no momento da solicitação e hoje
   var cols = [
     e(Painel,{key:"d", t:"Solicitação", estado:"feito"},
       e("div",{className:"flex flex-col items-center gap-1.5"}, e("b",{className:"text-[14px] leading-tight"}, s.material), e(Selo,{cor:COR_SOL[s.status]}, ROTULO_SOL[s.status]),
         e("div",{className:"flex flex-col items-center rounded-lg bg-black/25 px-3 py-1"}, e("b",{className:MONO+" text-[19px] leading-none"}, s.quantidade), e("span",{className:"text-[10px] font-bold uppercase tracking-wide text-white/70"}, s.unidade || "Quantidade")),
         e("span",{className:"text-[12px] text-white/70"}, "Solicitada por "+(s.solicitadoPor||"—")+" em "+formatarDia(dia(s.solicitadoEm))), forn && e("span",{className:"text-[12px] text-white/70"}, "Fornecedor: "+forn),
         s.valor>0 && e("span",{className:"text-[12px] text-white/70"}, "Valor: "+formatarReais(s.valor)), s.observacao && e("p",{className:"rounded-lg bg-black/25 px-2 py-1.5 text-[12px] text-white/85"}, s.observacao))),
+    blocoEstoque,
     e(Painel,{key:"l", t:"Etapas", ic:"clock-counter-clockwise", estado:"atual"}, e(Linha,{passos:passos(s)}),
       podeOperar && e("div",{className:"flex flex-col gap-2 border-t border-white/10 pt-2"}, e("span",{className:"text-[11px] font-bold uppercase text-white/70"}, "Dados da compra"),
         e(Campo,{rot:"Quantidade"}, e("input",{type:"number", min:1, step:1, value:v.qtd, onChange:function(ev){ set("qtd", ev.target.value); }, className:cx})),
@@ -74,7 +77,7 @@ function JanelaSol(p){
         e(Bt,{tipo:"ok", ic:"truck", onClick:receber}, "Registrar recebimento")),
       s.status==="RECEBIDO" && e("p",{className:"rounded-lg bg-[#22C55E]/15 px-2 py-1.5 text-[12px] font-bold text-[#4ADE80]"}, "Recebida"+(s.dataRecebimento ? " em "+formatarDia(s.dataRecebimento) : "")+(s.entradaId ? ". Entrada lançada no estoque." : ".")),
       e(Bt,{ic:"x", onClick:p.fechar}, "Fechar"))];
-  return e(Janela,{t:"Solicitação de compra", sub:s.material+" · "+s.quantidade, fechar:p.fechar, colunas:cols});
+  return e(JanelaAzul,{t:"Solicitação de compra", sub:s.material+" · "+s.quantidade, fechar:p.fechar, colunas:cols});
 }
 
 // ───────────── tela ─────────────
@@ -101,7 +104,7 @@ function AbaEstoqueSolicitacoes(pr){
       onMover:function(it, de0, para){ sJ[1]({id:it.id, sug:para}); }, onAbrir:function(it){ sJ[1]({id:it.id, sug:null}); },
       card:function(it){ var fn = fornNome(it.fornecedorId);
         return e("div",{className:"flex flex-col items-center gap-1"}, e("b",{className:"text-[13px] leading-tight"}, it.material),
-          e("span",{className:"text-[12px] text-white/80"}, it.quantidade+(it.unidade ? " · "+it.unidade : "")),
+          e("span",{className:"text-[11px]"}, it.quantidade+(it.unidade ? " · "+padronizarUnidade(it.unidade) : "")),
           e("span",{className:"text-[11px] text-white/55"}, (it.solicitadoPor||"—")+" · "+formatarDia(dia(it.solicitadoEm))),
           fn && e("span",{className:"text-[11px] text-white/55"}, fn), it.valor>0 && e("span",{className:MONO+" text-[11.5px] text-white/80"}, formatarReais(it.valor)),
           it.status==="APROVADO" && it.dataPrevisaoChegada && e(Selo,{cor:"info", ic:"truck"}, "Previsão "+formatarDia(it.dataPrevisaoChegada)),

@@ -4,6 +4,8 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **19/11/2026** (diário, Pix adiantado da revendedora): o Pix que a revendedora manda a um prestador da família ANTES do acerto entra no acerto como já pago (sem lançar de novo, sem Direcionar, sem segundo repasse) e fica marcado "usado no acerto" em `ff.pixUsados`; o próprio valor na tabela Pago de cada prestador é o link do comprovante (sublinhado abre a imagem; sem comprovante o clique anexa) e a dívida paga mostra o comprovante em Contas a pagar; imagem no servidor; rotina `scripts/importar-comprovantes-atendimento.mjs` (relatório antes de gravar). Soltar só se o acerto foi cancelado. Caso Karine: 4 Pix, R$ 2.284,55. Teste: `node scripts/testar-pix-adiantado.mjs`.
+- **19/11/2026** (diário, Link de pagamento): validade do link volta a 48 h (o servidor tinha 12 h) e os links gerados ganham as 48 h; Importar e-SiTef ganha a caixa Incluir (o que a Hellen deixa de fora não entra no setor); Descontados no acerto ganha o botão Incluir link. Ver `docs/DECISOES.md` de 19/11/2026.
 - **09/11/2026** (diário, Fiscal no servidor): o Fiscal passou a ser o módulo `fx` no servidor, com os dados do admin antigo (6 empresas, 284 notas, 112 saídas, 54 contas); só Financeiro e Diretoria abrem; os ajustes provisórios de 23/10 saíram. Ver `docs/DECISOES.md` de 09/11/2026.
 - **06/11/2026** (diário, Resumo de pagamentos, layout D): o Marcus não quis linha quebrada nem dourado, viu 4 layouts em HTML (`docs/ideias/resumo-pagamentos-4-layouts.html`) e escolheu o **D** (fileira de campos, fio fino, cabeçalho e total em faixa escura). Peça `TabelaCampos`/`FileiraCampos` em `padrao-fin.js`, usada só nas tabelas do Resumo de Pagamentos a fornecedores. Pendente: o Marcus dizer se vale para todas as tabelas.
 - **03/11/2026** (diário, Financeiro: Atividades, Resultado do mês e regras de caixa): **Financeiro › Atividades** (`/financeiro/atividades`, módulo `finativ`): lista do que fica para fazer depois; a pessoa escreve atividade, detalhes, quando e responsável; conclui com resposta opcional.
@@ -492,3 +494,122 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - **Prestador particular (10/11/2026, Marcus):** cada pessoa tem o próprio cadastro do prestador; sem dívida lançada a linha some do Resumo do grupo. O PDF do orçamento da dívida agora fica no servidor (`/api/anexos`, módulo `ff`). Detalhes em `docs/DECISOES.md` do mesmo dia.
 
 - **10/11/2026** (diário geral): Controle de pagamentos › Destinos mostra Escrever na folha, Banco, Favorecido e Chave Pix (lidos de Chaves Pix, com Copiar). Novo destino Itaú Marco PJ. Pendência 5 de Chaves Pix resolvida; a 7 (chaves no servidor) segue com o Leonardo.
+
+## 17/11/2026 — Pix para fornecedor: do Direcionar ao Contas a pagar (regra do Marcus, construída; v0.20.94 e v0.20.98)
+**Regra, em uma frase:** Pix de revendedora para fornecedor é sempre "um valor até uma data". Quando o Lucas confirma no Direcionar um Pix com um FORNECEDOR como destino, o Pix vira pagamento do fornecedor sozinho. Ninguém digita de novo.
+
+| Ponto | Como é |
+|---|---|
+| Em qual parcela cai | Na data de pagamento (janela) MAIS ANTIGA em aberto daquele fornecedor |
+| Quando conta como pago | Só com o Pix confirmado no Direcionar E o comprovante anexado. Antes disso fica "Falta o comprovante" e NÃO entra em Contas a pagar |
+| Quem anexa o comprovante | A REPRESENTANTE, na calculadora de acerto (Pix de representante), ou a FUNCIONÁRIA, na aba Atendimento interno (Atendimento Sorelly). O mesmo comprovante aparece no Consolidado Sorelly. Ninguém anexa de novo no Financeiro |
+| Chave Pix | A conta devolvida pelo Direcionar chega ao Atendimento Sorelly já com a chave Pix e o botão Copiar, para a funcionária passar à revendedora. A chave é lida na hora do cadastro (Chaves Pix e Destinos); nada é copiado para o pedido |
+| Lançamento de pagamentos | Deixa de ser onde o Pix nasce. Vira a tela de conferir e corrigir: ver comprovante, estornar, mandar o extrato ao fornecedor. O botão Anexar comprovante dela é só reserva |
+| Confirmar duas vezes | Não duplica |
+| Reabrir o Pix | Retira o pagamento que ainda NÃO tem comprovante; o que já tem fica |
+| Lançamentos antigos | Os ~1.500 antigos não mudam: a regra do comprovante vale só para os novos |
+
+**Fluxo:**
+```
+Lucas confirma no Direcionar (destino = fornecedor)
+        ↓
+Pagamento nasce no fornecedor, na data mais antiga em aberto: "Falta o comprovante"
+        ↓
+Representante (calculadora de acerto) ou funcionária (atendimento interno) anexa o comprovante
+        ↓
+O pagamento pega o comprovante sozinho, conta como pago e entra em Contas a pagar
+```
+
+**Código (para quem for mexer):** `state/reducer.js` (caso `DP`: ao confirmar e ao reabrir; `sincCompFornecedor`: copia o comprovante de `lancFin`, roda ao confirmar, a cada `FIN_LINHA` e quando a representante anexa em `REP_PAG` comprovante); `domain/pf.js` (ops `pix_dir`, `pix_dir_desfaz`, `lanc_comp`; `fornDoDestino` liga o destino ao fornecedor PELO NOME; `janelaMaisAntigaAberta`; `pagoPix` ignora o que tem `aguardaComp`); `domain/contas-empresa.js › setPf` ignora `aguardaComp`; `lib/chave-da-parte.js` (chave na linha da conta do atendimento). Cada lançamento novo guarda `origemPix` (id#n, evita duplicar), `aguardaComp` e `lf` (onde está o comprovante). Testes: `node scripts/testar-pix-fornecedor.mjs` (13 verificações) e `node scripts/testar-chave-da-parte.mjs` (4).
+
+**Limites conhecidos:** destino sem fornecedor de NOME igual no cadastro de Pagamentos a fornecedores não gera pagamento. Testado no navegador na porta 3000 com pedido falso (limpo depois); o comprovante do atendimento interno e o da representante foram testados só no reducer, em memória.
+
+**Erro que NÃO se repete (Marcus, 17/11/2026):** quem anexa o comprovante é a representante ou a funcionária do atendimento interno, nunca o Direcionar nem o Financeiro.
+
+## 18/11/2026 — Dívidas de prestadores da família: Contas a pagar e Direcionar (regra do Marcus, construída; v0.21.17)
+**Regra:** a dívida com um prestador da família (Greicy de cada sócio, Rebel Mode, 68 Gang) é uma CONTA CORRENTE: fica aberta e cada Pix que entra liquida uma parte. Ela aparece em Contas a pagar, por sócio, com data de pagamento.
+
+| Ponto | Como é |
+|---|---|
+| Onde aparece | Financeiro › Contas a pagar, visão Família ou Junto (só quem tem a autorização da família). Uma linha por dívida, Dono = sócio responsável |
+| Vencimento | O prazo gravado na dívida (Financeiro familiar › Prestadores). Sem prazo: último dia do mês de hoje. Greicy: 31/12/2026 (gravado nas 3 dívidas) |
+| Valor da linha | O que AINDA FALTA, depois dos repasses. Quitada vira Paga, com a data do repasse que quitou |
+| Direcionar | O prestador da família com dívida em aberto vira destino (mesmo nome do cadastro). O Lucas escolhe o prestador do sócio certo |
+| Pix confirmado no Direcionar | Vira repasse no Financeiro familiar sozinho, no sócio responsável, e abate a dívida. Reabrir retira. Confirmar duas vezes não duplica |
+| Pix de representante | Por enquanto o Lucas ainda lança à mão no Financeiro familiar |
+| Comprovante | Não trava o repasse da família (a trava do comprovante vale só para fornecedor) |
+
+**Código:** `domain/financeiro-familiar.js` (`itensDividasPrestadores`, `prazoDaDivida`, ops `repasse_dir` e `repasse_dir_desfaz`); `domain/controle-pagamentos.js` (op `destinos_prest`); `state/reducer.js` (caso `DP`); `pages/ContasPagarLista.js`; `pages/DirecionarPix.js`. Prestador da família NÃO entra na sugestão "prestador menor" do Direcionar. Teste: `node scripts/testar-pix-prestador-familia.mjs` (12 verificações).
+- **Contas a pagar, ordem por vencimento (18/11/2026, Marcus: "deveria aparecer sempre pelo vencimento"):** a lista JÁ ordena pelo vencimento (sem vencimento, pela emissão). O que parecia fora de ordem eram 2 títulos de representante com ano errado no DevMaster (0226 e 2006) e grupos com um título sem data. Agora o ano errado sai inteiro com Situação "Data errada" e o grupo mostra o menor vencimento que existe. O ERRO DE DIGITAÇÃO continua na DevMaster: corrigir lá. Dados da DevMaster atualizam ao abrir o sistema e a cada 10 minutos (cache do servidor também de 10 min).
+
+## 18/11/2026 — Contas a pagar e Direcionar: o que era só do navegador foi para o servidor (v0.21.17)
+- **Problema (vistoria de 18/11/2026):** `s.cpe` (baixas dadas no sistema, CNPJ trocado, marca Empresa/Família, contas à mão, histórico) e a configuração do Direcionar (`s.dp.contasRep`, `contasRepExtra`, `regras`, `limiteAlto`) não estavam na lista de sincronia. Cada pessoa só via o que ela mesma lançava.
+- **Feito:** dois módulos novos em `lib/sync-modulos.js`: `cpe` (o próprio `s.cpe`; o histórico ganha um id por linha em `fatiaCpe`) e `dpc` (só as chaves de configuração de `s.dp`; a fila de pedidos segue no módulo `pag`). Permissão no servidor: Financeiro e Diretoria (`src/server/permissoes.js`). Gravação por diferença, como os outros módulos.
+- **Primeira chegada em cada navegador:** o que só existia ali é JUNTADO ao que veio do servidor (baixa, conta à mão, histórico; conta fixa marcada à mão vence a automática) e sobe no envio seguinte. Depois disso vale o servidor (marcas `cpeSrv` e `dpcSrv` no estado). Sem isso, uma baixa desfeita por outra pessoa voltaria.
+- **Carga inicial:** a primeira gravação de um módulo só a Diretoria faz (regra do servidor). Até a Diretoria abrir a versão nova, os outros seguem como antes.
+- **Cópia de segurança:** a cópia diária do navegador (`lib/copia-navegador.js`) guarda o `cpe` antigo de cada pessoa até a véspera; serve para recuperar se faltar algo.
+- **Outros acertos:** `ateNomes` do Direcionar (cortava na letra s); baixa com data futura na DevMaster não entra no corte dos Pix de fornecedor (`contas-empresa.js › setPf`).
+- **Teste:** `node scripts/testar-sync-contas-a-pagar.mjs` (18 verificações).
+- **Ainda só no navegador (não mexido):** `s.fiscal`, `s.contasCnpj`, `s.cnpjs`, `s.emp`, `s.datasPag`, `s.dinheiroFluxo`, `s.fatDia`.
+
+## 18/11/2026 — Financeiro › Atividades, só para o Marcus (v0.21.20)
+- **Pedido do Marcus:** "uma aba de atividades lá do financeiro que fica somente para mim com todas as atividades". Já estava anotada como pendência em `docs/negocio/CAIXA-FINANCEIRO.md` (aba Atividades por funcionário, check diário).
+- **Tela:** `pages/AtividadesFinanceiro.js` (aba `finativ`, endereço `/financeiro/atividades-do-financeiro`, última palavra do menu do Financeiro). Três tabelas: **Rotina** (atividade, sistema, última vez, quem fez por último, quantidade e valor no período, situação), **Por pessoa e dia** e **Para corrigir**. Período: Hoje, 7 dias ou 30 dias.
+- **Situação:** Em dia = feita hoje ou no último dia útil; Parada há N dias úteis (segunda a sexta; feriado ainda não é descontado); estornos e Financeiro familiar são só informativos.
+- **Origens:** DevMaster pelo servidor (`src/server/atividades-fin.js`, rota `/api/atividades-fin`, só leitura, cache de 10 min): movimentos `dmabf` pela data em que foram gerados, com o usuário (`abf_usumov` + `dmzzx`); títulos lançados por dia (`dmabe`, sem usuário: a tabela não guarda); último extrato importado por conta e linhas sem conciliar (`dmajt`, 60 dias); erros de data. Sorelly Admin pelo estado (`domain/atividades-fin.js`): Pix direcionados (`dp.pix`), baixas e trocas do Contas a pagar (`cpe.hist`), saldos das contas (`saldosContas.saldos`) e Financeiro familiar (`ff.hist`).
+- **Acesso:** só a pessoa 16 (Marcus). O menu esconde (`PESSOAS_ATIVIDADES_FIN`, `App.js`) e o servidor confere pelo pessoaId (`LEITORES_ATIVIDADES_FIN`). Para liberar outra pessoa, acrescentar nas DUAS listas.
+- **Limites:** quem lançou um título a pagar não aparece (só pelo registro de usuários `dmzbl`, que é lento). Pagamentos a fornecedores e saldos das contas não guardam quem lançou. A tela não foi vista no navegador antes de subir (a porta 3000 mostra outro ramo); foi conferida por teste (`node scripts/testar-atividades-financeiro.mjs`, 17 verificações), leitura real da DevMaster e build.
+
+## 18/11/2026 — Revisão do Financeiro (testes + revisão de código independente): o que foi consertado e o que ficou aberto
+**Consertado (v0.21.23):** bloco Pagamentos da Família do Direcionar usa o prazo padrão (fim do mês) como o Contas a pagar; comprovante anexado por outra pessoa libera o pagamento do fornecedor também quando chega pelo servidor (módulo `pag` chama `sincCompFornecedor`); só Pix abate dívida de prestador (link e maquininha não); Pix já lançado à mão no Financeiro familiar não conta duas vezes (mesmo prestador, valor, dia e quem pagou); destino de mesmo nome sem ligação só recebe `prestFamId` e destinos novos têm id fixo `dpf-<id>`; data do Pix confirmado usa o dia local; dívida de prestador (`ffd|`) não casa com título da DevMaster; prestador desativado com saldo continua em Contas a pagar; Atividades: dia de São Paulo, ano acima de 2100 e nome de quem fez no familiar; `versoes.js` da master estava com a entrada 0.21.20 sem fechamento (erro de sintaxe) e foi consertado.
+**Aberto (risco conhecido, não consertado):** (1) a primeira junção de `cpe`/`dpc` pode ressuscitar item que outra pessoa apagou antes da primeira chegada; (2) bônus do Nickolas semeados (`nick2-*`) podem voltar em navegador novo; (3) comprovante em PDF de baixa vai inteiro em base64 dentro de `cpe` (pode estourar o limite da Vercel na primeira carga); (4) ids de pagamento de fornecedor vêm de contador local (`pf.seq.L`) e podem colidir entre dois navegadores; (5) reabrir um Pix que já tem comprovante e confirmar em outro fornecedor deixa o pagamento do primeiro; (6) Pix para fornecedor sem janela em aberto não cria pagamento nem avisa; (7) o repasse do Direcionar precisa que quem confirma tenha o módulo ff carregado (sem aviso se faltar); (8) baixa legada pode sumir se a aba fechar entre a junção e o primeiro envio. Testes: `node scripts/testar-pix-prestador-familia.mjs` (16) e `node scripts/testar-pix-fornecedor.mjs` (15).
+
+## 18/11/2026 — Cérebro do Financeiro: regras, contas e respostas do Marcus (pasta nova)
+Pasta `docs/negocio/cerebro-financeiro/` (README + 01 a 06; `CEREBRO-DO-FINANCEIRO.md` virou apontador). **Regras de orientação do Pix por CNPJ (nada construído ainda, só decisão):** orientação por CNPJ (o Lucas escolhe a conta); conta se paga no CNPJ, o banco previsto da DevMaster não importa; cheque especial conta como dinheiro; meta = nenhuma conta negativa; Rotativo + Sicredi 34 são um grupo, Safra e Unicred separados; todo saldo positivo do Sicredi 34 amortiza o Rotativo no dia; até R$ 2.000 negativo por conta, mandar só o suficiente; depois Pix para o 34 até todas ficarem positivas (Safra primeiro); avaliação refeita todo dia olhando o mês dia a dia (começo do mês, a partir do dia 26, é crítico), com 1 a 2 dias de antecedência e o recebimento efetivo do Contas a receber; prioridade quando não cobre: vale, INSS (e FGTS), cheques e todos os boletos; o cérebro só sugere e o Lucas confirma (no futuro executa sozinho); avisos num bloco no Direcionar; limite de faturamento por CNPJ existe mas este ano não trava; Open Finance em 2027; o saldo é lançado no fim do dia, por volta das 17h, e vale o último saldo. **Respostas às 12 perguntas da vistoria:** a empresa PARA de usar as contas pessoais dos sócios (exceção: Itaú PF do pai, que continua recebendo o salário dele); Itaú Black e Itaú Marco PJ são a mesma conta; não existe dinheiro entre CNPJs; Caixa Seguro = dinheiro na casa do Marcus, Caixa Financeiro = dinheiro das meninas antes de ir para a sócia do caixa; folha e impostos pela contabilidade; a sócia do caixa não usa relatórios da DevMaster; empréstimos em Contas a pagar e em aba própria; a Nayale entrou de férias e Ana Beatriz e Anamaria dão as baixas (a Ana Beatriz tem a menor taxa de estorno). **Ordem de trabalho mantida:** PDF da vistoria (feito) · primeira versão do cérebro (bloco de avisos no Direcionar) · teste real com a representante e tela de erros da DevMaster · depois cadastro único, lançador de contas a pagar e aba Empréstimos. **Decidir depois:** quando as contas pessoais saem do uso, se as contas da família continuam na orientação e de onde vem a lista de empréstimos.
+
+## 18/11/2026 — Cérebro do Financeiro v1 construído (v0.21.28)
+Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `pages/DirecionarPix.js`). Só sugere; o Lucas confirma. Testes: `node scripts/testar-cerebro-financeiro.mjs` (14). Rodado com dados reais de 18/11 (saldos das 16h19 e contas a pagar da DevMaster): bateu com a orientação manual da sócia do caixa. Ainda não entra: recebimento previsto por CNPJ, colchão mínimo, escolha da conta de pagamento.
+
+## 18/11/2026 — Chave Pix puxada do cadastro no Direcionar e no Atendimento; prestadores em tabela única (v0.21.21)
+- **Pedido do Marcus:** "conecta as chaves Pix aos fornecedores... quando o Lucas solicitar Pix Greicy Marcus no Direcionar ele puxa a chave Pix e já dá baixa e no Contas a pagar". A baixa (repasse) e o Contas a pagar já eram feitos desde 18/11 (v0.21.17). Faltava a CHAVE.
+- **O que era "Contas de prestadores":** conta bancária ligada a um prestador da família; o Pix lançado no Financeiro familiar que cai nela vira repasse sozinho. Continua. A chave Pix do prestador (`ff.prest[].chavePix`) é a mesma que a tela Chaves Pix edita.
+- **Regra da chave (`lib/chave-do-destino.js`):** prestador da família → a do cadastro dele; se ainda não editada, a do arquivo local; senão a da conta bancária ligada. "CPF", "A preencher" e vazio não valem. A Greicy de cada sócio é o MESMO Pix (as duas últimas usam a da Greicy). Fornecedor e prestador da empresa: busca exata; se nada achar, compara colado e pelo começo do nome ("Mega Sul" × "MegaSul").
+- **Dados reais:** na checagem de 18/11 havia 38 destinos fora de CNPJ no Direcionar; 25 achavam a chave e 13 não (6 fornecedores, 3 Greicy, Dávila Aline, Confraternização, Julia Marketing, Ulisses Detran). As chaves das Greicy e da Show Banca só existiam no arquivo local do computador do Marcus: o botão "Gravar N chaves Pix" (tela Prestadores) grava no servidor (`prest_set` com `chavePixEm`).
+- **Ainda sem chave:** Higor (só o texto CPF), Julia Marketing, Ulisses Detran, Lucas Castilho, Marcus Poupança e Dávila Aline: a chave precisa ser digitada na tela Chaves Pix.
+- **Teste:** `node scripts/testar-chaves-destinos.mjs` (13 verificações).
+
+## 18/11/2026 — 68 Gang conferido; prestadores em 3 colunas; Pix adiantado da revendedora (construído em 19/11/2026, v0.21.67)
+- **68 Gang acertado com o resumo do Marcus:** pago R$ 33.669,86, falta R$ 3.000,00 (só a 320i); M2 OS e troca de DRL quitadas. Removido o repasse duplicado `rp77` (R$ 4.500,00, "Cartão de crédito" lançado como Pix; o cartão 6x de 06/08 ficou) e lançado à mão o Pix da Karine Thauany Batista de Souza de 18/11 (R$ 634,55). Nomes dos Pix automáticos de novembro passam a mostrar o nome do PIX lançado.
+- **Pix adiantado da revendedora (regra do Marcus; CONSTRUÍDA em 19/11/2026, veja a decisão daquele dia):** quando a revendedora paga Pix direto a fornecedor ou prestador ANTES do acerto (ex.: Karine, R$ 634,55 em 18/11, sem acerto ainda), o acerto que a funcionária puxar no Atendimento interno tem que vir com esse valor JÁ PAGO, sem lançar de novo e sem criar um segundo repasse no prestador. O lançamento manual de 18/11 no 68 Gang é o registro do adiantamento até lá. Na DevMaster não há baixa dela depois de 23/10.
+- **Telas:** prestadores em três colunas lado a lado (Prestador, Dívidas, Pago) com totais na linha de baixo alinhados às colunas; dados do prestador em tabela e botão Editar abre um cartão (sócio travado quando já há dívida ou pago); lançar dívida e lançar pago em cartão próprio; Excluir pede "Tem certeza?"; descrição e nome de quem pagou mostram poucas palavras e o texto inteiro aparece ao passar o mouse; listas em ordem de data (antigo em cima); prestadores finalizados ficam fechados atrás do botão "Finalizados" e reabrem sozinhos quando se lança dívida nova.
+- **Limpeza pedida pelo Marcus:** Julia Marketing zerada (fechamento de R$ 300,00 em 18/11) e Rebel Mode 2 apagado (estava vazio). Truck Plaza fica finalizada (tem R$ 3.640,00 de histórico; só apagar se o Marcus confirmar).
+
+## 19/11/2026 — Pagamentos a fornecedores: controle e relatório por pedido (Nickolas, v0.21.35)
+- **Opção por fornecedor** `f.porPedido` ("Permitir identificação de pagamentos e relatórios por pedido"): desligada por padrão; ligada só na **Xangai (fornecedor id 23)**. Liga/desliga com histórico (`porPedidoHist`); desligar não apaga vínculos.
+- **Pedidos = as Negociações já lançadas** (`pf.pedidos`): é das parcelas Sem NF delas que sai a dívida do acerto. O controle por pedido não soma dívida; não existe "pedido manual" fora das Negociações. Campos novos opcionais do pedido: `condicoes`, `obs`, `descricao` e `compraId` (pedido do módulo Compras), op `pedido_info`.
+- **Pagamento único:** o Pix continua um registro e um comprovante; ganha `l.alocs = [{pedidoId, valor, adiant}]`. Soma destinada ≤ valor do Pix; o resto é "Valor sem identificação de pedido"; passar do saldo do pedido só com `adiant` (adiantamento/crédito). Nada é distribuído sozinho. Identificar depois: op `lanc_pedidos`, com `pedHist`; não muda a conferência.
+- **Saldo do pedido** = valor do pedido − ajustes identificados − Pix identificados − parcelas com NF marcadas pagas. A baixa automática das parcelas por ordem de vencimento (acerto geral) continua igual e NÃO entra no relatório por pedido.
+- **Ajuste:** desconto da maquininha de uma data pode ser marcado como do pedido ou "acerto geral" (`pf.ajustesPed["mq|chave"]`), sem novo abatimento. A "Diferença enviada a mais" fica no acerto geral.
+- **Relatório por pedido** (`lib/relatorio-pedidos-pf.js`): só os pedidos escolhidos, Pix dividido mostra o valor total da transferência e o valor destinado, junta pagamentos de acertos diferentes e mostra o período, com o aviso de escopo exclusivo. Mensagem sem o saldo geral.
+- **Link restrito:** `/acerto/<código>` (código de 20 caracteres em `pf.linksPedido`, escopo = fornecedor + pedidos), somente leitura, comprovantes só dos Pix ligados aos pedidos (`/acerto/<código>/comprovante/<id>`). O link completo antigo (`tokensAcerto`, acertos.sorelly.com.br) não mudou.
+- Teste: `scripts/testar-por-pedido-pf.mjs` (42 verificações).
+
+## 19/11/2026 — Pagamentos a fornecedores: "Sugerir divisão" por pedido (Nickolas, v0.21.37)
+- Pedido do Nickolas ("Sim, faça o botão"), depois de ver que os pagos por pedido ficavam R$ 0,00 sem identificação. Botão na área Pedidos do acerto: propõe a divisão dos Pix SEM identificação pela ordem de vencimento da parte Pix de cada pedido NESTE acerto (empate: data do pedido), até o saldo de cada um (`sugerirDivisao` em `domain/pf.js`).
+- É só proposta: grava apenas o que a pessoa deixar marcado e confirmar (op `lanc_pedidos_lote`, tudo ou nada; histórico com `sugestao:true`). Nunca vira adiantamento sozinha e não mexe no que já foi identificado.
+- Com os dados de hoje da Xangai (acerto de 30/11), a sugestão manda os 8 Pix (R$ 8.977,68) para o Romaneio 005457 (vence 19/11, antes da Fatura 5499 de 30/11).
+
+## 19/11/2026 — Relatório por pedido: boleto opcional e mensagem no formato do acerto (Nickolas, v0.21.40)
+- Caixa "Incluir boleto no relatório e na mensagem" (desmarcada por padrão). Desmarcada: HTML, link e mensagem só com o valor em Pix (igual ao acerto normal). Marcada: os três mostram também as parcelas com nota (boleto, cartão, cheque), com vencimento e situação. A opção fica gravada no link (`pf.linksPedido[código].boleto`): link com e sem boleto são códigos diferentes.
+- Mensagem por pedido no mesmo formato da mensagem normal (💰 Total do pedido em Pix, ✅ Já enviado, ⏳ Em aberto, 📄 Pix enviados, link, fecho). "Gerar mensagem" cria o link na hora (código sorteado na tela e gravado pela op `link_pedidos` com `token`), para a mensagem sair sempre com o link do novo HTML.
+- Mesmo dia: o Nickolas confirmou a sugestão de divisão: os 8 Pix da Xangai de 30/11 (R$ 8.977,68) ficaram no Romaneio 005457.
+
+## 19/11/2026 — Greicy padronizada; 68 Gang sem pagamento duplicado; Tenda acertada
+- **Nomes:** os três prestadores Greicy viram **Greicy Marcus**, **Greicy Anamaria** e **Greicy Ana Beatriz**, todos com serviço **Estética** (pedido do Marcus). Os destinos do Direcionar ganharam os mesmos nomes. A chave Pix (`lib/chave-do-destino.js`) continua achando pelo nome antigo (arquivo local) e pela Greicy universal (chave de telefone gravada em 19/11).
+- **68 Gang:** o Pix de R$ 634,55 da Karine (18/11) apareceu duas vezes (o manual de 18/11 e o Pix lançado depois, que gera repasse sozinho). Tirado o manual: pago R$ 33.669,86, falta R$ 3.000,00. Regra: quando o Pix entra no Financeiro, não manter lançamento manual do mesmo valor.
+- **Tenda (FHC TENDA):** os Pix de 14/10 (R$ 217 + R$ 300 + R$ 300 + R$ 300) estavam certos; lançada a dívida de R$ 1.117,00 que faltava. Saldo R$ 0,00, finalizada.
+- **Bônus Diego:** os Pix da Karine (R$ 500,00 em 13/11) e outro Pix (R$ 338,30 em 13/11) entraram como Pix e viraram repasse; falta R$ 69,00 da dívida de R$ 1.300,00.
+
+## 19/11/2026 — Prestadores: nome curto, uma linha só
+- Pedido do Marcus: em Quem pagou (tabela Pago) aparecem só 1 ou 2 nomes e nunca duas linhas; o nome inteiro aparece ao passar o mouse. Descrição da dívida: até 3 palavras numa linha, texto inteiro ao passar o mouse.
+- **Contas de prestadores (Marcus, 19/11/2026: "isso edita no prestador, pode excluir"):** o bloco saiu da tela. O banco e a conta que recebe o Pix se editam no cartão Editar do prestador (cria a conta se não existir). Os dados das contas continuam no sistema; o Pix que cai numa conta ligada ao prestador continua virando pagamento sozinho.

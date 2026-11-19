@@ -100,4 +100,4 @@ function JanelaSeparar(p){
         fotosBloco, e("div",{className:"flex min-w-0 flex-col gap-3"}, pedidoBloco, etapaBloco)),
       rodape));
 }
-export { JanelaSeparar, ETAPAS_SEP };
+export { JanelaSeparar, ETAPAS_SEP, Foto, urlAnexo };

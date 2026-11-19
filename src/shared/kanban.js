@@ -13,6 +13,7 @@
 //     compacto: true,                                         // (opcional) cartão baixo e à esquerda, colunas mais largas e com mais espaço (Kits novos, 05/11/2026)
 //     corBarra: function(item, coluna){ return "#EF4444"; }  // (opcional, com compacto) cor da barra da lateral do cartão; sem isso vale a cor da coluna
 //     recolherVazias: true,                                   // (opcional) coluna sem cartão vira uma tira fina com o título em pé e o zero (ainda aceita soltar cartão); Funil de pedidos, 09/11/2026
+//     cabecaFina: true,                                       // (opcional) cabeçalho da coluna de UMA linha só: título e quantidade (Link de pagamento, 16/11/2026)
 //   })
 // Cada coluna mostra no máximo `limite` cartões (padrão 30) e um botão "Ver mais" (nada de rolagem dentro da coluna).
 // Colunas ficam lado a lado e ajustam-se à largura: a lista rola para o lado arrastando o vazio (comportamento global do sistema).
@@ -44,7 +45,9 @@ function Coluna(p){
       className:"flex min-w-0 flex-col "+(fina ? "items-center gap-2 px-0 py-2.5 " : p.compacto ? "gap-1.5 p-2.5 " : "gap-2 p-2 ")+"rounded-xl bg-black/20 transition "+(sobre ? "ring-2" : "ring-1 ring-white/10"), style:sobre ? {boxShadow:"0 0 0 2px "+c.cor} : fina ? {boxShadow:"inset 0 3px 0 "+c.cor} : undefined},
     fina ? e("span",{className:"font-mono text-[13px]"}, "0") : null,
     fina ? e("span",{title:c.titulo, className:"whitespace-nowrap text-[11px]", style:{writingMode:"vertical-rl", transform:"rotate(180deg)"}}, c.titulo) : null,
-    fina ? null : e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-center", style:{background:c.cor+"33", boxShadow:"inset 0 0 0 1px "+c.cor+"88"}},
+    fina ? null : p.cabecaFina ? e("div",{className:"flex h-8 items-center justify-between gap-2 rounded-md px-2", style:{background:c.cor+"33", boxShadow:"inset 0 0 0 1px "+c.cor+"88"}},
+      e("b",{className:"text-[13px] leading-tight"}, c.titulo),
+      e("span",{className:"font-mono text-[11px] tabular-nums", title:c.itens.length+" "+((p.unidade||["cartão","cartões"])[c.itens.length===1 ? 0 : 1])}, c.itens.length)) : e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-center", style:{background:c.cor+"33", boxShadow:"inset 0 0 0 1px "+c.cor+"88"}},
       e("b",{className:"text-[13px] leading-tight"}, c.titulo),
       e("span",{className:"font-mono text-[12px] text-white/80"}, c.itens.length+" "+((p.unidade||["cartão","cartões"])[c.itens.length===1 ? 0 : 1])),
       c.dica && e("span",{className:"text-[10.5px] leading-tight text-white/60"}, c.dica)),
@@ -56,6 +59,6 @@ function Coluna(p){
 function Kanban(p){
   var st = useState(null), arrastando = st[0], n = p.colunas.length;
   return e("div",{className:"overflow-x-auto pb-1"}, e("div",{className:"grid items-start "+(p.compacto ? "gap-3" : "gap-2"), style:{gridTemplateColumns:p.recolherVazias ? p.colunas.map(function(c){ return !c.itens.length && !arrastando ? "3rem" : "minmax("+(p.compacto ? "16rem" : "14.5rem")+", 1fr)"; }).join(" ") : "repeat("+n+", minmax("+(p.compacto ? "18rem" : "14.5rem")+", 1fr))"}},
-    p.colunas.map(function(c){ return e(Coluna,{key:c.k, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, unidade:p.unidade, vazio:p.vazio, semMover:p.semMover, compacto:p.compacto, corBarra:p.corBarra, recolherVazias:p.recolherVazias, arrastando:arrastando, setArrastando:st[1]}); })));
+    p.colunas.map(function(c){ return e(Coluna,{key:c.k, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, unidade:p.unidade, vazio:p.vazio, semMover:p.semMover, compacto:p.compacto, corBarra:p.corBarra, recolherVazias:p.recolherVazias, cabecaFina:p.cabecaFina, arrastando:arrastando, setArrastando:st[1]}); })));
 }
 export { Kanban };

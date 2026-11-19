@@ -401,11 +401,7 @@ function JanelaPedido(p){
       e("select",{value:ped.catNovo, "aria-label":"Categoria", className:INPUT+" h-10! cursor-pointer", onChange:function(ev){ p.setPed(Object.assign({}, ped, {catNovo:ev.target.value})); }}, FORN_CATS.map(function(k){ return e("option",{key:k}, k); })),
       e(Btn,{onClick:addRapido}, "Adicionar"),
       e(Btn,{neutro:true, onClick:function(){ p.setPed(Object.assign({}, ped, {nova:false})); }}, "Cancelar")),
-    ehPrestador(forn(pf, ped.fornId)) && !ped.nova && e("div",{className:"flex flex-col gap-3 rounded-xl bg-[#3B82F6]/10 p-3 ring-1 ring-[#3B82F6]/40"},
-      Rot("Negociação do prestador"),
-      e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-        e(Campo,{rot:"Pagar até (data limite)"}, e(Txt,{type:"date", value:ped.limite, label:"Data limite", onChange:function(v){ upd({limite:v}); }})),
-        e(Campo,{rot:"Valor mínimo de cada pix (R$)"}, e(Txt,{type:"number", value:ped.pixMin, label:"Valor mínimo de pix", onChange:function(v){ upd({pixMin:v}); }})))),
+    // "Negociação do prestador" (data limite e Pix mínimo) saiu em 19/11/2026: não servia para nada e atrapalhava (Lucas)
     e(Campo,{rot:"O que estamos pagando (itens e combinado — aparece em Ver negociação)"}, e(Txt,{value:ped.descricao, ph:"Ex.: 3 refis de tinta + 9 bolsas de tinta, combinado R$ 3.600,00", label:"Resumo da negociação", onChange:function(v){ upd({descricao:v}); }})),
     Rot("Divisão da nota fiscal"),
     e("div",{className:"grid grid-cols-1 gap-1.5 sm:grid-cols-3"}, NF_SEG.map(function(x){ var on = ped.nf===x[0];
@@ -471,15 +467,17 @@ function JanelaDetalhe(p){
       e(Tile,{t:"Já pago", v:brl(D.pago), cor:COR.green}), e(Tile,{t:"Em aberto", v:brl(D.aberto), cor:D.aberto>0.005 ? COR.red : "#fff"})),
     e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 px-4 py-3"},
       lin("Parcelas alocadas na parte com NF — boleto · pix empresa · cartão · cheque", D.comAloc, pd.comNF, D.restCom, "a"), lin("Parcelas alocadas na parte sem NF — pix revendedora", D.semAloc, pd.semNF, D.restSem, "b")),
-    Rot("Parcelas"),
-    Rolagem([
-      e("thead",{key:"h"}, e("tr",null, th("Nº"), th("Forma"), th("NF"), th("Vencimento"), th("Conta / bandeira"), th("Valor", TN), th("Status"), th(" "))),
-      e("tbody",{key:"b"}, D.parcelas.length ? D.parcelas.map(function(x){
-        return e("tr",{key:x.i, className:LIN+(x.registro ? " opacity-90" : "")},
-          e("td",{className:TD}, x.i+1), e("td",{className:TD}, e(Chip,{cor:x.forma.cor}, x.forma.label)), e("td",{className:TD+" "+MUTED}, x.nfLabel), e("td",{className:TD}, dbr(x.p.venc)), e("td",{className:TD+" "+MUTED}, x.p.conta || "—"),
-          e("td",{className:NUM}, brl(x.p.valor)), e("td",{className:TD}, x.registro ? e(Chip,{cor:"gray"}, "Registro") : e(Chip,{cor:x.p.status==="Pago" ? "green" : "orange"}, x.p.status)),
-          e("td",{className:TD}, x.registro ? e("span",{className:"text-[13px] "+MUTED}, "sem baixa") : e(Btn,{perigo:x.p.status==="Pago", disabled:!c.edita, onClick:function(){ p.baixa(pd.id, x.i); }}, x.p.status==="Pago" ? "Estornar" : "Dar baixa"))); })
-        : e("tr",null, e("td",{colSpan:8, className:"px-3 py-4 text-center text-[13.5px] "+MUTED}, "Nenhuma parcela lançada neste pedido.")))]),
+    // Parcelas divididas em Com NF e Sem NF, cada parte em ordem de vencimento (17/11/2026, pedido do Lucas)
+    D.parcelas.length ? [{t:"Parcelas com NF", com:true}, {t:"Parcelas sem NF", com:false}].map(function(g){
+      var ls = D.parcelas.filter(function(x){ return !!x.registro===g.com; }).sort(function(a, b){ return a.p.venc.localeCompare(b.p.venc) || a.i-b.i; })
+        .map(function(x){ return {id:x.i, n:x.i+1, venc:x.p.venc, forma:x.forma.label, conta:x.p.conta || "—", valor:x.p.valor, sit:x.registro ? "Registro" : x.p.status, x:x}; });
+      if(!ls.length) return null;
+      return e("div",{key:g.t, className:"flex flex-col gap-1"}, Rot(g.t+" · "+ls.length+" · "+brl(ls.reduce(function(a, r){ return a+r.valor; }, 0))),
+        e(TabelaPlanilha,{chave:"id", centro:true, semContagem:true, linhas:ls,
+          cols:[{k:"venc", t:"Vencimento", fmt:function(v){ return dbr(v); }}, {k:"forma", t:"Forma"}, {k:"conta", t:"Conta / bandeira"}, {k:"valor", t:"Valor", fmt:brl, cor:function(){ return "font-mono"; }},
+            {k:"sit", t:"Situação", cor:function(r){ return "font-semibold "+(r.sit==="Pago" ? "text-[#22C55E]" : (r.sit==="Registro" ? "text-white" : "text-[#F59E0B]")); }},
+            {k:"n", t:"Ação", render:function(v, r){ return r.x.registro ? "sem baixa" : e(Btn,{perigo:r.sit==="Pago", disabled:!c.edita, onClick:function(ev){ ev.stopPropagation(); p.baixa(pd.id, r.x.i); }}, r.sit==="Pago" ? "Estornar" : "Dar baixa"); }}]})); })
+      : e("p",{className:"py-4 text-center text-[13px]"}, "Nenhuma parcela lançada neste pedido."),
     pd.avisoLimite && e("p",{className:"text-[13px] font-bold", style:tom("yellow")}, "Aviso do teto mensal: "+pd.avisoLimite),
     (pd.historico||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-black/20 px-4 py-3"}, Rot("Histórico de alterações"),
       pd.historico.slice().reverse().map(function(h, i){ return e("div",{key:i, className:"text-[13px] text-white"}, e("b",null, h.em+" · "+(h.por||"—")+": "), h.mudou); })),

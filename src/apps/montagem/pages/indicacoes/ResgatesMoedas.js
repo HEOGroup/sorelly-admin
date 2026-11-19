@@ -10,9 +10,11 @@ import { agoraSP, avisoDeEstorno, avisoDeAtraso, buscaRevendedoraPorId, buscarRe
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { Alternar, Avatar, BarraFiltros, Bt, Busca, Chip, Colunas, FiltroData, Janela, Painel, Resumo, Secao, Selo } from "@/apps/montagem/pages/indicacoes/visual";
+import { Alternar, AlternarFaixa, Avatar, Bt, Busca, BuscaFaixa, Colunas, FaixaBloco, FiltroData, Janela, Painel, Resumo, Secao, Selo } from "@/apps/montagem/pages/indicacoes/visual";
+import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { Kanban } from "@/shared/kanban";
-import { e, useEffect, useState } from "@/shared/react";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { e, useEffect, useMemo, useState } from "@/shared/react";
 
 // uma cor para o setor (Cadastro de revendedoras); verde, amarelo e vermelho só para estado
 var COR_SETOR = "laranja";
@@ -163,29 +165,33 @@ function DialogoResgate(p){
 }
 
 // ───────────── cartão do Kanban ─────────────
+// 17/11/2026 (Marcus: "padronizar os cards"): mesmo cartão do Funil das indicações (e do quadro de Kits novos): duas linhas, barra colorida na lateral (verde em dia, âmbar atrasado, vermelha crítico) e menu ⋯ com as ações.
+function MenuAcoesResgate(p){
+  var st = useState(false), aberto = st[0];
+  return e("span",{className:"relative inline-flex", onClick:function(ev){ ev.stopPropagation(); }},
+    e("button",{type:"button", "aria-label":"Ações do pedido", title:"Ações do pedido", onClick:function(){ st[1](!aberto); }, className:"-my-1.5 h-8 w-7 rounded-md text-[13px] leading-none hover:bg-white/10"}, "⋯"),
+    aberto && e("span",{className:"fixed inset-0 z-30", onClick:function(){ st[1](false); }}),
+    aberto && e("span",{className:"absolute right-0 top-7 z-40 flex min-w-48 flex-col rounded-lg border border-border bg-card p-1 shadow-xl"},
+      p.itens.slice().sort(function(a, b){ return (a.perigo ? 1 : 0)-(b.perigo ? 1 : 0); }).map(function(x, k){ return e("button",{key:k, type:"button", onClick:function(){ st[1](false); x.f(); }, className:"h-8 rounded-md px-2 text-left text-[13px] hover:bg-white/10 "+(x.perigo ? "text-[var(--negativo)]" : "")}, x.t); })));
+}
 function CartaoResgate(p){
-  var r = p.it, op = r.operacao, aberto = etapaEmAberto(r.etapa), cor = COR_NIVEL[r.nivel], cc = COR_ETAPA[r.etapa] || "#94A3B8", tel = r.revendedora ? r.revendedora.telefone : "", zap = linkWhatsapp(tel), maleta = textoBrindeMaleta(op);
+  var r = p.it, op = r.operacao, aberto = etapaEmAberto(r.etapa), tel = r.revendedora ? r.revendedora.telefone : "", zap = linkWhatsapp(tel), maleta = textoBrindeMaleta(op);
   var alterna = function(campo){ var d = {type:"IND", op:"resgate_set", id:r.id, por:p.por}; d[campo] = !op[campo]; p.dispatch(d); };
-  // fundo em degradê leve na cor da coluna (sem aumentar a altura do cartão)
-  return e("div",{className:"flex flex-col items-center gap-1", style:{margin:"-10px -10px 0 -7px", padding:"10px 10px 4px 7px", borderRadius:"8px 8px 0 0", background:"linear-gradient(160deg, "+cc+"2E 0%, "+cc+"0A 70%, transparent 100%)"}},
-    e("div",{className:"flex max-w-full items-center justify-center gap-1.5"}, e(Avatar,{nome:r.nomeRevendedora, cor:cc, s:26}), e("b",{className:"min-w-0 text-left text-[13.5px] leading-tight"}, r.nomeRevendedora)),
-    e("span",{className:"flex items-center gap-1 text-[12.5px] font-semibold"}, e(Ph,{n:"gift", s:13}), r.premioTitulo||"Prêmio"),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-1"},
-      e(Selo,{cor:"#F3D98B", ic:"coins"}, formatarMoedas(r.custoMoedas)), r.premioValor>0 && e(Selo,{cor:"#94A3B8"}, formatarReais(r.premioValor)),
-      aberto && e(Selo,{cor:cor, ic:"clock", titulo:ROTULO_NIVEL[r.nivel]+" · pedido #"+r.id}, r.esperando+(r.nivel==="em-dia" ? "" : " · "+ROTULO_NIVEL[r.nivel])),
-      r.horarioAgendado && e(Selo,{cor:"#60A5FA", ic:"calendar-blank"}, r.horarioAgendado)),
-    r.etapa==="entregue" && e("span",{className:"text-[11.5px] text-white/75"}, "Retirado em "+formatarDataHora(r.entregueEm)+(op.valorVenda!=null ? " · "+formatarReais(op.valorVenda) : "")),
-    r.etapa==="cancelado" && e("span",{className:"text-[11.5px] text-white/75"}, "Cancelado"+(r.canceladoMotivo ? ": "+r.canceladoMotivo : "")),
-    maleta && e("span",{className:"text-[11px] leading-tight text-white/70"}, maleta),
-    aberto && e("div",{className:"flex flex-wrap justify-center gap-1"},
-      e(Bt,{tipo:op.emContato ? "ok" : "normal", ic:"whatsapp-logo", titulo:"Marcar como em contato (mantém o pedido em dia)", onClick:function(){ alterna("emContato"); }, className:BTP}, "Em contato"),
-      e(Bt,{tipo:op.vendidoSistema ? "ok" : "normal", ic:"check", titulo:"Peças já vendidas no sistema", onClick:function(){ alterna("vendidoSistema"); }, className:BTP}, "Vendido no sistema")),
-    e("div",{className:"flex flex-wrap justify-center gap-1"},
-      acoesDaEtapa(r.etapa).map(function(a){ var t = a.acao==="cancelar" ? "cancelar" : a.acao==="aprovar" ? "agendar" : "entregar";
-        return e(Bt,{key:a.acao, tipo:a.tom==="perigo" ? "perigo" : "forte", ic:a.acao==="cancelar" ? "x-circle" : a.acao==="aprovar" ? "calendar-blank" : "check-circle", onClick:function(){ p.abrir(t, r); }, className:BTP}, a.rotulo); }),
-      r.etapa==="aprovado" && e(Bt,{ic:"calendar-blank", onClick:function(){ p.abrir("agendar", r); }, className:BTP}, "Reagendar"),
-      aberto && e(Bt,{ic:"pencil-simple", onClick:function(){ p.abrir("balcao", r); }, className:BTP}, "Balcão"),
-      zap && e("a",{href:zap, target:"_blank", rel:"noreferrer", title:"Abrir conversa no WhatsApp", className:"inline-flex items-center justify-center rounded-lg bg-muted/50 px-2 py-1 hover:bg-white/15"}, e(Ph,{n:"whatsapp-logo", s:15}))));
+  var itens = [];
+  acoesDaEtapa(r.etapa).forEach(function(a){ var tp = a.acao==="cancelar" ? "cancelar" : a.acao==="aprovar" ? "agendar" : "entregar"; itens.push({t:a.rotulo, perigo:a.tom==="perigo", f:function(){ p.abrir(tp, r); }}); });
+  if(r.etapa==="aprovado") itens.push({t:"Reagendar", f:function(){ p.abrir("agendar", r); }});
+  if(aberto){ itens.push({t:"Balcão (peças e valores)", f:function(){ p.abrir("balcao", r); }}); itens.push({t:op.emContato ? "Tirar a marca Em contato" : "Marcar Em contato", f:function(){ alterna("emContato"); }}); itens.push({t:op.vendidoSistema ? "Tirar a marca Vendido no sistema" : "Marcar Vendido no sistema", f:function(){ alterna("vendidoSistema"); }}); }
+  if(zap) itens.push({t:"Abrir o WhatsApp", f:function(){ window.open(zap, "_blank", "noopener"); }});
+  var linha2 = [r.premioTitulo||"Prêmio", formatarMoedas(r.custoMoedas), r.premioValor>0 ? formatarReais(r.premioValor) : ""].filter(Boolean).join(" · ");
+  var marcas = [r.horarioAgendado, op.emContato ? "Em contato" : "", op.vendidoSistema ? "Vendido no sistema" : "", maleta].filter(Boolean).join(" · ");
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:"flex items-start justify-between gap-2"},
+      e("b",{className:"min-w-0 break-words text-[13px] leading-tight"}, r.nomeRevendedora),
+      e("span",{className:"flex shrink-0 items-center gap-0.5"}, aberto && e("span",{className:"text-[11px] font-semibold tabular-nums", style:{color:COR_NIVEL[r.nivel]}, title:ROTULO_NIVEL[r.nivel]+" · pedido #"+r.id}, r.esperando), e(MenuAcoesResgate,{itens:itens}))),
+    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Prêmio, moedas e valor"}, linha2),
+    r.etapa==="entregue" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Retirado em "+formatarDataHora(r.entregueEm)+(op.valorVenda!=null ? " · "+formatarReais(op.valorVenda) : "")),
+    r.etapa==="cancelado" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Cancelado"+(r.canceladoMotivo ? ": "+r.canceladoMotivo : "")),
+    marcas && e("span",{className:"text-[11px] leading-tight text-white/70"}, marcas));
 }
 
 // ───────────── Fila de resgates (Kanban) ─────────────
@@ -209,18 +215,10 @@ function CorpoResgates(){
   };
   var corAtraso = ind0.criticos>0 ? ESTADO.ruim : ESTADO.alerta;
   return e(Pagina,null,
-    e(Resumo,{itens:[
-      {t:"Na fila", v:ind0.naFila, cor:"aberto"}, {t:"Aguardando retirada", v:ind0.aguardando, cor:"info"}, {t:"Retirados", v:ind0.retirados, cor:"ok"},
-      {t:"Cancelados", v:ind0.cancelados, cor:"cancelado"}, {t:"Atrasados", v:ind0.atrasados, cor:ind0.atrasados ? "atrasado" : "cancelado", sub:ind0.criticos ? ind0.criticos+" críticos" : undefined},
-      {t:"Sem horário", v:ind0.semHorario, cor:ind0.semHorario ? "aberto" : "cancelado"}]}),
-    ind0.aviso && e(Alerta,{cor:corAtraso}, ind0.aviso+(ind0.criticos ? " · "+ind0.criticos+(ind0.criticos===1 ? " crítico" : " críticos") : "")),
-    aviso && e("div",{onClick:function(){ st4[1](null); }, className:"cursor-pointer"}, e(Alerta,{cor:ESTADO.ruim, ic:"x-circle"}, aviso)),
-    e(BarraFiltros,{limpar:q || maleta ? function(){ st1[1](""); st5[1](false); } : null},
-      e(Busca,{v:q, ph:"Buscar por nome, telefone, prêmio ou nº", set:st1[1]}),
-      e(Alternar,{on:maleta, set:st5[1], ic:"package"}, "Retirada com a maleta"),
-      e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ st3[1](true); }, className:"h-9 py-0!"}, "Novo pedido")),
-    e(Secao,{ic:"gift", t:"Fila de resgates", sub:"Arraste o cartão para a etapa seguinte", dir:String(colunas.reduce(function(t, c){ return t+c.itens.length; }, 0))},
-      e(Kanban,{colunas:colunas, card:function(it){ return e(CartaoResgate,{it:it, por:por, dispatch:cx.dispatch, abrir:abrir}); }, onMover:mover, vazio:"Nenhum pedido nesta etapa."})),
+    e(Secao,{t:"Fila de resgates", semPad:true, dir:ind0.naFila+" na fila · "+ind0.aguardando+" aguardando retirada · "+ind0.retirados+" retirados"+(ind0.atrasados ? " · "+ind0.atrasados+" atrasados" : ""),
+      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:q, ph:"Buscar por nome, telefone, prêmio ou nº", set:st1[1]}), e(AlternarFaixa,{on:maleta, set:st5[1]}, "Retirada com a maleta"), e("span",{className:"flex-1"}), e(Botao,{principal:true, onClick:function(){ st3[1](true); }}, "Novo pedido"))},
+      aviso && e("div",{onClick:function(){ st4[1](null); }, className:"cursor-pointer p-2"}, e(Alerta,{cor:ESTADO.ruim, ic:"x-circle"}, aviso)),
+      e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:function(it){ return e(CartaoResgate,{it:it, por:por, dispatch:cx.dispatch, abrir:abrir}); }, onMover:mover, compacto:true, cabecaFina:true, semMover:true, corBarra:function(it, col){ return etapaEmAberto(it.etapa) ? COR_NIVEL[it.nivel] : col.cor; }, onAbrir:function(it){ if(it.etapa==="solicitado") abrir("agendar", it); else if(it.etapa==="aprovado") abrir("entregar", it); }, unidade:["pedido","pedidos"], vazio:"Nenhum pedido nesta etapa."}))),
     dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st2[1](null); }}),
     novo && e(FormNovoPedido,{ind:ind, por:por, dispatch:cx.dispatch, fechar:function(){ st3[1](false); }}));
 }
@@ -246,8 +244,6 @@ function CorpoRetiradas(){
   var Acoes = function(r, extra){ return e("div",{className:"flex flex-wrap justify-center gap-1"},
     e(Bt,{tipo:"ok", ic:"check-circle", onClick:function(){ abrir("entregar", r); }, className:BTP}, "Confirmar retirada"), e(Bt,{ic:"calendar-blank", onClick:function(){ abrir("agendar", r); }, className:BTP}, extra||"Reagendar"), e(Bt,{tipo:"perigo", ic:"x-circle", onClick:function(){ abrir("cancelar", r); }, className:BTP}, "Cancelar")); };
   return e(Pagina,null,
-    e(Resumo,{itens:[{t:"Agendados hoje", v:ind0.agendadosHoje, cor:"info"}, {t:"Sem horário", v:ind0.semHorario, cor:ind0.semHorario ? "aberto" : "cancelado"}, {t:"Retiradas hoje", v:ind0.retiradasHoje, cor:"ok"},
-      {t:"Valor em venda hoje", v:formatarReais(ind0.valorHoje), cor:"ouro"}, {t:"Moedas hoje", v:ind0.moedasHoje.toLocaleString("pt-BR"), cor:"ouro"}]}),
     sem.length>0 && e("section",{className:"flex flex-col gap-1.5 rounded-xl p-2.5 text-center", style:{background:"linear-gradient(135deg, "+ESTADO.alerta+"2E, "+ESTADO.alerta+"0F)", boxShadow:"inset 0 0 0 2px "+ESTADO.alerta+"88"}},
       e("b",{className:"flex items-center justify-center gap-1.5 text-[14px]", style:{color:ESTADO.alerta}}, e(Ph,{n:"warning", s:16}), "Resgates sem horário ("+sem.length+")"),
       e(Mosaico,{min:"22rem"}, sem.map(function(r){ return e("div",{key:r.id, className:"flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-lg bg-black/30 px-3 py-1.5"},
@@ -260,20 +256,17 @@ function CorpoRetiradas(){
           return e("button",{key:d, type:"button", onClick:function(){ st2[1](d); }, title:formatarDia(d), className:"flex min-w-16 flex-col items-center rounded-lg px-2.5 py-1 text-[12.5px] font-bold transition "+(sel ? "bg-[#F97316] text-black" : "bg-black/30 ring-1 ring-white/15 hover:bg-white/10")},
             rotuloDoChip(d, hoje), e("span",{className:MONO+" text-[11px] "+(sel ? "text-black/75" : n ? "text-[#FDBA74]" : "text-white/45")}, n===0 ? "Livre" : n+(n===1 ? " retirada" : " retiradas"))); })),
         e(Bt,{ic:"caret-right", onClick:function(){ st1[1](avancarFaixa(inicio, 1, cfg.agendaDias||7)); }, className:BTP+" shrink-0", titulo:"Próximos dias"})),
-      e(BarraFiltros,{limpar:diaAg!==hoje ? function(){ st2[1](hoje); st1[1](hoje); } : null},
-        e(FiltroData,{rot:"Outro dia", v:diaAg, set:function(x){ if(x){ st2[1](x); st1[1](x); } }})),
-      ag.length ? e(Tab,{cols:["Horário", "Revendedora", "Prêmio", "Moedas", "Espera", "Ações"]}, ag.map(function(r){ return e("tr",{key:r.id, className:LINHA},
-          e(Td,{dinheiro:true, forte:true}, horaDe(r.operacao.dataAgendada)), e(Td,{forte:true}, r.nomeRevendedora), e(Td,null, r.premioTitulo), e(Td,{dinheiro:true}, r.custoMoedas.toLocaleString("pt-BR")), e(Td,{cor:COR_NIVEL[r.nivel]}, r.esperando), e(Td,null, Acoes(r))); }))
+      e(FaixaBloco,null, e(FiltroData,{rot:"Outro dia", v:diaAg, set:function(x){ if(x){ st2[1](x); st1[1](x); } }}), diaAg!==hoje && e(Botao,{onClick:function(){ st2[1](hoje); st1[1](hoje); }}, "Hoje")),
+      ag.length ? e(TabelaPlanilha,{cols:[{k:"hora", t:"Horário"}, {k:"nome", t:"Revendedora"}, {k:"premio", t:"Prêmio"}, {k:"moedas", t:"Moedas", fmt:function(v){ return Number(v).toLocaleString("pt-BR"); }}, {k:"espera", t:"Espera"},
+          {k:"acoes", t:"Ações", render:function(v, l){ return Acoes(l.r); }}], linhas:ag.map(function(r){ return {id:r.id, hora:horaDe(r.operacao.dataAgendada), nome:r.nomeRevendedora, premio:r.premioTitulo, moedas:r.custoMoedas, espera:r.esperando, acoes:"", r:r}; }),
+          chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true})
         : e("p",{className:"py-3 text-center text-[13px] text-white/70"}, "Nenhuma retirada agendada para "+(diaAg===hoje ? "hoje" : formatarDia(diaAg))+".")),
     e(Secao,{ic:"package", t:"Retiradas do dia", dir:String(res.quantidade)},
-      e(BarraFiltros,null,
-        e(FiltroData,{rot:"Dia", v:diaRet, set:function(x){ if(x) st3[1](x); }}),
-        e(Chip,{on:diaRet===hoje, onClick:function(){ st3[1](hoje); }}, "Hoje"), e(Chip,{on:diaRet===somaDias(hoje, -1), onClick:function(){ st3[1](somaDias(hoje, -1)); }}, "Ontem"),
-        e(Bt,{tipo:"forte", ic:"download-simple", disabled:res.quantidade===0, titulo:nomeDoArquivoCsv(diaRet), onClick:baixar, className:"h-9 py-0!"}, "Baixar CSV")),
-      e(Resumo,{itens:[{t:"Retiradas", v:res.quantidade, cor:"ok"}, {t:"Valor em venda", v:formatarReais(res.valorTotal), cor:"ouro"}, {t:"Moedas", v:res.moedasTotal.toLocaleString("pt-BR"), cor:"ouro"}]}),
-      res.itens.length ? e(Tab,{cols:["Pedido", "Revendedora", "Prêmio", "Valor em venda", "Moedas", "Responsável", "Peças", "Retirado em"]}, res.itens.map(function(r){ var op = r.operacao;
-          return e("tr",{key:r.id, className:LINHA}, e(Td,{dinheiro:true}, "#"+r.id), e(Td,{forte:true}, r.nomeRevendedora), e(Td,null, r.premioTitulo), e(Td,{dinheiro:true}, formatarReais(op.valorVenda!=null ? op.valorVenda : r.premioValor)), e(Td,{dinheiro:true}, r.custoMoedas.toLocaleString("pt-BR")),
-            e(Td,null, op.responsavelNome||"—"), e(Td,{className:"max-w-48 truncate", dinheiro:true}, (op.codigosPecas||[]).join(" ")||"—"), e(Td,{dinheiro:true}, formatarDataHora(r.entregueEm))); }))
+      e(FaixaBloco,null, e(FiltroData,{rot:"Dia", v:diaRet, set:function(x){ if(x) st3[1](x); }}), e(Botao,{onClick:function(){ st3[1](hoje); }}, "Hoje"), e(Botao,{onClick:function(){ st3[1](somaDias(hoje, -1)); }}, "Ontem"),
+        e("span",{className:"flex-1"}), e(Botao,{principal:true, desabilitado:res.quantidade===0, title:nomeDoArquivoCsv(diaRet), onClick:baixar}, "Baixar CSV")),
+      res.itens.length ? e(TabelaPlanilha,{cols:[{k:"pedido", t:"Pedido"}, {k:"nome", t:"Revendedora"}, {k:"premio", t:"Prêmio"}, {k:"valor", t:"Valor em venda"}, {k:"moedas", t:"Moedas"}, {k:"resp", t:"Responsável"}, {k:"pecas", t:"Peças"}, {k:"quando", t:"Retirado em"}],
+          linhas:res.itens.map(function(r){ var op = r.operacao; return {id:r.id, pedido:"#"+r.id, nome:r.nomeRevendedora, premio:r.premioTitulo, valor:formatarReais(op.valorVenda!=null ? op.valorVenda : r.premioValor), moedas:r.custoMoedas.toLocaleString("pt-BR"), resp:op.responsavelNome||"—", pecas:(op.codigosPecas||[]).join(" ")||"—", quando:formatarDataHora(r.entregueEm)}; }),
+          chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true})
         : e("p",{className:"py-3 text-center text-[13px] text-white/70"}, "Nenhuma retirada em "+formatarDia(diaRet)+".")),
     dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st4[1](null); }}));
 }
@@ -341,31 +334,33 @@ function FormPremio(p){
 function CorpoRevendedoras(){
   var cx = use(), s = cx.state, ind = s.ind, por = nomeDe(s.usuario), hoje = hojeSP();
   var st1 = useState(""), q = st1[0], st2 = useState(0), pg = st2[0], st3 = useState(null), dlg = st3[0];   // dlg: {tipo:"extrato"|"creditar"|"editar"|"premio", id}
-  var rk = ranking(ind, {q:q, pagina:pg, hoje:hoje}); if(!rk.itens.length && pg>0) rk = ranking(ind, {q:q, pagina:0, hoje:hoje});
-  var est = estadoDaPaginacao(rk.paginacao, rk.itens.length), mo = indicadoresMoedas(ind, hoje), fecha = function(){ st3[1](null); };
+  var todasRk = useMemo(function(){ var out = [], k = 0; for(;;){ var r = ranking(ind, {q:"", pagina:k, hoje:hoje}); out = out.concat(r.itens.map(function(x){ return Object.assign({}, x, {telefone:formatarTelefone(x.telefone)||"—", acoes:""}); })); if(!r.paginacao.hasMore || k>300) break; k++; } return out; }, [ind]);
+  var mo = indicadoresMoedas(ind, hoje), fecha = function(){ st3[1](null); };
   var base = {ind:ind, por:por, dispatch:cx.dispatch};
   var rvDlg = dlg && (dlg.tipo==="editar" || dlg.tipo==="creditar") ? buscaRevendedoraPorId(ind, dlg.id) : null;
   var premDlg = dlg && dlg.tipo==="premio" ? ind.premios.find(function(x){ return x.codigo===dlg.id; }) : null;
   return e(Pagina,null,
-    e(Resumo,{itens:[{t:"Revendedoras", v:mo.revendedoras, cor:"laranja"}, {t:"Moedas em circulação", v:mo.emCirculo.toLocaleString("pt-BR"), cor:"ouro"}, {t:"Moedas vencidas", v:mo.vencidas.toLocaleString("pt-BR"), cor:mo.vencidas ? "aberto" : "cancelado"}, {t:"Prêmios no catálogo", v:ind.premios.length, cor:"info"}]}),
-    e(Nota,null, "Pedidos e indicações entram por lançamento manual até a integração com o app da revendedora."),
-    e(BarraFiltros,{limpar:q ? function(){ st1[1](""); st2[1](0); } : null}, e(Busca,{v:q, ph:"Buscar por nome, telefone ou número", set:function(x){ st1[1](x); st2[1](0); }})),
-    e(Secao,{ic:"trophy", t:"Ranking de revendedoras", dir:String(est.total)},
-      rk.itens.length ? e(Tab,{cols:["#", "Revendedora", "Telefone", "Indicações", "Em andamento", "Kits", "Moedas", "Pedidos", "Ações"]}, rk.itens.map(function(r){
-          return e("tr",{key:r.id, className:LINHA}, e(Td,{dinheiro:true}, r.posicao), e(Td,{forte:true}, e("span",{className:"inline-flex items-center gap-1.5"}, e(Avatar,{nome:r.nome, s:22}), r.nome)), e(Td,null, formatarTelefone(r.telefone)||"—"), e(Td,{dinheiro:true}, r.indicacoes), e(Td,{dinheiro:true}, r.emAndamento), e(Td,{dinheiro:true, cor:r.kits ? "ok" : undefined}, r.kits),
-            e(Td,{dinheiro:true, forte:true, cor:"total"}, r.moedas.toLocaleString("pt-BR")), e(Td,{dinheiro:true}, r.resgates),
-            e(Td,null, e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"coins", titulo:"Extrato de moedas", onClick:function(){ st3[1]({tipo:"extrato", id:r.id}); }, className:BTP}, "Extrato"), e(Bt,{ic:"hand-coins", titulo:"Creditar moedas", onClick:function(){ st3[1]({tipo:"creditar", id:r.id}); }, className:BTP}, "Creditar"), e(Bt,{ic:"pencil-simple", titulo:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:r.id}); }, className:BTP})))); }))
-        : e("p",{className:"py-3 text-center text-[13px] text-white/70"}, q.trim() ? "Nenhuma revendedora encontrada." : "Nenhuma revendedora cadastrada."),
-      est.total>0 && e("div",{className:"flex items-center justify-center gap-2"},
-        e(Bt,{ic:"caret-left", disabled:!est.podeVoltar, onClick:function(){ st2[1](Math.max(0, pg-1)); }, className:BTP}), e("span",{className:MONO+" text-[12.5px] text-white/80"}, textoDaPaginacao(est)+" · página "+est.paginaAtual+" de "+est.totalDePaginas), e(Bt,{ic:"caret-right", disabled:!est.podeAvancar, onClick:function(){ st2[1](pg+1); }, className:BTP}))),
+    e(Secao,{t:"Ranking de revendedoras", semPad:true, dir:todasRk.length.toLocaleString("pt-BR")+" revendedoras"},
+      todasRk.length ? e(TabelaPlanilha,{cols:[
+          {k:"posicao", t:"#"}, {k:"nome", t:"Revendedora"}, {k:"telefone", t:"Telefone"},
+          {k:"indicacoes", t:"Indicações"}, {k:"emAndamento", t:"Em andamento"},
+          {k:"kits", t:"Kits entregues", cor:function(l){ return l.kits>0 ? "text-emerald-400 font-semibold" : ""; }},
+          {k:"moedas", t:"Moedas", fmt:function(v){ return Number(v).toLocaleString("pt-BR"); }, cor:function(l){ return l.moedas>0 ? "text-primary font-semibold" : ""; }},
+          {k:"resgates", t:"Pedidos"},
+          {k:"acoes", t:"Ações", render:function(v, l){ return e("div",{className:"flex justify-center gap-1.5"},
+            e("button",{type:"button", title:"Extrato de moedas", onClick:function(){ st3[1]({tipo:"extrato", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Extrato"),
+            e("button",{type:"button", title:"Creditar moedas", onClick:function(){ st3[1]({tipo:"creditar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Creditar"),
+            e("button",{type:"button", title:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Editar")); }}],
+          linhas:todasRk, chave:"id", escura:true, grade:true, limite:100, semContagem:true, semLimpar:true})
+        : e("p",{className:"py-3 text-center text-[13px]"}, "Nenhuma revendedora cadastrada.")),
     // cadastro, crédito e catálogo lado a lado (mosaico), sem blocos que abrem e fecham
     e(Mosaico,{min:"24rem"},
       e(Secao,{ic:"user-plus", t:"Cadastro de revendedora"}, e(FormRev,base)),
       e(Secao,{ic:"hand-coins", t:"Crédito manual de moedas"}, e(FormCredito,base)),
       e(Secao,{ic:"gift", t:"Catálogo de prêmios", dir:String(ind.premios.length)},
-        ind.premios.length ? e(Tab,{cols:["Código", "Prêmio", "Custo em moedas", "Valor", "Ações"]}, ind.premios.map(function(x){
-            return e("tr",{key:x.codigo, className:LINHA}, e(Td,{dinheiro:true}, x.codigo), e(Td,{forte:true}, x.titulo), e(Td,{dinheiro:true}, x.custoMoedas.toLocaleString("pt-BR")), e(Td,{dinheiro:true}, formatarReais(x.valor)),
-              e(Td,null, e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"pencil-simple", onClick:function(){ st3[1]({tipo:"premio", id:x.codigo}); }, className:BTP}, "Editar"), e(Bt,{tipo:"perigo", ic:"trash", titulo:"Excluir prêmio", onClick:function(){ if(window.confirm("Excluir o prêmio "+x.titulo+"? Os pedidos antigos continuam com o nome que tinham.")) cx.dispatch({type:"IND", op:"premio_del", codigo:x.codigo, por:por}); }, className:BTP})))); }))
+        ind.premios.length ? e(TabelaPlanilha,{cols:[{k:"codigo", t:"Código"}, {k:"titulo", t:"Prêmio"}, {k:"custo", t:"Custo em moedas"}, {k:"valor", t:"Valor"},
+            {k:"acoes", t:"Ações", render:function(v, l){ var x = l.x; return e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"pencil-simple", onClick:function(){ st3[1]({tipo:"premio", id:x.codigo}); }, className:BTP}, "Editar"), e(Bt,{tipo:"perigo", ic:"trash", titulo:"Excluir prêmio", onClick:function(){ if(window.confirm("Excluir o prêmio "+x.titulo+"? Os pedidos antigos continuam com o nome que tinham.")) cx.dispatch({type:"IND", op:"premio_del", codigo:x.codigo, por:por}); }, className:BTP})); }}],
+            linhas:ind.premios.map(function(x){ return {id:x.codigo, codigo:x.codigo, titulo:x.titulo, custo:x.custoMoedas.toLocaleString("pt-BR"), valor:formatarReais(x.valor), acoes:"", x:x}; }), chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true})
           : e("p",{className:"py-2 text-center text-[13px] text-white/70"}, "Nenhum prêmio cadastrado."),
         e(FormPremio,base))),
     dlg && dlg.tipo==="extrato" && e(JanelaExtrato,Object.assign({id:dlg.id, fechar:fecha}, base)),

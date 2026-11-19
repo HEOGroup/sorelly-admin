@@ -7,7 +7,9 @@ Ferramenta criada pelo Marcus no ano passado para as **revendedoras venderem às
 
 ## Regras (já comunicadas às revendedoras)
 - **Regras por valor (19/10/2026, substituem "mínimo R$ 100 e até 6x"):** valor mínimo para gerar **R$ 80,00**. Até R$ 80,00: **1x**. De R$ 80,01 a R$ 400,00: até **4x** sem juros. De R$ 400,01 a R$ 1.500,00: até **6x**. Acima de R$ 1.500,00: até **10x**. Parcela mínima **R$ 50,00** em todas (então R$ 100 cabe 2x, R$ 150 cabe 3x, R$ 200 cabe 4x). Valores no Configurador do link (`cfg.faixas`, `maxParcelasSemJuros` = teto de 10x); lógica em `parcelasMaximas`/`parcelasPermitidas` (`domain/link-pagamento.js`); estado salvo antes disso é atualizado sozinho (`regrasV`).
-- O link **expira 12 horas** depois de gerado (precisa pedir outro).
+- O link **expira 48 horas** depois de gerado no Admin (mudou de 12 h em 05/11/2026; o servidor voltou a 12 h e foi corrigido em 19/11/2026, inclusive para os links já gerados). A revendedora continua sendo avisada de 12 h no app. Para mudar: Meios e acessos → Regras.
+- **Importar e-SiTef (19/11/2026):** cada linha tem a caixa Incluir; o que a Hellen desmarca (ex.: link gerado pela representante) não entra e fica guardado por NSU (`lp.esitefIgnorados`), voltando desmarcado nas próximas importações.
+- **Links descontados à mão (19/11/2026):** em Descontados no acerto, o botão Incluir link lança um link pago como descontado (data do acerto + valor usado); a linha fica com Origem "Lançado à mão" e dá para corrigir ou tirar.
 - Pagamento recusado: no máximo **3 tentativas de link por dia**.
 - **Fechamento do acerto:** só são descontados os links **emitidos e pagos até o dia anterior ao acerto**.
 - O valor pago pelo link **não é devolvido em dinheiro**: abate o acerto, ou fica como **crédito para o próximo acerto**; se a revendedora não retirar novo kit, pode usar em **semijoias** (retirada de peças).
@@ -59,3 +61,10 @@ Cada maquininha física é um meio (banco, CNPJ, aluguel/mês, representante). S
 - **Taxa do Link 59:** ainda usa a tabela antiga da Sicredi 59 (sem 4,05% das bandeiras que não são Visa/Master). Decidir se atualiza.
 - **Funcionalidades que faltam:** botão de link dentro da venda do app; crédito do excedente para o próximo acerto; ligar o link ao acerto da Atendimento Sorelly.
 - **Onde estão os dados:** taxas, aluguéis e representantes por máquina ficam SÓ em `src/apps/montagem/domain/maquininhas.local.js` (fora do Git, por conter nomes e valores por pessoa). Fazer cópia de segurança desse arquivo.
+
+## Onde os links são gerados e como ligar o sistema (16/11/2026, respostas da Hellen e prints do Marcus)
+- Os links são gerados no **e-SiTef** (Software Express / Fiserv). Quando o site cai (raramente), a Hellen usa o da **Sicredi**.
+- O e-SiTef mostra cada transação: número da transação (ex.: 261113340088210), loja (ex.: SERENETY), nome, valor, data, situação (**Confirmada**), **autorizadora** (Visa), **autorização** (ex.: 651824), **NSU SITEF**, NSU HOST, parcelas, **URL do link de pagamento** (única por link) e o cupom (1ª e 2ª via, com valor da 1ª parcela e das demais).
+- Dá para ver os comprovantes e **baixar uma planilha do dia**. O site **não avisa** quando alguém paga (a Hellen confere olhando).
+- Caminho de ligação, do simples ao completo: (1) **importar a planilha do dia** do e-SiTef no Admin e marcar "Pago" sozinho (casando a URL do link, ou valor + parcelas + nome + dia, e guardando a autorização); (2) consulta direta pela API do e-SiTef (precisa pedir à Software Express/Fiserv a documentação e as credenciais; só a diretoria ou o Leonardo pedem).
+- Falta: um exemplo real da planilha do dia (formato do arquivo) e qual "loja" do e-SiTef é cada CNPJ (SERENETY = ?).

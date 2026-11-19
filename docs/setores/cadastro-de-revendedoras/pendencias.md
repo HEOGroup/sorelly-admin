@@ -10,3 +10,11 @@ Lista tirada do diário por palavras como "pendente" e "falta". **Ainda não rev
 | 3 | Mapa das representantes: falta Nagela (região e horário), Rayssa (região), Leticia Moroz e Mariana (horário); "posso atender mais", datas indisponíveis (Dayanne em novembro, Jessica Tobias 12 a… | Marcus | De 27/10/2026, diário linha 1245. A conferir. |
 | 4 | Organização: mensagem ao Leonardo sobre hooks e regras obrigatórias, mover MAPA-DAS-REPRESENTANTES.md para docs/negocio/, apagar o DECISOES.md da raiz, commit do trabalho de hoje que ainda não está… | Leonardo | De 27/10/2026, diário linha 1245. A conferir. |
 | 5 | 28/10/2026, dívida antiga de acerto - loja: a Amanda de Miranda (cobrança, desde 09/2025) respondeu como o setor trabalha (régua de 2-3 dias e 5-7 dias, negativação no Serasa com nota promissória,… | Marcus | De 28/10/2026, diário linha 1420. A conferir. |
+
+## 17/11/2026 — Indicações
+- [ ] Leonardo: onde estão os dados do kit novo e dos leads do admin antigo (tabelas vazias).
+- [ ] Leonardo: ligar o app ao sistema novo (indicação e pedido novos entram sozinhos) e o sistema ao app (moedas e status para a revendedora).
+- [ ] Nickolas e Leonardo: regra de status entre Kommo e app (aprovada, reprovada, sem interesse) e como o lead se liga à indicação (leadId, telefone).
+- [ ] Equipe: pedido de prêmio 47 está "aprovado" no sistema e "entregue" no app.
+- [ ] Marcus: devolver ou não o botão "Anexar print das peças" no Brinde de indicação do Atendimento Sorelly (pedido da Kawany; a conversa do Atendimento o tirou na 0.20.93).
+- [ ] Michele e meninas do cadastro testam as telas de Indicações (sem criar indicação de teste).

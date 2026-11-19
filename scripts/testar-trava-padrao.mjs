@@ -58,6 +58,35 @@ for (const [arq] of R.PECAS_TABELA) { const e = R.conferirPecaTabela(arq, fs.rea
   t("REPROVA: TabelaPlanilha que perde o menu de filtro e ordem", R.conferirPecaTabela(arq, semMenu).some((x) => /menu de filtro/.test(x)), JSON.stringify(R.conferirPecaTabela(arq, semMenu)));
 }
 
+console.log("— tela travada: Visão geral das compras (blocos alinhados, mesma altura)");
+{
+  const arq = "src/apps/montagem/pages/compras/VisaoCompras.js", cont = fs.readFileSync(path.join(raiz, arq), "utf8");
+  t("PASSA:   a Visão geral das compras de verdade", R.conferirTelaTravada(arq, cont).length === 0, JSON.stringify(R.conferirTelaTravada(arq, cont)));
+  t("ignora outro arquivo", R.conferirTelaTravada("src/apps/montagem/pages/Outra.js", "e(BlocoPainel,{}); e(BlocoPainel,{});").length === 0);
+  const falha = (nome, novo, esperado) => { const er = R.conferirTelaTravada(arq, novo); t("REPROVA: " + nome, er.some((x) => x.indexOf(esperado) >= 0), JSON.stringify(er)); };
+  falha("bloco fora do componente Bloco", cont + "\nvar extra = e(BlocoPainel,{titulo:'x'});", "componente Bloco");
+  falha("Bloco sem a constante FAIXA", cont.replace("[&>section]:flex-1", "[&>section]:min-w-0"), "FAIXA");
+  falha("tabela do Bloco deixou de ser cheia", cont.replace("cheia:p.cheia!==false", "cheia:false"), "cheia por padrão");
+  falha("grade com items-start", cont.replace('"grid grid-cols-1 gap-2 lg:grid-cols-2"', '"grid grid-cols-1 items-start gap-2 lg:grid-cols-2"'), "alturas diferentes");
+  falha("divisão desigual de colunas", cont.replace('"grid grid-cols-1 gap-2 lg:grid-cols-2"', '"grid grid-cols-1 gap-2 lg:grid-cols-[2fr_1fr]"'), "divisão de coluna desigual");
+  falha("tabela feita à mão", cont + '\nvar t = e("table", null);', "feita à mão");
+  falha("faixa de números", cont + "\nvar f = e(Faixa, null);", "faixa de números");
+  const pl = "src/apps/montagem/components/tabela-planilha.js", cp = fs.readFileSync(path.join(raiz, pl), "utf8");
+  t("REPROVA: TabelaPlanilha cheia que volta a encolher (sobra preta embaixo)", R.conferirPecaTabela(pl, cp.replace('(p.cheia ? " min-h-0 flex-1" : "")', '""')).some((x) => /sobra espaço preto/.test(x)));
+}
+
+console.log("— tela travada: Configurações de compras (mesma grade de faixas)");
+{
+  const arq = "src/apps/montagem/pages/compras/CompraConfig.js", cont = fs.readFileSync(path.join(raiz, arq), "utf8");
+  t("PASSA:   a Configurações de compras de verdade", R.conferirTelaTravada(arq, cont).length === 0, JSON.stringify(R.conferirTelaTravada(arq, cont)));
+  const falha = (nome, novo, esperado) => { const er = R.conferirTelaTravada(arq, novo); t("REPROVA: Configurações com " + nome, er.some((x) => x.indexOf(esperado) >= 0 && x.indexOf("Configurações de compras") === 0), JSON.stringify(er)); };
+  falha("bloco fora do componente Bloco", cont + "\nvar extra = e(BlocoPainel,{titulo:'x'});", "componente Bloco");
+  falha("Bloco sem a constante FAIXA", cont.replace("[&>section]:flex-1", "[&>section]:min-w-0"), "FAIXA");
+  falha("grade com items-start", cont.replace('"grid grid-cols-1 gap-2 lg:grid-cols-2"', '"grid grid-cols-1 items-start gap-2 lg:grid-cols-2"'), "alturas diferentes");
+  falha("divisão desigual de colunas", cont.replace('"grid grid-cols-1 gap-2 lg:grid-cols-2"', '"grid grid-cols-1 gap-2 lg:grid-cols-[2fr_1fr]"'), "divisão de coluna desigual");
+  falha("tabela feita à mão", cont + '\nvar t = e("table", null);', "feita à mão");
+}
+
 console.log("— o lembrete que o hook manda a cada mensagem");
 t("fala da TabelaPlanilha", /TabelaPlanilha/.test(R.REGRAS));
 t("não manda mais topo dourado", !/topo dourado/i.test(R.REGRAS));

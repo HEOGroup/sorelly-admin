@@ -7,7 +7,7 @@
 //
 // MAPEAMENTO status do domínio → coluna do quadro (as 15 situações do domínio cabem em 7 colunas; a situação fina vira SELO no cartão):
 //   Solicitada        = NAO_VERIFICADA · AGUARDANDO (selo "Em espera") · AGUARDANDO_ORCAMENTO (selo "Novo orçamento") · AGUARDANDO_AUTORIZACAO (selo "Aguard. autorização")
-//   Aprovada          = APROVADA (falta o financeiro liberar) · AGUARDANDO_CNPJ (selo "Falta CNPJ") · AGUARDANDO_FORMA_PAGAMENTO (selo "Falta conta")
+//   Análise financeira = APROVADA · AGUARDANDO_CNPJ · AGUARDANDO_FORMA_PAGAMENTO (pedidos antigos). Selos: "Falta definir CNPJ", "Falta definir pagamento" ou "Pronto para liberar" (18/11/2026)
 //   Liberada          = LIBERADA (o financeiro liberou: só OK ou já com o plano de pagamento; quem tem "Efetuar compras liberadas" compra)
 //   Efetuada          = COMPRADA · EM_TRANSITO (selo "Em trânsito") · RECEBIDA_PARCIAL (selo "Parcial")
 //   Recebida/Entregue = RECEBIDA · ENTREGUE (selo "Entregue")
@@ -17,7 +17,7 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Abas, BarraFiltros, ESTADO, Faixa, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { PAGAVEL_STATUS, ROTULO_STATUS, STATUS_PEDIDO, TRANSICOES, dashboardCompras, diasEntre, formatarDia, formatarHoras, formatarReais, hojeSP, listarPedidos, podeAcaoPedido } from "@/apps/montagem/domain/compras-estoque";
+import { ETAPA_ANALISE, PAGAVEL_STATUS, ROTULO_STATUS, STATUS_PEDIDO, TRANSICOES, dashboardCompras, diasEntre, formatarDia, formatarHoras, formatarReais, hojeSP, listarPedidos, pendenciasAnalise, podeAcaoPedido } from "@/apps/montagem/domain/compras-estoque";
 import { AZUL, Avatar, Bt, Ind, Selo, cnpjCurto, corTempo, diasNaEtapa, norm, textoDias, useCompras } from "@/apps/montagem/pages/compras/pecas";
 import { useAcoes } from "@/apps/montagem/pages/compras/janelas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -25,24 +25,26 @@ import { Kanban } from "@/shared/kanban";
 import { e, useEffect, useState } from "@/shared/react";
 
 // ───────────── colunas e situações ─────────────
+// n = número da etapa no Painel. "Novo orçamento / ajustes" (18/11/2026) fica ANTES da 1 e não tem número: é o pedido devolvido ao solicitante para corrigir (não é compra nova nem reprovação)
 var COLUNAS = [
-  {k:"solicitada", titulo:"Solicitada", cor:ESTADO.alerta},
-  {k:"aprovada", titulo:"Aprovada", cor:AZUL},
-  {k:"liberada", titulo:"Liberada para compra", cor:"#93C5FD"},
-  {k:"efetuada", titulo:"Efetuada", cor:ESTADO.info},
-  {k:"transito", titulo:"Em transporte", cor:"#38BDF8"},
-  {k:"recebida", titulo:"Chegou na empresa", cor:"#34D399"},
-  {k:"entregue", titulo:"Entregue", cor:ESTADO.ok},
-  {k:"reprovada", titulo:"Reprovada", cor:ESTADO.ruim},
-  {k:"cancelada", titulo:"Cancelada", cor:ESTADO.neutro}];
-var NOME_COL = {solicitada:"Solicitada", aprovada:"Aprovada", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
-var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"solicitada", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
+  {k:"ajustes", titulo:"Novo orçamento / ajustes", cor:ESTADO.alerta},
+  {k:"solicitada", n:1, titulo:"Solicitada", cor:ESTADO.alerta},
+  {k:"aprovada", n:2, titulo:"Análise financeira", cor:AZUL},
+  {k:"liberada", n:3, titulo:"Liberada para compra", cor:"#93C5FD"},
+  {k:"efetuada", n:4, titulo:"Efetuada", cor:ESTADO.info},
+  {k:"transito", n:5, titulo:"Em transporte", cor:"#38BDF8"},
+  {k:"recebida", n:6, titulo:"Chegou na empresa", cor:"#34D399"},
+  {k:"entregue", n:7, titulo:"Entregue", cor:ESTADO.ok},
+  {k:"reprovada", n:8, titulo:"Reprovada", cor:ESTADO.ruim},
+  {k:"cancelada", n:9, titulo:"Cancelada", cor:ESTADO.neutro}];
+var NOME_COL = {ajustes:"Novo orçamento / ajustes", solicitada:"Solicitada", aprovada:"Análise financeira", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
+var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"ajustes", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
   COMPRADA:"efetuada", EM_TRANSITO:"transito", RECEBIDA_PARCIAL:"transito", RECEBIDA:"recebida", ENTREGUE:"entregue", NEGADA:"reprovada", CANCELADA:"cancelada"};
-var ORDEM = {solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
+var ORDEM = {ajustes:-1, solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
 var FINAIS = ["ENTREGUE", "NEGADA", "CANCELADA"];
-var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], AGUARDANDO_CNPJ:["Falta CNPJ", "info"], AGUARDANDO_FORMA_PAGAMENTO:["Falta conta", "info"], EM_TRANSITO:["Em transporte", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
+var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], EM_TRANSITO:["Em transporte", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
 // próxima operação natural de cada situação (botão "Concluir etapa ›")
-var PROXIMO = {NAO_VERIFICADA:"aprovar", AGUARDANDO:"aprovar", AGUARDANDO_ORCAMENTO:"aprovar", AGUARDANDO_AUTORIZACAO:"autorizar", AGUARDANDO_CNPJ:"cnpj", AGUARDANDO_FORMA_PAGAMENTO:"pagamento", APROVADA:"liberar", LIBERADA:"comprar", COMPRADA:"receber", EM_TRANSITO:"receber", RECEBIDA_PARCIAL:"receber", RECEBIDA:"entregar"};
+var PROXIMO = {NAO_VERIFICADA:"aprovar", AGUARDANDO:"aprovar", AGUARDANDO_ORCAMENTO:"aprovar", AGUARDANDO_AUTORIZACAO:"autorizar", AGUARDANDO_CNPJ:"liberar", AGUARDANDO_FORMA_PAGAMENTO:"liberar", APROVADA:"liberar", LIBERADA:"comprar", COMPRADA:"receber", EM_TRANSITO:"receber", RECEBIDA_PARCIAL:"receber", RECEBIDA:"entregar"};
 var ultimoEm = function(p){ return p.eventos && p.eventos.length ? p.eventos[p.eventos.length-1].em : p.solicitadoEm; };
 var ALTURA = "h-9! text-[13px]!";
 var SEL = INPUT+" "+ALTURA+" w-auto max-w-[12rem] cursor-pointer text-center";
@@ -52,21 +54,19 @@ function mover(c, ac, pd, de, para){
   var st = pd.status, o0 = ORDEM[de], o1 = ORDEM[para], aviso = function(t){ return c.aviso(t); };
   if(FINAIS.indexOf(st)>=0) return aviso("Esta compra já foi finalizada ("+pd.rotuloStatus.toLowerCase()+") e não muda de etapa.");
   if(para==="reprovada") return ac.iniciar(pd, "negar");
+  if(para==="ajustes") return st==="AGUARDANDO_ORCAMENTO" ? undefined : ac.iniciar(pd, "novo_orcamento");   // devolver ao solicitante (pede motivo e ajustes)
+  if(de==="ajustes" && para==="solicitada") return ac.iniciar(pd, "reenviar");
   if(para==="cancelada") return ac.iniciar(pd, "cancelar");
   if(o1<o0) return aviso("Não é possível voltar a compra para \""+NOME_COL[para]+"\". Cancele a compra ou peça ajuste ao financeiro.");
   if(para==="aprovada") return ac.iniciar(pd, st==="AGUARDANDO_AUTORIZACAO" ? "autorizar" : "aprovar");
-  if(para==="liberada"){   // de Solicitada: aprova e libera num passo só (atalho); de Aprovada: abre a janela "Liberar para compra"
+  if(para==="liberada"){   // de Solicitada: "Aprovar e liberar" (abre a análise financeira; tudo ou nada); da Análise financeira: abre a janela da análise
     if(st==="AGUARDANDO_AUTORIZACAO") return aviso("Autorize a compra antes de liberar para compra.");
-    if(st==="AGUARDANDO_CNPJ") return aviso("Defina o CNPJ pagador antes de liberar a compra.");
-    if(st==="AGUARDANDO_FORMA_PAGAMENTO") return aviso("Defina a conta pagadora antes de liberar a compra.");
     if(o0===0) return ac.aprovarLiberar(pd);
     return ac.iniciar(pd, "liberar");
   }
   if(para==="efetuada"){
     if(o0===0) return aviso("Aprove e libere a compra antes de efetuar.");
-    if(st==="AGUARDANDO_CNPJ") return aviso("Defina o CNPJ pagador antes de efetuar a compra.");
-    if(st==="AGUARDANDO_FORMA_PAGAMENTO") return aviso("Defina a conta pagadora antes de efetuar a compra.");
-    if(st==="APROVADA") return aviso("O financeiro precisa liberar a compra antes de efetuar.");
+    if(ETAPA_ANALISE.indexOf(st)>=0) return aviso("A análise financeira precisa definir o CNPJ e a forma de pagamento e liberar a compra antes de efetuar.");
     return ac.iniciar(pd, "comprar");
   }
   if(para==="transito"){ if(o0<3) return aviso("Efetue a compra antes de colocar em transporte."); if(st!=="COMPRADA") return aviso("Esta compra já saiu de Efetuada."); return ac.iniciar(pd, "transito"); }
@@ -91,11 +91,11 @@ var unicos = function(l, f){ var m = {}; l.forEach(function(x){ var v = f(x); if
 // ───────────── cartão do quadro ─────────────
 function CartaoCompra(p){
   var pd = p.p, c = p.c, ac = p.ac, final = FINAIS.indexOf(pd.status)>=0, dias = diasNaEtapa(pd, p.hoje), op = PROXIMO[pd.status], tr = op ? TRANSICOES[op] : null;
-  var pode = !!tr && podeAcaoPedido(pd, op) && c.pode(tr, pd), selo = SELO_STATUS[pd.status] || (pd.status==="LIBERADA" && pd.liberacao ? (pd.liberacao.modo==="plano" ? ["Plano definido", "ok"] : ["Comprador define", "neutro"]) : null), urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[pd.urgencia];
+  var pode = !!tr && podeAcaoPedido(pd, op) && c.pode(tr, pd), selo = SELO_STATUS[pd.status] || (pd.status==="LIBERADA" && pd.liberacao ? (pd.liberacao.modo==="plano" ? ["CNPJ e pagamento definidos", "ok"] : ["Comprador define", "neutro"]) : null), pend = pendenciasAnalise(pd), urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[pd.urgencia];
   var naoFecha = !final && pd.plano.length>0 && !pd.planoInfo.fecha;
   return e("div",{className:"flex flex-col items-center gap-1.5"},
-    e("div",{className:"flex w-full items-start justify-center gap-1.5"}, e("b",{className:MONO+" text-[12px] text-[#BFDBFE]"}, "#"+pd.id), e("span",{className:"line-clamp-2 min-w-0 break-words text-[13px] font-bold leading-tight"}, pd.titulo)),
-    e("span",{className:"w-full truncate text-[12px] text-white/70", title:pd.fornecedor}, pd.fornecedor || "Sem fornecedor"),
+    e("div",{className:"flex w-full items-start justify-center gap-1.5"}, e("b",{className:MONO+" text-[11px] text-[#BFDBFE]"}, "#"+pd.id), e("span",{className:"min-w-0 break-words text-[13px] font-bold leading-tight"}, pd.titulo)),   // título e fornecedor inteiros (16/11/2026)
+    e("span",{className:"w-full break-words text-[11px] text-white/80"}, pd.fornecedor || "Sem fornecedor"),
     e("span",{className:MONO+" text-[14px] font-bold"}, formatarReais(pd.valorFinal)),
     e("div",{className:"flex items-center justify-center gap-1.5"}, e(Avatar,{nome:pd.solicitante, s:22}), pd.cnpjId && e("span",{title:pd.cnpj, className:"rounded bg-white/10 px-1.5 py-0.5 text-[10.5px] font-bold"}, cnpjCurto(pd)),
       pd.link && e(Ph,{n:"link", s:14, className:"text-[#BFDBFE]"}), pd.mensagens.length>0 && e("span",{title:pd.mensagens.length+" mensagens", className:"inline-flex items-center gap-0.5 text-[11px] text-white/70"}, e(Ph,{n:"chat-circle-text", s:14}), pd.mensagens.length)),
@@ -103,10 +103,11 @@ function CartaoCompra(p){
       !final && e(Selo,{cor:corTempo(dias), ic:"clock", titulo:"Tempo na etapa"}, textoDias(dias)),
       urg && !final && e(Selo,{cor:urg, ic:"flag", titulo:"Urgência"}, pd.rotuloUrgencia),
       selo && e(Selo,{cor:selo[1]}, selo[0]),
+      pend.map(function(x){ return e(Selo,{key:x, cor:x==="Pronto para liberar" ? "ok" : "alerta", ic:x==="Pronto para liberar" ? "check-circle" : "warning"}, x); }),
       pd.atrasado && e(Selo,{cor:"ruim", ic:"warning"}, "Atrasada"),
       naoFecha && e(Selo,{cor:"alerta", ic:"warning", titulo:pd.planoInfo.aviso}, "Plano não fecha")),
     tr && e(Bt,{tipo:"marca", disabled:!pode, semAut:true, titulo:tr.rotulo, className:"w-full py-1.5! text-[12px]!", onClick:function(ev){ ev.stopPropagation(); ac.iniciar(pd, op); }}, "Concluir etapa ›"),
-    op==="aprovar" && pode && e(Bt,{disabled:!c.pode(TRANSICOES.liberar, pd), semAut:true, titulo:"Aprova e libera para compra num clique", ic:"lock-open", className:"w-full py-1.5! text-[12px]!", onClick:function(ev){ ev.stopPropagation(); ac.aprovarLiberar(pd); }}, "Aprovar e liberar"));
+    op==="aprovar" && pode && e(Bt,{disabled:!c.pode(TRANSICOES.liberar, pd), semAut:true, titulo:"Aprova e já faz a análise financeira (CNPJ e forma de pagamento)", ic:"lock-open", className:"w-full py-1.5! text-[11px]!", onClick:function(ev){ ev.stopPropagation(); ac.aprovarLiberar(pd); }}, "Aprovar e liberar"));
 }
 
 // ───────────── tela 1: quadro ─────────────
@@ -121,7 +122,7 @@ function AbaCompraQuadro(props){
     solicitadas:function(p){ return COL_DE[p.status]==="solicitada"; },
     aguard:function(p){ return p.status==="NAO_VERIFICADA" || p.status==="AGUARDANDO_AUTORIZACAO"; },
     autoriz:function(p){ return p.status==="AGUARDANDO_AUTORIZACAO"; },
-    aprovadas:function(p){ return p.status==="APROVADA"; },
+    aprovadas:function(p){ return ETAPA_ANALISE.indexOf(p.status)>=0; },
     liberadas:function(p){ return p.status==="LIBERADA"; },
     areceber:function(p){ return ["COMPRADA", "EM_TRANSITO", "RECEBIDA_PARCIAL"].indexOf(p.status)>=0; },
     atrasadas:function(p){ return p.atrasado; },
@@ -142,7 +143,7 @@ function AbaCompraQuadro(props){
   return e(Pagina,null,
     e(Faixa,{n:6},
       e(Ind,{t:"Aguardando aprovação", v:aguard.length, cor:"alerta", on:f.ind==="aguard", onClick:clica("aguard"), sub:aguard.length ? "Mais antiga: "+textoDias(Math.max(0, diasEntre(String(aguard[0].solicitadoEm).slice(0, 10), hoje))) : undefined}),
-      e(Ind,{t:"Aprovadas a liberar", v:conta("aprovadas"), cor:"info", on:f.ind==="aprovadas", onClick:clica("aprovadas"), titulo:"Aprovadas pelo financeiro, aguardando a liberação para compra"}),
+      e(Ind,{t:"Na análise financeira", v:conta("aprovadas"), cor:"info", on:f.ind==="aprovadas", onClick:clica("aprovadas"), titulo:"Aprovadas: falta escolher o CNPJ e a forma de pagamento e liberar para compra"}),
       e(Ind,{t:"Liberadas para comprar", v:conta("liberadas"), cor:AZUL, on:f.ind==="liberadas", onClick:clica("liberadas"), titulo:"Liberadas pelo financeiro, aguardando quem efetua a compra"}),
       e(Ind,{t:"A receber", v:conta("areceber"), cor:"info", on:f.ind==="areceber", onClick:clica("areceber")}),
       e(Ind,{t:"Atrasadas", v:conta("atrasadas"), cor:"ruim", on:f.ind==="atrasadas", onClick:clica("atrasadas"), titulo:"Solicitações sem resposta além de "+cfg.slaHoras+" horas"}),
@@ -207,8 +208,8 @@ function AbaCompraPlanilha(){
       : e("div",{className:"rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
         e(Tab,{cols:["Nº", "Data", "Compra", "Fornecedor", "Solicitante", "Classificação", "CNPJ", "Valor", "Situação", "Vencimento"]}, vis.map(function(p){
           return e("tr",{key:p.id, onClick:function(){ ac.abrir(p.id); }, className:LINHA+" cursor-pointer hover:bg-white/5"},
-            e(Td,{dinheiro:true, forte:true}, "#"+p.id), e(Td,null, formatarDia(String(p.solicitadoEm).slice(0, 10))), e(Td,{className:"max-w-[14rem] truncate", forte:true}, e("span",{title:p.titulo}, p.titulo)), e(Td,{className:"max-w-[10rem] truncate"}, e("span",{title:p.fornecedor}, p.fornecedor || "—")),
-            e(Td,null, p.solicitante), e(Td,{className:"max-w-[9rem] truncate"}, p.classificacoesTxt || "—"), e(Td,null, cnpjCurto(p) || "—"), e(Td,{dinheiro:true}, formatarReais(p.valorFinal)),
+            e(Td,{dinheiro:true, forte:true}, "#"+p.id), e(Td,null, formatarDia(String(p.solicitadoEm).slice(0, 10))), e(Td,{className:"min-w-[14rem] whitespace-normal break-words", forte:true}, p.titulo), e(Td,{className:"min-w-[10rem] whitespace-normal break-words"}, p.fornecedor || "—"),   // nada cortado (16/11/2026)
+            e(Td,null, p.solicitante), e(Td,{className:"min-w-[9rem] whitespace-normal break-words"}, p.classificacoesTxt || "—"), e(Td,null, cnpjCurto(p) || "—"), e(Td,{dinheiro:true}, p.valorCompra==null && !(p.valorFinal>0) ? "A definir" : formatarReais(p.valorFinal)),
             e(Td,null, e(Selo,{cor:corSit(p)}, p.rotuloStatus)), e(Td,{cor:p.vencido ? "ruim" : undefined}, formatarDia(p.proximoVencimento) || "—"));
         })),
         paginas>1 && e("div",{className:"flex flex-wrap items-center justify-center gap-2 pt-2"},
@@ -218,61 +219,4 @@ function AbaCompraPlanilha(){
     ac.janelas());
 }
 
-// ───────────── tela 3: visão geral ─────────────
-var PERIODOS = [["hoje", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"], ["mes", "Mês"], ["tudo", "Tudo"]];
-function BarraValor(p){
-  var pct = p.max>0 ? Math.max(3, Math.round(100*p.valor/p.max)) : 0, cor = p.cor || AZUL;
-  return e(p.onClick ? "button" : "div",{type:p.onClick ? "button" : undefined, onClick:p.onClick, title:p.onClick ? "Abrir no quadro" : undefined, className:"flex w-full flex-col items-center gap-1 rounded-lg bg-black/20 px-2 py-1.5 text-center "+(p.onClick ? "cursor-pointer transition hover:bg-black/40" : "")},
-    e("span",{className:"break-words text-[12.5px] font-bold leading-tight"}, p.nome),
-    e("div",{className:"h-2 w-full overflow-hidden rounded-full bg-white/10"}, e("div",{className:"h-full rounded-full", style:{width:pct+"%", background:"linear-gradient(90deg, "+cor+"88, "+cor+")"}})),
-    e("span",{className:MONO+" text-[12px] text-white/85"}, p.texto),
-    p.sub && e("span",{className:"text-[11px] leading-tight text-white/60"}, p.sub));
-}
-var vazioBloco = function(t){ return e("p",{className:"px-2 py-3 text-center text-[12.5px] text-white/60"}, t); };
-function AbaCompraVisao(props){
-  var c = useCompras(), ac = useAcoes(c), ce = c.ce, st = useState("30d"), per = st[0], ir = props.onIrQuadro;
-  if(!c.opera) return e(Pagina,null, e("p",{className:"rounded-xl bg-black/20 px-3 py-4 text-center text-[13px] text-white/70"}, "A visão geral das compras é restrita ao financeiro e à diretoria."));
-  var d = dashboardCompras(c.s, per), lt = d.leadTime, qtdPedidos = ce.pedidos.length;
-  var etapas = [["Resposta", lt.respostaHoras], ["Compra", lt.compraHoras], ["Entrega", lt.entregaHoras]], maxH = Math.max.apply(null, etapas.map(function(x){ return x[1] || 0; }));
-  var temEtapa = etapas.some(function(x){ return x[1]!=null; });
-  var vai = function(filtro){ return ir ? function(){ ir(filtro); } : undefined; };
-  var max = function(l, k){ return Math.max.apply(null, [0].concat(l.map(function(x){ return x[k]; }))); };
-  var idPorNome = function(lista, nome){ var x = lista.find(function(y){ return y.nome===nome; }); return x ? x.id : null; };
-  var porSetor = d.porSetor, porCat = d.porCategoria;
-  return e(Pagina,null,
-    e(Abas,{abas:PERIODOS, atual:per, onMudar:st[1], cor:AZUL}),
-    e("p",{className:"text-center text-[12px] text-white/65"}, "Período: "+d.periodo.rotulo+(d.periodo.de ? " · "+formatarDia(d.periodo.de)+" a "+formatarDia(d.periodo.ate) : "")),
-    e(Faixa,{n:6},
-      e(Ind,{t:"Gasto no período", v:formatarReais(d.gastoTotal), cor:AZUL, sub:d.qtdCompras+(d.qtdCompras===1 ? " compra efetuada" : " compras efetuadas")}),
-      e(Ind,{t:"Atrasadas", v:d.atrasadasNoSla, cor:"ruim", onClick:vai({ind:"atrasadas"}), titulo:ir ? "Abrir no quadro" : undefined}),
-      e(Ind,{t:"Aguardando autorização", v:d.aguardandoAutorizacao, cor:"alerta", onClick:vai({ind:"autoriz"}), titulo:ir ? "Abrir no quadro" : undefined}),
-      e(Ind,{t:"Aprovadas a liberar", v:d.aprovadasParaComprar, cor:"info", onClick:vai({ind:"aprovadas"}), titulo:ir ? "Abrir no quadro" : undefined}),
-      e(Ind,{t:"Liberadas para comprar", v:d.liberadasParaComprar, cor:AZUL, onClick:vai({ind:"liberadas"}), titulo:ir ? "Abrir no quadro" : undefined}),
-      e(Ind,{t:"Gargalo", v:lt.gargalo || "—", cor:lt.gargalo ? "alerta" : "neutro", titulo:"Etapa que mais demora em média"})),
-    qtdPedidos===0 && e("p",{className:"rounded-xl bg-black/20 px-3 py-2 text-center text-[13px] text-white/70"}, "Nenhuma compra registrada ainda. Os números aparecem depois das primeiras solicitações."),
-    e(Mosaico,{min:"20rem"},
-      e(BlocoBarra,{cor:"azul", t:"Tempo médio por etapa", compacto:true}, temEtapa ? e("div",{className:"flex flex-col gap-1.5 p-2"}, etapas.map(function(x){
-        return e(BarraValor,{key:x[0], nome:x[0]+(lt.gargalo===x[0] ? " · gargalo" : ""), valor:x[1] || 0, max:maxH, texto:formatarHoras(x[1]), cor:lt.gargalo===x[0] ? ESTADO.alerta : AZUL});
-      })) : vazioBloco("Sem dados de etapas neste período.")),
-      e(BlocoBarra,{cor:"azul", t:"Solicitações mais paradas", compacto:true, dir:d.maisParadas.length || undefined}, d.maisParadas.length ? e("div",{className:"flex flex-col gap-1.5 p-2"}, d.maisParadas.map(function(p){
-        return e("button",{key:p.id, type:"button", onClick:function(){ ac.abrir(p.id); }, className:"flex w-full cursor-pointer flex-col items-center rounded-lg bg-black/20 px-2 py-1.5 text-center transition hover:bg-black/40"},
-          e("span",{className:"break-words text-[12.5px] font-bold leading-tight"}, "#"+p.id+" · "+p.titulo), e("span",{className:"text-[11.5px] text-white/65"}, p.solicitante+" · parada há "+formatarHoras(p.horasParado)));
-      })) : vazioBloco("Nenhuma solicitação parada.")),
-      e(BlocoBarra,{cor:"azul", t:"Por categoria", compacto:true}, porCat.length ? e("div",{className:"flex flex-col gap-1.5 p-2"}, porCat.map(function(x){
-        return e(BarraValor,{key:x.nome, nome:x.nome, valor:x.valorPedido, max:max(porCat, "valorPedido"), texto:formatarReais(x.valorPedido), sub:x.pedidos+(x.pedidos===1 ? " pedido" : " pedidos")+" · gasto "+formatarReais(x.gasto)});
-      })) : vazioBloco("Sem pedidos neste período.")),
-      e(BlocoBarra,{cor:"azul", t:"Por setor", compacto:true}, porSetor.length ? e("div",{className:"flex flex-col gap-1.5 p-2"}, porSetor.map(function(x){
-        var id = idPorNome(ce.setores, x.nome);
-        return e(BarraValor,{key:x.nome, nome:x.nome, valor:x.valorPedido, max:max(porSetor, "valorPedido"), texto:formatarReais(x.valorPedido), sub:x.pedidos+(x.pedidos===1 ? " pedido" : " pedidos")+" · gasto "+formatarReais(x.gasto), onClick:id!=null ? vai({setor:id}) : undefined});
-      })) : vazioBloco("Sem pedidos neste período.")),
-      e(BlocoBarra,{cor:"azul", t:"Gasto por classificação", compacto:true}, d.porClassificacao.length ? e("div",{className:"flex flex-col gap-1.5 p-2"}, d.porClassificacao.map(function(x){
-        var cl = ce.config.classificacoes.find(function(y){ return y.nome===x.nome; });
-        return e(BarraValor,{key:x.nome, nome:x.nome, valor:x.gasto, max:max(d.porClassificacao, "gasto"), texto:formatarReais(x.gasto), onClick:cl ? vai({cls:cl.id}) : undefined});
-      })) : vazioBloco("Sem compras efetuadas neste período.")),
-      e(BlocoBarra,{cor:"azul", t:"Gasto por conta", compacto:true}, d.porConta.length ? e("div",{className:"flex flex-col gap-1.5 p-2"}, d.porConta.map(function(x){
-        return e(BarraValor,{key:x.rotulo, nome:x.rotulo, valor:x.gasto, max:max(d.porConta, "gasto"), texto:formatarReais(x.gasto), sub:x.compras+(x.compras===1 ? " compra" : " compras")+" · "+Math.round(x.parte*100)+"%"});
-      })) : vazioBloco("Sem compras efetuadas neste período."))),
-    ac.janelas());
-}
-
-export { AbaCompraQuadro, AbaCompraPlanilha, AbaCompraVisao, COLUNAS, COL_DE, FINAIS, CartaoCompra, baseLista, mover, ultimoEm };   // as peças do quadro também servem ao Painel (PainelComprasEstoque.js)
+export { csvDe, baixarCsv, AbaCompraQuadro, AbaCompraPlanilha, COLUNAS, COL_DE, FINAIS, CartaoCompra, baseLista, mover, ultimoEm };   // as peças do quadro também servem ao Painel (PainelComprasEstoque.js)

@@ -2,7 +2,7 @@
 // Tudo que a Calculadora de acertos DERIVA do que foi digitado (prévia da comissão, quanto falta, acordo, brindes liberados, kit novo, valor restante).
 // É a mesma conta para o app da representante (celular) e para a Calculadora de acertos do atendimento interno (desktop):
 // as duas telas só desenham o resultado, nenhuma refaz regra.
-import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva, avaliarMinimo, kitNovoLiberado as kitNovoLiberado2 } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva, versaoComissaoAntiga, avaliarMinimo, kitNovoLiberado as kitNovoLiberado2 } from "@/apps/montagem/domain/consignado";
 import { BK } from "@/apps/montagem/lib/format";
 
 var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas:null, pecasBrinde:null, pecasTrocas:null, trocas:[], tagsDanificadas:0,
@@ -25,7 +25,7 @@ function regraDoAcordo(parcelas, falta, hojeIso){
 
 function derivarAcerto(p){
   var form = p.form, ehPrata = p.modalidade==="prata";
-  var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade, p.especial) : null;   // p.especial: comissão especial da revendedora (Atendimento interno)
+  var versao = p.versaoBase ? versaoEfetiva(p.regraAntiga && p.modalidade!=="prata" ? versaoComissaoAntiga(p.versaoBase) : p.versaoBase, p.modalidade, p.especial) : null;   // p.regraAntiga: a revendedora questionou e foi cobrada pela comissão antiga neste acerto   // p.especial: comissão especial da revendedora (Atendimento interno)
   var gerais = versao ? versao.gerais : {};
   var totalPagoAtual = totalPago(form.pagamentos);
   // Dívida de acertos anteriores (p.dividaAnterior): o que ela paga agora quita primeiro a dívida mais antiga, o resto vai para este acerto

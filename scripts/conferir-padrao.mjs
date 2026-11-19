@@ -7,7 +7,7 @@
 // Sai com 1 quando acha erro (o CI fica vermelho).
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { DOC, PECAS_TABELA, conferirLinhas, conferirPecaTabela, ehTela } from "./padrao-regras.mjs";
+import { DOC, PECAS_TABELA, TELAS_TRAVADAS, conferirLinhas, conferirPecaTabela, conferirTelaTravada, ehTela } from "./padrao-regras.mjs";
 
 var args = process.argv.slice(2), relatorio = args.indexOf("--relatorio") >= 0, tudo = args.indexOf("--tudo") >= 0 || relatorio;
 var iBase = args.indexOf("--base"), base = iBase >= 0 ? args[iBase + 1] : "";
@@ -48,6 +48,11 @@ var total = 0, resultado = [];
 PECAS_TABELA.forEach(function(x){
   var erros = []; try{ erros = conferirPecaTabela(x[0], readFileSync(x[0], "utf8")); }catch(e){ erros = ["peça de tabela " + x[0] + " não encontrada"]; }
   if(erros.length){ total += erros.length; resultado.push({f:x[0], erros:erros}); }
+});
+// 2m: telas travadas (Visão geral das compras): conferidas SEMPRE, no arquivo inteiro
+TELAS_TRAVADAS.forEach(function(f){
+  var erros = []; try{ erros = conferirTelaTravada(f, readFileSync(f, "utf8")); }catch(e){ erros = ["tela travada " + f + " não encontrada"]; }
+  if(erros.length){ total += erros.length; resultado.push({f:f, erros:erros}); }
 });
 arquivos.forEach(function(f){
   var info = porArquivo[f];

@@ -11,6 +11,9 @@ function apiAtiva(){ return !!base(); }
 function token(){ try { return localStorage.getItem(CHAVE_TOKEN) || ""; } catch(x){ return ""; } }
 function guardaToken(t){ try { if(t) localStorage.setItem(CHAVE_TOKEN, t); else localStorage.removeItem(CHAVE_TOKEN); } catch(x){} }
 
+// 17/11/2026 (Marcus: "toda hora sai"): um 401 solto não desloga mais; a tela confere a sessão em /auth/eu e só sai se ela também disser que não vale (a conferência vale por 5 s para todas as chamadas juntas)
+var conferindo = null;
+function sessaoValida(){ if(!conferindo){ conferindo = fetch(base()+"/auth/eu", {headers:{authorization:"Bearer "+token()}}).then(function(r){ return r.status!==401; }).catch(function(){ return true; }); setTimeout(function(){ conferindo = null; }, 5000); } return conferindo; }
 // metodo: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; devolve o JSON ou joga Error com a mensagem do servidor
 async function chamar(metodo, caminho, corpo){
   var h = {"content-type":"application/json", "x-sorelly-build":"2026-11-09"}; if(token()) h.authorization = "Bearer "+token();   // x-sorelly-build: o servidor reconhece a tela nova e protege dados de telas antigas ainda abertas (ver app/api/estado/[modulo]/route.js)
@@ -18,7 +21,7 @@ async function chamar(metodo, caminho, corpo){
   try { r = await fetch(base()+caminho, {method:metodo, headers:h, body:corpo!==undefined ? JSON.stringify(corpo) : undefined}); }
   catch(x){ throw new Error("Sem conexão com o servidor."); }
   var j = await r.json().catch(function(){ return {}; });
-  if(r.status===401 && caminho!=="/auth/login"){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); }
+  if(r.status===401 && caminho!=="/auth/login"){ var vale = caminho==="/auth/eu" ? false : await sessaoValida(); if(!vale){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); } }
   if(!r.ok) throw new Error(j.erro || ("Erro "+r.status));
   return j;
 }
@@ -26,7 +29,7 @@ async function chamar(metodo, caminho, corpo){
 // Conta que entrou, guardada para a tela decidir o que mostrar (ADMIN = Diretoria; abas = telas liberadas; ocultar = setores escondidos). Quem manda de verdade é o servidor.
 var CHAVE_CONTA = "sorelly_conta";
 function lerConta(){ try { return JSON.parse(localStorage.getItem(CHAVE_CONTA) || "null") || {}; } catch(x){ return {}; } }
-function guardaPerfil(p, pessoaId, extra){ try { if(!p){ localStorage.removeItem(CHAVE_CONTA); return; } localStorage.setItem(CHAVE_CONTA, JSON.stringify({perfil:p, pessoa:pessoaId==null ? "" : String(pessoaId), abas:(extra && extra.abas) || null, ocultar:(extra && extra.ocultar) || null, grupo:(extra && extra.grupo) || null, cid:(extra && extra.cid) || null, nome:(extra && extra.nome) || ""})); } catch(x){} }
+function guardaPerfil(p, pessoaId, extra){ try { if(!p){ localStorage.removeItem(CHAVE_CONTA); return; } localStorage.setItem(CHAVE_CONTA, JSON.stringify({perfil:p, pessoa:pessoaId==null ? "" : String(pessoaId), abas:(extra && extra.abas) || null, ocultar:(extra && extra.ocultar) || null, grupo:(extra && extra.grupo) || null, cid:(extra && extra.cid) || null, nome:(extra && extra.nome) || "", repCod:(extra && extra.repCod) || ""})); } catch(x){} }
 function contaTexto(){ try { return localStorage.getItem(CHAVE_CONTA) || ""; } catch(x){ return ""; } }
 // id da pessoa ligada à conta que entrou (não muda quando a Diretoria usa o sistema "como" outra pessoa)
 function pessoaDaConta(){ return lerConta().pessoa || ""; }
@@ -35,12 +38,14 @@ function grupoDaConta(){ return lerConta().grupo || ""; }
 // conta sem grupo escolhido: quem é do setor Garantia entra no grupo Garantia (03/11/2026); a Diretoria continua podendo trocar o grupo de cada conta em RH → Acessos
 function grupoPorSetores(setores){ return Array.isArray(setores) && setores.indexOf("garantia")>=0 ? "garantia" : null; }
 function cidDaConta(){ return lerConta().cid || ""; }
+// código do vendedor da conta de REPRESENTANTE (17/11/2026): menu só com as telas dela; o servidor é quem filtra os dados
+function repCodDaConta(){ return lerConta().repCod || ""; }
 function nomeDaConta(){ return lerConta().nome || ""; }
 function abasDaConta(){ var l = lerConta().abas; return Array.isArray(l) ? l : null; }
 function ocultosDaConta(){ var l = lerConta().ocultar; return Array.isArray(l) ? l : null; }
 // as telas abertas ficam na aba do navegador: ao entrar ou sair, a próxima pessoa não herda as da anterior
 function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ if(k.indexOf("sorelly_abas_globais_")===0) sessionStorage.removeItem(k); }); } catch(x){} }
-async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar, grupo:u.grupo || grupoPorSetores(u.setores), cid:u.cid, nome:u.nome}); return j.usuario; }
+async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {repCod:u.repCod, abas:u.abas, ocultar:u.ocultar, grupo:u.grupo || grupoPorSetores(u.setores), cid:u.cid, nome:u.nome}); return j.usuario; }
 function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, nomeDaConta };
+export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, repCodDaConta, nomeDaConta };

@@ -100,7 +100,7 @@ function pfDeDados(d){   // converte o formato do arquivo local (seqL, seqF...) 
   d = JSON.parse(JSON.stringify(d||{}));
   var v = pfVazio();
   ["fornecedores","pedidos","pagamentos","lancamentos","mqPassadas","mqBaixas"].forEach(function(k){ if(Array.isArray(d[k])) v[k] = d[k]; });
-  ["acertos","tokensAcerto","mqFech","mqDist","ptBoleto","ptAberto"].forEach(function(k){ if(d[k] && typeof d[k]==="object") v[k] = d[k]; });
+  ["acertos","tokensAcerto","mqFech","mqDist","ptBoleto","ptAberto","ajustesPed","linksPedido"].forEach(function(k){ if(d[k] && typeof d[k]==="object") v[k] = d[k]; });
   if(d.ptSaldoIni!=null) v.ptSaldoIni = d.ptSaldoIni;
   if(d.mqFornId) v.mqFornId = d.mqFornId;
   v.seq = {L:d.seqL||1, F:d.seqF||1, P:d.seqP||d.seqPedidoInicial||1, Pg:d.seqPg||1, mqP:d.mqSeqP||1, mqB:d.mqSeqB||1};
@@ -351,7 +351,18 @@ function janelasDoForn(pf, fid){
   return c.jan[fid];
 }
 function lancDaJanela(pf, chave){ return pf.lancamentos.filter(function(l){ return l.chave===chave; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
-function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
+// Pix do Direcionar (17/11/2026): só conta como pago com o comprovante anexado (aguardaComp). Os lançamentos antigos não têm essa marca e contam como sempre.
+function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
+function fornDoDestino(pf, nomeDestino){   // destino do Direcionar (tipo FORNECEDOR) -> fornecedor do pf, pelo nome
+  var n = normBusca(nomeDestino); if(!n) return null;
+  var lista = pf.fornecedores.filter(function(f){ return f.tipo!=="prestador"; });
+  return lista.find(function(f){ return normBusca(f.nome)===n; }) || lista.find(function(f){ var m = normBusca(f.nome); return m.indexOf(n+" ")===0 || n.indexOf(m+" ")===0; }) || null;
+}
+// janela (data de pagamento) MAIS ANTIGA com valor em aberto; sem nenhuma aberta, a última
+function janelaMaisAntigaAberta(pf, fid){
+  var js = janelasDoForn(pf, fid).slice().sort(function(a,b){ return a.limite.localeCompare(b.limite); });
+  return js.find(function(j){ return j.total-pagoJanela(pf, j.chave) > 0.005; }) || js[js.length-1] || null;
+}
 function pagoJanela(pf, chave){ return pagoPix(pf, chave)+mqAplicado(pf, chave); }                     // Pix + desconto da maquininha
 function janelaPorChave(pf, chave){
   var fid = parseInt((chave||"").split("|")[0]);
@@ -359,7 +370,7 @@ function janelaPorChave(pf, chave){
 }
 function sincronizarJanela(pf, j){   // muda o pf: marca/desmarca as parcelas da janela conforme o total lançado, por ordem de vencimento
   var saldo = pagoJanela(pf, j.chave);
-  j.itens.slice().sort(function(a,b){ return a.p.venc.localeCompare(b.p.venc); }).forEach(function(l){
+  j.itens.slice().sort(function(a,b){ return (a.p.valor<0)!==(b.p.valor<0) ? (a.p.valor<0 ? -1 : 1) : a.p.venc.localeCompare(b.p.venc); }).forEach(function(l){
     var cobre = saldo >= l.p.valor-0.005;
     if(cobre) saldo -= l.p.valor;
     if(cobre && l.p.status!=="Pago") l.p.status = "Pago";
@@ -475,8 +486,11 @@ function cartoesLancamento(pf, mes){   // renderCards: grupos por fornecedor, co
       var pagoBruto = pagoJanela(pf, j.chave), pago = Math.min(pagoBruto, j.total), aberto = j.total-pago, n = dias(j.limite);
       var lancs = lancDaJanela(pf, j.chave), mq = mqAplicado(pf, j.chave);
       return {j:j, chave:j.chave, limite:j.limite, fim:j.fim, mes:j.mes, total:j.total, pagoBruto:pagoBruto, pago:pago, aberto:aberto, excesso:pagoBruto-pago, dias:n,
-        pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo:prazoTxt(j.limite),
-        lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : ""};
+        pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo: aberto<=0.005 ? "" : prazoTxt(j.limite),
+        lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : "",
+        passou:transfSaiu(pf, j.chave), veio:transfVeio(pf, j.chave), excPix: mq>0.005 ? 0 : r2(pagoBruto-pago), excAntigo: j.limite<PASSA_DESDE,
+        saldoSaiu:saldoSaiu(pf, j), saldoVeio:saldoVeio(pf, j), ajuste:ajusteValor(ajusteDaChave(pf, j.chave)), descSaiu:descontoSaiu(pf, j), descVeio:descontoVeio(pf, j),
+        saldoDst: pago>0.005 && aberto>0.005 && n<0 ? destinoSaldo(pf, j.chave) : null};   // só depois de vencida (Lucas, 18/11/2026)   // pagou parte: a tela oferece passar o que falta (só com aceite)
     });
     g.total = soma(g.js, function(j){ return j.total; });
     g.pago = soma(g.js, function(j){ return Math.min(pagoJanela(pf, j.chave), j.total); });
@@ -508,6 +522,163 @@ function lancExcedente(pf, chave, valor){   // quanto o valor passa do que falta
   var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; });
   var aberto = j ? Math.max(0, j.total-pagoJanela(pf, chave)) : 0;
   return {aberto:aberto, excesso:Math.max(0, valor-aberto), passa:valor-aberto>0.005};
+}
+// valor pago a mais vai para as próximas datas em aberto do mesmo fornecedor, por ordem de data (Lucas, 17/11/2026)
+// devolve {partes:[{chave, limite, valor}], sobra}: sobra = o que passou e não tem mais data em aberto (fica na data escolhida)
+function lancDistribuir(pf, chave, valor){
+  var fid = parseInt(chave.split("|")[0]), limite = chave.split("|")[1], js = janelasDoForn(pf, fid);
+  var abertoDe = function(j){ return Math.max(0, Math.round((j.total-pagoJanela(pf, j.chave))*100)/100); };
+  var j0 = js.find(function(x){ return x.chave===chave; }), resto = Math.round(valor*100)/100, partes = [];
+  var usa = j0 ? Math.min(resto, abertoDe(j0)) : resto;
+  if(usa>0.005){ partes.push({chave:chave, limite:limite, valor:usa}); resto = Math.round((resto-usa)*100)/100; }
+  js.forEach(function(j){
+    if(resto<=0.005 || j.chave===chave || j.limite<=limite) return;
+    var ab = abertoDe(j); if(ab<=0.005) return;
+    var v = Math.min(resto, ab); partes.push({chave:j.chave, limite:j.limite, valor:v}); resto = Math.round((resto-v)*100)/100;
+  });
+  var sobra = resto>0.005 ? resto : 0, falta = j0 ? Math.round((valor-abertoDe(j0))*100)/100 : 0;
+  if(sobra){ var p0 = partes.find(function(x){ return x.chave===chave; }); if(p0) p0.valor = Math.round((p0.valor+sobra)*100)/100; else partes.unshift({chave:chave, limite:limite, valor:sobra}); }
+  return {partes:partes, sobra:sobra, falta:Math.min(0, falta)};
+}
+// saldo passado entre datas (aviso na linha): lançamentos com deChave = parte que veio de outra data (Pix dividido ou saldo pago a mais)
+function somaPorChave(ls, campo){ var m = {}; ls.forEach(function(l){ m[l[campo]] = r2((m[l[campo]]||0)+l.valor); }); return Object.keys(m).sort().map(function(k){ return {chave:k, limite:k.split("|")[1], valor:m[k]}; }); }
+function transfVeio(pf, chave){ return somaPorChave(pf.lancamentos.filter(function(l){ return l.chave===chave && l.deChave && l.valor>0; }), "deChave"); }
+// saldo que faltou e passou para outra data (parcela com adiadaDe): de qual data saiu e em qual entrou
+function limiteDoVenc(pf, fid, venc){ var bs = blocosDoMes(pf, fid, venc.slice(0,7)), b = bs.find(function(x){ return venc<=x.fim; }) || bs[bs.length-1]; return b ? b.limite : venc; }
+function saldoVeio(pf, j){ return somaPorChave(j.itens.filter(function(l){ return l.p.adiadaDe; }).map(function(l){ return {de:j.fornId+"|"+limiteDoVenc(pf, j.fornId, l.p.adiadaDe), valor:l.p.valor}; }), "de"); }
+function saldoSaiu(pf, j){
+  var out = [];
+  janelasDoForn(pf, j.fornId).forEach(function(j2){ j2.itens.forEach(function(l){ if(l.p.adiadaDe && limiteDoVenc(pf, j.fornId, l.p.adiadaDe)===j.limite) out.push({para:j2.chave, valor:l.p.valor}); }); });
+  return somaPorChave(out, "para");
+}
+function transfSaiu(pf, chave){ return somaPorChave(pf.lancamentos.filter(function(l){ return l.deChave===chave && l.valor>0; }), "chave"); }
+// pago a mais numa data (de novembro/2026 em diante) AUMENTA A DÍVIDA DA PRÓPRIA DATA e a mesma diferença SAI DA PRÓXIMA (Lucas, 18/11/2026).
+// Vira um ajuste automático nas Negociações, "Diferença enviada a mais": uma parcela Pix de +X na data e parcela(s) de −X nas datas seguintes
+// do fornecedor que ainda têm saldo em aberto (por ordem de data; o total do ajuste fica zero). Sem data seguinte em aberto, fica só o +X.
+// O ajuste é refeito a cada ação: estornou um Pix ou entrou parcela nova, o ajuste diminui ou sai.
+// Fora: Point (conta corrente) e datas com desconto da maquininha (a sobra se divide na aba Maquininha Banho). Datas antes de novembro/2026: só o aviso.
+var PASSA_DESDE = "2026-11-01";   // o sistema começou a ser usado em novembro/2026 (Lucas, 18/11/2026)
+var AJUSTE_NOME = "Diferença enviada a mais";
+function dmy(d){ d = String(d||""); return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); }
+function ajusteDaChave(pf, chave){ return pf.pedidos.find(function(pd){ return pd.ajusteChave===chave; }) || null; }
+function ajusteValor(pd){ return pd ? r2(pd.parcelas.filter(function(p){ return p.valor>0; }).reduce(function(s, p){ return s+p.valor; }, 0)) : 0; }
+function ajustaExcesso(pf, chave){ var l = String(chave).split("|"); return +l[0]!==PT_FORN && l[1]>=PASSA_DESDE && !(mqAplicado(pf, chave)>0.005); }
+// desconto que uma data recebeu de ajustes de datas anteriores: [{chave (de onde veio), limite, valor}]
+function descontoVeio(pf, j){ var out = []; j.itens.forEach(function(l){ if(l.pd.ajusteChave && l.pd.ajusteChave!==j.chave && l.p.valor<0) out.push({chave:l.pd.ajusteChave, valor:-l.p.valor}); }); return somaPorChave(out, "chave"); }
+function descontoSaiu(pf, j){ var aj = ajusteDaChave(pf, j.chave), fid = j.fornId, out = []; if(!aj) return [];
+  janelasDoForn(pf, fid).forEach(function(k){ k.itens.forEach(function(l){ if(l.pd===aj && l.p.valor<0) out.push({chave:k.chave, valor:-l.p.valor}); }); });
+  return somaPorChave(out, "chave"); }
+function ajustarExcessos(pf){
+  var vencDe = function(j){ return j.itens.filter(function(l){ return eSem(l) && !l.pd.ajusteChave; }).reduce(function(m, l){ return l.p.venc>m ? l.p.venc : m; }, "") || j.fim; };
+  var dbr = function(d){ return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); }, dm = function(c){ var l = c.split("|")[1]; return l.slice(8,10)+"/"+l.slice(5,7); };
+  var antesPd = JSON.stringify(pf.pedidos.filter(function(pd){ return pd.ajusteChave; }));
+  // 1) tira os pares automáticos e os ajustes e refaz a conta do zero (o que não mudar volta igual, com o mesmo id)
+  var paresVelhos = {}; pf.lancamentos.forEach(function(l){ if(l.auto && l.par && (l.paraChave || l.deChave)){ var k = l.paraChave ? l.chave+">"+l.paraChave : l.deChave+">"+l.chave; (paresVelhos[k] = paresVelhos[k]||[]).push(l); } });
+  var antesL = pf.lancamentos.length;
+  pf.lancamentos = pf.lancamentos.filter(function(l){ return !(l.auto && (l.paraChave || l.deChave)); });
+  var velhos = {}; pf.pedidos.forEach(function(pd){ if(pd.ajusteChave) velhos[pd.ajusteChave] = pd; });
+  pf.pedidos = pf.pedidos.filter(function(pd){ return !pd.ajusteChave; }); invalidar(pf);
+  var novos = [], pares = [];
+  pf.fornecedores.forEach(function(f){
+    if(f.id===PT_FORN) return;
+    var js = janelasDoForn(pf, f.id), desc = {}, entra = {}, sai = {};   // desc = desconto de ajuste; entra/sai = pago passado entre datas do MESMO mês
+    var totalDe = function(j){ return r2(j.total-(desc[j.chave]||0)); }, pagoDe = function(j){ return r2(pagoJanela(pf, j.chave)+(entra[j.chave]||0)-(sai[j.chave]||0)); };
+    var abertoDe = function(j){ return r2(Math.max(0, totalDe(j)-pagoDe(j))); }, semMq = function(k){ return !(mqAplicado(pf, k.chave)>0.005); };
+    // 2) o MÊS manda (Lucas, 19/11/2026: "se coloquei 2.000 em novembro, vai ser 2.000 em novembro"): tudo o que foi pago no mês quita primeiro a data MAIS ANTIGA
+    //    do mês (regra da casa: o Pix quita a parcela aberta mais antiga), sem mudar nenhum valor cadastrado. O que sobra do mês fica na última data e vira o passo 3.
+    var porMes = {}; js.forEach(function(j){ if(ajustaExcesso(pf, j.chave)) (porMes[j.mes] = porMes[j.mes]||[]).push(j); });
+    Object.keys(porMes).forEach(function(mes){
+      var g = porMes[mes].slice().sort(function(a, b){ return a.limite.localeCompare(b.limite); }), resto = r2(g.reduce(function(t, j){ return t+pagoJanela(pf, j.chave); }, 0));
+      var dif = g.map(function(j, i){ var alvo = i===g.length-1 ? resto : r2(Math.min(resto, j.total)); resto = r2(resto-alvo); return {j:j, d:r2(alvo-pagoJanela(pf, j.chave))}; });
+      var sobra = dif.filter(function(x){ return x.d<-0.005; }), falta = dif.filter(function(x){ return x.d>0.005; });
+      falta.forEach(function(fx){ sobra.forEach(function(sx){
+        var v = r2(Math.min(fx.d, -sx.d)); if(v<=0.005) return;
+        sai[sx.j.chave] = r2((sai[sx.j.chave]||0)+v); entra[fx.j.chave] = r2((entra[fx.j.chave]||0)+v); fx.d = r2(fx.d-v); sx.d = r2(sx.d+v); pares.push({de:sx.j, para:fx.j, valor:v, fid:f.id});
+      }); });
+    });
+    js.forEach(function(j){
+      if(!ajustaExcesso(pf, j.chave)) return;
+      var exc = r2(pagoDe(j)-totalDe(j));
+      if(exc<=0.005) return;
+      // 3) o mês inteiro pago e ainda sobra: a dívida da data sobe (ajuste "Diferença enviada a mais") e o mesmo valor sai das próximas datas em aberto
+      var parcelas = [{forma:"pix_revendedora", venc:vencDe(j), valor:exc, conta:"—", status:"Pendente"}], resto = exc, para = [];
+      js.forEach(function(k){
+        if(resto<=0.005 || k.limite<=j.limite || !semMq(k)) return;
+        var v = r2(Math.min(resto, abertoDe(k))); if(v<=0.005) return;
+        parcelas.push({forma:"pix_revendedora", venc:vencDe(k), valor:-v, conta:"—", status:"Pendente"});
+        desc[k.chave] = r2((desc[k.chave]||0)+v); resto = r2(resto-v); para.push(brl(v)+" descontado em "+dbr(k.limite));
+      });
+      var pd = velhos[j.chave] || {id:pf.seq.P++};
+      Object.assign(pd, {fornId:f.id, numero:AJUSTE_NOME, data:parcelas[0].venc, total:resto, nfTipo:"sem", comNF:0, semNF:resto, cnpj:"Sem NF", nfNum:"",
+        descricao:"Ajuste automático: os pagamentos de "+mesLabel(j.mes+"-01")+" passaram do total do mês em "+brl(exc)+". A dívida da data "+dbr(j.limite)+" subiu "+brl(exc)+(para.length ? "; "+para.join("; ") : "; não há data seguinte em aberto para descontar")+".",
+        limite:j.limite, pixMin:0, ajusteChave:j.chave, auto:true, parcelas:parcelas});
+      novos.push(pd);
+    });
+  });
+  // pares do mesmo mês: −X na data que passou e +X na data que recebeu ("Crédito", conferido, automático). Igual ao que já existia = volta o mesmo
+  var hoje = hojeIso();
+  pares.forEach(function(x){
+    var k = x.de.chave+">"+x.para.chave, v = paresVelhos[k];
+    if(v && v.length===2 && v.every(function(l){ return Math.abs(Math.abs(l.valor)-x.valor)<0.005; })){ pf.lancamentos = pf.lancamentos.concat(v); return; }
+    var par = "t"+pf.seq.L, base = {fornId:x.fid, data:hoje, conta:"Crédito", arqNome:"", arqTipo:"", arqData:"", conferido:true, conferidoEm:hoje, par:par, auto:true};
+    pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:x.de.chave, mes:x.de.mes, limite:x.de.limite, revendedora:"Pago do mês → quita "+dm(x.para.chave)+" (data mais antiga)", valor:-x.valor, paraChave:x.para.chave}, base));
+    pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:x.para.chave, mes:x.para.mes, limite:x.para.limite, revendedora:"Pago do mês ← veio de "+dm(x.de.chave), valor:x.valor, deChave:x.de.chave}, base));
+  });
+  pf.pedidos = pf.pedidos.concat(novos); invalidar(pf);
+  return pf.lancamentos.length!==antesL || JSON.stringify(novos)!==antesPd;
+}
+// mudou o ciclo (ou as datas do mês) de um fornecedor: os Pix lançados nas datas antigas passam para a data nova onde caem (Lucas, 19/11/2026: Higor, dia 5 → dia 6)
+function religarLancamentos(pf, fid){
+  invalidar(pf);
+  var js = janelasDoForn(pf, fid), tem = {}, n = 0, mapa = {}; js.forEach(function(j){ tem[j.chave] = j; });
+  pf.lancamentos.forEach(function(l){
+    if(l.fornId!==fid || tem[l.chave]) return;
+    var lim = String(l.chave).split("|")[1]; if(!/^\d{4}-\d{2}-\d{2}$/.test(lim||"")) return;
+    var novo = fid+"|"+limiteDoVenc(pf, fid, lim), j = tem[novo]; if(!j) return;
+    mapa[l.chave] = novo; l.chave = novo; l.limite = j.limite; l.mes = j.mes; n++;
+  });
+  pf.lancamentos.forEach(function(l){ if(l.fornId!==fid) return; if(l.deChave && mapa[l.deChave]) l.deChave = mapa[l.deChave]; if(l.paraChave && mapa[l.paraChave]) l.paraChave = mapa[l.paraChave]; });
+  invalidar(pf);
+  return n;
+}
+// saldo que falta numa data passa para a 1ª data do mês seguinte (Lucas, 17/11/2026): move/divide as parcelas Pix da data,
+// da mais nova para a mais antiga, sem mudar o total do pedido. Point fica fora (conta corrente com tela própria).
+function adiarDestino(pf, chave){   // {mes, venc, limite} da 1ª data do mês seguinte, ou null
+  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; });
+  if(!j || fid===PT_FORN) return null;
+  // o mês da parcela decide em que mês ela cai: a data tem de ser do mês seguinte e depois da data atual (datas feitas à mão podem fugir disso)
+  var mes = mesMais(j.limite.slice(0,7), 1), bs = blocosDoMes(pf, fid, mes).filter(function(x){ return x.fim.slice(0,7)===mes && x.fim>j.limite; }).sort(function(a,b){ return a.fim.localeCompare(b.fim); });
+  var venc = bs.length ? bs[0].fim : diaISO(mes, ultDia(mes));
+  // mesma regra do distribuir: cai no 1º bloco do mês com fim >= vencimento, senão no último; data de pagamento antes da atual = não oferece
+  var todos = blocosDoMes(pf, fid, mes), alvo = todos.find(function(x){ return venc<=x.fim; }) || todos[todos.length-1];
+  var limite = alvo ? alvo.limite : venc;
+  return limite>j.limite ? {mes:mes, venc:venc, limite:limite} : null;
+}
+// destino do saldo que falta (Lucas, 18/11/2026): a PRÓXIMA data de pagamento do fornecedor; sem data depois, a 1ª do mês seguinte
+function destinoSaldo(pf, chave){
+  var fid = parseInt(chave.split("|")[0]); if(fid===PT_FORN) return null;
+  var js = janelasDoForn(pf, fid), j = js.find(function(x){ return x.chave===chave; }); if(!j) return null;
+  var prox = js.filter(function(x){ return x.limite>j.limite; });
+  for(var i = 0; i<prox.length; i++){
+    var j2 = prox[i], venc = j2.fim; if(venc.slice(0,7)!==j2.mes) continue;
+    var bs = blocosDoMes(pf, fid, j2.mes), alvo = bs.find(function(b){ return venc<=b.fim; }) || bs[bs.length-1];
+    if(alvo && alvo.limite===j2.limite) return {mes:j2.mes, venc:venc, limite:j2.limite};
+  }
+  return adiarDestino(pf, chave);
+}
+function adiarSaldo(pf, chave, valor){   // muda o pf; devolve o destino ou null
+  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; }), dst = destinoSaldo(pf, chave);
+  var resto = r2(valor); if(!j || !dst || resto<=0.005) return null;
+  j.itens.filter(eSem).sort(function(a,b){ return b.p.venc.localeCompare(a.p.venc); }).forEach(function(l){
+    if(resto<=0.005) return;
+    var p = l.p, de = p.venc;
+    if(p.valor<=resto+0.005){ resto = r2(resto-p.valor); p.venc = dst.venc; p.status = "Pendente"; p.adiadaDe = de; return; }
+    p.valor = r2(p.valor-resto);
+    l.pd.parcelas.push({forma:p.forma, venc:dst.venc, valor:resto, conta:p.conta, status:"Pendente", adiadaDe:de});
+    resto = 0;
+  });
+  invalidar(pf);
+  return dst;
 }
 function tokenAcerto(pf, chave){   // muda o pf: token do link do extrato do fornecedor
   if(!pf.tokensAcerto[chave]) pf.tokensAcerto[chave] = Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);
@@ -897,6 +1068,10 @@ function mqPreviewDist(pf, mes, linhas){   // previewDist
 
 // ---------- POINT · conta corrente (HTML 5366-5529) ----------
 function ptMeses(pf){ return pf.pedidos.filter(function(p){ return p.fornId===PT_FORN; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
+// MÊS ÚNICO (Nickolas, 12/11/2026): a Point tem só UM registro por mês e ano. Dois registros no mesmo mês duplicavam a linha nas duas partes e contavam o boleto do mês duas vezes.
+// "fora" = o próprio registro que está sendo editado (não conta como repetido).
+function ptMesTem(pf, mes, fora){ return pf.pedidos.some(function(p){ return p.fornId===PT_FORN && p!==fora && String(p.data||"").slice(0,7)===mes; }); }
+var ptMsgRepetido = function(data){ return "A Point já tem o mês de "+mesLabel(data.slice(0,7)+"-01")+". Só pode existir um mês de cada. Lance o pedido dentro dele: escolha a Point no filtro Fornecedor, abra o mês pela seta e use “+ pedido”."; };
 function ptPed(pf, id){ return pf.pedidos.find(function(p){ return p.id===id; }); }
 function ptDados(pf){   // cálculo do renderPoint: bloco de pedidos (saldo) e bloco do pix mensal
   var lista = ptMeses(pf), acum = pf.ptSaldoIni, tPed = 0, nPed = 0;
@@ -939,9 +1114,11 @@ var DATA_OK = /^\d{4}-\d{2}-\d{2}$/;
 function pfReduz(s, a){
   var pf = JSON.parse(JSON.stringify(s.pf||pfVazio())), msgAviso = "";
   var recusa = function(t, confirmar){ return {patch:{}, msg:t, confirmar:!!confirmar}; };   // confirmar:true = repita com forcar:true se o usuário concordar
-  var ok = function(msg){ invalidar(pf); sincronizarTudo(pf); return {patch:{pf:pf}, msg:msg||"Salvo"}; };
+  var ok = function(msg){ invalidar(pf); ajustarExcessos(pf); invalidar(pf); sincronizarTudo(pf); return {patch:{pf:pf}, msg:msg||"Salvo"}; };
   var F = function(id){ return forn(pf, id); };
   var ped = function(id){ return pf.pedidos.find(function(p){ return p.id===id; }); };
+  // número do próximo pedido sempre acima do maior já usado (12/11/2026): o "Novo mês" da Point usava ++seq e deixava o próximo pedido nascer com o mesmo número de um mês
+  if(pf.seq && Array.isArray(pf.pedidos)){ var maxP = pf.pedidos.reduce(function(m, p){ return Math.max(m, Number(p.id)||0); }, 0); if(!(pf.seq.P > maxP)) pf.seq.P = maxP+1; }
   invalidar(pf);
   switch(a.op){
     case "mut": { var r = a.fn(pf); invalidar(pf); return ok(typeof r==="string" ? r : "Salvo"); }
@@ -952,20 +1129,130 @@ function pfReduz(s, a){
       if(!a.data) return recusa("Informe a data do pagamento.");
       var rev = String(a.revendedora||"").trim(); if(!rev) return recusa("Informe o nome da revendedora.");
       if(!a.chave || a.chave.indexOf("|")<0) return recusa("Escolha a data de pagamento (janela).");
-      var fid = parseInt(a.chave.split("|")[0]), limite = a.chave.split("|")[1], jn = janelasDoForn(pf, fid).find(function(x){ return x.chave===a.chave; });
-      var ex = lancExcedente(pf, a.chave, v);
-      if(ex.passa && !a.forcar) return recusa("O valor ultrapassa o que falta nesta data (saldo de "+brl(ex.aberto)+"). Lançar mesmo assim?", true);
-      pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jn ? jn.mes : a.data.slice(0,7), limite:limite, data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
-        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", conferido:false, conferidoEm:""});
-      return ok("Pagamento lançado — "+brl(v)+" para "+rev+(a.arqNome ? " · comprovante anexado" : ""));
+      var fid = parseInt(a.chave.split("|")[0]);
+      // o Pix fica todo na data escolhida (18/11/2026): o que passar do total vira o ajuste "Diferença enviada a mais" (ajustarExcessos)
+      var jL = janelaPorChave(pf, a.chave), abL = jL ? r2(Math.max(0, jL.total-pagoJanela(pf, a.chave))) : 0, excL = r2(v-abL);
+      var alL = null; if(a.alocs && a.alocs.length){ if(!porPedidoAtivo(pf, fid)) return recusa("Este fornecedor não usa a identificação por pedido."); alL = lerAlocs(pf, fid, v, a.alocs, null); if(alL.erro) return recusa(alL.erro); }   // por pedido (19/11/2026)
+      pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jL ? jL.mes : a.data.slice(0,7), limite:a.chave.split("|")[1], data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
+        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:""});
+      if(alL && alL.alocs.length){ var lN = pf.lancamentos[pf.lancamentos.length-1]; lN.alocs = alL.alocs; lN.pedHist = [{em:hojeIso(), por:a.por||"", antes:"sem identificação", depois:textoAlocs(pf, alL.alocs)}]; }
+      var txtExc = excL>0.005 ? (ajustaExcesso(pf, a.chave) ? " · "+brl(excL)+" a mais: a dívida da data subiu ("+AJUSTE_NOME+")" : " · passou do total em "+brl(excL)) : "";
+      // pagou menos que o que falta: escolha "passar a diferença para o mês seguinte"
+      var difA = r2(abL-v);
+      if(a.adiar && difA>0.005){ invalidar(pf); var dA = adiarSaldo(pf, a.chave, difA); if(!dA) return recusa("Não há próxima data de pagamento para passar o saldo."); return ok("Pagamento lançado — "+brl(v)+" para "+rev+" · "+brl(difA)+" passou para "+dA.limite.slice(8,10)+"/"+dA.limite.slice(5,7)+(a.arqNome ? " · comprovante anexado" : "")); }
+      return ok("Pagamento lançado — "+brl(v)+" para "+rev+txtExc+(a.arqNome ? " · comprovante anexado" : ""));
+    }
+    // Pix confirmado no Direcionar vira pagamento do fornecedor (17/11/2026). a.itens = [{origemPix (id#n, evita duplicar), fornId, valor, data, revendedora, conta, por}]
+    case "pix_dir": { var nNovos = 0;
+      (a.itens||[]).forEach(function(it){
+        if(!it.origemPix || !(it.valor>0) || pf.lancamentos.some(function(x){ return x.origemPix===it.origemPix; })) return;
+        invalidar(pf); var jn2 = janelaMaisAntigaAberta(pf, it.fornId); if(!jn2) return;
+        pf.lancamentos.push({id:pf.seq.L++, chave:jn2.chave, fornId:it.fornId, mes:jn2.mes, limite:jn2.limite, data:it.data||hojeIso(), revendedora:String(it.revendedora||"").trim()||"Pix do Direcionar", valor:r2(it.valor), conta:String(it.conta||"").trim()||"—", lf:it.lf||null,
+          arqNome:"", arqTipo:"", arqData:"", chavePix:"", conferido:false, conferidoEm:"", origemPix:it.origemPix, aguardaComp:true, direcionadoPor:it.por||""});
+        nNovos++; invalidar(pf); });
+      if(!nNovos) return recusa("");
+      return ok(nNovos+" Pix virou(aram) pagamento de fornecedor · falta o comprovante"); }
+    // Pix reaberto no Direcionar: o pagamento que ainda não tem comprovante sai da lista
+    case "pix_dir_desfaz": { var antes = pf.lancamentos.length;
+      pf.lancamentos = pf.lancamentos.filter(function(x){ return !(x.origemPix && x.origemPix.indexOf(a.id+"#")===0 && x.aguardaComp); });
+      if(pf.lancamentos.length===antes) return recusa(""); return ok("Pagamento do Direcionar retirado"); }
+    // comprovante anexado: o pagamento passa a contar como pago
+    case "lanc_comp": { var l3 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l3) return recusa("Pagamento não encontrado.");
+      l3.arqNome = a.arqNome||""; l3.arqTipo = a.arqTipo||""; l3.arqKey = a.arqKey||""; l3.arqData = a.arqData || hojeIso(); if(l3.aguardaComp) l3.aguardaComp = false;
+      return ok("Comprovante anexado — pagamento de "+brl(l3.valor)+" agora conta como pago"); }
+    // comprovante que estava SÓ no navegador de quem lançou (arqId) sobe para o servidor (18/11/2026): assim o link do fornecedor mostra.
+    // Só acrescenta a cópia do servidor (arqKey); não muda valor nem conferência. a.itens = [{id, arqKey}]
+    case "lanc_comp_srv": { var nS = 0;
+      (a.itens||[]).forEach(function(it){ var lS = pf.lancamentos.find(function(x){ return x.id===it.id; }); if(!lS || lS.arqKey || !lS.arqId || !/^an_[a-z0-9]{6,40}$/.test(it.arqKey||"")) return; lS.arqKey = it.arqKey; nS++; });
+      if(!nS) return recusa("");
+      return ok(nS+" comprovante(s) guardado(s) neste computador agora estão no servidor"); }
+    case "saldo_passar": {   // só com o aceite de quem lança: o que falta numa data passa para a próxima data de pagamento
+      var jS = janelaPorChave(pf, a.chave); if(!jS) return recusa("Data não encontrada.");
+      var falS = r2(jS.total-pagoJanela(pf, a.chave)); if(falS<=0.005) return recusa("Esta data não tem saldo a pagar.");
+      var dS = adiarSaldo(pf, a.chave, falS); if(!dS) return recusa("Não há próxima data de pagamento para este fornecedor.");
+      return ok(brl(falS)+" passou para "+dS.limite.slice(8,10)+"/"+dS.limite.slice(5,7));
     }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
+      if(l1.par){ var nP = pf.lancamentos.filter(function(x){ return x.par===l1.par; }).length; pf.lancamentos = pf.lancamentos.filter(function(x){ return x.par!==l1.par; }); return ok(nP>1 ? "Estornado junto com as "+(nP-1)+" parte(s) ligada(s)" : "Pagamento estornado"); }
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
+    // editar o pagamento depois de lançado (Lucas, 18/11/2026): só enquanto NÃO estiver conferido
+    case "lanc_set": { var lE = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!lE) return recusa("Pagamento não encontrado.");
+      if(lE.conferido) return recusa("Pagamento conferido não pode ser alterado. Desfaça a conferência antes.");
+      if(lE.auto) return recusa("Este lançamento é automático e não pode ser alterado.");
+      var pE = a.patch||{}, vE = pE.valor!==undefined ? num(pE.valor) : lE.valor;
+      if(!(vE>0)) return recusa("Informe o valor pago.");
+      if(pE.data!==undefined && !DATA_OK.test(pE.data)) return recusa("Informe a data do pagamento.");
+      if(pE.revendedora!==undefined && !String(pE.revendedora).trim()) return recusa("Informe o nome da revendedora.");
+      var jE = null;
+      if(pE.chave!==undefined && pE.chave!==lE.chave){
+        jE = janelaPorChave(pf, pE.chave);
+        if(!jE || jE.fornId!==lE.fornId) return recusa("Escolha uma data de pagamento deste fornecedor.");
+      }
+      if(alocado(lE)>r2(vE)+0.005) return recusa("Este pagamento tem "+brl(alocado(lE))+" destinado a pedidos. Ajuste a identificação dos pedidos antes de diminuir o valor.");
+      var antesE = brl(lE.valor)+" · "+lE.revendedora+" · "+dmy(lE.data);
+      if(pE.data!==undefined) lE.data = pE.data;
+      if(pE.revendedora!==undefined) lE.revendedora = String(pE.revendedora).trim();
+      if(pE.conta!==undefined) lE.conta = String(pE.conta).trim()||"—";
+      if(pE.chavePix!==undefined) lE.chavePix = String(pE.chavePix).trim();
+      lE.valor = r2(vE);
+      if(jE){ lE.chave = jE.chave; lE.mes = jE.mes; lE.limite = jE.limite; delete lE.deChave; }
+      if(pE.arqKey){ lE.arqKey = pE.arqKey; lE.arqNome = pE.arqNome||""; lE.arqTipo = pE.arqTipo||""; lE.arqData = hojeIso(); if(lE.aguardaComp) lE.aguardaComp = false; }
+      (lE.hist = lE.hist||[]).push({em:hojeIso(), por:a.por||"", antes:antesE});
+      return ok("Pagamento alterado — "+brl(lE.valor)+" para "+lE.revendedora);
+    }
     case "lanc_conferido": { var l2 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l2) return recusa("Pagamento não encontrado.");
       var novo = (a.conferido===undefined) ? !l2.conferido : !!a.conferido;
       l2.conferido = novo; l2.conferidoEm = novo ? (a.em||hojeIso()) : "";
       return ok(novo ? "Pagamento conferido — "+brl(l2.valor)+" · "+(l2.revendedora||"") : "Conferência desfeita — voltou para Aguardando"); }
     case "token_acerto": { tokenAcerto(pf, a.chave); return ok("Link gerado"); }
+
+    // ---- CONTROLE POR PEDIDO (19/11/2026) ----
+    case "forn_por_pedido": {   // liga/desliga por fornecedor; desligar NÃO apaga vínculos nem histórico
+      var fP = F(a.id); if(!fP) return recusa("Fornecedor não encontrado."); var liga = !!a.ativo; if(!!fP.porPedido===liga) return recusa("");
+      fP.porPedido = liga; (fP.porPedidoHist = fP.porPedidoHist||[]).push({em:hojeIso(), por:a.por||"", ativo:liga});
+      return ok(liga ? "Identificação por pedido ativada para "+fP.nome : "Identificação por pedido desativada para "+fP.nome+" (os vínculos ficam guardados)");
+    }
+    case "lanc_pedidos": {   // identifica ou corrige para quais pedidos foi o dinheiro de um pagamento já lançado. Não confere e não muda valor
+      var lP = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!lP) return recusa("Pagamento não encontrado.");
+      if(!porPedidoAtivo(pf, lP.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+      var alP = lerAlocs(pf, lP.fornId, lP.valor, a.alocs||[], lP.id); if(alP.erro) return recusa(alP.erro);
+      var antesP = textoAlocs(pf, lP.alocs), depoisP = textoAlocs(pf, alP.alocs); if(antesP===depoisP) return recusa("");
+      if(alP.alocs.length) lP.alocs = alP.alocs; else delete lP.alocs;
+      (lP.pedHist = lP.pedHist||[]).push({em:hojeIso(), por:a.por||"", antes:antesP, depois:depoisP});
+      return ok("Pagamento de "+brl(lP.valor)+": "+depoisP+(alP.resto>0.005 ? " · "+brl(alP.resto)+" sem identificação de pedido" : ""));
+    }
+    case "lanc_pedidos_lote": {   // confirma a sugestão de divisão: vários pagamentos de uma vez; se um não passar, NADA é gravado
+      var itL = a.itens||[]; if(!itL.length) return recusa("Escolha pelo menos um pagamento.");
+      for(var iL = 0; iL<itL.length; iL++){
+        var lL = pf.lancamentos.find(function(x){ return x.id===itL[iL].id; }); if(!lL) return recusa("Pagamento não encontrado.");
+        if(!porPedidoAtivo(pf, lL.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+        var alL2 = lerAlocs(pf, lL.fornId, lL.valor, itL[iL].alocs||[], lL.id); if(alL2.erro) return recusa("Pix de "+brl(lL.valor)+" ("+(lL.revendedora||"")+"): "+alL2.erro+" Nada foi gravado.");
+        var antL = textoAlocs(pf, lL.alocs), depL = textoAlocs(pf, alL2.alocs); if(antL===depL) continue;
+        if(alL2.alocs.length) lL.alocs = alL2.alocs; else delete lL.alocs;
+        (lL.pedHist = lL.pedHist||[]).push({em:hojeIso(), por:a.por||"", antes:antL, depois:depL, sugestao:true});
+      }
+      return ok(itL.length+" pagamento(s) identificado(s) pela sugestão confirmada");
+    }
+    case "ajuste_pedido": {   // desconto da maquininha de uma data: do pedido X ou do acerto geral. Só identifica (não abate de novo)
+      var jA = janelaPorChave(pf, a.chave); if(!jA) return recusa("Data não encontrada."); if(!porPedidoAtivo(pf, jA.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+      if(!(mqAplicado(pf, a.chave)>0.005)) return recusa("Esta data não tem desconto para identificar.");
+      var pidA = a.pedidoId==null || a.pedidoId==="" || a.pedidoId==="geral" ? "geral" : parseInt(a.pedidoId);
+      if(pidA!=="geral" && !jA.itens.some(function(l){ return l.pd.id===pidA; })) return recusa("Escolha um pedido deste acerto.");
+      pf.ajustesPed = pf.ajustesPed||{}; pf.ajustesPed["mq|"+a.chave] = {pedidoId:pidA, por:a.por||"", em:hojeIso()};
+      return ok(pidA==="geral" ? "Desconto marcado como do acerto geral" : "Desconto identificado no pedido");
+    }
+    case "pedido_info": {   // dados do pedido para o controle por pedido: descrição, condições, observações e vínculo com a compra. NÃO mexe em valores
+      var pI = ped(a.id); if(!pI) return recusa("Pedido não encontrado.");
+      ["descricao","condicoes","obs"].forEach(function(k){ if(a[k]!==undefined){ var t = String(a[k]||"").trim(); if(t) pI[k] = t; else delete pI[k]; } });
+      if(a.compraId!==undefined){ if(a.compraId==null || a.compraId==="") delete pI.compraId; else pI.compraId = a.compraId; }
+      return ok("Dados do pedido "+pI.numero+" salvos");
+    }
+    case "link_pedidos": {   // link só dos pedidos escolhidos (somente leitura)
+      var fL = F(a.fornId); if(!fL || !fL.porPedido) return recusa("Este fornecedor não usa a identificação por pedido.");
+      var idsL = (a.pedidos||[]).map(Number).filter(function(id){ var p = ped(id); return p && p.fornId===fL.id && !p.ajusteChave && !p.auto; });
+      if(!idsL.length) return recusa("Escolha pelo menos um pedido.");
+      tokenPedidos(pf, fL.id, idsL, a.por, !!a.boleto, a.token); return ok("Link dos pedidos gerado");
+    }
 
     // ---- fornecedor (salvarFornecedor / excluirFornecedor / addFornRapido)
     case "forn_add": {
@@ -982,7 +1269,9 @@ function pfReduz(s, a){
       var p1 = a.patch||{};
       if(p1.nome!==undefined){ p1.nome = String(p1.nome).trim(); if(!p1.nome) return recusa("Informe o nome do fornecedor."); }
       if(p1.ciclo){ p1.ciclo = {periodicidade:p1.ciclo.periodicidade||"custom", cortes:limpaCortes(p1.ciclo.cortes).length ? limpaCortes(p1.ciclo.cortes) : [31], prazoDias:parseInt(p1.ciclo.prazoDias)||0}; }
-      Object.assign(f1, p1); return ok("Fornecedor atualizado");
+      Object.assign(f1, p1);
+      var nRel = p1.ciclo ? religarLancamentos(pf, f1.id) : 0;
+      return ok("Fornecedor atualizado"+(nRel ? " · "+nRel+" Pix passaram para as datas novas" : ""));
     }
     case "forn_del": {
       var f2 = F(a.id); if(!f2) return recusa("Fornecedor não encontrado.");
@@ -1001,9 +1290,9 @@ function pfReduz(s, a){
       if(Math.abs(tot-(c+s2))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       var fid2 = parseInt(a.fornId); if(!F(fid2)) return recusa("Escolha o fornecedor.");
       if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
+      if(fid2===PT_FORN && ptMesTem(pf, a.data.slice(0,7))) return recusa(ptMsgRepetido(a.data));
       var ePrest2 = ehPrestador(F(fid2)), pixMin = num(a.pixMin);
-      if(ePrest2 && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
-      if(ePrest2 && pixMin<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
+      // 19/11/2026 (Lucas): a "Negociação do prestador" (data limite e Pix mínimo) saiu da janela do pedido; não é mais obrigatória
       var todas = expandirParcelas(a.linhas);
       if(todas.some(function(p){ return !FORMAS[p.forma] || !DATA_OK.test(p.venc); })) return recusa("Há parcela com forma de pagamento ou data inválida.");
       var pCom = c>0.005 ? todas.filter(function(p){ return FORMAS[p.forma].nf==="com"; }) : [], pSem = s2>0.005 ? todas.filter(function(p){ return FORMAS[p.forma].nf==="sem"; }) : [];
@@ -1014,7 +1303,7 @@ function pfReduz(s, a){
       var num1 = a.numero||"s/nº", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
       var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
-      if(ePrest2){ novoPd.limite = a.limite; novoPd.pixMin = pixMin; }
+      if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
       var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);
       if(impLim.length) novoPd.avisoLimite = motivoImpacto(impLim);
@@ -1030,11 +1319,10 @@ function pfReduz(s, a){
       if(Math.abs(totE-(cE+sE))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       var fidE = parseInt(a.fornId); if(!F(fidE)) return recusa("Escolha o fornecedor.");
       if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
+      if(fidE===PT_FORN && ptMesTem(pf, a.data.slice(0,7), pe)) return recusa(ptMsgRepetido(a.data));
       var pagasE = pe.parcelas.filter(function(p){ return p.status==="Pago"; });
       if(fidE!==pe.fornId && pagasE.length) return recusa("Este pedido já tem parcela paga: não dá para trocar o fornecedor. Estorne as baixas antes.");
       var ePrestE = ehPrestador(F(fidE));
-      if(ePrestE && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
-      if(ePrestE && num(a.pixMin)<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
       var todasE = expandirParcelas(a.linhas);
       if(todasE.some(function(p){ return !FORMAS[p.forma] || !DATA_OK.test(p.venc); })) return recusa("Há parcela com forma de pagamento ou data inválida.");
       var sobraE = todasE.slice(), mantidas = [];
@@ -1065,7 +1353,7 @@ function pfReduz(s, a){
       pe.fornId = fidE; pe.numero = a.numero||"s/nº"; pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
-      if(ePrestE){ pe.limite = a.limite; pe.pixMin = num(a.pixMin); } else { delete pe.limite; delete pe.pixMin; }
+      if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)
       pe.parcelas = todasParc;
       var impE = a.semLimite ? [] : impactoPedido(pf, pe); if(impE.length) pe.avisoLimite = motivoImpacto(impE); else delete pe.avisoLimite;
       pe.historico = (pe.historico||[]).concat([{em:new Date().toISOString().slice(0, 16).replace("T", " "), por:a.por||"", mudou:mud.join(" · ")}]);
@@ -1079,6 +1367,7 @@ function pfReduz(s, a){
       if(t2<=0) return recusa("Informe o valor total do pedido.");
       if(Math.abs(t2-(c2+s3))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       if(q.data!==undefined && !DATA_OK.test(q.data)) return recusa("Informe a data do pedido.");
+      if(q.data!==undefined && pd1.fornId===PT_FORN && ptMesTem(pf, q.data.slice(0,7), pd1)) return recusa(ptMsgRepetido(q.data));
       ["numero","data","cnpj","nfNum","nfTipo","obs","descricao","limite","pixMin"].forEach(function(k){ if(q[k]!==undefined) pd1[k] = q[k]; });
       pd1.total = t2; pd1.comNF = c2; pd1.semNF = s3; return ok("Pedido atualizado");
     }
@@ -1136,9 +1425,10 @@ function pfReduz(s, a){
       if(!F(a.fornId) || !a.mes) return recusa("Escolha o fornecedor e o mês.");
       if(bl.some(function(b){ return b.fim.slice(0,7)!==a.mes; }) && !a.forcar) return recusa("Há data(s) de fechamento fora de "+mesLabel(a.mes+"-01")+". Salvar assim mesmo?", true);
       pf.acertos[a.fornId+"|"+a.mes] = bl;
+      religarLancamentos(pf, a.fornId);   // Pix das datas antigas passam para as novas (19/11/2026)
       return ok(bl.length===1 ? "Data limite definida — pagamento único no mês" : bl.length+" datas limite definidas para o mês");
     }
-    case "acerto_reset": { delete pf.acertos[a.fornId+"|"+a.mes]; return ok("Mês voltou ao ciclo do cadastro — "+cicloLabel(F(a.fornId))); }
+    case "acerto_reset": { delete pf.acertos[a.fornId+"|"+a.mes]; religarLancamentos(pf, a.fornId); return ok("Mês voltou ao ciclo do cadastro — "+cicloLabel(F(a.fornId))); }
 
     // ---- maquininha (salvarPassada / excluirPassada / salvarFechamento / limparFechamento / salvarDist / voltarAuto / salvarBaixa / estornarBaixa / setMqForn)
     case "mq_passada_add": case "mq_passada_set": {
@@ -1226,26 +1516,127 @@ function pfReduz(s, a){
       var ms = ptMeses(pf), prox;
       if(ms.length){ var u = ms[ms.length-1].data.slice(0,7).split("-").map(Number); prox = isoLocal(new Date(u[0], u[1], 1)).slice(0,7); } else prox = mesAtual();
       if(ms.some(function(p){ return p.data.slice(0,7)===prox; })) return recusa("O mês "+mesLabel(prox+"-01")+" já existe");
-      var nv = {id:++pf.seq.P, fornId:PT_FORN, numero:"Point "+mesLabel(prox+"-01"), data:prox+"-01", total:0, nfTipo:"sem", comNF:0, semNF:0, cnpj:(F(PT_FORN)||{}).cnpj||"", nfNum:"", obs:"", itens:[],
+      var nv = {id:pf.seq.P++, fornId:PT_FORN, numero:"Point "+mesLabel(prox+"-01"), data:prox+"-01", total:0, nfTipo:"sem", comNF:0, semNF:0, cnpj:(F(PT_FORN)||{}).cnpj||"", nfNum:"", obs:"", itens:[],
         parcelas:[{forma:"pix_revendedora", venc:prox+"-28", valor:0, conta:"Pix revendedora", status:"Pendente"}]};
       pf.pedidos.push(nv); ptSync(nv); pf.ptAberto[nv.id] = true;
       return ok("Mês "+mesLabel(prox+"-01")+" criado");
+    }
+    case "pt_mes_del": {   // APAGAR O MÊS (Nickolas, 12/11/2026): pedidos sem NF e acerto mensal são o mesmo registro, então o mês sai das duas partes de uma vez
+      var ixD = pf.pedidos.findIndex(function(p){ return p.id===a.id && p.fornId===PT_FORN && (!a.data || p.data===a.data); });   // id + data: acha o registro certo mesmo com id repetido de antes
+      if(ixD<0) return recusa("Mês da Point não encontrado.");
+      var pdM = pf.pedidos[ixD], mesD = String(pdM.data||"").slice(0,7), nItD = (pdM.itens||[]).length;
+      if((pdM.parcelas||[]).some(function(q){ return q.status==="Pago" && Math.abs(Number(q.valor)||0)>0.005; })) return recusa("O pix de "+mesLabel(pdM.data)+" está Pago. Volte o pix para Pendente antes de apagar o mês.");
+      if(!a.forcar) return recusa("O mês de "+mesLabel(pdM.data)+" vai sair das duas partes: "+(nItD ? nItD+" pedido(s) sem NF e " : "")+"o acerto mensal.", true);
+      pf.pedidos.splice(ixD, 1);
+      if(!ptMesTem(pf, mesD)) delete pf.ptBoleto[mesD];   // o boleto é do mês: só sai se não sobrou outro registro do mesmo mês
+      delete pf.ptAberto[pdM.id];
+      return ok("Mês de "+mesLabel(pdM.data)+" apagado");
     }
   }
   return recusa("Ação desconhecida: "+a.op);
 }
 
+// ---------- CONTROLE E RELATÓRIO POR PEDIDO (19/11/2026; ativado por fornecedor: f.porPedido, começa só na Xangai) ----------
+// Os PEDIDOS são as Negociações já lançadas (pf.pedidos): é delas que sai a dívida de cada acerto. Nada aqui soma dívida de novo.
+// Cada Pix (lançamento) continua UM registro com UM comprovante; só ganha l.alocs = [{pedidoId, valor, adiant}] dizendo para qual pedido foi o dinheiro.
+// O que não foi identificado fica "Valor sem identificação de pedido". Nada é distribuído sozinho. Identificar não confere o Pix nem marca parcela paga.
+// Ajuste (desconto da maquininha numa data) pode ser marcado como do pedido ou do acerto geral (pf.ajustesPed["mq|"+chave]); isso não cria abatimento novo.
+function porPedidoAtivo(pf, fid){ var f = forn(pf, fid); return !!(f && f.porPedido); }
+function pedidosDoForn(pf, fid){ return pf.pedidos.filter(function(pd){ return pd.fornId===fid && !pd.ajusteChave && !pd.auto; }).sort(function(a, b){ return String(a.data).localeCompare(String(b.data)) || a.id-b.id; }); }
+function alocado(l){ return r2(soma(l.alocs||[], function(x){ return x.valor; })); }
+function semIdent(l){ return r2(Math.max(0, l.valor-alocado(l))); }
+// pagamentos ligados a um pedido (de qualquer acerto ou mês): [{l, valor (destinado), total (da transferência), adiant}]
+function pagosDoPedido(pf, pedidoId){
+  var out = [];
+  pf.lancamentos.forEach(function(l){ (l.alocs||[]).forEach(function(x){ if(x.pedidoId===pedidoId) out.push({l:l, valor:x.valor, total:l.valor, adiant:!!x.adiant}); }); });
+  return out.sort(function(a, b){ return String(a.l.data).localeCompare(String(b.l.data)) || a.l.id-b.l.id; });
+}
+function ajustesDoPedido(pf, pedidoId){
+  var out = [], m = pf.ajustesPed||{};
+  Object.keys(m).forEach(function(k){ if(m[k] && m[k].pedidoId===pedidoId && k.indexOf("mq|")===0){ var ch = k.slice(3), v = r2(mqAplicado(pf, ch)); if(v>0.005) out.push({chave:k, rotulo:"Desconto da maquininha (acerto de "+dbr(ch.split("|")[1])+")", valor:v}); } });
+  return out;
+}
+// resumo de um pedido: valor original, parte Pix e parte com NF, ajustes identificados, pago identificado e saldo em aberto
+function resumoPedidoPf(pf, pedidoId){
+  var pd = pf.pedidos.find(function(x){ return x.id===pedidoId; }); if(!pd) return null;
+  var parc = pd.parcelas.map(function(p, idx){ return {p:p, idx:idx, sem:!!(FORMAS[p.forma] && FORMAS[p.forma].nf==="sem")}; });
+  var pix = r2(soma(parc.filter(function(x){ return x.sem; }), function(x){ return x.p.valor; })), nf = r2(soma(parc.filter(function(x){ return !x.sem; }), function(x){ return x.p.valor; }));
+  var nfPago = r2(soma(parc.filter(function(x){ return !x.sem && x.p.status==="Pago"; }), function(x){ return x.p.valor; }));
+  var pagos = pagosDoPedido(pf, pedidoId), pagoPixId = r2(soma(pagos, function(x){ return x.valor; })), ajs = ajustesDoPedido(pf, pedidoId), ajTot = r2(soma(ajs, function(x){ return x.valor; }));
+  var saldoPix = r2(pix-ajTot-pagoPixId), saldoNf = r2(nf-nfPago), datas = [pd.data].concat(pagos.map(function(x){ return x.l.data; })).filter(Boolean).sort();
+  return {pd:pd, valor:r2(pd.total), pix:pix, nf:nf, nfPago:nfPago, ajustes:ajs, ajustesTotal:ajTot, pagos:pagos, pagoIdentificado:r2(pagoPixId+nfPago), pagoPix:pagoPixId,
+    saldoPix:saldoPix, saldoNf:saldoNf, saldo:r2(saldoPix+saldoNf), periodo:{de:datas[0]||"", ate:datas[datas.length-1]||""},
+    acertos:janelasDoForn(pf, pd.fornId).filter(function(j){ return j.itens.some(function(l){ return l.pd.id===pedidoId; }); }).map(function(j){ return {chave:j.chave, limite:j.limite, valor:r2(soma(j.itens.filter(function(l){ return l.pd.id===pedidoId; }), function(l){ return l.p.valor; }))}; })};
+}
+// um acerto (data) por pedido: o que cada pedido tem nesta data, o que foi identificado e o que ainda não foi
+function acertoPorPedido(pf, chave){
+  var j = janelaPorChave(pf, chave); if(!j) return null;
+  var ids = []; j.itens.forEach(function(l){ if(!l.pd.ajusteChave && !l.pd.auto && ids.indexOf(l.pd.id)<0) ids.push(l.pd.id); });
+  var ls = lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), pago = r2(soma(ls, function(l){ return l.valor; })), ident = r2(soma(ls, alocado));
+  var ajuste = r2(soma(j.itens.filter(function(l){ return l.pd.ajusteChave; }), function(l){ return l.p.valor; })), mq = r2(mqAplicado(pf, chave)), mqDe = (pf.ajustesPed||{})["mq|"+chave] || null;
+  return {j:j, pedidos:ids.map(function(id){ var r = resumoPedidoPf(pf, id); r.nesteAcerto = r2(soma(j.itens.filter(function(l){ return l.pd.id===id; }), function(l){ return l.p.valor; })); return r; }),
+    pago:pago, identificado:ident, naoIdentificado:r2(pago-ident), semPedido:ls.filter(function(l){ return semIdent(l)>0.005; }).length, ajuste:ajuste, mq:mq, mqDe:mqDe};
+}
+// confere a divisão de um pagamento entre pedidos. lancId = lançamento que está sendo identificado (fica fora da conta do saldo)
+function lerAlocs(pf, fid, valorPix, alocs, lancId){
+  var out = [], vistos = {};
+  for(var i = 0; i<(alocs||[]).length; i++){
+    var x = alocs[i], pid = parseInt(x.pedidoId), v = r2(num(x.valor)); if(!(v>0)) continue;
+    var pd = pf.pedidos.find(function(p){ return p.id===pid; });
+    if(!pd || pd.fornId!==fid || pd.ajusteChave || pd.auto) return {erro:"Pedido não encontrado neste fornecedor."};
+    if(vistos[pid]) return {erro:"O pedido "+pd.numero+" aparece duas vezes."}; vistos[pid] = 1;
+    var r = resumoPedidoPf(pf, pid), jaOutros = r2(soma(pagosDoPedido(pf, pid).filter(function(y){ return y.l.id!==lancId; }), function(y){ return y.valor; })), saldo = r2(r.pix-r.ajustesTotal-jaOutros);
+    if(v>saldo+0.005 && !x.adiant) return {erro:"O pedido "+pd.numero+" tem "+brl(Math.max(0, saldo))+" em aberto. Para destinar "+brl(v)+", marque o excedente como adiantamento/crédito.", saldo:true};
+    out.push({pedidoId:pid, valor:v, adiant:!!x.adiant && v>saldo+0.005});
+  }
+  var tot = r2(soma(out, function(x){ return x.valor; }));
+  if(tot>r2(valorPix)+0.005) return {erro:"A soma destinada aos pedidos ("+brl(tot)+") passa do valor do pagamento ("+brl(valorPix)+")."};
+  return {alocs:out, total:tot, resto:r2(valorPix-tot)};
+}
+function textoAlocs(pf, alocs){ return (alocs||[]).length ? alocs.map(function(x){ var pd = pf.pedidos.find(function(p){ return p.id===x.pedidoId; }); return (pd ? pd.numero : "pedido "+x.pedidoId)+" "+brl(x.valor)+(x.adiant ? " (adiantamento)" : ""); }).join(" + ") : "sem identificação"; }
+// SUGESTÃO DE DIVISÃO (19/11/2026, pedido do Nickolas): propõe para quais pedidos foi o dinheiro dos Pix SEM identificação de um acerto,
+// enchendo os pedidos pela ordem do vencimento da parte Pix deles NESTE acerto (depois pela data do pedido), até o saldo de cada um. Nunca passa do saldo
+// (nada vira adiantamento sozinho) e não mexe no que já foi identificado. É só PROPOSTA: a tela mostra e grava só o que a pessoa confirmar (op lanc_pedidos_lote).
+// Devolve [{l, alocs (as que já tinha + as novas), novas:[{pedidoId, valor}], resto (continua sem identificação)}]
+function sugerirDivisao(pf, chave){
+  var j = janelaPorChave(pf, chave); if(!j || !porPedidoAtivo(pf, j.fornId)) return [];
+  var venc = {}; j.itens.forEach(function(l){ if(l.pd.ajusteChave || l.pd.auto || !(FORMAS[l.p.forma] && FORMAS[l.p.forma].nf==="sem")) return; if(!venc[l.pd.id] || l.p.venc<venc[l.pd.id]) venc[l.pd.id] = l.p.venc; });
+  var ids = Object.keys(venc).map(Number).sort(function(a, b){ var pa = pf.pedidos.find(function(x){ return x.id===a; }), pb = pf.pedidos.find(function(x){ return x.id===b; }); return venc[a].localeCompare(venc[b]) || String(pa.data).localeCompare(String(pb.data)) || a-b; });
+  var saldo = {}; ids.forEach(function(id){ var r = resumoPedidoPf(pf, id); saldo[id] = r2(r.pix-r.ajustesTotal-r.pagoPix); });
+  var out = [];
+  lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp && !l.auto && semIdent(l)>0.005; }).forEach(function(l){
+    var livre = semIdent(l), novas = [];
+    ids.forEach(function(id){ if(livre<=0.005 || saldo[id]<=0.005) return; var v = r2(Math.min(livre, saldo[id])); novas.push({pedidoId:id, valor:v}); saldo[id] = r2(saldo[id]-v); livre = r2(livre-v); });
+    if(!novas.length) return;
+    var alocs = (l.alocs||[]).map(function(x){ return Object.assign({}, x); });
+    novas.forEach(function(n){ var ja = alocs.find(function(x){ return x.pedidoId===n.pedidoId; }); if(ja) ja.valor = r2(ja.valor+n.valor); else alocs.push({pedidoId:n.pedidoId, valor:n.valor, adiant:false}); });
+    out.push({l:l, alocs:alocs, novas:novas, resto:livre});
+  });
+  return out;
+}
+function novoCodigoLink(){ var b = new Uint8Array(20); globalThis.crypto.getRandomValues(b); return Array.from(b, function(n){ return "abcdefghijkmnpqrstuvwxyz23456789".charAt(n%32); }).join(""); }
+// link do relatório por pedido: um código por escopo (fornecedor + pedidos escolhidos). Muda o pf.
+function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
+  var lista = ids.map(Number).filter(function(x){ return x>0; }).sort(function(a, b){ return a-b; }); pf.linksPedido = pf.linksPedido||{};
+  var ja = Object.keys(pf.linksPedido).find(function(t){ var x = pf.linksPedido[t]; return x.fornId===fid && x.pedidos.join(",")===lista.join(",") && !!x.boleto===!!boleto; });
+  if(ja) return ja;
+  var t = typeof sugerido==="string" && /^[a-z0-9]{20}$/.test(sugerido) && !pf.linksPedido[sugerido] ? sugerido : novoCodigoLink();
+  pf.linksPedido[t] = {fornId:fid, pedidos:lista, boleto:!!boleto, em:hojeIso(), por:por||""};
+  return t;
+}
+
 export {
-  TEM_ATU_PF,
+  TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,
-  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancExcedente, tokenAcerto,
+  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, ajustaExcesso, AJUSTE_NOME, adiarDestino, destinoSaldo, lancExcedente, tokenAcerto,
   coletar, agregar, alertasDe, resumoAlertas, painelTotais, viewTempo, tabelaJanelas, viewMatriz, resumoNegociacao, parcelaSituacao, pedidosSemParcela, relacaoPorMes, pedidoDetalhe,
   dividirNF, gerarParcelas, expandirParcelas, saldoParcela, formasDoPedido, acertoPreset, acertoPresetAtivo, acertoResumo, cortesDoPreset, previewCiclo, limpaCortes,
   mqPassadasDoMes, mqSomaPassadas, mqBruto, mqParcela, mqMesesDesconto, mqDescontoNoMes, mqOrigensDoMes, mqBaixasDoMes, mqBaixado, mqLinhas, mqColunas, mqMesesSel, semearBaixasMq,
   mqEhAuto, mqDisponivel, mqJanelasDoMes, mqOrdinal, mqManualNaJanela, mqDistribuicao, excedenteJanela, mqDistribuido, mqSobra, mqMesesComSaldo, mqMapaAplicado, mqAplicado, mqCandidatas,
   mqSincronizarBruto, mqPreviewFech, mqPreviewDist,
-  ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz
+  ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz,
+  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos, sugerirDivisao, novoCodigoLink
 };

@@ -19,13 +19,16 @@ var ABAS = [["rev","Revendedoras"], ["form","Formulário do app"], ["analise","A
 
 var hora = function(ms){ var x = new Date(ms); return String(x.getDate()).padStart(2, "0")+"/"+String(x.getMonth()+1).padStart(2, "0")+" às "+String(x.getHours()).padStart(2, "0")+":"+String(x.getMinutes()).padStart(2, "0"); };
 
-// lê do servidor; enquanto o servidor lê o app em segundo plano, pergunta de novo a cada 3 s
+// lê do servidor; enquanto o servidor lê o app em segundo plano, pergunta de novo a cada 3 s.
+// 18/11/2026: enquanto a lista de kit ativo da DevMaster ainda carrega no servidor (até 2 minutos num servidor novo), pergunta de novo a cada 15 s (até 12 vezes).
 function useDadosApp(){
   var sd = useState(null), sx = useState(""), sn = useState(0);
   useEffect(function(){
     if(!apiAtiva()) return undefined;
-    var vivo = true, tempo = null;
-    var carrega = function(forcar){ chamar("GET", "/preferencias-app"+(forcar ? "?atualizar=1" : "")).then(function(j){ if(!vivo) return; sd[1](j); sx[1](""); if(j.status && j.status.rodando) tempo = setTimeout(function(){ carrega(false); }, 3000); }).catch(function(x){ if(vivo) sx[1](x.message || "Não foi possível ler o app."); }); };
+    var vivo = true, tempo = null, voltas = 0;
+    var carrega = function(forcar){ chamar("GET", "/preferencias-app"+(forcar ? "?atualizar=1" : "")).then(function(j){ if(!vivo) return; sd[1](j); sx[1]("");
+      if(j.status && j.status.rodando) tempo = setTimeout(function(){ carrega(false); }, 3000);
+      else if(j.devmasterCarregando && voltas++<12) tempo = setTimeout(function(){ carrega(false); }, 15000); }).catch(function(x){ if(vivo) sx[1](x.message || "Não foi possível ler o app."); }); };
     carrega(sn[0]>0);
     return function(){ vivo = false; if(tempo) clearTimeout(tempo); };
   }, [sn[0]]);   // eslint-disable-line react-hooks/exhaustive-deps -- sd/sx/sn são estados fixos
@@ -37,16 +40,21 @@ function AbaPreferenciasKit(){
   var app = useDadosApp(), dados = app.dados, rodando = !!(dados && dados.status && dados.status.rodando);
   var sApp = useMemo(function(){
     if(!dados || !dados.revendedoras || !dados.revendedoras.length) return null;
-    var pk = Object.assign({}, s.pk, {deApp:true, registros:(s.pk && s.pk.registros) || [], revendedoras:dados.revendedoras.map(function(r){ return Object.assign({telefone:"", email:"", criadoEm:""}, r, r.preferencias ? {preferencias:Object.assign({versaoConfig:s.pk.config.versao}, r.preferencias)} : {}); })});
+    // registros = última montagem de cada revendedora (Fila de montagem e Listagens, 18/11/2026), para o "Já montado"
+    var pk = Object.assign({}, s.pk, {deApp:true, registros:dados.registros || (s.pk && s.pk.registros) || [], revendedoras:dados.revendedoras.map(function(r){ return Object.assign({telefone:"", email:"", criadoEm:""}, r, r.preferencias ? {preferencias:Object.assign({versaoConfig:s.pk.config.versao}, r.preferencias)} : {}); })});
     return Object.assign({}, s, {pk:pk, kits:[], revInternas:[]});   // sem as listagens de demonstração: só as do app
   }, [dados, s]);
   var sub = !apiAtiva() ? "Sem servidor ligado: mostrando só os dados deste navegador."
     : app.erro ? "Não foi possível ler o app: "+app.erro
     : !dados ? "Lendo as revendedoras do app…"
     : rodando ? "Lendo o app: "+dados.status.feitos+" de "+dados.status.total+" respostas."
+    : dados.semFiltro ? "Direto do app, somente leitura · "+dados.revendedoras.length+" revendedoras, todas as do app ("+(dados.devmasterCarregando ? "a lista de kit ativo da DevMaster ainda está carregando" : "a DevMaster não respondeu")+")"+(dados.status.concluidaEm ? " · lido em "+hora(dados.status.concluidaEm) : "")+"."
     : "Direto do app, somente leitura · "+dados.revendedoras.length+" revendedoras com kit ativo"+(dados.foraDoKit ? " ("+dados.foraDoKit+" do app sem kit ativo não aparecem nem contam)" : "")+(dados.status.concluidaEm ? " · lido em "+hora(dados.status.concluidaEm) : "")+".";
   var verNoApp = function(){ window.__revTelaIni = "preferencias"; d({type:"ABA", aba:"apps"}); };   // abre o app da revendedora (dentro da tela Apps) já na tela de preferências
-  var doApp = function(corpo){ return sApp ? e(Ctx.Provider,{value:{state:sApp, dispatch:d}}, corpo) : corpo; };
+  // 18/11/2026: com servidor ligado, Revendedoras e Análise só mostram o que veio do app. Antes, enquanto carregava, apareciam os dados guardados neste navegador
+  // (as revendedoras do atendimento interno, todas "Não preencheu") e o aviso de preferências aleatórias, que só vale no modo sem servidor.
+  var semApp = function(){ return e("p",{className:"rounded-lg border border-border px-3 py-6 text-center text-[13px]"}, app.erro ? "Não foi possível ler as preferências no app: "+app.erro : !dados ? "Lendo as preferências das revendedoras no app…" : "Nenhuma revendedora lida do app ainda. Use Atualizar do app."); };
+  var doApp = function(corpo){ return sApp ? e(Ctx.Provider,{value:{state:sApp, dispatch:d}}, corpo) : apiAtiva() ? semApp() : corpo; };
   var corpo = aba==="rev" ? doApp(e(AbaPkRevendedoras,null)) : aba==="form" ? e(AbaPkFormulario,null) : aba==="analise" ? doApp(e(AbaPkAnalise,null)) : e(AbaPkImportar,null);
   return e("div",{className:"flex flex-col gap-2.5"},
     e(PageHead,{t:"Preferências do kit", sub:sub}, apiAtiva() && e(Bt,{tipo:"normal", ic:"refresh", onClick:app.atualizar}, "Atualizar do app"), e(Bt,{tipo:"forte", ic:"device-mobile", onClick:verNoApp}, "Ver no app da revendedora")),

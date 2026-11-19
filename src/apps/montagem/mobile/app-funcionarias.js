@@ -88,7 +88,7 @@ function WhatsInterno(p){   // ocupa a tela toda do celular, como o WhatsApp de 
 function AppInterno(p){
   var cx = use(), s = cx.state, d = cx.dispatch, tl = useState(null), tela = tl[0], setTela = tl[1];
   var pes = p.pessoa, ac = p.acesso, ehMontadora = MONTADORAS.some(function(m){ return m.id===pes.id; });
-  var abrir = function(k){ if(k==="whats") efem({conversaSel:null}); if(k==="mon" && ehMontadora) d({type:"CEL", id:pes.id}); setTela(k); };
+  var abrir = function(k){ if(k==="whats") efem({conversaSel:null}); if(k==="mon" && ehMontadora) d({type:"CEL", id:pes.id}); if(k==="mon") d({type:"TELACEL", t:"proximo"}); setTela(k); };
   var n = function(sts){ return s.kits.filter(function(k){ return sts.indexOf(k.status)>=0; }).length; };
   var nRet = n(["bipado"]), nMon = n(["semvalor","pendente","montando","ajuste","supervisao","montado","bipando"]), nCond = n(["condicional","precond"]), nList = s.listagens.filter(function(l){ return !l.fechada; }).length;
   var SUB = {ret:nRet+(nRet===1 ? " kit pronto para retirar" : " kits prontos para retirar"), mon:nMon+(nMon===1 ? " kit na montagem" : " kits na montagem"), cond:nCond+(nCond===1 ? " revendedora esperando" : " revendedoras esperando"), list:nList+(nList===1 ? " listagem aberta" : " listagens abertas"), whats:"Converse com a equipe", din:"Quem entrega mostra o código; quem recebe digita"};
@@ -118,7 +118,15 @@ function AppInterno(p){
       e(Icon,{n:"chevron", s:13, className:"shrink-0 text-[#9CA3AF]"})); }));
   if(tela==="whats") return e(React.Fragment,null, e("span",{key:"h", className:"hidden"}), corpo);
   if(tela) return e(React.Fragment,null,
-    e("div",{key:"b", className:"flex items-center gap-2"}, e("button",{type:"button", onClick:function(){ setTela(null); }, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[12px] font-semibold text-amber-200"}, "‹ Início"), e("b",{className:"text-[16px]"}, TAREFAS[tela].t)),
+    // 16/11/2026 (Marcus: "melhora com dourado e diminui mais"): barra baixa (32 px), título em dourado e fio dourado embaixo; a regra global do primeiro bloco (montagem.css) é sobreposta aqui
+    e("div",{key:"b", className:"flex items-center gap-2", style:{padding:"0 16px 6px", margin:"-8px -16px 6px", borderRadius:"0 0 18px 18px", boxShadow:"inset 0 -2px 0 #C9A13B"}},
+      e("button",{type:"button", onClick:function(){ setTela(null); }, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[13px] font-bold text-amber-200"}, "‹ Início"),
+      tela==="mon"
+        // montagem: as abas ficam na própria barra (sem segunda linha): Próximo, Listagens e Resultados
+        ? e("div",{className:"grid flex-1 grid-cols-3 gap-1"}, [["proximo", "Próximo"], ["listagens", "Listagens"], ["resultados", "Resultados"]].map(function(a){
+            var on = (s.telaCel==="listagens" || s.telaCel==="resultados" ? s.telaCel : "proximo")===a[0];
+            return e("button",{key:a[0], type:"button", onClick:function(){ d({type:"TELACEL", t:a[0]}); }, className:"h-8 rounded-lg px-1 text-[13px] font-bold "+(on ? "bg-[#C9A13B] text-[#1B1409]" : "bg-[#26262B] text-amber-200")}, a[1]); }))
+        : e("b",{className:"text-[13px] font-extrabold uppercase tracking-[.12em]", style:{color:"#E8B84B"}}, TAREFAS[tela].t)),
     e("div",{key:"c", className:"flex flex-col gap-3"}, corpo));
   return e(React.Fragment,null, header, lista, e("p",{key:"ac", className:"mt-4 text-center text-[11.5px] font-semibold text-[#8E8E93]"}, "Acesso: "+ac.titulo.toLowerCase()+" · "+ac.nota));
 }

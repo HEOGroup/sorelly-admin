@@ -160,7 +160,6 @@ function Fila(p){
                 : k.status==="semvalor" ? e("span",{className:"text-muted-foreground", title:"Ainda não calculada"},"—")
                 : k.vendas.length ? BK(media3(k.vendas)) : e("span",{className:"text-muted-foreground", title:"Sem vendas: kit padrão a confirmar"},"sem vendas")),
               sup && e(TD,{className:C}, semKit ? vazio
-                : k.status==="semvalor" ? gbtn("Definir","calc",function(){d({type:"ABRIR_CALC", id:k.id});}, true, false, "w-[5.5rem]", "Ir para a Calculadora de kits")
                 : e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})),
               e(TD,{className:C}, e(StatusBadge,{k:k})),
               e(TD,{className:C+" truncate"}, celMont(k)),

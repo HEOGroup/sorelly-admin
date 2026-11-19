@@ -14,6 +14,8 @@ import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inici
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { useCopiaNavegador } from "@/apps/montagem/lib/copia-navegador";
+import { useCondicionaisKits } from "@/apps/montagem/lib/condicionais-kits";
 import { pendenciasDoAcerto } from "@/apps/montagem/domain/inadimplencia";
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
@@ -35,12 +37,15 @@ import { abaDoCaminho, caminhoDaAba, setorDaAba } from "@/apps/montagem/router/s
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
+import { nr1Alertas, PESSOAS_CLIMA, PESSOAS_DENUNCIAS } from "@/apps/montagem/domain/nr1";
+import { PESSOAS_ATIVIDADES_FIN } from "@/apps/montagem/domain/atividades-fin";
 import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
 import { MenuSetor } from "@/apps/montagem/components/barra-menu";
 import { setPlano } from "@/apps/montagem/lib/estilo-plano";
 import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
+import { NovaVendaAlerta } from "@/apps/montagem/components/nova-venda";
 import { AvisoMelhorias } from "@/apps/montagem/components/aviso-melhorias";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
 import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
@@ -51,7 +56,7 @@ import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
+import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta, primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 import { abasVetadas, telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
@@ -116,13 +121,15 @@ function App(){
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {abas:j.usuario.abas, ocultar:j.usuario.ocultar, grupo:j.usuario.grupo || srv.grupoPorSetores(j.usuario.setores), cid:j.usuario.cid, nome:j.usuario.nome}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {repCod:j.usuario.repCod, abas:j.usuario.abas, ocultar:j.usuario.ocultar, grupo:j.usuario.grupo || srv.grupoPorSetores(j.usuario.setores), cid:j.usuario.cid, nome:j.usuario.nome}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(function(){ if(abaVisivel()) t(); }, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
   definirPfMes(s.pfmes && s.pfmes.dados);   // resumo do mês dos fornecedores vindo do servidor
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
+  useCondicionaisKits(s, d);   // condicionais abertas da DevMaster entram nos kits ainda não montados (16/11/2026)
   useSyncModulos(s, d);   // módulos que ficam no servidor: sincroniza sempre que há servidor e login (o servidor manda)
+  useCopiaNavegador(s);   // Fase 1 de "tudo no banco" (17/11/2026): uma vez por dia, cópia no banco do que ainda está só neste navegador
   // Inadimplência ligada ao acerto (11/11/2026): acerto real com valor pendente vira dívida sozinho, e o pendente do acerto atualiza a dívida
   useEffect(function(){ if(!s.logado || !s.inad || !s.inad.doServidor) return; var pIn = pendenciasDoAcerto(s.inad, s.acertosConsignado); if(pIn.criar.length || pIn.atualizar.length) d({type:"INAD", op:"do_acerto", criar:pIn.criar, atualizar:pIn.atualizar}); }, [s.logado, s.inad, s.acertosConsignado]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
@@ -139,6 +146,14 @@ function App(){
   // Plano 45/60: aprovada sem contato em 24 h e nova data sem venda lançada (um alerta por tipo por dia)
   // avaliação de experiência (03/11/2026): no dia da 1ª e da 2ª avaliação sai um alerta para quem o Tecnologia → Avisos marcar (padrão Maria, Marcus, Nickolas, Lucas); a chave não repete
   useEffect(function(){ var t = function(){ if(!s.logado || !s.rh) return; experienciaAlertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.rh, s.logado]);
+  // Canal de denúncias (18/11/2026): só quem pode ler pergunta ao servidor, de 2 em 2 minutos, quais denúncias ainda não foram tratadas e recebe o alerta (sem o conteúdo da denúncia)
+  useEffect(function(){
+    if(!s.logado || !srv.apiAtiva() || PESSOAS_DENUNCIAS.indexOf(Number(srv.pessoaDaConta()))<0) return;
+    var t = function(){ srv.chamar("GET", "/denuncias?novas=1").then(function(j){ (j.ids||[]).forEach(function(id){ d({type:"ALERTA_ADD", tipo:"denuncia_nova", chave:"den:"+id, titulo:"Nova denúncia no Canal de ética", texto:"Chegou uma denúncia. Abra o Canal de denúncias, em Recursos Humanos.", aba:"denuncias", critico:true, para:[Number(srv.pessoaDaConta())]}); }); }).catch(function(){}); };
+    t(); var iv = setInterval(t, 120000); return function(){ clearInterval(iv); };
+  }, [s.logado]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Prazos da NR-1 (19/11/2026): Marcus e Maria recebem o alerta quando uma ação vence em até 3 dias ou está atrasada; confere a cada 10 minutos
+  useEffect(function(){ if(!s.logado || !s.rh || PESSOAS_CLIMA.indexOf(Number(srv.pessoaDaConta()))<0) return; var t = function(){ nr1Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.rh, s.logado]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ var t = function(){ if(!s.logado || !s.p45) return; p45Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.p45, s.logado]);
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)
@@ -206,25 +221,30 @@ function App(){
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);
-  if(permitidas && permitidas.indexOf("regrasguias")<0) permitidas = permitidas.concat(["regrasguias"]);   // Regras (guias em PDF): de todo mundo (Marcus, 05/11/2026)
+  if(permitidas && permitidas.indexOf("regrasguias")<0) permitidas = permitidas.concat(["regrasguias"]);
+  if(permitidas && permitidas.indexOf("segdocs")<0) permitidas = permitidas.concat(["segdocs"]);   // PGR e PCMSO: de todo colaborador, cada um vê só o do próprio CNPJ (17/11/2026)   // Regras (guias em PDF): de todo mundo (Marcus, 05/11/2026)
   if(permitidas && permitidas.indexOf("informativos")<0) permitidas = permitidas.concat(["informativos"]);   // Folders e informativos (Representantes) também são de todo mundo (Marcus, 04/11/2026)   // Folders (Cadastro de revendedoras) são de todo mundo (Marcus, 04/11/2026): PDFs e mensagens para qualquer pessoa mandar à candidata
   if(permitidas && permitidas.indexOf("aulas")<0) permitidas = permitidas.concat(["aulas"]);   // as aulas do setor são de todo mundo (cada um vê só as do seu setor)   // pedir melhorias é de todo mundo (28/10/2026)
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16" || srv.pessoaDaConta()==="44";   // 44 = Leonardo: 100% igual ao Marcus (29/10/2026)
   var veApps = soMarcus || ["17","28","29","44"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas, Lucas e Leonardo (27/10/2026; Leonardo em 29/10/2026)
-  if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // 29/10/2026 (Marcus): Apps só da Diretoria; o app da revendedora também ficava de fora da lista
+  if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0 || (k==="celrep" && !!srv.repCodDaConta()); });   // conta de REPRESENTANTE (rep_cod) abre o App da representante (a calculadora): 17/11/2026   // 29/10/2026 (Marcus): Apps só da Diretoria; o app da revendedora também ficava de fora da lista
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
+  // Canal de denúncias (17/11/2026): só Marcus e Maria (RH) abrem; para as demais pessoas a tela some, mesmo para quem vê tudo (o servidor também recusa)
+  if(srv.apiAtiva() && PESSOAS_DENUNCIAS.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="denuncias"; });
+  if(srv.apiAtiva() && PESSOAS_CLIMA.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="clima"; });   // Pesquisa de clima (18/11/2026): só Marcus e Maria (RH)
+  if(srv.apiAtiva() && PESSOAS_ATIVIDADES_FIN.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="finativ"; });   // Financeiro › Atividades (18/11/2026): só o Marcus
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
-  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas","regrasguias"];
+  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas","regrasguias","segdocs"];
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","regrasguias"].indexOf(k)>=0; });
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || (srv.repCodDaConta() ? k==="inicio" : ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0); });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
@@ -236,9 +256,9 @@ function App(){
   var donoTitulo = aba==="breve" ? null : setorDaAba(aba), setorTitulo = donoTitulo ? donoTitulo.nome : "Sorelly Admin";
   useEffect(function(){ document.title = titulo+" · "+setorTitulo; }, [titulo, setorTitulo]);   // título da aba do navegador: Tela · Setor (pedido do Marcus, 28/10/2026)
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
-  var visao = (s.visaoMenu==="pontual" || /^pont/.test(aba)) && s.usuario===16 ? "pontual" : s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
+  var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","fffaturas","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
@@ -253,14 +273,14 @@ function App(){
   var podeMenu = function(n){ return n.perm ? String(n.perm).split(",").some(function(k){ return temAutorizacao(k, s.usuario); }) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
-  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
-    return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
-    e(Icon,{n:st.ic, s:15, peso: on ? "fill" : "duotone"})); };
+  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:17}));
+    return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
+    e(Icon,{n:st.ic, s:13, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
-  var primeiraTela = function(st){ var todas = [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return todas.find(function(t){ return !t.breve; }) || todas[0]; };
+  var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
   var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
     return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
-      className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-1.5 py-0.5 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
+      className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
       tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
   var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
@@ -283,7 +303,7 @@ function App(){
   var navItem = function(key, lb, ic, on, onClick){ var cor = COR_ABA[key] || "#D9A63A";
     return e("button",{key:key, onClick:onClick,
     className:"flex h-9 w-full items-center gap-2.5 rounded-lg px-1.5 text-left text-sm "+(on?"bg-sidebar-accent font-medium text-sidebar-accent-foreground":"text-foreground/85 hover:bg-white/5 hover:text-foreground")},
-    e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
+    e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
   // App das funcionárias no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
   if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); var pp = papelDe(u.pessoaId); if(pp==="montadora" || pp==="bipadora") navigate(caminhoDaAba("whats"), {replace:true}); recarregar(); }});   // montadora e bipadora começam no chat
@@ -297,20 +317,27 @@ function App(){
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col sombra-lado bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
-      e("div",{className:"relative flex h-28 items-center justify-center sombra-baixo px-4"},
-        visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-20 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
+      e("div",{className:"relative flex h-16 items-center justify-center sombra-baixo px-4"},
+        visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-12 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-12 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
-      !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
-        [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"],["pontual","Pontual","O sistema da Pontual (empresa de banho)"]].map(function(x){
-          return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : x[0]==="pontual" ? "pontclientes" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
-      e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
+      // 16/11/2026 (Marcus): a busca saiu da barra de cima e fica aqui, logo abaixo do logo da Sorelly
+      // 16/11/2026 (Marcus: "compacte"): busca, conta, Sair e situação num bloco só, em 2 linhas de 32 px (Sair e situação viraram só ícone)
+      e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"},
+        e(IrPara,{larga:true, navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
+        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
+        e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}), e(PilulaSituacao,{esq:true, compacto:true}))),
+      // 13/11/2026 (Marcus): o seletor Admin / Marcus / Pontual saiu do alto do menu. O Pontual foi tirado e o Marcus virou um setor logo abaixo de Diretoria.
+      // 13/11/2026 (Marcus): o nome com o nível de acesso, o Sair e a situação (Disponível) saíram da barra de cima e ficam num bloquinho aqui, entre a logo e o GERAL
+      e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-2 pb-2 pt-1.5"},
+        visao==="marcus" && s.usuario===16 && e("button",{key:"voltar-admin", title:"Voltar para o sistema da Sorelly", onClick:function(){ d({type:"VISAO_MENU", v:"admin"}); navigate(caminhoDaAba("visaogeral")); setMenu(false); }, className:"mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-white/10 px-2.5 text-left text-[13px] font-semibold leading-tight hover:bg-white/15"}, "← Sorelly Admin"),
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
           // menu sempre aberto, sem botão de abrir/fechar (Marcus, 02/11/2026): o título do grupo é só um rótulo
           return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
-            e("div",{className:"mt-2.5 px-1.5 pb-0.5 first:mt-0"},
+            e("div",{className:"mt-1.5 px-1.5 pb-0 first:mt-0"},
               e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
-            lst.map(linhaSetor)); }),
+            lst.map(linhaSetor),
+            g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
         !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && visao!=="pontual" && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
         visao!=="pontual" && urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
@@ -320,26 +347,21 @@ function App(){
       className:"group fixed inset-y-0 z-50 hidden w-2 cursor-col-resize md:block", style:{left:menuW-4}},
       e("div",{className:"mx-auto h-full w-0.5 transition-colors "+(arrastando ? "bg-primary" : "group-hover:bg-primary/70")})),
     e("div",{className:(arrastando ? "" : "transition-[margin] duration-200 ")+(recolhido ? "md:ml-0" : "md:ml-[var(--mw)]"), style:{"--mw":menuW+"px"}},
-      e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 bg-background/80 px-4 backdrop-blur md:px-6"},
-        e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
-        window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
-        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true),
+      // 16/11/2026 (Marcus): setor com menu (as 2 linhas: telas abertas + menu) NÃO tem mais a linha de cima (Voltar, nome do setor, busca). No computador, com o menu lateral aberto, ela some; só sobra o botão do menu no celular ou com o menu recolhido.
+      e("header",{className:"sticky top-0 z-30 flex h-9 items-center gap-2 bg-background/80 px-3 backdrop-blur md:px-4"+(navPerg && !recolhido ? " md:hidden" : "")},
+        e("button",{className:"grid size-7 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
+        !navPerg && window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-7 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[11px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:12, className:"rotate-180"}), "Voltar"),
+        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"},
           // ao lado do ícone fica o NOME DO SETOR (ex.: "Financeiro"), sempre o mesmo não importa a tela aberta; a tela atual aparece como aba, não aqui (Marcus, 26/10/2026)
-          e("span",{className:"truncate"+(navPerg ? " font-semibold" : ""), style:navPerg ? {color:setorAtual.st.id==="whats" ? "#E8B84B" : setorAtual.st.cor} : undefined}, navPerg ? setorAtual.st.nome.replace("\n", " ") : titulo)),
+          e("span",{className:"truncate"}, navPerg ? "" : titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
-        e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
-          return e("button",{key:x[0], title:x[1], onClick:function(){ navigate(caminhoDaAba(x[0])); setColArea(null); },
-            className:"flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-bold transition-transform hover:-translate-y-px", style: on ? {background:x[3], color:"#fff", boxShadow:"0 2px 10px "+x[3]+"66"} : {background:x[3]+"26", color:x[3], boxShadow:"inset 0 0 0 1px "+x[3]+"55"}},
-            e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
+        // 13/11/2026 (Marcus): os botões "App representante" e "App das funcionárias" saíram da barra de cima, para todo mundo (a tela Apps continua só para quem já a via no menu)
 
-        e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
-        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
-        visao!=="pontual" && e(PilulaSituacao),
-        visao!=="pontual" && e(BotaoNotificacoes),
-        visao!=="pontual" && e("button",{className:"relative grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22}), e(BadgeNaoLidas,{eu:euChat})),
-        e(ContaMenu,{zoom:e(ZoomTela), onTema:toggleTema})),
-      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
-      setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
+        // 16/11/2026 (Marcus): a busca e o cronômetro do Progresso foram para o menu lateral, abaixo do logo
+        // 13/11/2026 (Marcus): saíram da barra de cima o botão do SorellyChat e o sino de avisos (limpar o topo)
+        ),
+      navPerg && e(MenuSetor,{topo:recolhido ? "top-9" : "top-9 md:top-0", menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-9 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },
             style:{background:"linear-gradient(135deg,"+cc+(ativa ? "66" : "33")+","+cc+(ativa ? "26" : "0d")+")", boxShadow:"inset 0 0 0 1px "+cc+(ativa ? "bb" : "55")},
@@ -363,6 +385,7 @@ function App(){
     visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar
     visao!=="pontual" && e(AvisoMelhorias,{abrirMelhorias:function(){ navigate(caminhoDaAba("melhorias")); setColArea(null); }}),   // resposta nova nas Melhorias (02/11/2026)
+    visao!=="pontual" && e(NovaVendaAlerta,{abrir:function(){ navigate(caminhoDaAba("direcionar")); setColArea(null); }}),
     visao!=="pontual" && e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }, abrirTela:function(aba){ navigate(caminhoDaAba(aba)); setColArea(null); }}));
 }
 

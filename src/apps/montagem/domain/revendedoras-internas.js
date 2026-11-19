@@ -271,6 +271,8 @@ function motivoNaoMarcar(lista, iso, hora, ignorarId){
   return "";
 }
 
+// Condicionais REAIS da DevMaster para a calculadora (Marcus, 18/11/2026): vêm todas (kit principal e expositor), com data de saída, peças e valor; a funcionária marca (cobrar) só as que está cobrando.
+function condsDaDevmaster(conds){ return (conds||[]).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0, saida:c.e||"", prevista:c.d||"", tipo:c.t||"", cobrar:false, dm:true}; }); }
 // Item da agenda da Atendimento Sorelly criado a partir de uma agendada (a condicional vem da DevMaster; aqui é inventada para testar a calculadora)
 function internoDeAgendada(r, versaoId, agora, extra){
   var n = r.id.replace("RI","");
@@ -292,4 +294,4 @@ function agendaHojeDemo(lista, hojeIso, versaoId, agora){
   return itens;
 }
 
-export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo, PRAZO_UTEIS, JURIDICO_UTEIS, ANTECEDENCIA_LIVRE, ehDiaUtil, diasUteisDepois, somaDiasUteis, primeiroMarcado, referenciaPrazo, atrasoUteisDe, prazoAcerto, remarcacaoLivre, cicloDe, kitDesde };
+export { condsDaDevmaster, definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo, PRAZO_UTEIS, JURIDICO_UTEIS, ANTECEDENCIA_LIVRE, ehDiaUtil, diasUteisDepois, somaDiasUteis, primeiroMarcado, referenciaPrazo, atrasoUteisDe, prazoAcerto, remarcacaoLivre, cicloDe, kitDesde };

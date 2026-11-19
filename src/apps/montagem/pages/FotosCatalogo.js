@@ -6,9 +6,9 @@
 // Regras e contas em domain/fotos-catalogo.js (estado s.fc, ação FC).
 import { BKC } from "@/apps/montagem/lib/format";
 import { ESTADO, Pagina } from "@/apps/montagem/components/padrao";
-import { AbasTela, Bloco, Botao, CAMPO, CampoSel, Rotulo, Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { AbasTela, Bloco, Botao, CAMPO, Rotulo, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { diasEntre, formatarDia, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
+import { diasEntre, formatarDia, formatarHora, fotosFeitas, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
 import { porDe } from "@/apps/montagem/pages/trafego/comum";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -22,7 +22,7 @@ var PCT = function(n, tot){ return tot ? (n/tot*100).toLocaleString("pt-BR", {mi
 // tabela do Layout D com filtro e ordem em cada coluna (TabelaPlanilha); linhas = objetos; total() = linha de total em cima (opcional); regra de 11/11/2026: TabelaCampos e FileiraCampos saíram
 function Plan(p){ return e(TabelaPlanilha,{cols:p.cols, linhas:p.linhas, chave:p.chave || "id", grade:true, escura:true, semContagem:true, totalLinha:p.total, aoClicar:p.aoClicar, linhaCls:p.linhaCls, vazio:p.vazio || "Nenhum registro."}); }
 var COR = {foto:"#5B8DEF", ed:"#A78BFA", sub:"#2DD4BF"};   // as três etapas (mesmas cores das fases de Cadastro de peças › Pedidos)
-var ABAS = [["lista", "Hoje"], ["cat", "Progresso por categoria"], ["ant", "Meses anteriores"], ["dia", "Produção diária"], ["proc", "Processos"], ["meta", "Meta"]];
+var ABAS = [["lista", "Hoje"], ["feitas", "Feitas"], ["cat", "Progresso por categoria"], ["ant", "Meses anteriores"], ["dia", "Produção diária"], ["proc", "Processos"], ["meta", "Meta"]];
 // botões pequenos dentro da linha (Marcus, 10/11/2026: "esse botão marcar está uma merda, diminui ele"): 22 px de altura, texto 11 px
 var BTN_ICONE = "h-[22px] w-[22px] rounded-full text-[11px] leading-none text-foreground hover:bg-white/15"; // padrao-ok
 var BTN_MARCAR = "h-[22px] rounded-full border border-primary/60 px-3 text-[11px] font-medium leading-none text-primary transition-colors hover:bg-primary hover:text-black"; // padrao-ok
@@ -54,13 +54,14 @@ function BarraMeta(p){
   var corMeta = mr.situacao==="Batida" ? ESTADO.ok : mr.situacao==="Não batida" ? ESTADO.ruim : ESTADO.alerta, escuro = "bg-[#131a2b]";
   return e("section",{className:"overflow-hidden rounded-lg border-2 border-white/60"},
     e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 px-3 py-1.5 "+escuro},
-      e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]"}, "Meta · até "+formatarDia(mt.fim)),
+      e("span",{className:"text-[11px] font-bold uppercase tracking-[.05em]"}, "Meta · "+formatarDia(mt.ini).slice(0, 5)+" a "+formatarDia(mt.fim).slice(0, 5)),
       e("b",{className:"text-[14px] tabular-nums"}, N(mr.feitas)+" de "+N(mt.alvo)+" fotos"),
       e("span",{className:"text-[13px] tabular-nums"}, "Falta "+N(mr.falta)+(mr.restam && mr.falta ? " · "+N(mr.porDia)+" por dia" : "")),
       e("span",{className:"block h-1.5 min-w-[140px] flex-1 overflow-hidden rounded bg-black/30"}, e("i",{className:"block h-full", style:{width:Math.max(1, Math.round(mr.pct))+"%", background:corMeta}})),
       e("b",{className:"text-[14px] tabular-nums"}, PCT(mr.feitas, mt.alvo)),
       e("b",{className:"text-[13px]", style:{color:corMeta}}, mr.situacao),
-      e("span",{className:"text-[13px] tabular-nums"}, "Bônus "+BKC(mt.bonus))));
+      e("span",{className:"text-[13px] tabular-nums"}, mr.proximo ? "Próximo degrau: "+N(mr.proximo.alvo)+" fotos = "+BKC(mr.proximo.bonus)+" · falta "+N(mr.proximo.falta) : "Todos os degraus conquistados"),
+      e("span",{className:"text-[13px] tabular-nums"}, "Bônus agora "+BKC(mr.bonusAtual)+" · até "+BKC(mt.bonus))));
 }
 
 // MESES ANTERIORES (Marcus, 11/11/2026): peças cadastradas antes de 01/11 que ainda não têm foto. Começa por OUTUBRO; o mês seguinte só aparece quando o anterior termina.
@@ -102,6 +103,17 @@ function MesesAnteriores(p){
         e("span",{className:"flex flex-wrap items-center gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Botao,{onClick:copiar, desabilitado:!sem.length}, copiou ? "Copiado!" : "Copiar lista para o cadastro · "+N(sem.length))),
         e(Segmentado,{opcoes:[["todas", "Todas · "+N(pend.length)], ["sem", "Sem marcar · "+N(sem.length)], ["tem", "Tem · "+N(tem.length)], ["nao", "Não tem · "+N(nao.length)]], atual:busca ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
       e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:busca ? "Nenhuma peça sem foto com esse código nos meses anteriores." : "Nenhuma peça nesta lista."})));
+}
+
+// FEITAS (Marcus, 17/11/2026: "você precisa saber quais são as peças"): cada peça com foto desde o início da meta, com data, hora e quem marcou (ou DevMaster)
+function Feitas(p){
+  var fc = p.fc, lista = useMemo(function(){ return fotosFeitas(fc, "2026-11-10"); }, [fc]);
+  var resumo = useMemo(function(){ var m = {}; lista.forEach(function(x){ var k = x.dia+"|"+x.quem; m[k] = m[k] || {id:k, dia:x.dia, quem:x.quem, n:0}; m[k].n++; }); return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : b.n-a.n; }); }, [lista]);
+  return e("div",{className:"flex flex-col gap-2.5"},
+    e(Bloco,{t:"Por dia e por pessoa · "+N(lista.length)+" peças desde 10/11"},
+      e(Plan,{linhas:resumo, cols:[{k:"dia", t:"Dia", fmt:formatarDia}, {k:"quem", t:"Quem"}, {k:"n", t:"Peças", fmt:N}], vazio:"Nenhuma foto feita ainda."})),
+    e(Bloco,{t:"Todas as peças com foto feita"},
+      e(Plan,{linhas:lista, cols:[{k:"quando", t:"Quando", fmt:formatarHora}, {k:"cod", t:"Código"}, {k:"quem", t:"Quem"}, {k:"origem", t:"Como entrou"}, {k:"desc", t:"Descrição"}, {k:"cadastro", t:"Cadastro", fmt:formatarDia}, {k:"sistema", t:"No sistema"}], vazio:"Nenhuma foto feita ainda."})));
 }
 
 function Producao(p){
@@ -169,7 +181,7 @@ function proximaEntrega(){
 }
 function Hoje(p){
   var cx = use(), s = cx.state, dsp = cx.dispatch;
-  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0], sb = useState(""), busca = sb[0], sl = useState(""), texto = sl[0], se = useState("foto"), etapa = se[0];
+  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0], sb = useState(""), busca = sb[0], sl = useState(""), texto = sl[0];
   var todas = useMemo(function(){ return p.linhas.filter(function(l){ return l.dia && l.dia>=INICIO_FILA && !/CANCELAD/i.test(l.desc); }).map(function(l){ var esp = l.sOk ? null : diasEntre(l.dia, hoje); return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }); }, [p.linhas, hoje]);
   var porData = function(a, b){ return a.dia<b.dia ? -1 : a.dia>b.dia ? 1 : ORDEM.compare(a.cod, b.cod); };
   // três filas: a do Castilho (sem foto tirada), a da Ana (foto tirada, ainda não está na DevMaster) e a fila toda (não está na DevMaster)
@@ -187,7 +199,8 @@ function Hoje(p){
   var achados = useMemo(function(){ return busca ? p.linhas.filter(function(l){ return casaCodigo(l, busca); }).map(function(l){ var esp = l.dia && !l.sOk ? diasEntre(l.dia, hoje) : null; return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }) : null; }, [busca, p.linhas, hoje]);
   var linhas = achados || (vis==="foto" ? semFoto : vis==="ed" ? edita : vis==="env" ? envia : vis==="mes" ? mes : doDia);
   var base = comeco || comecoAna, vermelho = base && base.esp>=PRAZO_DIAS;
-  var enviar = function(){ if(!texto.trim()) return; dsp({type:"FC", op:"etapa_lote", etapa:etapa, texto:texto, por:porDe(s)}); sl[1](""); };
+  // só o OK de Enviadas à DevMaster: já vale foto e edição (Castilho, 16/11/2026)
+  var enviar = function(){ if(!texto.trim()) return; dsp({type:"FC", op:"etapa_lote", etapa:"sub", texto:texto, por:porDe(s)}); sl[1](""); };
   var barra = comeco
     ? e("section",{className:"fc-pulso flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-lg border-2 px-4 py-3", style:{borderColor:vermelho ? ESTADO.ruim : ESTADO.alerta}},
         e("div",{className:"flex flex-wrap items-baseline gap-x-3 gap-y-1"},
@@ -208,18 +221,17 @@ function Hoje(p){
   return e("div",{className:"flex flex-col gap-2.5"},
     e("style",null, "@keyframes fcPulso{0%,100%{background-color:rgba(232,184,75,.04)}50%{background-color:rgba(232,184,75,.22)}} .fc-pulso{animation:fcPulso 2.6s ease-in-out infinite} @media (prefers-reduced-motion:reduce){.fc-pulso{animation:none;background-color:rgba(232,184,75,.12)}}"),
     barra,
-    e(Bloco,{t:"Dar OK nas peças · em lote"},
-      e("div",{className:"grid gap-2 md:grid-cols-[1fr_230px_auto] md:items-end"},
+    e(Bloco,{t:"Dar OK nas peças enviadas à DevMaster · em lote"},
+      e("div",{className:"grid gap-2 md:grid-cols-[1fr_auto] md:items-end"},
         e("div",{className:"min-w-0"}, e(Rotulo,{t:"Códigos (um por linha ou separados por espaço; grade ou modelo)", id:"fc-lote"}),
           e("textarea",{id:"fc-lote", rows:2, value:texto, placeholder:"Ex.: A2357 CL2771 M0802", onChange:function(ev){ sl[1](ev.target.value.toUpperCase()); }, className:"w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-[13px] uppercase text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
-        e(CampoSel,{t:"Etapa concluída", id:"fc-lote-etapa", value:etapa, onChange:se[1], opcoes:[["foto", "Fotografadas (Castilho)"], ["ed", "Editadas (Ana)"], ["sub", "Enviadas à DevMaster (OK)"]]}),
-        e(Botao,{principal:true, desabilitado:!texto.trim(), onClick:enviar}, "Marcar"))),
+        e(Botao,{principal:true, desabilitado:!texto.trim(), onClick:enviar}, "Dar OK"))),
     dias.length ? e(Bloco,{t:"Fila por dia · clique no dia para ver as peças"},
       e(Plan,{linhas:linhasFila, aoClicar:function(l){ ss[1](l.dia); sv[1]("dia"); }, linhaCls:function(l){ return l.comece ? "fc-pulso" : ""; },
         cols:[{k:"dia", t:"Dia de cadastro", fmt:function(v, l){ return (v===diaAtual && vis==="dia" ? "▸ " : "")+formatarDia(v)+(l.comece ? " · comece aqui" : ""); }}, {k:"cad", t:"Cadastradas", fmt:N}, {k:"sem", t:"Falta fotografar", fmt:N}, {k:"ed2", t:"Falta editar", fmt:N}, {k:"env", t:"Falta enviar", fmt:N},
-          {k:"foto", t:"Foto", corTopo:COR.foto, fmt:N}, {k:"ed", t:"Editada", corTopo:COR.ed, fmt:N}, {k:"sub", t:"Sistema", corTopo:COR.sub, fmt:N},
+          {k:"sub", t:"Sistema", corTopo:COR.sub, fmt:N},   // só Sistema (Marcus, 19/11/2026): se foi para o sistema, a foto já foi tirada e editada
           {k:"esp", t:"Esperando", fmt:function(v){ return v===0 ? "hoje" : v+(v===1 ? " dia" : " dias"); }}, {k:"sit", t:"Situação", cor:function(l){ return l.late ? "text-destructive" : "text-success"; }}],
-        total:function(){ return ["Fila toda", N(somaFila("cad")), N(semFoto.length), N(edita.length), N(envia.length), N(somaFila("foto")), N(somaFila("ed")), N(somaFila("sub")), "—", atras ? N(atras)+" atrasadas" : "Em dia"]; }})) : null,
+        total:function(){ return ["Fila toda", N(somaFila("cad")), N(semFoto.length), N(edita.length), N(envia.length), N(somaFila("sub")), "—", atras ? N(atras)+" atrasadas" : "Em dia"]; }})) : null,
     e(Bloco,{t:(achados ? "Busca por "+busca : titulo)+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças")},
       e("div",{className:"mb-2 flex flex-wrap items-center justify-between gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Segmentado,{opcoes:[["dia", "Dia "+(diaAtual ? formatarDia(diaAtual).slice(0, 5) : "—")+" · "+N(doDia.length)], ["foto", "Fotografar · "+N(semFoto.length)], ["ed", "Editar · "+N(edita.length)], ["env", "Enviar · "+N(envia.length)], ["mes", "Mês · "+N(mes.length)]], atual:achados ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
       e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:achados ? "Nenhuma peça com esse código." : "Nenhuma peça nesta lista."})));
@@ -252,15 +264,17 @@ function Processos(){
 // META (Marcus, 10/11/2026): 500 fotos até sexta = bônus de R$ 250,00; a próxima meta entra em METAS (domain/fotos-catalogo.js)
 function Meta(p){
   var hoje = hojeSP();
-  return e("div",{className:"flex flex-col gap-2.5"}, e("p",{className:"text-[13px] text-foreground"}, "Foto conta quando chega na DevMaster (a Ana coloca lá e o sistema lê sozinho) ou quando é marcada nesta tela, no período da meta. O bônus só vale para quem trabalhar no período."), METAS.map(function(m){
+  return e("div",{className:"flex flex-col gap-2.5"}, e("p",{className:"text-[13px] text-foreground"}, "Foto conta quando chega na DevMaster (a Ana coloca lá e o sistema lê sozinho) ou quando é marcada nesta tela, no período da meta. O bônus só vale para quem trabalhar no período."), METAS.slice().reverse().map(function(m){
     var r = metaProgresso(p.fc, m, hoje), cor = r.situacao==="Batida" ? ESTADO.ok : r.situacao==="Não batida" ? ESTADO.ruim : ESTADO.alerta;
-    var linhas = r.linhas.map(function(x){ return {id:x.dia, dia:x.dia, fotos:x.fotos, acum:x.acum, pct:x.acum/m.alvo*100}; });
+    var linhas = r.linhas.map(function(x){ return {id:x.dia, dia:x.dia, fotos:x.fotos, acum:x.acum, falta:Math.max(0, m.alvo-x.acum), pct:x.acum/m.alvo*100}; });
+    var degraus = r.degraus.map(function(g){ return {id:String(g.alvo), alvo:g.alvo, bonus:g.bonus, falta:g.falta, porDia:r.restam && g.falta ? g.porDia : null, sit:g.feito ? "Conquistado" : "Falta "+N(g.falta), feito:g.feito}; });
     var umaLinha = [{id:"m", ini:m.ini, fim:m.fim, alvo:m.alvo, feitas:r.feitas, falta:r.falta, pct:r.feitas/m.alvo*100, porDia:r.restam ? r.porDia : null, bonus:m.bonus, sit:r.situacao}];
     return e("div",{key:m.id, className:"flex flex-col gap-2"},
       e(Bloco,{t:m.nome+" · até "+formatarDia(m.fim)},
         e(Plan,{linhas:umaLinha, cols:[{k:"ini", t:"Início", fmt:formatarDia}, {k:"fim", t:"Prazo", fmt:formatarDia}, {k:"alvo", t:"Meta", fmt:function(v){ return N(v)+" fotos"; }}, {k:"feitas", t:"Feitas", fmt:N}, {k:"falta", t:"Falta", fmt:N}, {k:"pct", t:"%", fmt:function(v){ return PCT(v, 100); }}, {k:"porDia", t:"Por dia", fmt:function(v){ return v==null ? "—" : N(v)+" por dia"; }}, {k:"bonus", t:"Bônus", fmt:BKC}, {k:"sit", t:"Situação", cor:function(){ return r.situacao==="Batida" ? "text-success" : r.situacao==="Não batida" ? "text-destructive" : "text-amber-400"; }}]})),
+      r.degraus.length>1 ? e(Bloco,{t:"Degraus do bônus"}, e(Plan,{linhas:degraus, cols:[{k:"alvo", t:"Fotos na semana", fmt:N}, {k:"bonus", t:"Bônus", fmt:BKC}, {k:"falta", t:"Falta", fmt:N}, {k:"porDia", t:"Por dia", fmt:function(v){ return v==null ? "—" : N(v)+" por dia"; }}, {k:"sit", t:"Situação", cor:function(l){ return l.feito ? "text-success" : ""; }}]})) : null,
       e(Bloco,{t:"Fotos por dia"},
-        e(Plan,{linhas:linhas, cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+(v===hoje ? " · hoje" : ""); }}, {k:"fotos", t:"Fotos no dia", fmt:N}, {k:"acum", t:"Acumulado", fmt:N}, {k:"pct", t:"% da meta", fmt:function(v){ return PCT(v, 100); }}]})));
+        e(Plan,{linhas:linhas, cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+(v===hoje ? " · hoje" : ""); }}, {k:"fotos", t:"Fotos no dia", fmt:N}, {k:"acum", t:"Acumulado", fmt:N}, {k:"falta", t:"Falta para a meta", fmt:N}, {k:"pct", t:"% da meta", fmt:function(v){ return PCT(v, 100); }}]})));
   }));
 }
 
@@ -278,12 +292,13 @@ function AbaFotosCatalogo(){
   var colsAnt = useMemo(function(){ var acaoTem = function(op, cod, valor){ d({type:"FC", op:op, cod:cod, etapa:valor, valor:valor, por:porDe(s)}); }; var c = colunasDia(acaoTem); c.splice(4, 0, colTem(acaoTem)); return c; }, [s.usuario, d]);   // eslint-disable-line react-hooks/exhaustive-deps
   var cols = useMemo(function(){ return colunas(function(op, cod, etapa){ d({type:"FC", op:op, cod:cod, etapa:etapa, valor:etapa, por:porDe(s)}); }); }, [s.usuario, d]);   // eslint-disable-line react-hooks/exhaustive-deps
   // código novo cadastrado na DevMaster (Rayssa) entra sozinho aqui: consulta a cada 2 minutos enquanto a tela está aberta; foto já subida na DevMaster marca o Sistema
+  var fh = useState(""), falhaDm = fh[0], setFalhaDm = fh[1], lidoEm = [fc && fc.dmEm, fc && fc.dmEmServidor].filter(Boolean).sort().pop();
   useEffect(function(){
     if(!apiAtiva() || !token()) return undefined;
-    var vivo = true, rodar = function(){ chamar("GET", "/fotos/dm?dias=120").then(function(r){ if(vivo && r && Array.isArray(r.itens)) d({type:"FC", op:"dm_sync", itens:r.itens, por:"DevMaster"}); }).catch(function(){}); };
+    var vivo = true, rodar = function(){ chamar("GET", "/fotos/dm?dias=120").then(function(r){ if(vivo && r && Array.isArray(r.itens)){ setFalhaDm(""); d({type:"FC", op:"dm_sync", itens:r.itens, por:"DevMaster"}); } }).catch(function(x){ if(vivo) setFalhaDm((x && x.message) || "sem resposta"); }); };
     rodar(); var iv = setInterval(rodar, 120000); return function(){ vivo = false; clearInterval(iv); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  var cab = e(PageHead,{t:"Fotos de catálogo", sub:"Última atualização: "+(fc && fc.dmEm ? String(fc.dmEm).slice(8, 10)+"/"+String(fc.dmEm).slice(5, 7)+" às "+String(fc.dmEm).slice(11, 16) : "ainda não lida")});
+  var cab = e(PageHead,{t:"Fotos de catálogo", sub:"Última atualização: "+(lidoEm ? String(lidoEm).slice(8, 10)+"/"+String(lidoEm).slice(5, 7)+" às "+String(lidoEm).slice(11, 16) : "ainda não lida")+(falhaDm ? " · a leitura da DevMaster falhou agora ("+falhaDm+")" : "")});
   if(!fc) return e(Pagina,null, cab, e("p",{className:"py-6 text-center text-[13px] text-foreground"}, "Dados das fotos de catálogo indisponíveis."));
   return e(Pagina,null, cab,
     e(BarraMeta,{fc:fc}),
@@ -293,6 +308,7 @@ function AbaFotosCatalogo(){
         e("button",{type:"button", onClick:function(){ abreTodos(false); }, className:"h-8 whitespace-nowrap border-l border-border px-3 text-[13px] hover:bg-white/10"}, "Fechar todos"))),
     aba==="lista" ? e(Hoje,{fc:fc, linhas:linhas, cols:colsDia})
       : aba==="cat" ? e("div",{className:"flex flex-col gap-2.5"}, e(Painel,{fc:fc}), e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, agrupar:"cat", grupoEsquerda:true, cabSoAberto:true, grupoAberto:function(c){ return !!abertos[c]; }, aoGrupo:alterna, linhaGrupo:function(c){ return grupo(c); }, vazio:"Nenhum código lançado."}))
+      : aba==="feitas" ? e(Feitas,{fc:fc})
       : aba==="ant" ? e(MesesAnteriores,{linhas:linhas, cols:colsAnt})
       : aba==="dia" ? e(Producao,{fc:fc})
       : aba==="proc" ? e(Processos)

@@ -8,8 +8,10 @@ import { mensagemDaVez, msAteTrocar } from "@/apps/montagem/domain/mensagens-fe"
 import { apiAtiva, chamar, ehAdmin } from "@/apps/montagem/lib/api";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
-import { ORDEM_SIT, SITUACOES, reduzirFoto, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
+import { ORDEM_SIT, SITUACOES, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
+import { RecortarFoto } from "@/apps/montagem/components/recortar-foto";
 import { ABAS } from "@/apps/montagem/navigation/abas";
+import { primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 import { caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -23,10 +25,7 @@ var nomeAba = function(aba){ var a = ABAS.find(function(x){ return x[0]===aba; }
 var haQuanto = function(em){ var m = Math.round((Date.now()-em)/60000); if(m<1) return "agora"; if(m<60) return "há "+m+" min"; var h = Math.round(m/60); if(h<24) return "há "+h+" h"; var d = Math.round(h/24); return d===1 ? "ontem" : "há "+d+" dias"; };
 
 // primeiro setor com tela de verdade (as "em breve" ficam por último), como o menu lateral faz
-function primeiraTela(st){
-  var todas = st.direto ? [st.direto] : [].concat.apply([], (st.areas||[]).map(function(ar){ return ar.telas; }));
-  return todas.find(function(t){ return !t.breve; }) || todas[0];
-}
+function primeiraTela(st){ return primeiraTelaDoSetor(st); }
 
 var CSS = [
   ".ini{margin:-16px;color:#fff;background:radial-gradient(ellipse at 50% 0%,#201808 0%,#0a0806 55%,#050403 100%)}@media(min-width:768px){.ini{margin:-24px}}",
@@ -82,7 +81,7 @@ function AbaInicio(){
   var cx = use(), s = cx.state, d = cx.dispatch, eu = s.usuario, navigate = useNavigate();
   var pf = usePerfil(), eMeu = pf.meuId!=null && pf.meuId===eu, diretor = papelDe(eu)==="supervisao";
   var sv = useState(0), forcar = sv[1], sf = useState(false), some = sf[0], setSome = sf[1], sa = useState(0), contasAguardando = sa[0], setContas = sa[1];
-  var sn = useState(false), novoAberto = sn[0], setNovoAberto = sn[1], st = useState({titulo:"", texto:""}), novo = st[0], setNovo = st[1], arq = useRef(null), se = useState(""), erro = se[0], setErro = se[1];
+  var sn = useState(false), novoAberto = sn[0], setNovoAberto = sn[1], st = useState({titulo:"", texto:""}), novo = st[0], setNovo = st[1], arq = useRef(null), se = useState(""), erro = se[0], setErro = se[1], rcs = useState(null), recorte = rcs[0], setRecorte = rcs[1];
 
   // a mensagem troca sozinha na hora certa (a cada 2 horas)
   var msg = mensagemDaVez();
@@ -108,7 +107,7 @@ function AbaInicio(){
   var eu_p = pf.pessoas[eu] || {}, nome = primeiroNome(nomeDe(eu)) || primeiroNome(eu_p.nome);
   var trocarFoto = function(ev){
     var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;
-    setErro(""); reduzirFoto(f).then(function(url){ return salvarEu({foto:url}); }).catch(function(x){ setErro(x.message); });
+    setErro(""); setRecorte(f);   // abre a janelinha de enquadrar; quem salva é ela
   };
 
   var avisos = ((s.inicio||{}).avisos || []).slice().sort(function(a, b){ return (b.em||0)-(a.em||0); }).slice(0, 5);
@@ -140,6 +139,7 @@ function AbaInicio(){
         e("div",{className:"ini-foto", style:eu_p.foto ? {backgroundImage:"url("+eu_p.foto+")"} : undefined}, eu_p.foto ? null : e("b",null, (nome||"?").charAt(0).toUpperCase()),
           eMeu && e("button",{type:"button", onClick:function(){ arq.current.click(); }, "aria-label":"Trocar minha foto", title:"Trocar minha foto"}, e(Icon,{n:"pencil", s:11}))),
         e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
+        recorte && e(RecortarFoto,{arquivo:recorte, onCancelar:function(){ setRecorte(null); }, onSalvar:function(url){ setErro(""); salvarEu({foto:url}).then(function(){ setRecorte(null); }).catch(function(x){ setErro(x.message); setRecorte(null); }); }}),
         erro && e("p",{role:"alert", style:{color:"#ff8a8a", fontWeight:600}}, erro),
         e("span",{className:"ini-selo"}, "Central Sorelly"),
         e("h1",{className:"ini-nome"}, "Olá, "+nome+". ", e("span",{className:"ini-ouro"}, "Seja bem-vindo!")),

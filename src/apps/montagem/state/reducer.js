@@ -1,23 +1,24 @@
 // Sorelly Admin · montagem e bipagem — state/reducer.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-import { aplicaFdFixos } from "@/apps/montagem/state/fd-patches";
+import { aplicaFdFixos, REV_FIXAS } from "@/apps/montagem/state/fd-patches";
 import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
-import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
+import { condNums, condOk, condVisiveisPre } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
-import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, versaoComissaoAntiga, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
 import { BIPADORAS, DIRETORIA, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
-import { sugerido } from "@/apps/montagem/domain/vendas";
+import { media3, sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
-import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
+import { condsDaDevmaster, internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
+import { repCodDaConta } from "@/apps/montagem/lib/api";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
@@ -29,7 +30,7 @@ import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
 import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
-import { pfReduz } from "@/apps/montagem/domain/pf";
+import { pfReduz, fornDoDestino } from "@/apps/montagem/domain/pf";
 import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
 import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
@@ -40,10 +41,9 @@ import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
 import { modReduz } from "@/apps/montagem/domain/modelas";
-import { bmReduz, bmSemear } from "@/apps/montagem/domain/bonus-montagem";
-import { LOCAL_BM } from "@/apps/montagem/domain/bonus-montagem-local";
-import { avkSemear } from "@/apps/montagem/domain/avaliacoes-kits";
-import { LOCAL_AVK } from "@/apps/montagem/domain/avaliacoes-kits-local";
+import { jpReduz } from "@/apps/montagem/domain/joias-pagamento";
+import { sgReduz } from "@/apps/montagem/domain/seguranca-docs";
+import { mrReduz } from "@/apps/montagem/domain/relatorio-marketing";
 import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
@@ -98,6 +98,23 @@ function gravaConferencia(s, kC, res, confNovo, agora){
 }
 function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
+// Pix de fornecedor vindo do atendimento interno (17/11/2026, Marcus): o comprovante já é anexado no Atendimento Sorelly (e aparece no Consolidado Sorelly).
+// Quando a parte do lançamento (lancFin) ganha o comprovante, o pagamento do fornecedor pega o mesmo comprovante e passa a contar como pago.
+function sincCompFornecedor(s){
+  if(!s.pf || !(s.pf.lancamentos||[]).some(function(l){ return l.aguardaComp && l.lf; })) return s;
+  var sx = s;
+  s.pf.lancamentos.filter(function(l){ return l.aguardaComp && l.lf; }).forEach(function(l){
+    var x, li, pt;
+    if(l.lf.repId){ x = (s.lancFin||[]).find(function(z){ return z.id===l.lf.repId; }); li = x && (x.linhas||[]).find(function(z){ return z.pid===l.lf.pid; }); pt = li && (li.partes||[])[0]; }   // representante (calculadora de acerto)
+    else { x = (s.lancFin||[]).find(function(z){ return z.internoId===l.lf.internoId; }); li = x && (x.linhas||[])[l.lf.li]; pt = li && (li.partes||[])[l.lf.k]; }   // funcionária (atendimento interno)
+    var cmp = pt && pt.comprovante;
+    if(!cmp) return;
+    var r = pfReduz(sx, {op:"lanc_comp", id:l.id, arqNome:cmp.nome||"comprovante", arqTipo:"", arqKey:"", arqData:typeof cmp.url==="string" && cmp.url.indexOf("data:")===0 ? cmp.url : ""});
+    if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
+  return sx;
+}
+// data LOCAL (dia no relógio de quem confirmou): toISOString() usa UTC e jogava o Pix das 21h para o dia seguinte (revisão de 18/11/2026)
+function dataLocalDe(ts){ var d = new Date(ts || Date.now()); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); }
 function reducer(s, a){
   var k, agora = Date.now();
   switch(a.type){
@@ -112,7 +129,6 @@ function reducer(s, a){
     case "ACESSO_SET": { var ac = Object.assign({}, s.acessos); if(a.abas) ac[a.papel] = a.abas; else delete ac[a.papel]; return com(s, {acessos:ac}, a.abas ? "Acessos salvos" : "Acessos voltaram ao padrão"); }
     case "ACESSO_BLOCO": { var ab = Object.assign({}, s.acessosBlocos); if(a.grupos) ab[a.chave] = a.grupos; else delete ab[a.chave]; return com(s, {acessosBlocos:ab}); }
     case "ABA": return com(s, {aba:a.aba, breveNome: a.breve || s.breveNome});
-    case "ABRIR_CALC": return com(s, {aba:"calc", calcKit:a.id});
     case "VISAO_MENU": return com(s, {visaoMenu:a.v});
     case "VER_FIN": return com(s, {verFinanceiro:a.v});
     // Lançamento diário do faturamento: sempre referente ao dia anterior. "revendedoras" é o total absoluto naquele dia —
@@ -256,18 +272,19 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
+      if(a.chave==="mr") return Object.assign({}, s, {mr:Object.assign({}, s.mr, a.conteudo)});   // Marketing › Relatório diário: o servidor manda só o que mudou; aqui só junta
+      if(a.chave==="sg") return Object.assign({}, s, {sg:Object.assign({}, s.sg, a.conteudo)});   // PGR e PCMSO: o servidor manda só o que mudou; aqui só junta
+      if(a.chave==="jp") return Object.assign({}, s, {jp:Object.assign({}, s.jp, a.conteudo)});   // Pagamento em joias: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
-      if(a.chave==="avk") return Object.assign({}, s, {avk:avkSemear(Object.assign({}, s.avk, a.conteudo), LOCAL_AVK)});   // Nota do kit por montadora vinda do servidor: junta SEM reorganizar; a leitura local só entra se for mais nova (lidoEm)
-      if(a.chave==="bm") return Object.assign({}, s, {bm:bmSemear(Object.assign({}, s.bm, a.conteudo), LOCAL_BM)});   // Bônus da montagem vindo do servidor: chegam SÓ as chaves que mudaram; junta com o que já está aqui SEM reorganizar (senão regrava sem parar) e põe o mês real local que faltar
       if(a.chave==="revdia"){
         var pRD = {};
-        if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);
+        if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario, REV_FIXAS);   // REV_FIXAS: total que o Marcus informou vale sobre o automático (state/fd-patches.js)
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
       if(a.chave==="rpo" || a.chave==="rpf"){   // app real da representante (domain/app-rep.js): guarda as chaves cruas e remonta listagens, kits e acertos das telas
         var sRp = Object.assign({}, s); sRp[a.chave] = Object.assign({}, s[a.chave], a.conteudo); sRp[a.chave==="rpo" ? "_rpoPronto" : "_rpfPronto"] = true;
-        return Object.assign(sRp, aplicarAppNoEstado(sRp));
+        return Object.assign(sRp, aplicarAppNoEstado(sRp, !!repCodDaConta()));   // conta de representante: só o que o servidor mandou (filtrado por ela)
       }
       if(a.chave==="kn"){   // kits novos vindos do servidor: entram (ou atualizam) na lista de novas da representante
         var nvK = (s.novas||[]).slice();
@@ -280,6 +297,21 @@ function reducer(s, a){
           if(recK.filter(function(y){ return y.rep===x.rep; }).length >= ((s.cfg||{}).recusasBloqueio||2)) blK[x.rep] = true; }); });
         return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK}, novaRec ? {recusas:recK, bloqueioNovas:blK} : {});
       }
+      // Contas a pagar vindas do servidor (18/11/2026): baixas, CNPJ trocado, marca Empresa/Família, contas à mão e histórico.
+      // Na PRIMEIRA chegada neste navegador, o que só existia aqui é JUNTADO ao que veio (ninguém perde baixa) e segue para o servidor no próximo envio; depois disso vale o servidor.
+      if(a.chave==="cpe"){ var cA = s.cpe || {}, cS = a.conteudo || {}, cN = Object.assign({}, cA, cS);
+        if(!s.cpeSrv){ ["lanc", "baixas", "forn", "hist"].forEach(function(k){ if(!Array.isArray(cS[k])) return; var tem = {}; cS[k].forEach(function(x){ if(x && x.id!==undefined) tem[x.id] = 1; });
+            cN[k] = cS[k].concat((cA[k]||[]).map(function(x){ return k==="hist" && x && !x.id ? Object.assign({id:"h"+(x.ts||0)+"-"+String(x.acao||"").length+"-"+String(x.chave||"").slice(-12)}, x) : x; }).filter(function(x){ return x && x.id!==undefined && !tem[x.id]; })); });
+          if(cS.classe) cN.classe = Object.assign({}, cA.classe, cS.classe); }
+        return Object.assign({}, s, {cpe:cN, cpeSrv:true}); }
+      // Configuração do Direcionar vinda do servidor (18/11/2026): contas fixas das representantes, regras e valor fora do normal. Na primeira chegada, a conta fixa marcada À MÃO neste navegador não se perde para uma automática.
+      if(a.chave==="dpc"){ var dA = s.dp || Object.assign(dpDemo(), {pix:[]}), dS = a.conteudo || {}, dN = Object.assign({}, dA);
+        ["regras", "limiteAlto", "limite3000", "maqV"].forEach(function(k){ if(dS[k]!==undefined) dN[k] = dS[k]; });
+        if(dS.contasRep || dS.contasRepExtra){ var crS = Object.assign({}, dS.contasRep || dA.contasRep), cxS = Object.assign({}, dS.contasRepExtra || dA.contasRepExtra);
+          if(!s.dpcSrv) Object.keys(dA.contasRep||{}).forEach(function(rp){ var exL = (dA.contasRepExtra||{})[rp] || {}, exS = cxS[rp] || {};
+            if(!crS[rp] || (exS.auto && !exL.auto)){ crS[rp] = dA.contasRep[rp]; if((dA.contasRepExtra||{})[rp]) cxS[rp] = dA.contasRepExtra[rp]; else delete cxS[rp]; } });
+          dN.contasRep = crS; dN.contasRepExtra = cxS; }
+        return Object.assign({}, s, {dp:dN, dpcSrv:true}); }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="lst"){   // listagens de retirada e os kits delas vindos do servidor (05/11/2026): as duas listas entram inteiras, não se misturam com as do navegador
@@ -289,7 +321,7 @@ function reducer(s, a){
         var fcS = Object.assign({v:1, categorias:[], historico:[], codigos:[]}, s.fc), fcCods = (fcS.codigos||[]).slice(), fcMapa = new Map(), fcTira = {};
         fcCods.forEach(function(c, i){ fcMapa.set(c.cod, i); });
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
-          if(k==="m"){ if(v){ if(Array.isArray(v.historico) && v.historico.length) fcS.historico = v.historico; if(Array.isArray(v.categorias) && v.categorias.length) fcS.categorias = v.categorias; if(v.semeado) fcS.semeado = true; } return; }
+          if(k==="m"){ if(v){ if(Array.isArray(v.historico) && v.historico.length) fcS.historico = v.historico; if(Array.isArray(v.categorias) && v.categorias.length) fcS.categorias = v.categorias; if(v.semeado) fcS.semeado = true; if(v.dmEm) fcS.dmEmServidor = v.dmEm; } return; }
           if(k.indexOf("c_")!==0) return; var cod = k.slice(2), ix = fcMapa.get(cod);
           if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
         if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
@@ -310,13 +342,14 @@ function reducer(s, a){
         var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
           if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); else if(k.indexOf("kp_")===0) poe(kitsP, v, k.slice(3), false); });   // kp_ = pedido de kit novo (11/11/2026)
-        dpP.pix = pixP; dpP.kits = kitsP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
+        dpP.pix = pixP; dpP.kits = kitsP; return sincCompFornecedor(Object.assign({}, s, {lancFin:lfP, dp:dpP})); }   // o comprovante anexado por OUTRA pessoa chega aqui: libera o pagamento do fornecedor (revisão de 18/11/2026)
       if(a.chave==="ri"){ var pRi = {}; if(a.conteudo && a.conteudo.revInternas) pRi.revInternas = a.conteudo.revInternas; if(a.conteudo && a.conteudo.comissaoFunc) pRi.comissaoFunc = a.conteudo.comissaoFunc; return Object.keys(pRi).length ? Object.assign({}, s, pRi) : s; }   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
         return Object.assign({}, s, {faturamentoDiario:fdm});
       }
+      if(a.chave==="rc") return Object.assign({}, s, {prataRev:Object.assign({}, s.prataRev, a.conteudo && a.conteudo.prataRev)});   // quem é Kit 100% Prata, vindo do servidor (12/11/2026)
       if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
       // Expositores e Encomendas vindos do servidor: refazem a migração (cópia do admin antigo e planilhas, 06/11/2026). A marca de versão vale a DO SERVIDOR (se ele não tem, a cópia entra de novo); o que veio do navegador não conta.
@@ -344,8 +377,10 @@ function reducer(s, a){
     case "INAD": { var rIn = inadReduz(s, a); return com(s, rIn.patch, rIn.msg); }   // setor de Inadimplência (dívidas, acordos, pagamentos, Serasa, kits em atraso)
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
+    case "MR": { var rMr = mrReduz(s, a); return com(s, rMr.patch, rMr.msg); }   // Marketing › Relatório diário
+    case "SG": { var rSg = sgReduz(s, a); return com(s, rSg.patch, rSg.msg); }   // RH › PGR e PCMSO por CNPJ (17/11/2026)
+    case "JP": { var rJp = jpReduz(s, a); return com(s, rJp.patch, rJp.msg); }   // RH › Pagamento em joias
     case "MOD": { var rMod = modReduz(s, a); return com(s, rMod.patch, rMod.msg); }   // Encomendas › Modelos (cadastro particular do Marcus)
-    case "BM": { var rBm = bmReduz(s, a); return com(s, rBm.patch, rBm.msg); }   // Bônus da montagem de kits (kits do dia por colaboradora)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
@@ -373,6 +408,22 @@ function reducer(s, a){
             if(ds.length) porLinha[li] = ds.map(function(d){ return {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; }); });
           sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
             return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
+      // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
+      if(a.op==="confirma" && rDp.patch.dp){ var pFo = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pFo && pFo.status==="direcionado" && sDp.pf){
+          var itFo = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
+            var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
+            var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
+            if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
+            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
+          if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
+      if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
+      // 18/11/2026 (Marcus): Pix confirmado para um PRESTADOR DA FAMÍLIA vira repasse no Financeiro familiar sozinho e abate a dívida dele (conta corrente). Reabrir retira.
+      if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId || (d.via && d.via!=="pix")) return;   // só Pix abate a dívida: link e maquininha não
+          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:dataLocalDe(pFa.confirmadoEm), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
+      if(a.op==="reabre" && sDp.ff){ var rF2 = ffReduz(sDp, {op:"repasse_dir_desfaz", id:a.id}); if(rF2.patch && rF2.patch.ff) sDp = Object.assign({}, sDp, {ff:rF2.patch.ff}); }
+      if(a.op==="confirma") sDp = sincCompFornecedor(sDp);   // o comprovante já pode estar anexado (representante ou funcionária)
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
@@ -606,7 +657,7 @@ function reducer(s, a){
       if(antM === a.modalidade) return s;
       perfM[a.chave] = Object.assign({}, atualM, {modalidade:a.modalidade,
         modalidadeHist:[{de:antM, para:a.modalidade, em:new Date(agora).toISOString(), por:a.por||"", origem:a.origem||"representante"}].concat(atualM.modalidadeHist||[])});
-      return com(s, {perfisRev:perfM}, a.chave+" agora é "+(a.modalidade==="prata" ? "Kit 100% Prata" : "Kit padrão"));
+      return com(s, {perfisRev:perfM, prataRev:Object.assign({}, s.prataRev, {[a.chave]:a.modalidade==="prata" ? "prata" : "padrao"})}, a.chave+" agora é "+(a.modalidade==="prata" ? "Kit 100% Prata" : "Kit padrão"));
     }
     case "CRIAR_LISTAGEM": {
       var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
@@ -684,6 +735,62 @@ function reducer(s, a){
         var c = Object.assign({}, x.cond), p = Object.assign({}, c.chkP), prev = Object.assign({}, c.prev);
         p[num] = true; prev[num] = new Date().toISOString();
         return {cond:Object.assign(c, {nums:(c.nums||[]).concat([num]), chkP:p, prev:prev})}; })}, "Condicional "+num+" adicionada");
+    }
+    // 16/11/2026 (Marcus: "liga as condicionais da DevMaster" e "o valor do kit vai automático, igual ao interno"): chegam (a) os números das condicionais
+    // ABERTAS da revendedora e (b) as até 3 últimas vendas da média (rota /api/condicionais-kits, lib/condicionais-kits.js). Só kit ainda não montado.
+    // (a) cond.nums (sem apagar o que a funcionária já digitou) e cond.prev. Acerto + kit com condicional a conferir e cfg.condConferenciaPrevia diferente de false:
+    //     vai para "precond"; a funcionária de condicionais confere e libera (LIBERAR_COND).
+    // (b) kit.vendas = as vendas da média; valor = média das vendas pela tabela de kit (sugerido(), a mesma do Atendimento Sorelly), sem marcar como manual.
+    //     Média acima de cfg.limiteAnaliseVendas NÃO define o valor sozinho (a análise de vendas é obrigatória): fica para a supervisão. Sem venda, fica para a supervisão.
+    //     Desliga com cfg.valorAutomatico = false. Kit novo e reposição não entram (valor do setor Kit novo / teto da reposição).
+    case "KIT_COND_NUMS": {
+      var kCn = kitDe(s, a.kitId); if(!kCn) return s;
+      var cdC = kCn.cond || {};
+      if(kCn.status!=="semvalor" && kCn.status!=="pendente" && kCn.status!=="precond") return s;   // já começou a montar: não mexe
+      // Regra 2 (Marcus, 16/11/2026, papel da DevMaster da Maria Eduarda): entram só as condicionais ANTIGAS, as que voltam no acerto. A condicional NOVA
+      // (a do kit que a revendedora vai receber, emitida depois da listagem, com previsão uns 30 dias à frente) NÃO entra em cond.nums: fica em cond.novaDm.
+      // Corte: previsão de devolução até (dia da listagem + cfg.condPrevDias, padrão 15). Lara: 094059 (prev 14/11) entra; 097106 (prev 15/12) fica fora.
+      var lgC = s.listagens.find(function(x){ return x.id===kCn.lid; }), limC = null;
+      if(lgC && lgC.data){ var dtC = new Date(String(lgC.data).slice(0, 10)+"T12:00:00Z"); dtC.setUTCDate(dtC.getUTCDate() + (((s.cfg||{}).condPrevDias)||15)); limC = dtC.toISOString().slice(0, 10); }
+      var todasC = (a.conds||[]).filter(function(c){ return c && c.numero; });
+      var tardeC = limC ? todasC.filter(function(c){ return c.previsao && String(c.previsao).slice(0, 10) > limC; }) : [], cedoC = todasC.filter(function(c){ return tardeC.indexOf(c)<0; });
+      var tardeNums = tardeC.map(function(c){ return c.numero; });
+      var fazCond = !cdC.condBuscaEm && kCn.status!=="precond", fazRegra = !!cdC.condBuscaEm && cdC.condRegra!==2 && a.conds!==undefined;
+      var fazValor = !cdC.valorBuscaEm && a.vendas!==undefined && a.vendas!==null;
+      if(!fazCond && !fazRegra && !fazValor) return s;
+      var kitC = Object.assign({}, kCn), condC = Object.assign({}, cdC);
+      // 16/11/2026: o valor automático do kit (média das 3 últimas vendas pela tabela de kit, igual ao Atendimento Sorelly; ver docs/DECISOES.md)
+      if(fazValor){
+        condC.valorBuscaEm = agora;
+        var vsC = (a.vendas||[]).map(Number).filter(function(x){ return x>0; }).slice(0, 3);
+        if(vsC.length){
+          kitC.vendas = vsC;
+          if((kCn.tipoKit==="acerto_kit" || kCn.tipoKit==="acerto_kit_exp") && (kCn.valor===null || kCn.valor===undefined) && (s.cfg||{}).valorAutomatico!==false){
+            var mC = media3(vsC); condC.mediaAuto = Math.round(mC*100)/100;
+            if(!(mC > s.cfg.limiteAnaliseVendas)){
+              kitC.valor = sugerido(vsC, s.cfg); kitC.manual = false; kitC.defPor = SUPERVISORA.id; kitC.defEm = agora; kitC.defAuto = true;
+              if(kitC.status==="semvalor") kitC.status = "pendente";
+            }
+          }
+        }
+      }
+      if(fazCond){
+        var jaC = condNums(kCn), prevC = Object.assign({}, cdC.prev), numsC = jaC.slice();
+        cedoC.forEach(function(c){ if(numsC.indexOf(c.numero)<0) numsC.push(c.numero); if(!prevC[c.numero] && c.previsao) prevC[c.numero] = c.previsao; });
+        condC.nums = numsC; condC.prev = prevC; condC.condBuscaEm = agora; condC.condDm = cedoC.length; condC.condRegra = 2; condC.novaDm = tardeNums;
+        kitC.cond = condC;
+        var travaC = ((s.cfg||{}).condConferenciaPrevia!==false) && numsC.length>jaC.length && condVisiveisPre(kitC).length>0 && (kCn.tipoKit==="acerto_kit" || kCn.tipoKit==="acerto_kit_exp");
+        if(travaC) kitC.status = "precond";
+      } else if(fazRegra){
+        // kit já buscado pela regra 1: tira só os números que a DevMaster diz serem da condicional NOVA (o que a funcionária digitou à mão fica)
+        var fora = {}; tardeNums.forEach(function(n){ fora[n] = 1; });
+        var numsR = condNums(kCn).filter(function(n){ return !fora[n]; });
+        ["prev", "chkP", "chkM", "chkB", "faltas", "impressas"].forEach(function(cp){ if(condC[cp]){ var o = Object.assign({}, condC[cp]); tardeNums.forEach(function(n){ delete o[n]; }); condC[cp] = o; } });
+        condC.nums = numsR; condC.novaDm = tardeNums; condC.condRegra = 2; condC.condDm = cedoC.length;
+        kitC.cond = condC;
+        if(kitC.status==="precond" && condVisiveisPre(kitC).length===0) kitC.status = (kitC.valor===null || kitC.valor===undefined) ? "semvalor" : "pendente";   // nada mais a conferir: não fica parado
+      } else kitC.cond = condC;
+      return com(s, {kits:s.kits.map(function(x){ return x.id===a.kitId ? kitC : x; })}, null);
     }
     // Libera pra fila de montagem: só chega até aqui quando as condicionais da revendedora já foram todas conferidas.
     case "LIBERAR_COND": {
@@ -928,7 +1035,7 @@ function reducer(s, a){
       var perfI = s.perfisRev, patchI = {};
       if(a.modalidade){ patchI.perfisRev = Object.assign({}, perfI); var pI = Object.assign({}, perfI[novoI.nome]);
         if((pI.modalidade==="prata" ? "prata" : "padrao") !== a.modalidade) pI.modalidadeHist = [{de:pI.modalidade==="prata"?"prata":"padrao", para:a.modalidade, em:new Date(agora).toISOString(), por:a.por||"", origem:"interno"}].concat(pI.modalidadeHist||[]);
-        pI.modalidade = a.modalidade; patchI.perfisRev[novoI.nome] = pI; }
+        pI.modalidade = a.modalidade; patchI.perfisRev[novoI.nome] = pI; patchI.prataRev = Object.assign({}, s.prataRev, {[novoI.nome]:a.modalidade==="prata" ? "prata" : "padrao"}); }
       return com(s, Object.assign({internos:[novoI].concat(s.internos||[])}, patchI), novoI.nome+" entrou na agenda do atendimento interno");
     }
     // ── Revendedoras internas (controle de ciclo e agendamento da agendadora) ──
@@ -1026,7 +1133,7 @@ function reducer(s, a){
     case "AVISO_CFG": return com(s, {avisosCfg:Object.assign({}, s.avisosCfg||{}, {[a.tipo]:a.ids})});
     case "ALERTA_ADD": {
       if((s.alertas||[]).some(function(x){ return x.chave===a.chave; })) return s;
-      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, dados:a.dados||null, cor:a.cor||null, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
+      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, dados:a.dados||null, cor:a.cor||null, critico:!!a.critico, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
     }
     case "ALERTA_LIDO": return com(s, {alertas:(s.alertas||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {lidoPor:(x.lidoPor||[]).concat([a.usuario])}); })});
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
@@ -1037,7 +1144,7 @@ function reducer(s, a){
       var rrN = Object.assign({}, rr, primeiroMarcado(rr) ? {} : {primeira:{dia:a.data, desde:cicloDe(rr)}}, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
       if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, (a.quer || vLib) ? {obs:(a.quer ? "Quer: "+a.quer : "Atendimento")+vLib} : {}); }); }
-      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
+      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, Object.assign({tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}, Array.isArray(rr.conds) ? {condicionais:condsDaDevmaster(rr.conds)} : {})); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
     // Comissão especial (Edna, 09/11/2026): porcentagem de comissão por faixa de venda, fixa na ficha da revendedora; os brindes seguem a tabela normal. Só a Diretoria muda (a tela já esconde o botão; o sistema confere de novo aqui).
@@ -1072,7 +1179,7 @@ function reducer(s, a){
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
       if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId || (x.revIntId===ra.id && x.data===ra.agend.data && x.status!=="cancelado"); })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
-        condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
+        condicionais:condsDaDevmaster(ra.conds),
         vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});
       return com(s, {internos:[itA].concat(s.internos||[]), revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {internoId:itA.id}); })});
     }
@@ -1137,21 +1244,33 @@ function reducer(s, a){
       // o que ainda não tem conta (Pix, link) vai para a fila do Direcionar de todo o Financeiro (09/11/2026)
       var formaDp = function(f){ return f==="link" ? "link" : (f==="credito" || f==="debito") ? "maquininha" : "pix"; };
       var abertasF = [], pagosF = [];
-      novoF.linhas.forEach(function(l, i){ if(l.tipo!=="pagamento" || l.isento) return;
+      // 12/11/2026 (Marcus): a diferença do brinde também sobe para o Direcionar (antes só os pagamentos subiam, e o pedido sumia da fila)
+      novoF.linhas.forEach(function(l, i){ if((l.tipo!=="pagamento" && l.tipo!=="brinde") || l.isento) return;
+        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:l.forma ? formaDp(l.forma) : "pix", valor:l.valor, linha:i, brinde:true}); return; }   // forma escolhida no Atendimento chega ao Direcionar (19/11/2026)
         if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
         else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
       return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
+    }
+    // Conserto de 12/11/2026: a diferença do brinde sem conta que ficou FORA da fila do Direcionar (pedidos enviados antes desta versão) entra na fila como um pedido à parte ("PB"+id).
+    case "FIN_FILA": {
+      var lfQ = (s.lancFin||[]).find(function(x){ return x.internoId===a.internoId; });
+      if(!lfQ || lfQ.conferido || lfQ.cancelado) return s;
+      var cobertas = []; ((s.dp && s.dp.pix) || []).forEach(function(x){ if(x.internoId===a.internoId && x.status==="fila") cobertas = cobertas.concat(x.linhas||[]); });   // linhas do lançamento que já estão numa fila
+      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:l.forma==="link" ? "link" : (l.forma==="credito" || l.forma==="debito") ? "maquininha" : "pix", valor:l.valor, linha:i, brinde:true}); });
+      if(!abQ.length) return s;
+      var rsQ = lfQ.resumo || {};
+      return Object.assign({}, s, dpReduz(s, {op:"int_pedir", idPedido:"PB"+a.internoId, internoId:a.internoId, nome:lfQ.nome, atendente:lfQ.por||"", vendas:rsQ.vendido||0, aPagar:rsQ.aPagar||0, abertas:abQ, pagos:[]}).patch);
     }
     case "FIN_ETAPA": {
       return com(s, {lancFin:(s.lancFin||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, a.patch); })});
     }
     case "FIN_LINHA": {
-      return sincContasRep(com(s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==a.id) return x;
+      return sincCompFornecedor(sincContasRep(com(s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==a.id) return x;
         var linhas = x.linhas.map(function(l,i){ return i===a.i ? Object.assign({}, l, a.patch, a.patch && a.patch.partes ? {manual:true} : null) : l; });
         x = pxAplicar(s.px, Object.assign({}, x, {linhas:linhas}), s.lancFin); linhas = x.linhas;   // definida a conta do link/cartão, o Pix da mesma venda se resolve sozinho
         if(x.origem==="rep" || x.origem==="func") linhas = linhas.map(function(l){ return l.tipo==="pagamento" && !l.isento && contasDefinidas(l) && !l.enviada ? Object.assign({}, l, {enviada:true}) : l; });   // pedido da representante: definiu a conta, ela já vê (sem o "OK, enviar")
         return Object.assign({}, x, {linhas:linhas, conferido:!!x.finalizado && lancamentoConferido(linhas), conferidoPor:a.por||x.conferidoPor});
-      })}));
+      })})));
     }
     // Representante pede a conta de um pagamento do acerto (só forma + valor): sobe na hora no Controle de pagamentos, o app dela não espera
     case "REP_PAG": {
@@ -1163,7 +1282,7 @@ function reducer(s, a){
       if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
       if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;
           return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:{nome:a.anexo.nome, url:a.anexo.dados||null}})]}); })}); })});
-        return com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro"); }
+        return sincCompFornecedor(com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro")); }
       if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }
@@ -1179,7 +1298,7 @@ function reducer(s, a){
       var vR = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itR.regrasVersaoId; }) || versaoVigente(s); if(!vR) return s;
       var modR = modalidadeDe(s, itR.nome), vEfR = versaoEfetiva(vR, modR, comissaoEspecialDe(s, itR.nome));
       var zeroR = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, vEfR);
-      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
+      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno", semExplicacao:!!a.semExplicacao, saiuSemAssinar:!!a.saiuSemAssinar}});
       return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
     }
     case "INT_SIMPLES_FIM": {   // atendimento sem acerto (Brinde de indicação, Reposição, Troca de peça; 11/11/2026): registra a hora, quem atendeu e a anotação
@@ -1191,21 +1310,26 @@ function reducer(s, a){
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
-      var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI, comissaoEspecialDe(s, it.nome));   // comissão especial da revendedora (Edna, 09/11/2026)
+      var modI = a.modalidade || modalidadeDe(s, it.nome), antigaI = !!a.regraAntiga && modI!=="prata";   // comissão antiga: a revendedora questionou (Marcus, 16/11/2026); vale só neste acerto
+      var vEf = versaoEfetiva(antigaI ? versaoComissaoAntiga(vBase) : vBase, modI, comissaoEspecialDe(s, it.nome));   // comissão especial da revendedora (Edna, 09/11/2026)
       var abI = abaterDividas(s, it.nome, a.pagamentos, null);
       var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
         valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
       if(a.recusouNegociar) resI = Object.assign({}, resI, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var regI = Object.assign({id:"AC"+agora, internoId:it.id, rev:it.nome, rep:"Atendimento interno", origem:"interno", tipo:"acerto",
-        data:isoDia(new Date(agora)), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        data:isoDia(new Date(agora)), regrasVersaoId:vBase.id, regraAntiga:antigaI, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(it.remarcacoesLista||[]).length, formSnapshot:a.formSnapshot||null, recebimento:null,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null, pecasADevolver:a.pecasADevolver!=null ? a.pecasADevolver : null,
         condicionaisSelecionadas:a.condicionaisSelecionadas||[], pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
         brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
-      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
-      return com(s, {lp:(s.lp ? usarLinksNoAcerto(s.lp, a.pagamentos, "AC"+agora, agoraSPLp(), a.por) : null) || s.lp, perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
+      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno", semExplicacao:!!a.semExplicacao, saiuSemAssinar:!!a.saiuSemAssinar}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
+      // registro na ficha: este acerto foi cobrado pela comissão antiga; o próximo acerto volta sozinho para a regra nova
+      if(antigaI) prT[it.nome] = Object.assign({}, prT[it.nome], {historicoRegras:((prT[it.nome]||{}).historicoRegras||[]).concat([{ts:agora, tipo:"comissao_antiga", acertoId:"AC"+agora, por:a.por||"", motivo:"A revendedora questionou a regra nova. Acerto cobrado pela comissão antiga; o próximo acerto vale a regra nova."}])});
+      return com(s, {lp:(s.lp ? usarLinksNoAcerto(s.lp, a.pagamentos, "AC"+agora, agoraSPLp(), a.por) : null) || s.lp, perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", regraAntiga:antigaI, acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", renovaDia:a.renovaDia||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
+        // 16/11/2026 (Sthefany, Stefany Winter): "Renova outro dia" vai para a lista da agendadora (Atendimento interno › Revendedoras) como A contatar, com o dia combinado em "Próximo acerto"; a Tamara liga e agenda a retirada do próximo kit
+        revInternas:(a.continuidade==="outro_dia" && a.renovaDia) ? (s.revInternas||[]).map(function(r){ return (r.id===it.revIntId || r.nome===it.nome) ? Object.assign({}, r, {proximoManual:a.renovaDia, situacao:"contatar", agend:null, internoId:null}) : r; }) : s.revInternas,
         acertosConsignado:[regI].concat(aplicarAbatimento(s.acertosConsignado||[], abI, (a.pagamentos||[])[0], regI.id, agora))},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");
     }

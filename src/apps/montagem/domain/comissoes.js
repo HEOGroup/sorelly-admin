@@ -129,8 +129,8 @@ function devidoDe(r){ return r2((r.valorDevido!=null ? r.valorDevido : r.valorAc
 function prazoPendente(r, hoje){
   var N = r.regrasNovas; if(!N || !r.data) return null;
   var dias = Math.max(0, Math.floor((new Date((hoje||new Date().toISOString().slice(0,10))+"T12:00:00") - new Date(r.data+"T12:00:00"))/86400000));
-  var atraso = Math.max(0, dias-(N.prazoQuitarDias||15));
-  return {dias:dias, prazo:N.prazoQuitarDias||15, atraso:atraso, pct:Math.min(N.atrasoQuitacaoTetoPct||10, atraso*(N.atrasoQuitacaoPctDia||1))};
+  var atraso = Math.max(0, dias-(N.prazoQuitarDias||30));
+  return {dias:dias, prazo:N.prazoQuitarDias||30, atraso:atraso, pct:Math.min(N.atrasoQuitacaoTetoPct||10, atraso*(N.atrasoQuitacaoPctDia||1))};
 }
 function faltaDe(r){ return Math.max(0, r2(devidoDe(r) - pagoDe(r))); }
 // Dívidas abertas de acertos anteriores da mesma revendedora, da mais antiga para a mais nova: [{id, falta}]

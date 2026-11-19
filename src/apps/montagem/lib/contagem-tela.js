@@ -7,6 +7,8 @@
 import { React } from "@/shared/react";
 import { tocar } from "@/apps/montagem/lib/sons";
 
+// Troca o texto SEM trocar o nó de texto do React (13/11/2026): antes usava el.textContent=..., que cria outro nó; o React seguia atualizando o nó antigo (solto da tela) e a célula ficava presa num valor velho (tabela de Contas a pagar mostrava Novembro com R$ 25 mil e Acumulado fora de ordem).
+function poe(el, texto){ var n = el.firstChild; if(n && n.nodeType===3 && !n.nextSibling) n.nodeValue = texto; else el.textContent = texto; }
 var ultTique = 0;   // um tique por ~70 ms no máximo, mesmo com vários números subindo juntos
 
 function ler(t){
@@ -31,7 +33,7 @@ function loop(agora){
     if(!cn || a.el.textContent!==cn.txt){ ativas.delete(a); return; }   // o sistema trocou o texto: o observador recomeça dali
     var k = Math.min(1, (agora-a.ini)/a.dur), x = a.de+(a.para-a.de)*(1-Math.pow(1-k, 3));
     var texto = k>=1 ? a.final : fmt(a.info.tipo, a.info.sinal, x);
-    a.el.textContent = texto; cn.txt = texto; cn.mostrado = k>=1 ? a.para : x;
+    poe(a.el, texto); cn.txt = texto; cn.mostrado = k>=1 ? a.para : x;
     if(k<1 && agora-ultTique>70){ ultTique = agora; tocar("contar"); }
     if(k>=1) ativas.delete(a);
   });
@@ -39,11 +41,11 @@ function loop(agora){
 }
 function correr(el, info, de, para, final, dur){
   var cn = el._cn; ativas.forEach(function(a){ if(a.el===el) ativas.delete(a); });
-  var texto = fmt(info.tipo, info.sinal, de); el.textContent = texto; cn.txt = texto; cn.mostrado = de;   // volta ao valor antigo antes de aparecer o novo
+  var texto = fmt(info.tipo, info.sinal, de); poe(el, texto); cn.txt = texto; cn.mostrado = de;   // volta ao valor antigo antes de aparecer o novo
   var a = {el:el, info:info, de:de, para:para, final:final, ini:performance.now(), dur:dur};
   ativas.add(a);
   // Relógio de segurança (02/11/2026): se o navegador não desenhar quadros (aba escondida, painel de teste), a animação nunca termina e o número ficaria preso no valor antigo.
-  setTimeout(function(){ if(ativas.has(a) && el._cn && el.textContent===el._cn.txt){ el.textContent = final; el._cn.txt = final; el._cn.mostrado = para; ativas.delete(a); } }, dur+400);
+  setTimeout(function(){ if(ativas.has(a) && el._cn && el.textContent===el._cn.txt){ poe(el, final); el._cn.txt = final; el._cn.mostrado = para; ativas.delete(a); } }, dur+400);
   if(!raf) raf = requestAnimationFrame(loop);
 }
 // primeira passada (ao abrir a tela): registra cada número e o faz correr desde zero

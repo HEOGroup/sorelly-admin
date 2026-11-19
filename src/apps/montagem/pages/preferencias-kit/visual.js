@@ -2,6 +2,7 @@
 // Peças visuais só de Preferências do kit (setor Kits, cor ouro #E8B84B), usadas pelas 4 abas.
 // Regras de negócio NÃO ficam aqui (estão em domain/preferencias-kit.js).
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { apiAtiva, ehAdmin } from "@/apps/montagem/lib/api";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -13,10 +14,14 @@ var SITCOR = {sem:"#94A3B8", pendente:"#FBBF24", montado:"#4ADE80"};
 var cap1 = function(t){ return typeof t==="string" && t ? t.charAt(0).toUpperCase()+t.slice(1) : t; };
 var pct1 = function(v){ return (Math.round((v||0)*10)/10).toFixed(1).replace(".", ",")+"%"; };
 
+// Formulário do app (blocos): é o que o app da revendedora mostra (GET /api/kit/preferences). Como no admin antigo, só a Diretoria edita (18/11/2026);
+// sem servidor (modo navegador) continua livre. O servidor também descarta essa mudança de quem não é da Diretoria (app/api/estado/[modulo]).
+var OPS_FORMULARIO = ["bloco_add", "bloco_edit", "bloco_enabled", "bloco_del", "reordenar", "versao_subir"];
+function podeEditarFormulario(){ return !apiAtiva() || ehAdmin(); }
 // acesso ao estado e à ação do módulo: pk("rev_add", {...}) já leva quem fez
 function usePk(){
   var c = use(), s = c.state, por = nomeDe(s.usuario);
-  return {s:s, pk:function(op, x){ c.dispatch(Object.assign({type:"PK", op:op, por:por}, x||{})); }};
+  return {s:s, pk:function(op, x){ if(OPS_FORMULARIO.indexOf(op)>=0 && !podeEditarFormulario()) return; c.dispatch(Object.assign({type:"PK", op:op, por:por}, x||{})); }};
 }
 
 // botões
@@ -88,4 +93,4 @@ function Paginar(p){
     e("span",{className:"text-[12.5px] font-bold text-white/80"}, "Página "+p.pg+" de "+p.total),
     e(Ic,{ic:"caret-right", titulo:"Próxima página", disabled:p.pg>=p.total, onClick:function(){ p.set(p.pg+1); }}));
 }
-export { OURO, PRATA, COR_SETOR, MCOR, SITCOR, MONO, cap1, pct1, usePk, Bt, Ic, Selo, grad, Campo, Txt, Area, Busca, Sel, Data, Chip, Interruptor, Avatar, Vazio, Painel, Aviso, BarraPct, BarraMetal, Bolinha, Paginar };
+export { OURO, PRATA, COR_SETOR, MCOR, SITCOR, MONO, cap1, pct1, usePk, podeEditarFormulario, Bt, Ic, Selo, grad, Campo, Txt, Area, Busca, Sel, Data, Chip, Interruptor, Avatar, Vazio, Painel, Aviso, BarraPct, BarraMetal, Bolinha, Paginar };

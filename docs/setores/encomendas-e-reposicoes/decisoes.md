@@ -16,7 +16,28 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 
 - **26/10/2026** (diário, linha 1188; · Revendedoras: expositores): Marcus: puxar as condicionais abertas até o ano 3000 (expositor). "Todas" continua só kits (2.106 revendedoras, R$ 20.665.969); aba Expositor e aba "Só expositor · sem kit" (59 esquecidas). Modelos agrupados: todos os dois andares juntos; abrir o grupo mostra os modelos e quem está com cada um (filtro por grupo/modelo). Média das 3 últimas vendas = acertos fechados (dmach, ach_valormerc) dos últimos 20 meses; objetivo: cobrar valor mínimo de venda de quem está com expositor (a regra de cobrança ainda NÃO existe). Esquecida: mais de 6 meses amarelo, mais de 1 ano vermelho. Itens do expositor com código fora de MP/EX/MU/PJ são joias e ficam no grupo "Peças de joia".
 
+## 18/11/2026 (Encomendas e reposições: link do pedido da revendedora)
+- **Fluxo:** a revendedora NÃO pede mais peças pelo WhatsApp. Ela recebe um link só dela (vale 48 h; 120 h depois de o setor publicar peças). Pede por ali (até 10 peças, foto ou descrição, dourado/prata/os dois). O setor importa no Funil, acha as peças e publica no MESMO link. Ela marca Quero ou Não quero em cada peça, com observação por peça e recado final.
+- **Duas abas no link das peças:** "Peças que encontramos" e "O que eu pedi" (fotos, descrições e recado do pedido dela, porque às vezes nem ela lembra). A barra de baixo (quero, não quero, faltam, total e limite) só aparece na aba das peças.
+- **Pedir mais peças:** no fim da aba das peças, no máximo 2 vezes por link (`MAX_EXTRAS` em `src/server/pedido-link.js`), até 10 peças por vez. Aparece na ficha do pedido, bloco "Pediu mais peças". Os pedidos extras ficam em `dados.extras` do link.
+- **Limite de valor:** vem do cadastro da revendedora (tabela de valores por média e quantidade por mês). Tabela de valores em `/pedido/<código>/tabela`. A barra bloqueia o envio acima do limite. PERGUNTA ABERTA: o pedido extra conta o limite de novo ou usa o que sobrou?
+- **Visual do link:** fundo preto com degradê dourado subindo de baixo, botões dourados, verdinho no Quero e vermelhinho no Não quero, borda da foto na cor do cartão, celular primeiro, letras pequenas, sem rolar para o lado. Peças sempre na ordem anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras. Nome de peça sem a palavra folheado/banhado.
+- **Links sempre com o endereço online** (https://sorelly-admin.vercel.app), nunca localhost.
+- **Teste:** nome "TESTE ... APAGAR"; nunca testar com cliente real; limpar depois. Mensagem de WhatsApp para as meninas testarem foi escrita em negrito, curta, só com o link.
+- **Pendências:** ligar o link da Taciana ao pedido no Funil (op `ped_dados` com o id do link) para a resposta aparecer na ficha; apagar o link antigo da Taciana e o pedido "Teste Marcus"; chave Pix da taxa vazia no servidor; decidir a regra do limite no pedido extra.
+
 ## 10/11/2026 (noite) — Palavras e setor
 - **Reposição** = peças levadas no meio do mês para a revendedora. **Encomenda** = peças separadas para levar no próximo kit. É um setor só; o Marcus permitiu o nome **"Reposições & Encomendas"** (renomear o menu fica para decidir). Pergunta aberta: unir os dois campos de R$ 15,00 em um e quem define o valor da reposição "especial".
 
 - **10/11/2026 (2ª rodada):** os dois campos de R$ 15,00 viram **um só**. Aberto: quem define a reposição "especial".
+
+## 13/11/2026 (Encomendas › Separar peças com IA)
+- **Tela nova** Encomendas › Separar peças (`pages/SepararPecas.js`, rota `/encomendas/separar-pecas`). Fluxo do Marcus: a funcionária tira umas 20 peças do estoque e cola os CÓDIGOS; o sistema busca nome e foto de cada código na DevMaster (API 2, só leitura); peça sem foto: ela tira a foto na hora; a IA (Claude Sonnet 5.5) compara as peças com as FOTOS dos pedidos "Separar peças" em aberto e sugere qual peça vai para quem; a pessoa confere olhando as duas fotos lado a lado e confirma (op `aten_casar`, grava `casadas` no pedido).
+- **A IA só sugere.** Confiança baixa mostra opções; quem decide é a pessoa. Teste com as 13 fotos da Solange de Fátima: Claude Sonnet 5.5 e a análise manual concordaram em 6 de 7 fotos; sem gabarito oficial.
+- Servidor: `src/server/separar-pecas.js`, rotas `/api/encomendas/pecas`, `/api/encomendas/pecas/foto`, `/api/encomendas/casar`. **Falta a chave `ANTHROPIC_API_KEY` no `.env.local` do servidor (e na Vercel)**; o Marcus ou o Leonardo cria, nunca no chat. Custo estimado: cerca de R$ 22 por 1.000 fotos comparadas (estimativa).
+
+## 17/11/2026 · Funil de pedidos zerado (Marcus)
+- Funil zerado: apagados os 836 pedidos importados das planilhas; ficaram os 6 pedidos lançados pelo setor (Jaqueline Roberta de Souza Ferreira, Silmara da Silva, Katlyn de Melo da Luz, Victoria Daniela da Silva Cordeiro, Lidianne Correia Costa Stofella e Francelle Schmidt Alves Pinto dos Santos).
+- Cópia guardada por 30 dias (até **17/12/2026**): arquivo `src/apps/montagem/domain/encomendas.local.js.backup-funil-17-11` (só neste PC, fora do Git) e as cópias diárias do servidor. Depois dessa data, apagar o arquivo e os `.bak` antigos.
+- Top 50: vendas, última venda e média vêm da DevMaster e não se digitam; coluna Kit (Pendente, Urgente, Montagem na empresa, Finalizado), Responsável e Observação são do setor.
+- Organização proposta do setor (aguarda respostas do Marcus): Pedidos, Separar peças (IA), Revendedoras atendidas, Expositores, Regras e mensagens; Ida na empresa e Representantes saem do menu.

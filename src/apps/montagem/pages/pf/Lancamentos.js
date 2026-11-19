@@ -4,14 +4,18 @@
 // Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, janelaPorChave, lancExcedente, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
-import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
-import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
+import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { apagarArquivo, baixarArquivo, obterArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
+import { copiar, msgWhatsApp, nomeArquivoExtrato, useLinkConferencia, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
 import { Dinheiro, Faixa, Indicador, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { COR, Campo, Chip, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { e, useState } from "@/shared/react";
+import { Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { e, useEffect, useState } from "@/shared/react";
+import { lerAlocs, porPedidoAtivo } from "@/apps/montagem/domain/pf";
+import { BlocoPedidos, EscopoRelatorio, IdentPedidos, MarcaPedidos, ModalIdent, paraAcao } from "@/apps/montagem/pages/pf/PorPedido";   // controle por pedido (19/11/2026), só fornecedor com a opção ligada
 
 // botão pequeno com texto (tipos: normal, forte, ok, conf, perigo)
 var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#3B82F6] text-black hover:bg-[#FBBF24]", ok:"bg-[#22C55E]/25 text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35", conf:"bg-[#3B82F6]/25 text-[#93C5FD] ring-1 ring-[#3B82F6]/50 hover:bg-[#3B82F6]/35", perigo:"bg-destructive/20 text-destructive hover:bg-destructive/30"};
@@ -38,18 +42,60 @@ function FiltroLanc(p){
     ativo && e("div",{className:"text-[12.5px]"}, ((f.d1||f.d2) ? (f.d1 ? dbr(f.d1) : "início")+" a "+(f.d2 ? dbr(f.d2) : "fim")+" · " : "")+p.res.n+" de "+p.res.total+" pagamento(s) · total ", e("b",null, brl(p.res.soma))));
 }
 
+// ───────────── janela: Editar pagamento (só enquanto não estiver conferido) ─────────────
+function ModalEditar(p){
+  var c = p.c, l = p.l, datas = janelasDoForn(c.pf, l.fornId);
+  var st = useState({data:l.data, rev:l.revendedora||"", valor:Number(l.valor).toFixed(2), conta:l.conta==="—" ? "" : (l.conta||""), chavePix:l.chavePix||"", chave:l.chave, arq:null}), v = st[0], setV = st[1];
+  var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
+  var opcoes = datas.some(function(j){ return j.chave===l.chave; }) ? datas : [{chave:l.chave, limite:l.limite||l.chave.split("|")[1]}].concat(datas);
+  var salvar = function(){
+    var patch = {data:v.data, revendedora:v.rev, valor:parseFloat(v.valor), conta:v.conta, chavePix:v.chavePix, chave:v.chave};
+    var gravar = function(){ op(c, "lanc_set", {id:l.id, patch:patch}); p.fechar(); };
+    if(!v.arq) return gravar();
+    lerAnexo(v.arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ patch.arqKey = sv.key; patch.arqNome = v.arq.name; patch.arqTipo = v.arq.type; gravar(); },
+      function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); });
+  };
+  return e(Modal,{t:"Editar pagamento", fechar:p.fechar, sub:e("span",null, "Lançado: ", e("b",null, brl(l.valor)), " · "+(l.revendedora||"—")+" · "+dbr(l.data))},
+    e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
+      e(Campo,{rot:"Data"}, e(Txt,{type:"date", value:v.data, label:"Data", onChange:function(x){ set("data", x); }})),
+      e(Campo,{rot:"Nome da revendedora"}, e(Txt,{value:v.rev, label:"Nome da revendedora", onChange:function(x){ set("rev", x); }})),
+      e(Campo,{rot:"Valor (R$)"}, e(Dinheiro,{out:"ponto", value:v.valor, label:"Valor", onChange:function(x){ set("valor", x); }})),
+      e(Campo,{rot:"Data de pagamento"}, e(Sel,{value:v.chave, label:"Data de pagamento", className:"w-full", onChange:function(x){ set("chave", x); }},
+        opcoes.map(function(j){ return e("option",{key:j.chave, value:j.chave}, dbr(j.limite)); }))),
+      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }})),
+      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", onChange:function(x){ set("chavePix", x); }}))),
+    e(Campo,{rot:"Comprovante de pagamento"},
+      e("div",{className:"flex flex-wrap items-center gap-3 rounded-lg bg-black/25 px-3 py-2"},
+        e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[13px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), l.arqKey || l.arqNome ? "Trocar arquivo" : "Selecionar arquivo",
+          e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
+        e("span",{className:"text-[13px]"}, v.arq ? v.arq.name : (l.arqNome || "Nenhum arquivo")))),
+    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Salvar alteração")));
+}
+
 function ItemLanc(p){
-  var l = p.l, c = p.c;
-  var comp = l.arqId
+  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1], si = useState(false), porPed = porPedidoAtivo(c.pf, l.fornId) || (l.alocs || []).length>0;
+  var comp = l.arqKey
+    ? e("button",{type:"button", title:l.arqNome, onClick:function(){ abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-bold hover:underline"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
+    : l.arqId
     ? e("button",{type:"button", title:l.arqNome, onClick:function(){ baixarArquivo(l.arqId, l.arqNome||"comprovante").catch(function(){ aviso(c, "Não achei o arquivo neste computador.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE] hover:bg-[#06B6D4]/30"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
     : String(l.arqData||"").indexOf("data:")===0
       ? e("a",{href:l.arqData, target:"_blank", rel:"noreferrer", download:l.arqNome, title:l.arqNome, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE]"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
       : l.arqNome ? e("span",{className:"inline-flex items-center gap-1 text-[11.5px]", title:l.arqNome}, e(Ph,{n:"paperclip", s:13}), "comprovante anexado")
       : e("span",{className:"text-[11.5px] text-muted-foreground"}, "sem comprovante");
-  var conf = l.conferido ? e(Chip,{cor:"green"}, "✓ Conferido "+dbr(l.conferidoEm)) : e(Chip,{cor:"orange"}, "⏳ Aguardando conferência");
+  // Pix vindo do Direcionar (17/11/2026): só conta como pago depois de anexar o comprovante
+  if(l.aguardaComp) comp = e("label",{title:"Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago.", className:"inline-flex cursor-pointer items-center gap-1 rounded-md bg-[#3B82F6]/25 px-2.5 py-0.5 text-[11px] font-bold text-[#93C5FD] hover:bg-[#3B82F6]/35"}, e(Ph,{n:"paperclip", s:13}), "Anexar comprovante",
+    e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return;
+      lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:l.id, arqNome:arq.name, arqTipo:arq.type, arqKey:sv.key}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); }); }}));
+  var conf = l.aguardaComp ? e(Chip,{cor:"orange"}, "⏳ Falta o comprovante") : l.conferido ? e(Chip,{cor:"green"}, "✓ Conferido "+dbr(l.conferidoEm)) : e(Chip,{cor:"orange"}, "⏳ Aguardando conferência");
+
   return e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 "+(l.conferido ? "bg-[#22C55E]/10" : "bg-black/25")},
     e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]"}, e("b",null, dbr(l.data)), e("span",{className:"text-muted-foreground"}, l.revendedora||"—"), e("span",{className:"text-muted-foreground"}, l.conta||"—"), comp, conf),
     e("div",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[14px]", style:{color:COR.green}}, brl(l.valor)),
+      // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
+      !l.auto && e(Bt,{ic:"pencil-simple", disabled:!c.edita || l.conferido, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Conferido: desfaça a conferência para alterar" : "Alterar este pagamento", onClick:function(){ setEditando(true); }}, "Editar"),
+      editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
+      porPed && !l.auto && e(MarcaPedidos,{c:c, l:l, abrir:function(){ si[1](true); }}),   // para qual pedido foi o dinheiro (não confere o pagamento)
+      si[0] && e(ModalIdent,{c:c, l:l, fechar:function(){ si[1](false); }}),
       e(Bt,{tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:c.edita ? "" : "Só financeiro e diretoria", onClick:function(){
         if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return;
         op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),
@@ -73,6 +119,29 @@ function ListaPagamentos(p){
       ativo && e("p",{className:"py-2 text-center text-[13px] text-muted-foreground"}, "Nenhum pagamento encontrado com esse filtro."));
 }
 
+// ───────────── aviso na linha: saldo que passou para outra data, que veio de outra data, ou pago a mais ainda sem destino ─────────────
+function dm(chave){ var l = String(chave||"").split("|")[1]||""; return l.slice(8,10)+"/"+l.slice(5,7); }
+function AvisoSaldo(p){
+  var cd = p.cd, c = p.c, itens = [];
+  // pagou parte: o que falta só passa para a próxima data com o aceite de quem lança (senão continua em aberto)
+  if(cd.saldoDst) itens.push(e("span",{key:"falta", className:"inline-flex items-center gap-2 rounded-md bg-black/30 px-2 py-0.5 ring-1 ring-white/15"},
+    e("span",null, "Falta ", e("b",{style:{color:COR.red}}, brl(cd.aberto))),
+    c.edita && e("button",{type:"button", className:"rounded px-2 font-bold underline hover:brightness-125", onClick:function(){
+      if(window.confirm("Passar "+brl(cd.aberto)+" que falta em "+dbr(cd.limite)+" para somar na parcela de "+dbr(cd.saldoDst.limite)+"?")) op(c, "saldo_passar", {chave:cd.chave}); }}, "Passar para "+dbr(cd.saldoDst.limite))));
+  cd.passou.forEach(function(x){ itens.push(e("span",{key:"s"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
+  cd.saldoSaiu.forEach(function(x){ itens.push(e("span",{key:"ss"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
+  cd.saldoVeio.forEach(function(x){ itens.push(e("span",{key:"sv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
+  cd.veio.forEach(function(x){ itens.push(e("span",{key:"v"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
+  // pago a mais (novembro/2026 em diante): a dívida da data sobe sozinha com o ajuste "Diferença enviada a mais" das Negociações
+  if(cd.ajuste>0.005) itens.push(e("button",{type:"button", key:"aj", title:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50 hover:brightness-125"},
+    e(Ph,{n:"plus-circle", s:13}), "Diferença enviada a mais: ", e("b",null, brl(cd.ajuste)), " · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : "")));
+  cd.descVeio.forEach(function(x){ itens.push(e("span",{key:"dv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"minus-circle", s:13}), "Desconto de ", e("b",null, brl(x.valor)), " · enviado a mais em "+dm(x.chave))); });
+  // antes de novembro/2026 (ou com maquininha): fica só o aviso
+  if(cd.excPix>0.005) itens.push(e("span",{key:"exc", className:"inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 ring-1 ring-destructive/50"},
+    e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix))));
+  return itens.length ? e("div",{className:"flex flex-wrap items-center justify-center gap-2 text-[13px]"}, itens) : null;
+}
+
 // ───────────── uma data de pagamento = uma linha da tabela do fornecedor (a lista de pagamentos abre embaixo dela) ─────────────
 function LinhaData(p){
   var cd = p.cd, c = p.c, aberto = p.abertos[cd.chave], ir = function(aba){ c.d({type:"ABA", aba:aba}); }, pode = c.edita;
@@ -80,7 +149,7 @@ function LinhaData(p){
   var linha = e("tr",{key:cd.chave, className:LINHA+" "+corLinha},
     p.forn && e(Td,{forte:true, className:"text-left"}, p.forn),
     e(Td,null, e("b",null, dbr(cd.limite)), e("div",{className:"text-[11px] font-normal leading-tight text-muted-foreground"}, "fecha "+dbr(cd.fim))),
-    e(Td,{className:"whitespace-normal!"}, e("div",{className:"flex flex-wrap items-center justify-center gap-1"}, e(Chip,{s:cd.status}), e(Chip,{s:cd.prazo}), cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" a conferir"))),
+    e(Td,{className:"whitespace-normal!"}, e("div",{className:"flex flex-wrap items-center justify-center gap-1"}, e(Chip,{s:cd.status}), cd.prazo && e(Chip,{s:cd.prazo}), cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" a conferir"))),
     e(Td,{dinheiro:true, forte:true}, e("button",{type:"button", title:"Ver o detalhe das parcelas nas Negociações", onClick:function(){ ir("pfneg"); }, className:"hover:underline"}, brl(cd.total))),
     e(Td,{dinheiro:true, cor:"ok"}, brl(cd.pago)),
     e(Td,{dinheiro:true, forte:true, cor:cd.aberto>0.005 ? "ruim" : "ok"}, brl(cd.aberto)),
@@ -90,10 +159,12 @@ function LinhaData(p){
       e(Bt,{tipo:cd.aberto<=0.005 ? "ok" : "normal", ic:"link", titulo:cd.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor", onClick:function(){ p.enviar(cd.chave); }}),
       e(Bt,{ic:aberto ? "caret-up" : "caret-down", titulo:aberto ? "Ocultar pagamentos" : "Ver pagamentos lançados", onClick:function(){ p.alt(cd.chave); }}, String(cd.lancs.length)))));
   var extra = [];
+  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.ajuste>0.005 || cd.descVeio.length || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
   if(cd.mq>0.005 && !aberto) extra.push(e("tr",{key:cd.chave+"mq"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"},
     e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
       "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
   if(aberto) extra.push(e("tr",{key:cd.chave+"ls"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(ListaPagamentos,{cd:cd, c:c, f:p.filtros[cd.chave]||{}, setF:function(n){ p.setFiltro(cd.chave, n); }}))));
+  if(aberto && porPedidoAtivo(c.pf, parseInt(cd.chave.split("|")[0]))) extra.push(e("tr",{key:cd.chave+"pd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(BlocoPedidos,{c:c, chave:cd.chave}))));   // área "Pedidos" (19/11/2026)
   return [linha].concat(extra);
 }
 
@@ -114,16 +185,28 @@ function BlocoForn(p){
 function ModalLancar(p){
   var c = p.c, chave = p.chave, j = janelaPorChave(c.pf, chave), f = c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); });
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
-  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", arq:null}), v = st[0], setV = st[1];
+  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
+  var porPed = !!f && porPedidoAtivo(c.pf, f.id), sAl = useState([]), alocs = sAl[0];   // "Este pagamento se refere a:" (só fornecedor com a opção ligada)
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
+  // pago a mais: de novembro/2026 em diante a dívida da data sobe sozinha ("Diferença enviada a mais"); antes disso fica só o aviso
+  var vNum = parseFloat(v.valor), excV = vNum>aberto+0.005 ? Math.round((vNum-aberto)*100)/100 : 0, ajusta = excV && ajustaExcesso(c.pf, chave);
+  var avisoValor = !excV ? null
+    : e("div",{className:"rounded-lg px-3 py-2 text-center text-[13px] "+(ajusta ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-destructive/15 ring-1 ring-destructive/50")},
+        ajusta ? e("div",null, "Diferença enviada a mais: ", e("b",null, brl(excV)), ". A dívida desta data sobe de "+brl(j ? j.total : 0)+" para ", e("b",null, brl((j ? j.total : 0)+excV)), ".")
+          : e("div",null, "Passou do total em ", e("b",null, brl(excV)), ". Fica só o aviso na linha."));
+  // pagou menos do que falta: manter o saldo em aberto nesta data ou passar a diferença para a 1ª data do mês seguinte
+  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos && j && j.limite<hojeIso() ? destinoSaldo(c.pf, chave) : null;   // só depois de vencida
+  var escolhaSaldo = !dst ? null
+    : e("div",{className:"flex flex-col items-center gap-1.5 rounded-lg bg-black/25 px-3 py-2 text-center text-[13px]"},
+        e("div",null, "Falta ", e("b",{style:{color:COR.red}}, brl(difMenos)), " nesta data"),
+        e(Segmentado,{opcoes:[["manter","Manter em aberto"], ["adiar","Passar para "+dbr(dst.limite)]], atual:v.adiar, onMudar:function(x){ set("adiar", x); }}));
   var salvar = function(){
     var valor = parseFloat(v.valor);
     if(!valor || valor<=0) return aviso(c, "Informe o valor pago.", "alerta");
     if(!v.data) return aviso(c, "Informe a data do pagamento.", "alerta");
     var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora.", "alerta");
-    var ex = lancExcedente(c.pf, chave, valor);
-    if(ex.passa && !window.confirm("O valor ultrapassa o que falta nesta data (saldo de "+brl(ex.aberto)+"). Lançar mesmo assim?")) return;
-    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), forcar:true};
+    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
+    if(porPed && alocs.length){ var cfA = lerAlocs(c.pf, f.id, valor, paraAcao(alocs), null); if(cfA.erro) return aviso(c, cfA.erro, "alerta"); base.alocs = cfA.alocs; }   // um registro só; a divisão vai junto
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
       // guarda o id do arquivo no lançamento recém-criado
@@ -131,8 +214,8 @@ function ModalLancar(p){
       p.fechar(chave);
     };
     if(!arq) return gravar("");
-    var id = "pfc-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
-    salvarArquivo(id, arq).then(function(){ gravar(id); }, function(){ aviso(c, "Não foi possível guardar o comprovante. O pagamento será lançado sem anexo.", "alerta"); arq = null; gravar(""); });
+    // o comprovante vai para o SERVIDOR (todo mundo abre, em qualquer computador); só foto ou PDF (Marcus, 16/11/2026)
+    lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ base.arqKey = sv.key; gravar(""); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"O pagamento será lançado sem anexo.", "alerta"); arq = null; gravar(""); });
   };
   return e(Modal,{t:"Lançar pagamento", fechar:function(){ p.fechar(null); },
     sub:e("span",null, (f ? f.nome : "")+" · pagamento de ", e("b",null, dbr(chave.split("|")[1])), " · falta ", e("b",{style:{color:COR.red}}, brl(aberto)), " de "+brl(j ? j.total : 0))},
@@ -140,12 +223,16 @@ function ModalLancar(p){
       e(Campo,{rot:"Data"}, e(Txt,{type:"date", value:v.data, label:"Data", onChange:function(x){ set("data", x); }})),
       e(Campo,{rot:"Nome da revendedora"}, e(Txt,{value:v.rev, label:"Nome da revendedora", ph:"Ex.: Ana Paula de Lima", onChange:function(x){ set("rev", x); }})),
       e(Campo,{rot:"Valor (R$)"}, e(Dinheiro,{out:"ponto", value:v.valor, label:"Valor", onChange:function(x){ set("valor", x); }})),
-      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }}))),
+      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }})),
+      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", ph:"Chave que recebeu o Pix", onChange:function(x){ set("chavePix", x); }}))),
     e(Campo,{rot:"Comprovante de pagamento"},
       e("div",{className:"flex flex-wrap items-center gap-3 rounded-lg bg-black/25 px-3 py-2"},
         e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[12.5px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), "Selecionar arquivo",
           e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
         e("span",{className:"text-[12.5px] "+(v.arq ? "" : "text-muted-foreground")}, v.arq ? v.arq.name : "Nenhum arquivo selecionado"))),
+    porPed && e(IdentPedidos,{c:c, fid:f.id, valor:v.valor, alocs:alocs, setAlocs:sAl[1], lancId:null}),
+    avisoValor,
+    escolhaSaldo,
     e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:function(){ p.fechar(null); }}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Lançar pagamento")));
 }
 
@@ -154,19 +241,29 @@ function ModalAcerto(p){
   var c = p.c, pf = c.pf, chave = p.chave, parte = chave.split("|"), f = pf.fornecedores.find(function(x){ return x.id===parseInt(parte[0]); }), j = janelaPorChave(pf, chave);
   var cd = cartoesLancamento(pf, j ? j.mes : mesAtual()).grupos.reduce(function(a, g){ return a || g.cards.find(function(k){ return k.chave===chave; }); }, null);
   var ms = useState(""), msg = ms[0], setMsg = ms[1];
-  var total = j ? j.total : 0, pago = Math.min(pagoJanela(pf, chave), total), falta = total-pago, ls = cd ? cd.lancs : [], comComp = ls.filter(function(l){ return l.arqId || l.arqData; }).length;
-  var link = linkDoAcerto(pf, chave);
-  var abrir = function(){ var w = window.open("", "_blank"); montarExtrato(pf, chave).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})); if(w) w.location.href = u; else window.open(u, "_blank"); setTimeout(function(){ URL.revokeObjectURL(u); }, 60000); }); };
-  var baixar = function(){ montarExtrato(pf, chave).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})), a = document.createElement("a"); a.href = u; a.download = nomeArquivoExtrato(pf, chave); document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500); aviso(c, "Arquivo do acerto baixado"); }); };
+  var total = j ? j.total : 0, pago = Math.min(pagoJanela(pf, chave), total), falta = total-pago, ls = cd ? cd.lancs : [], comComp = ls.filter(function(l){ return l.arqId || l.arqKey || l.arqData; }).length;
+  var lk = useLinkConferencia(pf, chave), link = lk.link;
+  // "Conteúdo do relatório" (19/11/2026): só para fornecedor com a opção ligada; "Fechamento completo" continua o padrão e igual a hoje
+  var porPed = !!f && porPedidoAtivo(pf, f.id), sCt = useState("completo"), sIds = useState([]);
+  var escopo = porPed && e(EscopoRelatorio,{c:c, fid:f.id, fnome:f.nome, chave:chave, conteudo:sCt[0], setConteudo:sCt[1], ids:sIds[0], setIds:sIds[1]});
+  if(porPed && sCt[0]!=="completo") return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar, sub:e("span",null, f.nome+" · relatório por pedido")}, escopo, e("div",{className:"flex justify-end"}, e(Bt,{onClick:p.fechar}, "Fechar")));
+  // Ver e Baixar usam a MESMA página do link público (18/11/2026): o que se vê aqui é o que o fornecedor vê
+  var abrir = function(){ if(!link) return aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta"); window.open(link, "_blank", "noopener"); };
+  var baixar = function(){
+    if(!link) return aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta");
+    fetch(link).then(function(r){ if(!r.ok) throw new Error(); return r.text(); }).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})), a = document.createElement("a"); a.href = u; a.download = nomeArquivoExtrato(pf, chave); document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500); },
+      function(){ aviso(c, "Não consegui baixar a página do acerto. Tente de novo.", "alerta"); });
+  };
   return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar,
     sub:e("span",null, (f ? f.nome : "")+" · acerto de ", e("b",null, dbr(parte[1])), " — "+ls.length+" Pix, "+comComp+" com comprovante · ", falta>0.005 ? e("b",{style:{color:COR.red}}, brl(falta)+" ainda em aberto") : e("b",{style:{color:COR.green}}, "quitado"))},
+    escopo,
     falta>0.005 && e("div",{className:"flex items-start gap-2 rounded-xl border border-[#3B82F6]/50 bg-[#3B82F6]/10 px-4 py-2.5 text-[13.5px] font-medium"}, e(Ph,{n:"warning", s:18}), "Este acerto ainda não está quitado — o fornecedor verá os Pix já enviados e o saldo em aberto."),
     e(Campo,{rot:"Link de conferência (somente leitura)"},
-      e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link, "aria-label":"Link de conferência", className:INPUT+" h-10! min-w-0 flex-1", onFocus:function(ev){ ev.target.select(); }}),
+      e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link || (lk.erro ? "Não consegui gerar o link: "+lk.erro : "Gerando o link…"), "aria-label":"Link de conferência", className:INPUT+" h-8! min-w-0 flex-1 text-[13px]!", onFocus:function(ev){ ev.target.select(); }}),
         e(Bt,{ic:"copy", onClick:function(){ copiar(link).then(function(){ aviso(c, "Link copiado"); }); }}, "Copiar"))),
     e("div",{className:"flex flex-wrap gap-2"},
       e(Bt,{ic:"eye", onClick:abrir}, "Ver como o fornecedor vê"), e(Bt,{ic:"download-simple", onClick:baixar}, "Baixar HTML"),
-      e(Bt,{ic:"chat-circle-dots", onClick:function(){ setMsg(msgWhatsApp(pf, chave)); }}, "Gerar mensagem"),
+      e(Bt,{ic:"chat-circle-dots", onClick:function(){ setMsg(msgWhatsApp(pf, chave, link)); }}, "Gerar mensagem"),
       msg && e(Bt,{tipo:"ok", ic:"copy", onClick:function(){ copiar(msg).then(function(){ aviso(c, "Mensagem copiada"); }); }}, "Copiar mensagem")),
     msg && e("textarea",{rows:10, value:msg, "aria-label":"Mensagem de WhatsApp", className:INPUT+" h-auto! py-2 text-[13px]", onChange:function(ev){ setMsg(ev.target.value); }}),
     e("p",{className:"text-[12px] text-muted-foreground"}, "A página mostra só o fechamento desta data — total do período, cada Pix e os comprovantes. Não dá acesso a nenhuma outra informação do sistema."),
@@ -200,6 +297,7 @@ function Consolidado(p){
 }
 
 // ───────────── a tela ─────────────
+var COMP_TENTADOS = {};   // id do Pix → já tentou subir o comprovante nesta sessão
 function AbaPfLanc(){
   var c = usePf(), pf = c.pf, mm = useMesLanc(), mes = mm[0], setMes = mm[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1], sf = useState({}), filtros = sf[0], setFiltros = sf[1];
@@ -209,7 +307,21 @@ function AbaPfLanc(){
   var setFiltro = function(k, f){ var n = Object.assign({}, filtros); n[k] = f; setFiltros(n); };
   var lancar = function(k){ setModalLanc(k); };
   var fecharLanc = function(k){ setModalLanc(null); if(k){ var n = Object.assign({}, abertos); n[k] = true; setAbertos(n); } };
-  var enviar = function(k){ op(c, "token_acerto", {chave:k}); setModalAcerto(k); };
+  var enviar = function(k){ setModalAcerto(k); };   // o link é pedido ao servidor dentro da janela (18/11/2026)
+  // comprovantes antigos guardados SÓ neste navegador sobem para o servidor (18/11/2026), um por vez, uma vez por sessão: o link do fornecedor passa a mostrá-los
+  useEffect(function(){
+    if(!c.edita) return;
+    var fila = pf.lancamentos.filter(function(l){ return l.arqId && !l.arqKey && !COMP_TENTADOS[l.id]; }); if(!fila.length) return;
+    var feitos = [], p = Promise.resolve();
+    fila.forEach(function(l){ COMP_TENTADOS[l.id] = true; p = p.then(function(){
+      return obterArquivo(l.arqId).then(function(blob){
+        if(!blob) return null;
+        var arq = new File([blob], l.arqNome || "comprovante", {type:blob.type || l.arqTipo || ""});
+        return lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ feitos.push({id:l.id, arqKey:sv.key}); });
+      }).catch(function(){ return null; });
+    }); });
+    p.then(function(){ if(feitos.length) op(c, "lanc_comp_srv", {itens:feitos}); });
+  }, [pf.lancamentos.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   var bloco = function(g){ return e(BlocoForn,{key:g.f.id, g:g, c:c, abertos:abertos, filtros:filtros, setFiltro:setFiltro, alt:alt, lancar:lancar, enviar:enviar}); };
   return e(Pagina,null,
     e(PageHead,{t:"Lançamento de Pagamentos", sub:"Pix (sem NF) do mês, por fornecedor e data de acerto"},

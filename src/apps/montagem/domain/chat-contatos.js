@@ -75,7 +75,8 @@ function contatoDaRepresentante(nome){ var q = sem(nome); var c = CONTATOS.find(
 function rotuloCurto(id){ var c = POR_ID[id]; if(!c) return "?"; var t = c.completo.split(" "); return primeiros[t[0]]>1 && t[1] ? t[0]+" "+t[1] : t[0]; }
 // a revendedora do app vira contato do chat (id v_nome) para poder conversar com os setores
 function registrarRevendedora(nome){ var idc = "v_"+sem(nome).replace(/ /g,""); if(!POR_ID[idc]){ var c = {id:idc, nome:nome, completo:nome, setor:"Revendedoras", funcao:"Revendedora", tipo:"rev", cor:CORES[hash(idc)%CORES.length], setorCurto:"Revendedora", titulo:nome+" - Revendedora"}; CONTATOS.push(c); POR_ID[idc] = c; } return idc; }
-function contato(id){ return POR_ID[id] || {id:id, nome:"Contato", titulo:"Contato", completo:"Contato", setor:"", setorCurto:"", tipo:"func", cor:"#8696A0"}; }
+function contato(id){ if(id==="sistema") return {id:id, nome:"Aviso automático", titulo:"Aviso automático", completo:"Aviso automático", setor:"", setorCurto:"", tipo:"sistema", cor:"#3B82F6"};   // avisos automáticos (Compras, 18/11/2026)
+  return POR_ID[id] || {id:id, nome:"Contato", titulo:"Contato", completo:"Contato", setor:"", setorCurto:"", tipo:"func", cor:"#8696A0"}; }
 function iniciais(nome){ var p = String(nome||"?").split(/\s+/).filter(Boolean); return ((p[0]||"?")[0] + (p.length>1 ? p[p.length-1][0] : "")).toUpperCase(); }
 // presença de demonstração: estável por pessoa; em produção virá do servidor (WebSocket)
 function presenca(id){ var h = hash(id); return {online: h%100 < 58, visto: Date.now() - (h%420)*60000}; }
