@@ -2913,3 +2913,13 @@ Marcus: "é estoque, algo assim" e "arruma os pagamentos". Estoque com a Dávila
 
 ## 19/11/2026 · Dias travados
 Marcus: "trava os dias pra ninguém poder mexer". A funcionária só lança hoje e o dia útil anterior; dia antigo só a Diretoria altera; dia já lançado da funcionária também fica travado. Vale no cálculo (diaAbertoFuncionaria) e na tela. SÓ FUNCIONA NO SITE DEPOIS DE PUBLICAR (o site no ar é a versão antiga).
+
+## 19/11/2026 — Pagamentos a fornecedores: controle e relatório por pedido (Nickolas, v0.21.35)
+- **Opção por fornecedor** `f.porPedido` ("Permitir identificação de pagamentos e relatórios por pedido"): desligada por padrão; ligada só na **Xangai (fornecedor id 23)**. Liga/desliga com histórico (`porPedidoHist`); desligar não apaga vínculos.
+- **Pedidos = as Negociações já lançadas** (`pf.pedidos`): é das parcelas Sem NF delas que sai a dívida do acerto. O controle por pedido não soma dívida; não existe "pedido manual" fora das Negociações. Campos novos opcionais do pedido: `condicoes`, `obs`, `descricao` e `compraId` (pedido do módulo Compras), op `pedido_info`.
+- **Pagamento único:** o Pix continua um registro e um comprovante; ganha `l.alocs = [{pedidoId, valor, adiant}]`. Soma destinada ≤ valor do Pix; o resto é "Valor sem identificação de pedido"; passar do saldo do pedido só com `adiant` (adiantamento/crédito). Nada é distribuído sozinho. Identificar depois: op `lanc_pedidos`, com `pedHist`; não muda a conferência.
+- **Saldo do pedido** = valor do pedido − ajustes identificados − Pix identificados − parcelas com NF marcadas pagas. A baixa automática das parcelas por ordem de vencimento (acerto geral) continua igual e NÃO entra no relatório por pedido.
+- **Ajuste:** desconto da maquininha de uma data pode ser marcado como do pedido ou "acerto geral" (`pf.ajustesPed["mq|chave"]`), sem novo abatimento. A "Diferença enviada a mais" fica no acerto geral.
+- **Relatório por pedido** (`lib/relatorio-pedidos-pf.js`): só os pedidos escolhidos, Pix dividido mostra o valor total da transferência e o valor destinado, junta pagamentos de acertos diferentes e mostra o período, com o aviso de escopo exclusivo. Mensagem sem o saldo geral.
+- **Link restrito:** `/acerto/<código>` (código de 20 caracteres em `pf.linksPedido`, escopo = fornecedor + pedidos), somente leitura, comprovantes só dos Pix ligados aos pedidos (`/acerto/<código>/comprovante/<id>`). O link completo antigo (`tokensAcerto`, acertos.sorelly.com.br) não mudou.
+- Teste: `scripts/testar-por-pedido-pf.mjs` (42 verificações).

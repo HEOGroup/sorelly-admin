@@ -100,7 +100,7 @@ function pfDeDados(d){   // converte o formato do arquivo local (seqL, seqF...) 
   d = JSON.parse(JSON.stringify(d||{}));
   var v = pfVazio();
   ["fornecedores","pedidos","pagamentos","lancamentos","mqPassadas","mqBaixas"].forEach(function(k){ if(Array.isArray(d[k])) v[k] = d[k]; });
-  ["acertos","tokensAcerto","mqFech","mqDist","ptBoleto","ptAberto"].forEach(function(k){ if(d[k] && typeof d[k]==="object") v[k] = d[k]; });
+  ["acertos","tokensAcerto","mqFech","mqDist","ptBoleto","ptAberto","ajustesPed","linksPedido"].forEach(function(k){ if(d[k] && typeof d[k]==="object") v[k] = d[k]; });
   if(d.ptSaldoIni!=null) v.ptSaldoIni = d.ptSaldoIni;
   if(d.mqFornId) v.mqFornId = d.mqFornId;
   v.seq = {L:d.seqL||1, F:d.seqF||1, P:d.seqP||d.seqPedidoInicial||1, Pg:d.seqPg||1, mqP:d.mqSeqP||1, mqB:d.mqSeqB||1};
@@ -1095,8 +1095,10 @@ function pfReduz(s, a){
       var fid = parseInt(a.chave.split("|")[0]);
       // o Pix fica todo na data escolhida (18/11/2026): o que passar do total vira o ajuste "Diferença enviada a mais" (ajustarExcessos)
       var jL = janelaPorChave(pf, a.chave), abL = jL ? r2(Math.max(0, jL.total-pagoJanela(pf, a.chave))) : 0, excL = r2(v-abL);
+      var alL = null; if(a.alocs && a.alocs.length){ if(!porPedidoAtivo(pf, fid)) return recusa("Este fornecedor não usa a identificação por pedido."); alL = lerAlocs(pf, fid, v, a.alocs, null); if(alL.erro) return recusa(alL.erro); }   // por pedido (19/11/2026)
       pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jL ? jL.mes : a.data.slice(0,7), limite:a.chave.split("|")[1], data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
         arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:""});
+      if(alL && alL.alocs.length){ var lN = pf.lancamentos[pf.lancamentos.length-1]; lN.alocs = alL.alocs; lN.pedHist = [{em:hojeIso(), por:a.por||"", antes:"sem identificação", depois:textoAlocs(pf, alL.alocs)}]; }
       var txtExc = excL>0.005 ? (ajustaExcesso(pf, a.chave) ? " · "+brl(excL)+" a mais: a dívida da data subiu ("+AJUSTE_NOME+")" : " · passou do total em "+brl(excL)) : "";
       // pagou menos que o que falta: escolha "passar a diferença para o mês seguinte"
       var difA = r2(abL-v);
@@ -1149,6 +1151,7 @@ function pfReduz(s, a){
         jE = janelaPorChave(pf, pE.chave);
         if(!jE || jE.fornId!==lE.fornId) return recusa("Escolha uma data de pagamento deste fornecedor.");
       }
+      if(alocado(lE)>r2(vE)+0.005) return recusa("Este pagamento tem "+brl(alocado(lE))+" destinado a pedidos. Ajuste a identificação dos pedidos antes de diminuir o valor.");
       var antesE = brl(lE.valor)+" · "+lE.revendedora+" · "+dmy(lE.data);
       if(pE.data!==undefined) lE.data = pE.data;
       if(pE.revendedora!==undefined) lE.revendedora = String(pE.revendedora).trim();
@@ -1165,6 +1168,42 @@ function pfReduz(s, a){
       l2.conferido = novo; l2.conferidoEm = novo ? (a.em||hojeIso()) : "";
       return ok(novo ? "Pagamento conferido — "+brl(l2.valor)+" · "+(l2.revendedora||"") : "Conferência desfeita — voltou para Aguardando"); }
     case "token_acerto": { tokenAcerto(pf, a.chave); return ok("Link gerado"); }
+
+    // ---- CONTROLE POR PEDIDO (19/11/2026) ----
+    case "forn_por_pedido": {   // liga/desliga por fornecedor; desligar NÃO apaga vínculos nem histórico
+      var fP = F(a.id); if(!fP) return recusa("Fornecedor não encontrado."); var liga = !!a.ativo; if(!!fP.porPedido===liga) return recusa("");
+      fP.porPedido = liga; (fP.porPedidoHist = fP.porPedidoHist||[]).push({em:hojeIso(), por:a.por||"", ativo:liga});
+      return ok(liga ? "Identificação por pedido ativada para "+fP.nome : "Identificação por pedido desativada para "+fP.nome+" (os vínculos ficam guardados)");
+    }
+    case "lanc_pedidos": {   // identifica ou corrige para quais pedidos foi o dinheiro de um pagamento já lançado. Não confere e não muda valor
+      var lP = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!lP) return recusa("Pagamento não encontrado.");
+      if(!porPedidoAtivo(pf, lP.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+      var alP = lerAlocs(pf, lP.fornId, lP.valor, a.alocs||[], lP.id); if(alP.erro) return recusa(alP.erro);
+      var antesP = textoAlocs(pf, lP.alocs), depoisP = textoAlocs(pf, alP.alocs); if(antesP===depoisP) return recusa("");
+      if(alP.alocs.length) lP.alocs = alP.alocs; else delete lP.alocs;
+      (lP.pedHist = lP.pedHist||[]).push({em:hojeIso(), por:a.por||"", antes:antesP, depois:depoisP});
+      return ok("Pagamento de "+brl(lP.valor)+": "+depoisP+(alP.resto>0.005 ? " · "+brl(alP.resto)+" sem identificação de pedido" : ""));
+    }
+    case "ajuste_pedido": {   // desconto da maquininha de uma data: do pedido X ou do acerto geral. Só identifica (não abate de novo)
+      var jA = janelaPorChave(pf, a.chave); if(!jA) return recusa("Data não encontrada."); if(!porPedidoAtivo(pf, jA.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+      if(!(mqAplicado(pf, a.chave)>0.005)) return recusa("Esta data não tem desconto para identificar.");
+      var pidA = a.pedidoId==null || a.pedidoId==="" || a.pedidoId==="geral" ? "geral" : parseInt(a.pedidoId);
+      if(pidA!=="geral" && !jA.itens.some(function(l){ return l.pd.id===pidA; })) return recusa("Escolha um pedido deste acerto.");
+      pf.ajustesPed = pf.ajustesPed||{}; pf.ajustesPed["mq|"+a.chave] = {pedidoId:pidA, por:a.por||"", em:hojeIso()};
+      return ok(pidA==="geral" ? "Desconto marcado como do acerto geral" : "Desconto identificado no pedido");
+    }
+    case "pedido_info": {   // dados do pedido para o controle por pedido: descrição, condições, observações e vínculo com a compra. NÃO mexe em valores
+      var pI = ped(a.id); if(!pI) return recusa("Pedido não encontrado.");
+      ["descricao","condicoes","obs"].forEach(function(k){ if(a[k]!==undefined){ var t = String(a[k]||"").trim(); if(t) pI[k] = t; else delete pI[k]; } });
+      if(a.compraId!==undefined){ if(a.compraId==null || a.compraId==="") delete pI.compraId; else pI.compraId = a.compraId; }
+      return ok("Dados do pedido "+pI.numero+" salvos");
+    }
+    case "link_pedidos": {   // link só dos pedidos escolhidos (somente leitura)
+      var fL = F(a.fornId); if(!fL || !fL.porPedido) return recusa("Este fornecedor não usa a identificação por pedido.");
+      var idsL = (a.pedidos||[]).map(Number).filter(function(id){ var p = ped(id); return p && p.fornId===fL.id && !p.ajusteChave && !p.auto; });
+      if(!idsL.length) return recusa("Escolha pelo menos um pedido.");
+      tokenPedidos(pf, fL.id, idsL, a.por); return ok("Link dos pedidos gerado");
+    }
 
     // ---- fornecedor (salvarFornecedor / excluirFornecedor / addFornRapido)
     case "forn_add": {
@@ -1448,6 +1487,75 @@ function pfReduz(s, a){
   return recusa("Ação desconhecida: "+a.op);
 }
 
+// ---------- CONTROLE E RELATÓRIO POR PEDIDO (19/11/2026; ativado por fornecedor: f.porPedido, começa só na Xangai) ----------
+// Os PEDIDOS são as Negociações já lançadas (pf.pedidos): é delas que sai a dívida de cada acerto. Nada aqui soma dívida de novo.
+// Cada Pix (lançamento) continua UM registro com UM comprovante; só ganha l.alocs = [{pedidoId, valor, adiant}] dizendo para qual pedido foi o dinheiro.
+// O que não foi identificado fica "Valor sem identificação de pedido". Nada é distribuído sozinho. Identificar não confere o Pix nem marca parcela paga.
+// Ajuste (desconto da maquininha numa data) pode ser marcado como do pedido ou do acerto geral (pf.ajustesPed["mq|"+chave]); isso não cria abatimento novo.
+function porPedidoAtivo(pf, fid){ var f = forn(pf, fid); return !!(f && f.porPedido); }
+function pedidosDoForn(pf, fid){ return pf.pedidos.filter(function(pd){ return pd.fornId===fid && !pd.ajusteChave && !pd.auto; }).sort(function(a, b){ return String(a.data).localeCompare(String(b.data)) || a.id-b.id; }); }
+function alocado(l){ return r2(soma(l.alocs||[], function(x){ return x.valor; })); }
+function semIdent(l){ return r2(Math.max(0, l.valor-alocado(l))); }
+// pagamentos ligados a um pedido (de qualquer acerto ou mês): [{l, valor (destinado), total (da transferência), adiant}]
+function pagosDoPedido(pf, pedidoId){
+  var out = [];
+  pf.lancamentos.forEach(function(l){ (l.alocs||[]).forEach(function(x){ if(x.pedidoId===pedidoId) out.push({l:l, valor:x.valor, total:l.valor, adiant:!!x.adiant}); }); });
+  return out.sort(function(a, b){ return String(a.l.data).localeCompare(String(b.l.data)) || a.l.id-b.l.id; });
+}
+function ajustesDoPedido(pf, pedidoId){
+  var out = [], m = pf.ajustesPed||{};
+  Object.keys(m).forEach(function(k){ if(m[k] && m[k].pedidoId===pedidoId && k.indexOf("mq|")===0){ var ch = k.slice(3), v = r2(mqAplicado(pf, ch)); if(v>0.005) out.push({chave:k, rotulo:"Desconto da maquininha (acerto de "+dbr(ch.split("|")[1])+")", valor:v}); } });
+  return out;
+}
+// resumo de um pedido: valor original, parte Pix e parte com NF, ajustes identificados, pago identificado e saldo em aberto
+function resumoPedidoPf(pf, pedidoId){
+  var pd = pf.pedidos.find(function(x){ return x.id===pedidoId; }); if(!pd) return null;
+  var parc = pd.parcelas.map(function(p, idx){ return {p:p, idx:idx, sem:!!(FORMAS[p.forma] && FORMAS[p.forma].nf==="sem")}; });
+  var pix = r2(soma(parc.filter(function(x){ return x.sem; }), function(x){ return x.p.valor; })), nf = r2(soma(parc.filter(function(x){ return !x.sem; }), function(x){ return x.p.valor; }));
+  var nfPago = r2(soma(parc.filter(function(x){ return !x.sem && x.p.status==="Pago"; }), function(x){ return x.p.valor; }));
+  var pagos = pagosDoPedido(pf, pedidoId), pagoPixId = r2(soma(pagos, function(x){ return x.valor; })), ajs = ajustesDoPedido(pf, pedidoId), ajTot = r2(soma(ajs, function(x){ return x.valor; }));
+  var saldoPix = r2(pix-ajTot-pagoPixId), saldoNf = r2(nf-nfPago), datas = [pd.data].concat(pagos.map(function(x){ return x.l.data; })).filter(Boolean).sort();
+  return {pd:pd, valor:r2(pd.total), pix:pix, nf:nf, nfPago:nfPago, ajustes:ajs, ajustesTotal:ajTot, pagos:pagos, pagoIdentificado:r2(pagoPixId+nfPago), pagoPix:pagoPixId,
+    saldoPix:saldoPix, saldoNf:saldoNf, saldo:r2(saldoPix+saldoNf), periodo:{de:datas[0]||"", ate:datas[datas.length-1]||""},
+    acertos:janelasDoForn(pf, pd.fornId).filter(function(j){ return j.itens.some(function(l){ return l.pd.id===pedidoId; }); }).map(function(j){ return {chave:j.chave, limite:j.limite, valor:r2(soma(j.itens.filter(function(l){ return l.pd.id===pedidoId; }), function(l){ return l.p.valor; }))}; })};
+}
+// um acerto (data) por pedido: o que cada pedido tem nesta data, o que foi identificado e o que ainda não foi
+function acertoPorPedido(pf, chave){
+  var j = janelaPorChave(pf, chave); if(!j) return null;
+  var ids = []; j.itens.forEach(function(l){ if(!l.pd.ajusteChave && !l.pd.auto && ids.indexOf(l.pd.id)<0) ids.push(l.pd.id); });
+  var ls = lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), pago = r2(soma(ls, function(l){ return l.valor; })), ident = r2(soma(ls, alocado));
+  var ajuste = r2(soma(j.itens.filter(function(l){ return l.pd.ajusteChave; }), function(l){ return l.p.valor; })), mq = r2(mqAplicado(pf, chave)), mqDe = (pf.ajustesPed||{})["mq|"+chave] || null;
+  return {j:j, pedidos:ids.map(function(id){ var r = resumoPedidoPf(pf, id); r.nesteAcerto = r2(soma(j.itens.filter(function(l){ return l.pd.id===id; }), function(l){ return l.p.valor; })); return r; }),
+    pago:pago, identificado:ident, naoIdentificado:r2(pago-ident), semPedido:ls.filter(function(l){ return semIdent(l)>0.005; }).length, ajuste:ajuste, mq:mq, mqDe:mqDe};
+}
+// confere a divisão de um pagamento entre pedidos. lancId = lançamento que está sendo identificado (fica fora da conta do saldo)
+function lerAlocs(pf, fid, valorPix, alocs, lancId){
+  var out = [], vistos = {};
+  for(var i = 0; i<(alocs||[]).length; i++){
+    var x = alocs[i], pid = parseInt(x.pedidoId), v = r2(num(x.valor)); if(!(v>0)) continue;
+    var pd = pf.pedidos.find(function(p){ return p.id===pid; });
+    if(!pd || pd.fornId!==fid || pd.ajusteChave || pd.auto) return {erro:"Pedido não encontrado neste fornecedor."};
+    if(vistos[pid]) return {erro:"O pedido "+pd.numero+" aparece duas vezes."}; vistos[pid] = 1;
+    var r = resumoPedidoPf(pf, pid), jaOutros = r2(soma(pagosDoPedido(pf, pid).filter(function(y){ return y.l.id!==lancId; }), function(y){ return y.valor; })), saldo = r2(r.pix-r.ajustesTotal-jaOutros);
+    if(v>saldo+0.005 && !x.adiant) return {erro:"O pedido "+pd.numero+" tem "+brl(Math.max(0, saldo))+" em aberto. Para destinar "+brl(v)+", marque o excedente como adiantamento/crédito.", saldo:true};
+    out.push({pedidoId:pid, valor:v, adiant:!!x.adiant && v>saldo+0.005});
+  }
+  var tot = r2(soma(out, function(x){ return x.valor; }));
+  if(tot>r2(valorPix)+0.005) return {erro:"A soma destinada aos pedidos ("+brl(tot)+") passa do valor do pagamento ("+brl(valorPix)+")."};
+  return {alocs:out, total:tot, resto:r2(valorPix-tot)};
+}
+function textoAlocs(pf, alocs){ return (alocs||[]).length ? alocs.map(function(x){ var pd = pf.pedidos.find(function(p){ return p.id===x.pedidoId; }); return (pd ? pd.numero : "pedido "+x.pedidoId)+" "+brl(x.valor)+(x.adiant ? " (adiantamento)" : ""); }).join(" + ") : "sem identificação"; }
+// link do relatório por pedido: um código por escopo (fornecedor + pedidos escolhidos). Muda o pf.
+function tokenPedidos(pf, fid, ids, por){
+  var lista = ids.map(Number).filter(function(x){ return x>0; }).sort(function(a, b){ return a-b; }); pf.linksPedido = pf.linksPedido||{};
+  var ja = Object.keys(pf.linksPedido).find(function(t){ var x = pf.linksPedido[t]; return x.fornId===fid && x.pedidos.join(",")===lista.join(","); });
+  if(ja) return ja;
+  var b = new Uint8Array(20); globalThis.crypto.getRandomValues(b);
+  var t = Array.from(b, function(n){ return "abcdefghijkmnpqrstuvwxyz23456789".charAt(n%32); }).join("");
+  pf.linksPedido[t] = {fornId:fid, pedidos:lista, em:hojeIso(), por:por||""};
+  return t;
+}
+
 export {
   TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
@@ -1460,5 +1568,6 @@ export {
   mqPassadasDoMes, mqSomaPassadas, mqBruto, mqParcela, mqMesesDesconto, mqDescontoNoMes, mqOrigensDoMes, mqBaixasDoMes, mqBaixado, mqLinhas, mqColunas, mqMesesSel, semearBaixasMq,
   mqEhAuto, mqDisponivel, mqJanelasDoMes, mqOrdinal, mqManualNaJanela, mqDistribuicao, excedenteJanela, mqDistribuido, mqSobra, mqMesesComSaldo, mqMapaAplicado, mqAplicado, mqCandidatas,
   mqSincronizarBruto, mqPreviewFech, mqPreviewDist,
-  ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz
+  ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz,
+  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos
 };

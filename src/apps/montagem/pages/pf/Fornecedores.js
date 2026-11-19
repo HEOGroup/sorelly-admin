@@ -38,6 +38,10 @@ function ModalForn(p){
       e("label",{className:"flex flex-col gap-1 "+LBL}, (prest ? "Nome do prestador" : "Nome do fornecedor"), e("input",{value:nome, placeholder:"Ex.: Pontual", "aria-label":"Nome do fornecedor", className:INPUT+" h-10!", onChange:function(ev){ sNome[1](ev.target.value); }})),
       e("label",{className:"flex flex-col gap-1 "+LBL}, prest ? "Tipo de serviço" : "Categoria", e(Sel,{value:cat, label:"Categoria", className:"w-full", onChange:sCat[1]}, cats.map(function(x){ return e("option",{key:x, value:x}, x); }))),
       prest && e("label",{className:"flex flex-col gap-1 "+LBL}, "Vínculo com a Sorelly", e(Sel,{value:vinc, label:"Vínculo", className:"w-full", onChange:sVin[1]}, VINCULOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })))),
+    // CONTROLE POR PEDIDO (19/11/2026): desligado por padrão; liga/desliga na hora e fica no histórico. Desligar não apaga vínculos
+    f && !prest && e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black/25 px-3 py-2 text-[13px] font-semibold ring-1 ring-white/10"},
+      e("input",{type:"checkbox", checked:!!(c.pf.fornecedores.find(function(x){ return x.id===f.id; }) || f).porPedido, disabled:!c.edita, onChange:function(ev){ op(c, "forn_por_pedido", {id:f.id, ativo:ev.target.checked}); }}),
+      "Permitir identificação de pagamentos e relatórios por pedido"),
 
     e("div",{className:"mt-1 flex items-center gap-2 border-t border-border pt-3 text-[11px] font-bold uppercase tracking-[.12em] text-primary"}, e(Ph,{n:"calendar-blank", s:15}), "Ciclo de acerto — como este fornecedor é pago"),
     e("span",{className:LBL}, "Periodicidade"),

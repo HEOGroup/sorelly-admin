@@ -14,6 +14,8 @@ import { PageHead } from "@/apps/montagem/ui/page";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { e, useEffect, useState } from "@/shared/react";
+import { lerAlocs, porPedidoAtivo } from "@/apps/montagem/domain/pf";
+import { BlocoPedidos, EscopoRelatorio, IdentPedidos, MarcaPedidos, ModalIdent, paraAcao } from "@/apps/montagem/pages/pf/PorPedido";   // controle por pedido (19/11/2026), só fornecedor com a opção ligada
 
 // botão pequeno com texto (tipos: normal, forte, ok, conf, perigo)
 var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#3B82F6] text-black hover:bg-[#FBBF24]", ok:"bg-[#22C55E]/25 text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35", conf:"bg-[#3B82F6]/25 text-[#93C5FD] ring-1 ring-[#3B82F6]/50 hover:bg-[#3B82F6]/35", perigo:"bg-destructive/20 text-destructive hover:bg-destructive/30"};
@@ -71,7 +73,7 @@ function ModalEditar(p){
 }
 
 function ItemLanc(p){
-  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1];
+  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1], si = useState(false), porPed = porPedidoAtivo(c.pf, l.fornId) || (l.alocs || []).length>0;
   var comp = l.arqKey
     ? e("button",{type:"button", title:l.arqNome, onClick:function(){ abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-bold hover:underline"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
     : l.arqId
@@ -92,6 +94,8 @@ function ItemLanc(p){
       // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
       !l.auto && e(Bt,{ic:"pencil-simple", disabled:!c.edita || l.conferido, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Conferido: desfaça a conferência para alterar" : "Alterar este pagamento", onClick:function(){ setEditando(true); }}, "Editar"),
       editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
+      porPed && !l.auto && e(MarcaPedidos,{c:c, l:l, abrir:function(){ si[1](true); }}),   // para qual pedido foi o dinheiro (não confere o pagamento)
+      si[0] && e(ModalIdent,{c:c, l:l, fechar:function(){ si[1](false); }}),
       e(Bt,{tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:c.edita ? "" : "Só financeiro e diretoria", onClick:function(){
         if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return;
         op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),
@@ -160,6 +164,7 @@ function LinhaData(p){
     e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
       "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
   if(aberto) extra.push(e("tr",{key:cd.chave+"ls"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(ListaPagamentos,{cd:cd, c:c, f:p.filtros[cd.chave]||{}, setF:function(n){ p.setFiltro(cd.chave, n); }}))));
+  if(aberto && porPedidoAtivo(c.pf, parseInt(cd.chave.split("|")[0]))) extra.push(e("tr",{key:cd.chave+"pd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(BlocoPedidos,{c:c, chave:cd.chave}))));   // área "Pedidos" (19/11/2026)
   return [linha].concat(extra);
 }
 
@@ -181,6 +186,7 @@ function ModalLancar(p){
   var c = p.c, chave = p.chave, j = janelaPorChave(c.pf, chave), f = c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); });
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
   var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
+  var porPed = !!f && porPedidoAtivo(c.pf, f.id), sAl = useState([]), alocs = sAl[0];   // "Este pagamento se refere a:" (só fornecedor com a opção ligada)
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
   // pago a mais: de novembro/2026 em diante a dívida da data sobe sozinha ("Diferença enviada a mais"); antes disso fica só o aviso
   var vNum = parseFloat(v.valor), excV = vNum>aberto+0.005 ? Math.round((vNum-aberto)*100)/100 : 0, ajusta = excV && ajustaExcesso(c.pf, chave);
@@ -200,6 +206,7 @@ function ModalLancar(p){
     if(!v.data) return aviso(c, "Informe a data do pagamento.", "alerta");
     var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora.", "alerta");
     var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
+    if(porPed && alocs.length){ var cfA = lerAlocs(c.pf, f.id, valor, paraAcao(alocs), null); if(cfA.erro) return aviso(c, cfA.erro, "alerta"); base.alocs = cfA.alocs; }   // um registro só; a divisão vai junto
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
       // guarda o id do arquivo no lançamento recém-criado
@@ -223,6 +230,7 @@ function ModalLancar(p){
         e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[12.5px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), "Selecionar arquivo",
           e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
         e("span",{className:"text-[12.5px] "+(v.arq ? "" : "text-muted-foreground")}, v.arq ? v.arq.name : "Nenhum arquivo selecionado"))),
+    porPed && e(IdentPedidos,{c:c, fid:f.id, valor:v.valor, alocs:alocs, setAlocs:sAl[1], lancId:null}),
     avisoValor,
     escolhaSaldo,
     e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:function(){ p.fechar(null); }}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Lançar pagamento")));
@@ -235,6 +243,10 @@ function ModalAcerto(p){
   var ms = useState(""), msg = ms[0], setMsg = ms[1];
   var total = j ? j.total : 0, pago = Math.min(pagoJanela(pf, chave), total), falta = total-pago, ls = cd ? cd.lancs : [], comComp = ls.filter(function(l){ return l.arqId || l.arqKey || l.arqData; }).length;
   var lk = useLinkConferencia(pf, chave), link = lk.link;
+  // "Conteúdo do relatório" (19/11/2026): só para fornecedor com a opção ligada; "Fechamento completo" continua o padrão e igual a hoje
+  var porPed = !!f && porPedidoAtivo(pf, f.id), sCt = useState("completo"), sIds = useState([]);
+  var escopo = porPed && e(EscopoRelatorio,{c:c, fid:f.id, fnome:f.nome, chave:chave, conteudo:sCt[0], setConteudo:sCt[1], ids:sIds[0], setIds:sIds[1]});
+  if(porPed && sCt[0]!=="completo") return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar, sub:e("span",null, f.nome+" · relatório por pedido")}, escopo, e("div",{className:"flex justify-end"}, e(Bt,{onClick:p.fechar}, "Fechar")));
   // Ver e Baixar usam a MESMA página do link público (18/11/2026): o que se vê aqui é o que o fornecedor vê
   var abrir = function(){ if(!link) return aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta"); window.open(link, "_blank", "noopener"); };
   var baixar = function(){
@@ -244,6 +256,7 @@ function ModalAcerto(p){
   };
   return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar,
     sub:e("span",null, (f ? f.nome : "")+" · acerto de ", e("b",null, dbr(parte[1])), " — "+ls.length+" Pix, "+comComp+" com comprovante · ", falta>0.005 ? e("b",{style:{color:COR.red}}, brl(falta)+" ainda em aberto") : e("b",{style:{color:COR.green}}, "quitado"))},
+    escopo,
     falta>0.005 && e("div",{className:"flex items-start gap-2 rounded-xl border border-[#3B82F6]/50 bg-[#3B82F6]/10 px-4 py-2.5 text-[13.5px] font-medium"}, e(Ph,{n:"warning", s:18}), "Este acerto ainda não está quitado — o fornecedor verá os Pix já enviados e o saldo em aberto."),
     e(Campo,{rot:"Link de conferência (somente leitura)"},
       e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link || (lk.erro ? "Não consegui gerar o link: "+lk.erro : "Gerando o link…"), "aria-label":"Link de conferência", className:INPUT+" h-8! min-w-0 flex-1 text-[13px]!", onFocus:function(ev){ ev.target.select(); }}),

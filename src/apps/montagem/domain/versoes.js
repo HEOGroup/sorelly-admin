@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.35", data:"2026-11-19", titulo:"Pagamentos a fornecedores: controle e relatório por pedido (Xangai)", itens:[
+  {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores", txt:"Opção por fornecedor \"Permitir identificação de pagamentos e relatórios por pedido\" (desligada para todos; ligada só na Xangai). Os pedidos são as Negociações já lançadas, que formam a dívida do acerto: nada é somado de novo. No Lançar aparece \"Este pagamento se refere a\" (um pedido, mais de um ou sem identificação); o Pix continua um registro só, com o mesmo comprovante, e o que sobra fica \"Valor sem identificação de pedido\". Passar do saldo do pedido só marcando adiantamento/crédito."},
+  {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores", txt:"Dentro do acerto, área Pedidos com valor original, ajustes, pago identificado, saldo e \"Valor ainda não identificado por pedido\". Pix já lançados ganham \"Identificar pedido\" (com histórico; não confere o pagamento). O desconto da maquininha pode ser marcado como do pedido ou do acerto geral."},
+  {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores", txt:"Enviar acerto ao fornecedor ganhou \"Conteúdo do relatório\": Fechamento completo (padrão, igual a hoje), Pedido específico ou Pedidos selecionados. O relatório por pedido mostra só os pedidos escolhidos, com o valor total da transferência e o valor destinado a cada pedido, comprovantes, período e o aviso de escopo exclusivo. Link próprio, somente leitura, que abre só aqueles pedidos e seus comprovantes."}
+ ]},
  {v:"0.21.34", data:"2026-11-19", titulo:"Link das peças: tela de resposta enviada e pedir mais peças em tela cheia", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Ao enviar a resposta, abre uma tela cheia de confirmação (peças escolhidas e total) com o botão Pedir mais peças. Pedir mais peças agora abre em tela cheia, sem ficar atrás da barra de baixo. O envio tem limite de tempo e avisa se a internet demorar, em vez de ficar travado em Enviando."},
  ]},
