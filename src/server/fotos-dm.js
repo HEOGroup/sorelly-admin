@@ -21,7 +21,7 @@ const hojeBR = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_P
 async function codigosComFoto() {
   const c = (G.__sorellyFotosDmTodos = G.__sorellyFotosDmTodos || {});
   if (c.mapa && Date.now() - c.em < 10 * 60 * 1000) return c.mapa;
-  const linhas = await todasAsPaginas("dmaaa", { campos: ["aaa_codigo", "aaa_descricao", "aaa_datacadastro", "aaa_foto"] });
+  const linhas = await todasAsPaginas("dmaaa", { campos: ["aaa_codigo", "aaa_descricao", "aaa_datacadastro", "aaa_foto"] }, 400);   // a DevMaster tem 37.518 produtos: o limite padrão de 60 páginas cortava em 30.500 e deixava peças de fora (CL2450J)
   const mapa = new Map();   // código -> { dia, desc, foto }
   linhas.forEach((x) => { const cod = String(x.aaa_codigo || "").trim().toUpperCase(); if (cod) mapa.set(cod, { dia: String(x.aaa_datacadastro || "").slice(0, 10), desc: String(x.aaa_descricao || "").trim(), foto: !!String(x.aaa_foto || "").trim() }); });
   c.mapa = mapa; c.em = Date.now();

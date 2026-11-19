@@ -95,12 +95,13 @@ export async function fotoDoProduto(codigo) {
 const TTL_KIT = 10 * 60 * 1000;
 const G = globalThis;
 
-export async function todasAsPaginas(codigo, base) {
+// maxPaginas (19/11/2026): o limite de 60 páginas (30.500 linhas) cortava tabelas maiores em silêncio (produtos dmaaa tem 37.518). Quem precisa da tabela inteira passa um limite maior.
+export async function todasAsPaginas(codigo, base, maxPaginas = 60) {
   let pagina = 0, tudo = [];
   for (;;) {
     const r = await consultarTabela(codigo, { ...base, pagina, registros: 500, ordem: "dm_id" });
     tudo = tudo.concat(r.itens);
-    if (r.registros < 500 || pagina >= 60) return tudo;
+    if (r.registros < 500 || pagina >= maxPaginas) return tudo;
     pagina++;
   }
 }
