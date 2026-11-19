@@ -167,13 +167,66 @@ function MaisPecas({ info, codigo }) {
   );
 }
 
+// Taxa de entrega (18/11/2026, Marcus): depois que o setor separa as peças, o MESMO link pede o Pix da taxa; sem pagar, o pedido não é liberado para envio
+function Pagamento({ info, codigo }) {
+  const sep = info.separado, [pago, setPago] = useState(!!sep.pago), [copiado, setCopiado] = useState(false), [enviando, setEnviando] = useState(false), [erro, setErro] = useState("");
+  const campo = useRef(null);
+  const BLOCO = "flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3";
+  const copiar = () => { try { navigator.clipboard.writeText(sep.pix.chave).then(() => setCopiado(true), () => setErro("Não consegui copiar. Copie a chave à mão.")); } catch (x) { setErro("Não consegui copiar. Copie a chave à mão."); } };
+  const mandar = async (arquivos) => {
+    const f = Array.from(arquivos || []).filter((a) => /^image\//.test(a.type || ""))[0]; if (!f) return;
+    setErro(""); setEnviando(true);
+    try {
+      const url = await reduzir(f);
+      const j = await chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/foto", { nome: "comprovante", url });
+      await chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/comprovante", { key: j.key });
+      setPago(true);
+    } catch (x) { setErro(x.message); } finally { setEnviando(false); if (campo.current) campo.current.value = ""; }
+  };
+  if (!(sep.taxa > 0)) return <section className={BLOCO}><p className="text-[15px] font-bold text-[#F5E7BE]">Peças separadas ✓</p>{sep.pecas && sep.pecas.length > 0 && <p className="text-[13px] leading-snug">Foram separadas {sep.pecas.length} peças, no total de <b>{reais(sep.total)}</b>.</p>}<p className="text-[13px] leading-snug">As suas peças foram separadas e o pedido está <b>sem taxa de entrega</b>. A equipe combina o envio com você por mensagem.</p></section>;
+  return (
+    <section className={BLOCO}>
+      <p className="text-[15px] font-bold text-[#F5E7BE]">Suas peças foram separadas ✓</p>
+      {sep.pecas && sep.pecas.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-[#E8B84B]/40 bg-black/50 p-2">
+          <p className="text-[13px] font-bold text-[#F5E7BE]">Peças separadas para você ({sep.pecas.length})</p>
+          {sep.pecas.map((p) => (
+            <div key={p.cod} className="flex items-center gap-2 border-b border-white/10 pb-1.5 last:border-b-0 last:pb-0">
+              <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={frasePeca(p.desc) || "Peça"} className="size-14 shrink-0 rounded-lg border-2 border-[#4ade80] object-cover" onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
+              <p className="min-w-0 flex-1 break-words text-[12px] leading-snug"><b>{p.cod}</b> · {frasePeca(p.desc)}</p>
+              {p.preco != null && <p className="shrink-0 text-[12px] font-bold">{reais(p.preco)}</p>}
+            </div>
+          ))}
+          <p className="text-right text-[13px]">Total das peças: <b className="text-[#F5E7BE]">{reais(sep.total)}</b></p>
+        </div>
+      )}
+      <p className="text-[13px] leading-snug">Para <b>liberar o pedido para envio</b>, pague a taxa de entrega de <b>{reais(sep.taxa)}</b> por Pix. Depois mande o comprovante aqui.</p>
+      {sep.pix ? (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-[#E8B84B]/40 bg-black/50 p-3 text-[13px] leading-snug">
+          <p><b>Valor:</b> {reais(sep.taxa)}</p>
+          <p><b>Chave Pix{sep.pix.tipo ? " (" + sep.pix.tipo.toLowerCase() + ")" : ""}:</b></p>
+          <p className="break-all text-[16px] font-bold text-[#F5E7BE]">{sep.pix.chave}</p>
+          {sep.pix.titular && <p><b>Nome no Pix:</b> {sep.pix.titular}</p>}
+          <button type="button" onClick={copiar} className={VOLTAR}>{copiado ? "Chave copiada ✓" : "Copiar chave Pix"}</button>
+        </div>
+      ) : <p className="text-[13px] font-bold leading-snug">A equipe vai te mandar a chave Pix por mensagem.</p>}
+      {pago ? <p className="rounded-lg border border-[#4ade80]/50 bg-[#4ade80]/10 p-3 text-center text-[13px] font-bold leading-snug text-[#bbf7d0]">Comprovante enviado ✓ A equipe confere o pagamento e libera o seu pedido para envio.</p> : (
+        <>
+          <label className={BTN + " grid cursor-pointer place-items-center " + (enviando ? "opacity-40" : "")}>{enviando ? "Enviando" : "Enviar comprovante"}<input ref={campo} disabled={enviando} type="file" accept="image/*" className="hidden" onChange={(ev) => mandar(ev.target.files)} /></label>
+          {erro && <p className="text-center text-[12px] font-bold leading-snug text-[#fecaca]">⚠ {erro}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
 function Acompanhar({ info, codigo }) {
   const ret = info.acompanhar.retorno, lim = info.limite && info.limite.max > 0 ? info.limite : null;
   // peças em ordem fixa: anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras, outras (dentro de cada grupo, a ordem do setor)
   const pecas = info.acompanhar.pecas.map((p, i) => ({ ...p, _i: i })).sort((x, y) => GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(x.desc)) - GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(y.desc)) || x._i - y._i);
   const [escolha, setEscolha] = useState(() => { const o = {}; if (ret) { (ret.quer || []).forEach((c) => { o[c] = "sim"; }); (ret.nao || []).forEach((c) => { o[c] = "nao"; }); } return o; });
   const [obs, setObs] = useState(ret ? ret.obs || "" : ""), [enviando, setEnviando] = useState(false), [feito, setFeito] = useState(!!ret), [erro, setErro] = useState("");
-  const [semFoto, setSemFoto] = useState({}), [piscar, setPiscar] = useState(""), [aba, setAba] = useState("pecas");
+  const [semFoto, setSemFoto] = useState({}), [piscar, setPiscar] = useState(""), [aba, setAba] = useState(info.separado && !info.separado.pago ? "pagamento" : "pecas");
   const ped = info.pedido;
   const [notas, setNotas] = useState(() => ({ ...((ret && ret.notas) || {}) }));
   const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length, naoN = pecas.filter((p) => escolha[p.cod] === "nao").length;
@@ -232,12 +285,13 @@ function Acompanhar({ info, codigo }) {
         <p className="mt-1 text-[13px] leading-snug">A equipe encontrou estas peças para o seu pedido. Veja cada foto e marque <b>Quero</b> ou <b>Não quero</b>. Depois toque em <b>Enviar resposta</b>.</p>
         {lim && <p className="mt-1.5 text-[13px] leading-snug">Seu limite: <b className="text-[#F5E7BE]">{reais(lim.max)}</b> por reposição. <a href={"/pedido/" + encodeURIComponent(codigo) + "/tabela"} target="_blank" rel="noopener" className="font-bold text-[#F5E7BE] underline">Ver a tabela de valores</a></p>}
       </section>
-      <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#E8B84B]/50 bg-black p-1" role="tablist">
-        {[["pecas", "Peças que encontramos"], ["pedido", "O que eu pedi"]].map(([id, nome]) => (
+      <div className={"grid gap-1.5 rounded-xl border border-[#E8B84B]/50 bg-black p-1 " + (info.separado ? "grid-cols-3" : "grid-cols-2")} role="tablist">
+        {[...(info.separado ? [["pagamento", "Pagamento"]] : []), ["pecas", "Peças que encontramos"], ["pedido", "O que eu pedi"]].map(([id, nome]) => (
           <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => { setAba(id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             className={"h-10 rounded-lg text-[13px] font-bold " + (aba === id ? "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#B8892A] text-[#14233f]" : "text-white")}>{nome}</button>
         ))}
       </div>
+      {aba === "pagamento" && info.separado && <Pagamento info={info} codigo={codigo} />}
       {aba === "pedido" && (
         <section className="flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
           {!ped || (!ped.fotos.length && !ped.textos.length) ? <p className="text-[13px] leading-snug">O seu pedido não ficou guardado neste link. Se precisar, fale com o setor.</p> : (

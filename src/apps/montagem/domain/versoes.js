@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.27", data:"2026-11-18", titulo:"Link das peças: taxa de entrega por Pix depois de separar", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Depois que o setor separa as peças (a funcionária desmarca a que não foi separada), o mesmo link da revendedora ganha a aba Pagamento: lista das peças separadas com foto e total, taxa de entrega, chave Pix com botão Copiar e envio do comprovante. O pedido só é liberado para envio depois que a equipe confere. Na ficha do pedido, o bloco Mensagem mostra uma mensagem de cada vez (pedido, peças encontradas, peças separadas), já pronta para copiar com o link, e o bloco Taxa de entrega mostra o comprovante."},
+ ]},
  {v:"0.21.26", data:"2026-11-18", titulo:"Link das peças: pedir mais peças (máximo 2 vezes)", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Depois de ver as peças encontradas, a revendedora pode pedir mais peças no mesmo link (fotos e/ou descrições, até 10), no máximo 2 vezes. O pedido extra aparece na ficha do pedido, no bloco \"Pediu mais peças\"."},
  ]},

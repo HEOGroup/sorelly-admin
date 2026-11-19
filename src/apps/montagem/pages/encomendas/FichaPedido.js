@@ -340,7 +340,36 @@ function FichaPedido(p){
         (x.textos || []).map(function(t, i){ return e("p",{key:"t"+i}, e("b",null, "Descreveu: "), (t.cor ? t.cor+" · " : "")+t.obs); }),
         x.obs && e("p",null, e("b",null, "Recado: "), x.obs));
     }))) : null;
-  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, respBloco, extrasBloco, pecasBloco);
+  // UMA mensagem de cada vez (Marcus, 18/11/2026): a que cabe na etapa em que o link está, já pronta para copiar
+  var sepInfo = v.ret && v.ret.separado ? v.ret.separado : null, pagInfo = v.ret && v.ret.pagamento ? v.ret.pagamento : null;
+  var etapaMsg = !x.linkId || fim ? "" : sepInfo ? "" : v.ret && v.ret.retorno ? "link_separado" : v.ret ? "link_pecas" : "link_pedido";
+  var textoMsg = etapaMsg ? mensagemTexto(cfg, etapaMsg).split("{nome}").join(primeiro).split("{link}").join(baseLink()+"/pedido/"+x.linkId) : "";
+  var tituloMsg = {link_pedido:"Mensagem 1 · pedido (o link para ela pedir)", link_pecas:"Mensagem 2 · peças encontradas (ela marca Quero ou Não quero)", link_separado:"Mensagem 3 · peças separadas (ela paga a taxa)"}[etapaMsg];
+  // peças que ela quis; a funcionária desmarca a que não foi separada (acabou, quebrou etc.)
+  var queroCods = v.ret && v.ret.retorno ? (v.ret.retorno.quer || []) : [];
+  var peçasQuero = (x.pecas || []).filter(function(y){ return queroCods.indexOf(y.cod)>=0; });
+  var desm = v.desm || {};
+  var codsSep = queroCods.filter(function(c){ return !desm[c]; });
+  var separar = function(){
+    if(v.sep) return; set("sep", true); set("lkErro", "");
+    chamar("POST", "/encomendas/link/separado", {linkId:x.linkId, cods:codsSep}).then(function(){ return chamar("GET", "/encomendas/link/retorno?ids="+encodeURIComponent(x.linkId)); }).then(function(j){ set("ret", j[x.linkId] || null); set("sep", false); copiar(textoMsg); }, function(err){ set("sep", false); set("lkErro", err && err.message ? err.message : "Não consegui avisar que separou."); });
+  };
+  var msgBloco = etapaMsg ? e(Caixa,{key:"msg", t:tituloMsg},
+    e("div",{className:"flex flex-col gap-1.5 text-[13px]"},
+      etapaMsg==="link_separado" && e("div",{className:"flex flex-col gap-0.5 rounded-md border border-white/25 bg-black/30 p-2"},
+        e("p",{className:"text-[11px] font-bold uppercase"}, "Peças separadas ("+codsSep.length+" de "+queroCods.length+"): desmarque a que não foi separada"),
+        peçasQuero.map(function(y){ return e("label",{key:y.cod, className:"flex cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:!desm[y.cod], onChange:function(){ var o = Object.assign({}, desm); o[y.cod] = !o[y.cod]; set("desm", o); }}), e("span",null, y.cod+" · "+y.desc+(y.preco ? " · "+formatarReais(y.preco) : ""))); })),
+      e("pre",{className:"whitespace-pre-wrap break-words rounded-md border border-white/25 bg-black/30 p-2 font-[inherit] text-[13px] leading-snug"}, textoMsg),
+      e("div",{className:"flex flex-wrap items-center gap-2"},
+        etapaMsg==="link_separado" ? e("button",{type:"button", disabled:!!v.sep || !codsSep.length, title:"Libera a taxa e o Pix no link da revendedora e copia a mensagem", onClick:separar, className:"h-8 rounded-md border border-[#E8B84B] bg-[#E8B84B]/20 px-3 text-[13px] font-bold text-[#F5E7BE] disabled:opacity-50"}, v.sep ? "Liberando" : "Peças separadas: liberar a taxa e copiar")
+        : e("button",{type:"button", onClick:function(){ copiar(textoMsg); }, className:"h-8 rounded-md border border-white/40 bg-white/10 px-3 text-[13px] font-bold hover:bg-white/20"}, "Copiar mensagem")))) : null;
+  var taxaBloco = sepInfo ? e(Caixa,{key:"tx", t:"Taxa de entrega"},
+    e("div",{className:"flex flex-col gap-1 text-[13px]"},
+      e("p",null, "Peças separadas e taxa liberada no link em "+formatarDataHora(sepInfo.em)+"."),
+      pagInfo ? e("div",{className:"flex flex-col gap-1"}, e("p",{className:"font-bold text-[#bbf7d0]"}, "Comprovante enviado pela revendedora em "+formatarDataHora(pagInfo.em)+". Confira o pagamento e avance o pedido."),
+        e("button",{type:"button", title:"Abrir o comprovante", onClick:function(){ abrirAnexo(pagInfo.key); }, className:"block w-28 overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:pagInfo.key, cls:"block aspect-square w-full object-cover"})))
+      : e("p",{className:"font-bold text-[#fbbf24]"}, "Aguardando o pagamento. Sem pagar, o pedido não é liberado para envio."))) : null;
+  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, msgBloco, taxaBloco, respBloco, extrasBloco, pecasBloco);
 
   // NO TOPO (fixo): o que ela pediu em texto (uma linha por item) e as fotos que ela mandou, com botões para aumentar ou diminuir
   var TAMANHOS = [56, 80, 112, 160, 220], iz = v.zoom===undefined ? 3 : v.zoom, lado = TAMANHOS[iz];

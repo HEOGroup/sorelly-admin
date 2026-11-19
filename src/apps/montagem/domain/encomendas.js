@@ -424,7 +424,7 @@ function mensagemSolicitacao(config, so, link){
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
   ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
-  ["link_pedido", "Link do pedido da revendedora"], ["link_pecas", "Peças encontradas: aviso com o link"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
+  ["link_pedido", "Link do pedido da revendedora"], ["link_pecas", "Peças encontradas: aviso com o link"], ["link_separado", "Peças separadas: aviso da taxa com o link"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
   ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
   var v = (c.valores||[]).slice().sort(function(a, b){ return a.de-b.de; });
@@ -456,6 +456,7 @@ function mensagemPadrao(config, k){
     "As *encomendas* devem ser preenchidas *no aplicativo*, *somente para o novo kit*.", "", "Atendemos somente por *mensagem escrita*. Não enviamos nem ouvimos áudios.", "", "Obrigado pela compreensão. 💛"].join("\n");
   if(k==="recusa") return ["Prezada revendedora, informamos que não foi possível atender à sua solicitação de reposição.", "", "Atendemos somente por *mensagem escrita*. Aguarde o retorno da nossa equipe para novas orientações."].join("\n");
   if(k==="link_pecas") return ["Oi, {nome}! 💛", "", "Encontramos peças para o seu pedido! 🎉", "", "Abra o link, veja a foto de cada peça e marque *Quero* ou *Não quero*:", "", "{link}", "", "Assim a gente já separa certinho para você. 🙏"].join("\n");
+  if(k==="link_separado") return ["Oi, {nome}! 💛", "", "Separamos as suas peças! 🎉", "", "Para *liberar o envio*, pague a taxa de entrega de *"+R(r.taxa)+"* por Pix. Abra o link, copie a chave e mande o comprovante:", "", "{link}", "", "Assim que o pagamento for conferido, o pedido sai para envio. 🚚"].join("\n");
   if(k==="link_pedido") return ["Oi, {nome}! 💛", "", "Para pedir a sua reposição, preencha o formulário no link abaixo: é só colocar as fotos das peças e escolher dourado, prata ou os dois.", "", "{link}", "", "O link é só seu e vale por *48 horas*. Depois disso ele expira e a gente gera outro. 🙏"].join("\n");
   if(k==="taxa_aceite") return ["Oi, {nome}! 💛", "", "Antes de separar as suas peças, preciso te avisar: a reposição entregue pelo nosso entregador tem uma taxa de *"+R(r.taxa)+"*.", "",
     "A taxa só é cobrada *depois* que as peças forem separadas. Se separarmos e enviarmos para você, o valor é pago por Pix antes da entrega.", "",

@@ -45,6 +45,10 @@ export async function criarLink({ nome, cod, representante, telefone, cidade, uf
 
 /** Estado do link para a página pública: aberto, enviado, expirado ou inexistente. */
 export const MAX_EXTRAS = 2;   // regra do Marcus (18/11/2026): depois das peças encontradas, ela pode pedir mais peças no máximo 2 vezes
+/** Pix da taxa de entrega (config do módulo er, preenchida em Encomendas → Regras). Só sai para o link depois que o setor avisa que separou. */
+async function pixDaTaxa() {
+  try { const r = (await consulta("select conteudo->'config'->'pix' as pix from sorelly.estado_modulo where modulo = 'er'")).rows[0]; const p = r && r.pix; return p && p.chave ? { chave: String(p.chave), tipo: String(p.tipo || ""), titular: String(p.titular || ""), recebedor: String(p.recebedor || "") } : null; } catch (x) { return null; }
+}
 export async function lerLink(id) {
   if (!codigoValido(id)) return null;
   await garantirTabelaLink();
@@ -57,8 +61,11 @@ export async function lerLink(id) {
   const d = r.dados && typeof r.dados === "object" ? r.dados : null;
   const pedido = d ? { tipo: d.tipo || "", em: r.enviado_em || null, obs: d.obs || "", fotos: (Array.isArray(d.fotos) ? d.fotos : []).filter((f) => f && chaveAnexoValida(f.key)).map((f) => ({ key: f.key, cor: f.cor || "", obs: f.obs || "" })), textos: (Array.isArray(d.textos) ? d.textos : []).map((t) => ({ cor: (t && t.cor) || "", obs: (t && t.obs) || "" })) } : null;
   const extras = d && Array.isArray(d.extras) ? d.extras.map((x) => ({ em: x.em || "", obs: x.obs || "", fotos: (Array.isArray(x.fotos) ? x.fotos : []).filter((f) => f && chaveAnexoValida(f.key)).map((f) => ({ key: f.key, cor: f.cor || "", obs: f.obs || "" })), textos: (Array.isArray(x.textos) ? x.textos : []).map((t) => ({ cor: (t && t.cor) || "", obs: (t && t.obs) || "" })) })) : [];
+  // peças separadas (18/11/2026, Marcus): o setor avisa, o MESMO link passa a pedir a taxa de entrega por Pix; sem pagamento o pedido não é liberado
+  const sepPecas = d && d.separado && Array.isArray(d.separado.pecas) ? d.separado.pecas.map((x) => ({ cod: x.cod, desc: x.desc || "", preco: x.preco == null ? null : Number(x.preco) })) : [];
+  const sep = d && d.separado ? { em: d.separado.em || "", pecas: sepPecas, total: Math.round(sepPecas.reduce((t, x) => t + (Number(x.preco) || 0), 0) * 100) / 100, taxa: Number(r.taxa) || 0, pix: Number(r.taxa) > 0 ? await pixDaTaxa() : null, pago: d.pagamento ? { em: d.pagamento.em || "" } : null } : null;
   const forcaEncomenda = !!(r.uf && r.uf !== "PR");   // outro estado: só encomenda (vai no próximo kit)
-  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar, limite: r.limite || null, pedido, extras, extrasMax: MAX_EXTRAS };
+  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar, limite: r.limite || null, pedido, extras, extrasMax: MAX_EXTRAS, separado: sep };
 }
 
 // ---------- peças encontradas pelo setor, para a revendedora aprovar no MESMO link (18/11/2026, Marcus) ----------
@@ -81,8 +88,8 @@ export async function retornos(ids) {
   await garantirTabelaLink();
   const lista = (Array.isArray(ids) ? ids : []).filter(codigoValido).slice(0, 30);
   if (!lista.length) return {};
-  const r = await consulta("select id, retorno, publicado_em, dados->'extras' as extras from sorelly.pedido_link where id = any($1) and publicadas is not null", [lista]);
-  const o = {}; r.rows.forEach((x) => { o[x.id] = { retorno: x.retorno || null, publicadoEm: x.publicado_em, extras: Array.isArray(x.extras) ? x.extras : [] }; }); return o;
+  const r = await consulta("select id, retorno, publicado_em, dados->'extras' as extras, dados->'separado' as separado, dados->'pagamento' as pagamento from sorelly.pedido_link where id = any($1) and publicadas is not null", [lista]);
+  const o = {}; r.rows.forEach((x) => { o[x.id] = { retorno: x.retorno || null, publicadoEm: x.publicado_em, extras: Array.isArray(x.extras) ? x.extras : [], separado: x.separado || null, pagamento: x.pagamento || null }; }); return o;
 }
 /** Lado público: a revendedora diz quais peças quer. Vale a última resposta. */
 export async function aprovarPecas(id, { quer, obs, notas }) {
@@ -94,6 +101,30 @@ export async function aprovarPecas(id, { quer, obs, notas }) {
   const retorno = { em: new Date().toISOString(), quer: Array.from(new Set(sim)), nao: todas.filter((c) => !sim.includes(c)), obs: String(obs || "").trim().slice(0, 300), notas: nt };
   await consulta("update sorelly.pedido_link set retorno = $2 where id = $1", [id, JSON.stringify(retorno)]);
   return retorno;
+}
+/** Lado do sistema: o setor separou as peças. O link passa a mostrar a taxa e o Pix. */
+export async function marcarSeparado(id, por, cods) {
+  if (!codigoValido(id)) throw Object.assign(new Error("Link inválido."), { statusCode: 400 });
+  await garantirTabelaLink();
+  const l = (await consulta("select publicadas from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const pub = l && Array.isArray(l.publicadas) ? l.publicadas : [];
+  const querCods = new Set((Array.isArray(cods) ? cods : []).map((c) => String(c || "").toUpperCase()));
+  const pecas = pub.filter((x) => querCods.has(x.cod)).map((x) => ({ cod: x.cod, desc: x.desc || "", preco: x.preco == null ? null : Number(x.preco) }));
+  if (pub.length && !pecas.length) throw Object.assign(new Error("Marque ao menos uma peça separada."), { statusCode: 400 });
+  const r = await consulta("update sorelly.pedido_link set dados = jsonb_set(coalesce(dados, '{}'::jsonb), '{separado}', $2::jsonb), expira_em = greatest(expira_em, now() + interval '120 hours') where id = $1 and publicadas is not null returning id", [id, JSON.stringify({ em: new Date().toISOString(), por: String(por || "").slice(0, 60), pecas })]);
+  if (!r.rows.length) throw Object.assign(new Error("Publique as peças no link antes de avisar que separou."), { statusCode: 400 });
+  return true;
+}
+/** Lado público: a revendedora manda o comprovante da taxa (a foto já subiu em /foto). Não libera nada sozinho: a equipe confere. */
+export async function enviarComprovante(id, key) {
+  const l = await lerLink(id);
+  if (!l) throw Object.assign(new Error("Link não encontrado."), { statusCode: 404 });
+  if (!l.separado) throw Object.assign(new Error("Ainda não há taxa para pagar."), { statusCode: 410 });
+  if (!chaveAnexoValida(key)) throw Object.assign(new Error("Dados inválidos: comprovante."), { statusCode: 400 });
+  const dona = (await consulta("select id from sorelly.anexo_modulo where por = $1 and id = $2", ["link:" + id, key])).rows.length > 0;
+  if (!dona) throw Object.assign(new Error("Dados inválidos: comprovante."), { statusCode: 400 });
+  await consulta("update sorelly.pedido_link set dados = jsonb_set(coalesce(dados, '{}'::jsonb), '{pagamento}', $2::jsonb) where id = $1", [id, JSON.stringify({ key, em: new Date().toISOString() })]);
+  return true;
 }
 /** Lado público: depois de ver as peças, a revendedora pede MAIS peças (fotos e/ou descrições). No máximo MAX_EXTRAS vezes por link. */
 export async function maisPecas(id, { fotos, textos, obs }) {
