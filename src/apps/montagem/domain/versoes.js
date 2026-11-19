@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
+  {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."}]},
  {v:"0.21.56", data:"2026-11-19", titulo:"Encomendas: botão Mudar para encomenda", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ficha do pedido", txt:"Pedido lançado como reposição que na verdade era encomenda: botão Mudar para encomenda na ficha. O pedido perde a taxa e o prazo de 24 horas e segue o caminho da encomenda (Novo, Conferindo, Separando, Concluído)."},
  {v:"0.21.55", data:"2026-11-19", titulo:"RH › Acessos e autorizações simplificada", itens:[

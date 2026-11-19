@@ -44,15 +44,15 @@ function AbaAcessosPessoas(){
   linhas.sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
 
   var cols = [
-    {k:"nome", t:"Pessoa", w:"16rem"},
-    {k:"nivel", t:"Acesso", w:"18rem", render:function(v, l){ var c = l.c; if(!c) return e("span",null, v);
+    {k:"nome", t:"Pessoa", w:"13rem"},
+    {k:"nivel", t:"Acesso", w:"14rem", render:function(v, l){ var c = l.c; if(!c) return e("span",null, v);
       return e("select",{className:CAMPO+" w-full cursor-pointer", value:l.n, disabled:!edita, "aria-label":"Acesso de "+l.nome, onChange:function(ev){ mudaNivel(c, ev.target.value, l.nome); }}, NIVEIS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })); }},
-    {k:"grupo", t:"Setor", w:"16rem", render:function(v, l){ var c = l.c; if(!c || l.n!=="grupo") return e("span",null, v);
+    {k:"grupo", t:"Setor", w:"13rem", render:function(v, l){ var c = l.c; if(!c || l.n!=="grupo") return e("span",null, v);
       return e("select",{className:CAMPO+" w-full cursor-pointer", value:efetivo(c), disabled:!edita, "aria-label":"Setor de "+l.nome, onChange:function(ev){ muda(c.id, {grupo:ev.target.value}); }}, GRUPOS_SETOR.map(function(g){ return e("option",{key:g, value:g}, LB[g] || g); })); }},
-    {k:"modulos", t:"Módulos", w:"9rem", render:function(v, l){ var c = l.c; if(!c || c.perfil==="ADMIN") return e("span",null, v);
+    {k:"modulos", t:"Módulos", w:"7rem", render:function(v, l){ var c = l.c; if(!c || c.perfil==="ADMIN") return e("span",null, v);
       return e(Botao,{onClick:function(){ setModId(c.id); }, title:"Escolher os módulos do servidor que esta pessoa abre"}, v); }},
-    {k:"sit", t:"Situação", w:"9rem", cor:function(l){ return COR_SIT[l.sit] || ""; }},
-    {k:"acao", t:"Ação", w:"9rem", render:function(v, l){ var c = l.c; if(!c || !edita) return e("span",null, "—");
+    {k:"sit", t:"Situação", w:"7rem", cor:function(l){ return COR_SIT[l.sit] || ""; }},
+    {k:"acao", t:"Ação", w:"7rem", render:function(v, l){ var c = l.c; if(!c || !edita) return e("span",null, "—");
       return c.status==="ativo" ? e(Botao,{onClick:function(){ muda(c.id, {status:"bloqueado"}); }}, "Bloquear")
         : e(Botao,{principal:true, desabilitado:c.pessoaId==null, title:c.pessoaId==null ? "Ligue a conta a uma pessoa do sistema antes de liberar" : "", onClick:function(){ muda(c.id, {status:"ativo"}); }}, c.status==="bloqueado" ? "Reativar" : "Liberar"); }}];
 
