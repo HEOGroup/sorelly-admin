@@ -331,7 +331,16 @@ function FichaPedido(p){
       ret.notas && Object.keys(ret.notas).length>0 && e("div",{className:"flex flex-col gap-0.5"}, e("b",null, "Observações por peça:"), Object.keys(ret.notas).map(function(c){ return e("p",{key:c}, e("b",null, c+": "), ret.notas[c]); })),
       ret.obs && e("p",null, e("b",null, "Recado: "), ret.obs),
       e("p",{className:"text-[11px]"}, "Respondeu em "+formatarDataHora(ret.em)))) : (v.ret ? e("p",{key:"rp", className:"text-[11px]"}, "Peças publicadas no link. Aguardando a resposta da revendedora.") : null);
-  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, respBloco, pecasBloco);
+  var extras = v.ret && Array.isArray(v.ret.extras) ? v.ret.extras : [];
+  var extrasBloco = extras.length ? e(Caixa,{key:"ex", t:"Pediu mais peças ("+extras.length+" de 2)"},
+    e("div",{className:"flex flex-col gap-2 text-[13px]"}, extras.map(function(x, n){
+      return e("div",{key:n, className:"flex flex-col gap-1 border-b border-white/20 pb-2 last:border-b-0"},
+        e("p",{className:"text-[11px]"}, (n+1)+"º pedido extra, "+formatarDataHora(x.em)),
+        (x.fotos || []).length>0 && e("div",{className:"flex flex-wrap gap-2"}, x.fotos.map(function(fo){ return e("div",{key:fo.key, className:"flex w-24 flex-col gap-0.5"}, e("button",{type:"button", title:"Abrir a foto", onClick:function(){ abrirAnexo(fo.key); }, className:"block w-24 overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:fo.key, cls:"block aspect-square w-full object-cover"})), e("span",{className:"text-[11px] leading-tight"}, (fo.cor ? fo.cor+(fo.obs?" · ":"") : "")+(fo.obs || ""))); })),
+        (x.textos || []).map(function(t, i){ return e("p",{key:"t"+i}, e("b",null, "Descreveu: "), (t.cor ? t.cor+" · " : "")+t.obs); }),
+        x.obs && e("p",null, e("b",null, "Recado: "), x.obs));
+    }))) : null;
+  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, respBloco, extrasBloco, pecasBloco);
 
   // NO TOPO (fixo): o que ela pediu em texto (uma linha por item) e as fotos que ela mandou, com botões para aumentar ou diminuir
   var TAMANHOS = [56, 80, 112, 160, 220], iz = v.zoom===undefined ? 3 : v.zoom, lado = TAMANHOS[iz];

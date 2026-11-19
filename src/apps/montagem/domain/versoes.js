@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.26", data:"2026-11-18", titulo:"Link das peças: pedir mais peças (máximo 2 vezes)", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Depois de ver as peças encontradas, a revendedora pode pedir mais peças no mesmo link (fotos e/ou descrições, até 10), no máximo 2 vezes. O pedido extra aparece na ficha do pedido, no bloco \"Pediu mais peças\"."},
+ ]},
  {v:"0.21.25", data:"2026-11-18", titulo:"Link das peças: aba \"O que eu pedi\"", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"No link das peças encontradas, a revendedora agora tem duas abas: \"Peças que encontramos\" e \"O que eu pedi\" (as fotos, as descrições e o recado do pedido dela), para ela rever o que pediu. A barra de baixo só aparece na aba das peças."},
  ]},

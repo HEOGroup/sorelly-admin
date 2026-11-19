@@ -94,6 +94,79 @@ const grupoDaPeca = (desc) => {
 };
 
 // PEÇAS QUE O SETOR ENCONTROU (18/11/2026, Marcus): a revendedora volta ao MESMO link, vê a foto de cada peça e marca se quer ou não
+// Pedido extra (regra do Marcus, 18/11/2026): depois de responder, ela pode pedir MAIS peças, no máximo 2 vezes
+function MaisPecas({ info, codigo }) {
+  const feitos = info.extras ? info.extras.length : 0, max = info.extrasMax || 2;
+  const [aberto, setAberto] = useState(false), [itens, setItens] = useState([]), [obs, setObs] = useState(""), [enviando, setEnviando] = useState(false), [erro, setErro] = useState(""), [n, setN] = useState(feitos);
+  const campo = useRef(null);
+  const mudar = (id, parte) => setItens((l) => l.map((i) => (i.id === id ? { ...i, ...parte } : i)));
+  const novoId = () => Math.random().toString(36).slice(2, 9);
+  const adicionar = async (arquivos) => {
+    const lista = Array.from(arquivos || []).filter((f) => /^image\//.test(f.type || "")).slice(0, MAX - itens.length);
+    for (const f of lista) {
+      const id = novoId();
+      try {
+        const url = await reduzir(f);
+        setItens((l) => [...l, { id, url, key: "", cor: "", obs: "", subindo: true, erro: "" }]);
+        chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/foto", { nome: f.name || "foto", url }).then((j) => mudar(id, { key: j.key, subindo: false }), (x) => mudar(id, { subindo: false, erro: x.message }));
+      } catch (x) { setErro(x.message); }
+    }
+    if (campo.current) campo.current.value = "";
+  };
+  const semFoto = () => setItens((l) => (l.length >= MAX ? l : [...l, { id: novoId(), url: "", key: "", cor: "", obs: "", subindo: false, erro: "", texto: true }]));
+  const valem = itens.filter((i) => (i.texto ? i.obs.trim() : i.key && !i.erro));
+  const falta = !valem.length ? "Coloque ao menos uma foto ou descreva uma peça." : itens.some((i) => i.texto && !i.obs.trim()) ? "Descreva a peça que está sem foto (ou tire o cartão)." : valem.some((i) => !i.cor) ? "Escolha dourado, prata ou os dois em cada peça." : itens.some((i) => i.subindo) ? "Aguarde as fotos terminarem de subir." : "";
+  const enviar = async () => {
+    setErro(""); setEnviando(true);
+    try {
+      await chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/mais", { obs, fotos: valem.filter((i) => !i.texto).map((i) => ({ key: i.key, cor: i.cor, obs: i.obs })), textos: valem.filter((i) => i.texto).map((i) => ({ cor: i.cor, obs: i.obs })) });
+      setN((v) => v + 1); setItens([]); setObs(""); setAberto(false);
+    } catch (x) { setErro(x.message); } finally { setEnviando(false); }
+  };
+  const BLOCO = "flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3";
+  if (n >= max && !aberto) return <section className={BLOCO}><p className="text-[13px] leading-snug">Você já fez os <b>{max} pedidos extras</b> deste link. ✓ A equipe vai procurar as peças e avisa por mensagem.</p></section>;
+  if (!aberto) return (
+    <section className={BLOCO}>
+      {n > 0 && <p className="text-[13px] leading-snug">Pedido extra enviado ✓ A equipe vai procurar as peças e avisa por mensagem.</p>}
+      <button type="button" onClick={() => setAberto(true)} className={BTN + " w-full"}>Pedir mais peças ({max - n} {max - n === 1 ? "vez restante" : "vezes restantes"})</button>
+    </section>
+  );
+  return (
+    <section className={BLOCO}>
+      <p className="text-[14px] font-bold text-[#F5E7BE]">Pedir mais peças ({n + 1} de {max})</p>
+      <p className="text-[12px] leading-snug">Até {MAX} peças. Mande a foto ou descreva a peça.</p>
+      <div className="grid grid-cols-2 gap-2">
+        {itens.map((i) => (
+          <div key={i.id} className="col-span-2 flex flex-col gap-1.5 rounded-lg border border-[#E8B84B]/40 bg-black/50 p-2">
+            <div className="flex items-start gap-2">
+              {!i.texto && i.url && <img src={i.url} alt="Foto da peça" className="size-16 shrink-0 rounded-lg border-2 border-[#E8B84B] object-cover" />}
+              <input className={ENTRADA} value={i.obs} maxLength={160} placeholder={i.texto ? "Descreva a peça" : "Observação (opcional)"} onChange={(ev) => mudar(i.id, { obs: ev.target.value })} />
+              <button type="button" aria-label="Tirar" onClick={() => setItens((l) => l.filter((x) => x.id !== i.id))} className="h-11 shrink-0 px-2 text-[18px] font-bold">×</button>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {CORES.map(([v, nome]) => <button key={v} type="button" onClick={() => mudar(i.id, { cor: v })} className={"h-9 rounded-lg text-[13px] font-bold " + (i.cor === v ? "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#B8892A] text-[#14233f]" : "border border-[#E8B84B]/40 text-white")}>{nome}</button>)}
+            </div>
+            {i.subindo && <p className="text-[12px]">Enviando a foto…</p>}
+            {i.erro && <p className="text-[12px] font-bold text-[#fecaca]">⚠ {i.erro}</p>}
+          </div>
+        ))}
+      </div>
+      {itens.length < MAX && (
+        <div className="grid grid-cols-2 gap-2">
+          <label className={VOLTAR + " grid cursor-pointer place-items-center"}>Adicionar foto<input ref={campo} type="file" accept="image/*" multiple className="hidden" onChange={(ev) => adicionar(ev.target.files)} /></label>
+          <button type="button" onClick={semFoto} className={VOLTAR}>Só descrever</button>
+        </div>
+      )}
+      <textarea value={obs} maxLength={300} onChange={(ev) => setObs(ev.target.value)} placeholder="Recado para a equipe (opcional)" className={ENTRADA + " h-20 py-2"} />
+      {(erro || falta) && <p className="text-center text-[12px] font-bold leading-snug text-[#fecaca]">⚠ {erro || falta}</p>}
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => { setAberto(false); setItens([]); setErro(""); }} className={VOLTAR}>Cancelar</button>
+        <button type="button" disabled={enviando || !!falta} onClick={enviar} className={BTN}>{enviando ? "Enviando" : "Enviar pedido"}</button>
+      </div>
+    </section>
+  );
+}
+
 function Acompanhar({ info, codigo }) {
   const ret = info.acompanhar.retorno, lim = info.limite && info.limite.max > 0 ? info.limite : null;
   // peças em ordem fixa: anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras, outras (dentro de cada grupo, a ordem do setor)
@@ -207,6 +280,7 @@ function Acompanhar({ info, codigo }) {
         <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => { setObs(ev.target.value); setFeito(false); }} placeholder="Quer avisar algo? (opcional)" className="w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-3 py-2 text-[13px] placeholder:text-white/60" />
         {feito && !erro && <p className="text-center text-[14px] font-bold text-[#F5E7BE]">Resposta enviada ✓ Você marcou {querN} de {pecas.length}. Pode mudar e enviar de novo.</p>}
       </section>}
+      {aba === "pecas" && <MaisPecas info={info} codigo={codigo} />}
       {aba === "pecas" && <div className="h-44" aria-hidden />}
       {/* barra fixa de baixo: resumo, medidor do limite e o botão, em três linhas bem alinhadas */}
       {aba === "pecas" && <div className="fixed inset-x-0 bottom-0 z-20 rounded-t-2xl border-t border-[#E8B84B]/70 bg-black/95 px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-8px_24px_rgba(0,0,0,.7)]">
