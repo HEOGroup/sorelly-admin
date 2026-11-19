@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.69", data:"2026-11-19", titulo:"Fila de montagem: sem Listagens, sem totais no título e sem a mãozinha", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Fila de montagem", txt:"Saiu o bloco Listagens de hoje (já existe na tela Listagens), a frase de totais embaixo do título e o contador N de N. As tabelas deixaram de mostrar a mãozinha de arrastar no meio da tela."},
  {v:"0.21.68", data:"2026-11-19", titulo:"Indicações ao vivo: ligadas ao app, à Kommo e ao balcão do admin antigo", itens:[
   {tipo:"novo", area:"Cadastro de revendedoras → Indicações", txt:"Funil, Resgates de prêmios, Retiradas, Revendedoras e moedas e Histórico passam a ler o app ao vivo (antes era uma cópia parada de 17/11). Agendar, confirmar retirada, cancelar, creditar moedas, pedido no balcão e mudar etapa do funil gravam no app, como no admin antigo. As telas são as mesmas."},
   {tipo:"novo", area:"Cadastro de revendedoras → Indicações", txt:"Dados de balcão (peças, valor em venda, data da retirada, em contato, maleta) e a planilha antiga vieram do admin antigo: 114 pedidos e 1.239 linhas. Enquanto o antigo ainda é usado, a cópia do balcão pode rodar sozinha a cada 2 minutos (ADMIN_ANTIGO_DATABASE_URL no servidor)."},

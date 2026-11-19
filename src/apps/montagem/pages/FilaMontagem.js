@@ -4,13 +4,11 @@
 // Depois: TODAS as revendedoras do app com o resumo das preferências do kit, pendentes primeiro ("já montado" = montagem concluída depois da
 // última atualização das preferências; se ela atualizar de novo, volta a pendente). Clicar abre a área de montar (pages/fila-montagem/Montar.js).
 // Embaixo: os últimos registros de montagem. Filtro e ordem no nome de cada coluna (TabelaPlanilha). Dinheiro só para a supervisão e a diretoria.
-import { JanelaMontar } from "@/apps/montagem/components/janela-montar";
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Aviso, Botao, brl } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { filaMontagem, listagemDe } from "@/apps/montagem/domain/regras";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -39,14 +37,6 @@ function linhasRevendedoras(lista){
     .sort(function(a, b){ return ordem[a.sitK]-ordem[b.sitK] || (a.at<b.at ? 1 : a.at>b.at ? -1 : 0) || a.nome.localeCompare(b.nome, "pt-BR"); });
 }
 
-// kits das listagens abertas: os que estão sendo montados agora e os próximos 15 da fila
-function linhasListagens(s){
-  var abertas = function(k){ var l = listagemDe(s, k); return l && !l.fechada; };
-  var linha = function(k, sit){ var l = listagemDe(s, k) || {}; return {id:k.id, sit:sit, rev:nomeBonito(k.rev), rep:nomeBonito(l.rep), horario:l.horario || "", data:String(l.data || "").slice(0, 10), mont:k.montId!=null ? nomeBonito(nomeDe(k.montId)) : ""}; };
-  var montando = (s.kits || []).filter(function(k){ return k.status==="montando" && abertas(k); }).map(function(k){ return linha(k, "Montando agora"); });
-  return montando.concat(filaMontagem(s).slice(0, 15).map(function(k, i){ return linha(k, "Próximo "+(i+1)); }));
-}
-
 // supervisão completa o valor do kit de um registro feito sem valor (a montadora não vê dinheiro)
 function JanelaValor(p){
   var sv = useState(null), se = useState(""), sg = useState(false);
@@ -63,9 +53,8 @@ function JanelaValor(p){
 function AbaFilaMontagem(){
   var cx = use(), s = cx.state, dinheiro = veDinheiro(s);
   var sq = useState(""), fila = useServidor(apiAtiva() ? "/montagem/fila"+sq[0] : ""), regs = useServidor(apiAtiva() ? "/montagem/registros?page=1&pageSize=10" : "");
-  var ssel = useState(null), sel = ssel[0], san = useState(false), sk = useState(null), sv = useState(null);
+  var ssel = useState(null), sel = ssel[0], san = useState(false), sv = useState(null);
   var revs = useMemo(function(){ return linhasRevendedoras(fila.dados && fila.dados.revendedoras); }, [fila.dados]);
-  var lst = linhasListagens(s);
   var atualizar = function(){ if(sq[0]) fila.recarregar(); else sq[1]("?atualizar=1"); };
   // primeira leitura completa do app em andamento: pergunta de novo a cada 5 s até terminar
   var lendo = !!(fila.dados && fila.dados.lendoApp);
@@ -74,12 +63,12 @@ function AbaFilaMontagem(){
 
   if(sel) return e(Pagina,null, e(MontarKit,{key:sel, id:sel, voltar:voltar}));
 
-  var dados = fila.dados, n = dados ? dados.revendedoras.length : 0, pend = revs.filter(function(r){ return r.sitK==="pendente"; }).length;
+  var dados = fila.dados;
   var sub = !apiAtiva() ? "Sem servidor ligado."
     : fila.erro ? "Não foi possível ler as revendedoras: "+fila.erro
     : !dados ? "Lendo as revendedoras do app…"
     : dados.lendoApp ? "Lendo todas as revendedoras do app; a lista completa aparece em alguns minutos."
-    : n.toLocaleString("pt-BR")+" revendedoras do app · "+pend.toLocaleString("pt-BR")+" pendentes"+(dados.lidoEm ? " · lido às "+horaSP(new Date(dados.lidoEm).toISOString()) : "")+".";
+    : "";
   var colsReg = [{k:"rev", t:"Revendedora"}, {k:"quem", t:"Montado por"}].concat(dinheiro ? [{k:"valor", t:"Valor do kit", fmt:function(v){ return v>0 ? brl(v) : "A definir"; },
       render:function(v, l){ return v>0 ? brl(v) : e(Botao,{onClick:function(ev){ ev.stopPropagation(); sv[1](l.reg); }}, "Definir valor"); }}] : [],
     [{k:"prefs", t:"Preferências"}, {k:"dur", t:"Duração"}, {k:"dia", t:"Concluído em", data:true, fmt:dataBR}, {k:"hora", t:"Hora"}]);
@@ -91,19 +80,15 @@ function AbaFilaMontagem(){
       apiAtiva() && e(Botao,{onClick:atualizar, desabilitado:fila.carregando}, fila.carregando ? "Lendo o app…" : "Atualizar do app"),
       apiAtiva() && e(Botao,{principal:true, onClick:function(){ san[1](true); }}, "Análise geral")),
     !apiAtiva() && e(SemServidor,null),
-    lst.length>0 && e(BlocoBarra,{cor:"azul", compacto:true, t:"Listagens de hoje"},
-      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, cols:[{k:"sit", t:"Situação", cor:function(l){ return l.sit==="Montando agora" ? VERDE+" font-semibold" : ""; }}, {k:"rep", t:"Representante"}, {k:"rev", t:"Revendedora"},
-        {k:"horario", t:"Horário"}, {k:"mont", t:"Montadora"}], linhas:lst, aoClicar:function(l){ sk[1](l.id); }})),
     apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Revendedoras"},
-      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, semMao:true, limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
         cols:[{k:"sit", t:"Situação", cor:function(l){ return COR_SIT[l.sitK]; }}, {k:"nome", t:"Revendedora"}, {k:"cidade", t:"Cidade"}, {k:"estado", t:"UF"}, {k:"telefone", t:"Telefone"},
           {k:"dia", t:"Atualização", data:true, fmt:dataBR}, {k:"hora", t:"Hora"}, {k:"categorias", t:"Categorias"}, {k:"ouro", t:"Ouro", fmt:pct}, {k:"prata", t:"Prata", fmt:pct},
           {k:"montagem", t:"Última montagem", data:true, fmt:dataBR}],
         linhas:revs})),
     apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Últimos registros de montagem"},
-      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, semMao:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
     san[0] && e(AnaliseGeral,{fechar:function(){ san[1](false); }}),
-    sk[0] && e(JanelaMontar,{key:sk[0], kitId:sk[0], fechar:function(){ sk[1](null); }}),
     sv[0] && e(JanelaValor,{reg:sv[0], fechar:function(){ sv[1](null); }, salvo:function(){ sv[1](null); regs.recarregar(); }}));
 }
 
