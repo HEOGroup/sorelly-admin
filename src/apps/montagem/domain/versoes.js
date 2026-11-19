@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.30", data:"2026-11-19", titulo:"Canal de denúncias: alerta não repete", itens:[
+  {tipo:"correção", area:"Canal de denúncias", txt:"O alerta de denúncia nova não volta mais a cada abertura da tela: a denúncia vira vista quando o leitor abre o Canal (em qualquer aparelho) e os alertas pendentes dão baixa sozinhos."}
+ ]},
  {v:"0.21.29", data:"2026-11-18", titulo:"Prestadores da família: bloco em 3 colunas, Editar, finalizados fechados e chave Pix puxada no Direcionar e no Atendimento", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → Cadastro de prestadores", txt:"Tela refeita: uma tabela só, com uma linha por prestador (sócio, serviço, banco, situação, dívidas, repasses e saldo) e filtro em cada coluna. Clicar na linha abre embaixo o responsável, a chave Pix, as dívidas e os repasses. Fundo azul-marinho, letra de 11 px e campos em uma linha. Cada dívida mostra Pago e Falta, e o prazo se troca na própria linha. O resumo por sócio virou uma tabela de 2 linhas e Novo prestador abre só quando precisa."},
   {tipo:"novo", area:"Financeiro → Direcionar e Atendimento Sorelly", txt:"A chave Pix do prestador da família (Greicy de cada sócio, Rebel Mode, 68 Gang...) passa a ser puxada do cadastro dele, a mesma que a tela Chaves Pix edita. Fornecedor com nome escrito diferente (Mega Sul e MegaSul) também acha a chave. Texto que não é chave (CPF, A preencher) não conta. Botão Gravar chaves Pix na tela de prestadores grava no servidor as chaves que só existiam no computador do Marcus, para o Lucas e as atendentes verem."}

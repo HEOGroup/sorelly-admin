@@ -46,12 +46,17 @@ function Ficha(p){
 }
 
 function AbaDenuncias(){
-  var cx = use(), d = cx.dispatch, lista = useState(null), itens = lista[0], er = useState(""), erroTxt = er[0], ab = useState(null), aberta = ab[0];
+  var cx = use(), s = cx.state, d = cx.dispatch, lista = useState(null), itens = lista[0], er = useState(""), erroTxt = er[0], ab = useState(null), aberta = ab[0];
   var aviso = function(t, tom){ d({type:"AVISO", txt:t, tom:tom || "alerta"}); };
   var carregar = useCallback(function(){
     return chamar("GET", "/denuncias").then(function(j){ lista[1](j.denuncias || []); er[1](""); }).catch(function(x){ er[1](x && x.message || "Não consegui abrir o canal de denúncias."); });
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ carregar(); }, [carregar]);
+  // abriu a tela = leu: os alertas "Nova denúncia" pendentes desta pessoa somem (18/11/2026: o alerta não parava de subir)
+  useEffect(function(){
+    if(!itens) return;
+    (s.alertas||[]).filter(function(a){ return a.tipo==="denuncia_nova" && (a.para||[]).indexOf(s.usuario)>=0 && (a.lidoPor||[]).indexOf(s.usuario)<0; }).forEach(function(a){ d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); });
+  }, [itens]);   // eslint-disable-line react-hooks/exhaustive-deps
   var salvar = function(id, patch){
     return chamar("PATCH", "/denuncias/"+id, patch).then(function(){ aviso("Andamento salvo", "ok"); return carregar(); }).catch(function(x){ aviso(x && x.message || "Não consegui salvar."); });
   };

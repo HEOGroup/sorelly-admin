@@ -40,6 +40,7 @@ export function garantirTabelaDenuncia() {
     .then(() => consulta("alter table sorelly.denuncia add column if not exists envolve_direcao text not null default ''"))
     .then(() => consulta("alter table sorelly.denuncia add column if not exists resposta text not null default ''"))
     .then(() => consulta("alter table sorelly.denuncia add column if not exists resposta_em timestamptz"))
+    .then(() => consulta("alter table sorelly.denuncia add column if not exists vista_em timestamptz"))   // quando um leitor abriu a lista pela primeira vez: depois disso a denúncia não gera mais alerta
     .catch((e) => { pronta = null; throw e; });
   return pronta;
 }
@@ -92,13 +93,15 @@ const COLUNAS = "id, protocolo, criado_em, categoria, setor, relacao, frequencia
 export async function listarDenuncias(eu) {
   await garantirTabelaDenuncia();
   const r = await consulta(`select ${COLUNAS} from sorelly.denuncia where true${filtroReservadas(eu)} order by criado_em desc limit 1000`);
+  // abriu a lista = viu: as denúncias que esta pessoa pode ler deixam de gerar alerta (em qualquer aparelho)
+  await consulta(`update sorelly.denuncia set vista_em = now() where vista_em is null${filtroReservadas(eu)}`);
   return r.rows;
 }
 
 // só os números das denúncias ainda não tratadas (situação "nova"): o navegador de quem lê pergunta de tempos em tempos e mostra o alerta
 export async function novasDenuncias(eu) {
   await garantirTabelaDenuncia();
-  const r = await consulta(`select id from sorelly.denuncia where situacao = 'nova'${filtroReservadas(eu)} order by id`);
+  const r = await consulta(`select id from sorelly.denuncia where situacao = 'nova' and vista_em is null${filtroReservadas(eu)} order by id`);
   return r.rows.map((x) => x.id);
 }
 
