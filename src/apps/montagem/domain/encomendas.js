@@ -662,6 +662,19 @@ function erReduz(s, a){
       if(pd.tipo==="reposicao"){ var rvd = pd.revendedoraId ? revDe(er, pd.revendedoraId) : revPorNome(er, pd.revendedora); pd.valorMax = valorMaximo(cfg, pd.media3m, !!(rvd && rvd.top50)); }
       return ok("Dados da cliente atualizados");
     }
+    // Mudar de reposição para encomenda (19/11/2026, Marcus): o pedido foi lançado como reposição, mas a solicitação era de encomenda (próximo kit). Perde a taxa e o prazo de 24 h e segue o caminho da encomenda.
+    case "ped_tipo": {
+      var pt = ped1(); if(!pt) return recusa("Pedido não encontrado.");
+      if(FINAIS[pt.status]) return recusa("Este pedido já foi encerrado.");
+      if(pt.tipo!=="reposicao") return recusa("Só uma reposição pode virar encomenda.");
+      var stAntes = pt.status;
+      pt.tipo = "encomenda"; pt.canal = ""; pt.taxa = 0; pt.taxaIsenta = false; pt.valorMax = 0; pt.hora = ""; pt.dataAgendada = "";
+      if(CAMINHOS.encomenda.indexOf(pt.status)<0) pt.status = "novo";
+      delete pt.aguardando; pt.etapaEm = agora;
+      if(!trim(pt.descricao)){ var d0 = (pt.itens || []).length ? trim(pt.itens[0].txt) : ((pt.fotos || [])[0] && trim(pt.fotos[0].nota)) || "Encomenda"; pt.descricao = d0; }
+      hist(pt, stAntes, pt.status, "Mudou de reposição para encomenda ("+por+"): sem taxa e sem prazo de 24 h");
+      return ok("Pedido mudou para encomenda");
+    }
     // "Aguardando peças" (17/11/2026, Marcus; caso da Jady: a equipe não achou as peças): o pedido continua aberto, mas sai da conta de atrasados. Ao tirar a marcação, o prazo da etapa recomeça.
     case "ped_aguardando": {
       var pg = ped1(); if(!pg) return recusa("Pedido não encontrado.");
