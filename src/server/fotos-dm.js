@@ -17,13 +17,13 @@ function inicioDaJanela(dias) {
 const agoraBR = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "medium" }).format(new Date()).replace(" ", "T");
 const hojeBR = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
-// TODOS os produtos com foto na DevMaster, sem limite de data (18/11/2026): peças antigas que o sistema já controla e ganharam foto lá não eram vistas, porque a leitura normal só olha os últimos 120 dias. Cache de 10 minutos.
+// TODOS os produtos da DevMaster (com e sem foto), sem limite de data (18/11/2026; 19/11/2026: passou a trazer também os sem foto, para a bipagem achar qualquer código): peças antigas que o sistema já controla e ganharam foto lá não eram vistas, porque a leitura normal só olha os últimos 120 dias. Cache de 10 minutos.
 async function codigosComFoto() {
   const c = (G.__sorellyFotosDmTodos = G.__sorellyFotosDmTodos || {});
   if (c.mapa && Date.now() - c.em < 10 * 60 * 1000) return c.mapa;
-  const linhas = await todasAsPaginas("dmaaa", { campos: ["aaa_codigo", "aaa_datacadastro", "aaa_foto"] });
-  const mapa = new Map();
-  linhas.forEach((x) => { if (String(x.aaa_foto || "").trim()) { const cod = String(x.aaa_codigo || "").trim().toUpperCase(); if (cod) mapa.set(cod, String(x.aaa_datacadastro || "").slice(0, 10)); } });
+  const linhas = await todasAsPaginas("dmaaa", { campos: ["aaa_codigo", "aaa_descricao", "aaa_datacadastro", "aaa_foto"] });
+  const mapa = new Map();   // código -> { dia, desc, foto }
+  linhas.forEach((x) => { const cod = String(x.aaa_codigo || "").trim().toUpperCase(); if (cod) mapa.set(cod, { dia: String(x.aaa_datacadastro || "").slice(0, 10), desc: String(x.aaa_descricao || "").trim(), foto: !!String(x.aaa_foto || "").trim() }); });
   c.mapa = mapa; c.em = Date.now();
   return mapa;
 }
@@ -64,17 +64,18 @@ export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = 
       if (alterou) mudou[chave] = c;
     }
     // peças antigas (fora dos 120 dias) que o sistema já controla e já têm foto na DevMaster: marca Foto, Editada e Sistema como "dm". A data da foto é a do cadastro (antiga), então NÃO entra na meta da semana.
-    let antigasMarcadas = 0, espPuladas = 0;
+    let antigasMarcadas = 0, espPuladas = 0, comFotoMapa = null;
     if (antigas) {
-      const comFoto = await codigosComFoto();
+      const comFoto = comFotoMapa = await codigosComFoto();
       for (const k of Object.keys(atual)) {
         if (k.indexOf("c_") !== 0) continue;
         const cod = k.slice(2);
-        if (!comFoto.has(cod)) continue;
+        const info = comFoto.get(cod);
+        if (!info || !info.foto) continue;
         const existente = mudou[k] || atual[k];
         if (!existente || typeof existente !== "object" || existente.subEm) continue;
         if (existente.esp) { espPuladas++; continue; }   // peça que a equipe marcou de propósito (Diversas, Aguardando, Repetido...): não mexe
-        const c = JSON.parse(JSON.stringify(existente)), dia = comFoto.get(cod);
+        const c = JSON.parse(JSON.stringify(existente)), dia = info.dia;
         if (!c.dmFoto) c.dmFoto = (/^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : "2000-01-01") + "T00:00:00";
         if (!c.fotoEm) c.fotoEm = "dm";
         if (!c.edEm) c.edEm = "dm";
@@ -82,12 +83,26 @@ export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = 
         mudou[k] = c; antigasMarcadas++;
       }
     }
-    if (!gravar) return { novos, subiram, antigasMarcadas, espPuladas, lidos: dm.itens.length, simulacao: true };
+    // 19/11/2026 (Marcus): o sistema tem que conhecer TODOS os códigos da DevMaster. Peça antiga que não estava na lista entra aqui (a bipagem dava "Código não encontrado", ex.: CL2450J). Com foto na DevMaster: já entra como Sistema feito, com a data do cadastro (não conta na meta). Sem foto: entra pendente.
+    let antigasNovas = 0;
+    if (antigas) {
+      for (const [cod, info] of comFotoMapa) {
+        if (!/^[A-Z0-9]{2,12}$/.test(cod) || !/[0-9]/.test(cod)) continue;
+        const k = "c_" + cod;
+        if (mudou[k] || (atual[k] && typeof atual[k] === "object")) continue;
+        const dia = /^d{4}-d{2}-d{2}$/.test(info.dia) && info.dia <= hoje ? info.dia : "2000-01-01";
+        const c = { cod, dia, por: "DevMaster" };
+        if (info.desc) c.desc = info.desc.slice(0, 140);
+        if (info.foto) { c.dmFoto = dia + "T00:00:00"; c.fotoEm = "dm"; c.edEm = "dm"; c.subEm = "dm"; }
+        mudou[k] = c; antigasNovas++;
+      }
+    }
+    if (!gravar) return { novos, subiram, antigasMarcadas, antigasNovas, espPuladas, lidos: dm.itens.length, simulacao: true };
     // a hora da leitura vai junto (m.dmEm): é o "Última atualização" da tela. Sem nada novo, só regrava se a última hora tem mais de 4 minutos.
     const agora = agoraBR(), ultima = String(((atual.m || {}).dmEm) || "");
     if (!Object.keys(mudou).length && ultima && Date.now() - Date.parse(ultima + "-03:00") < 4 * 60 * 1000) return { novos: 0, subiram: 0, antigasMarcadas: 0, lidos: dm.itens.length };
     const u = await consulta("update sorelly.estado_modulo set conteudo = jsonb_set(conteudo || $1::jsonb, '{m,dmEm}', to_jsonb($3::text), true), versao = versao + 1, atualizado_por = 'automatico', atualizado_em = now() where modulo = 'fc' and versao = $2", [JSON.stringify(mudou), r.rows[0].versao, agora]);
-    if (u.rowCount) return { novos, subiram, antigasMarcadas, lidos: dm.itens.length };
+    if (u.rowCount) return { novos, subiram, antigasMarcadas, antigasNovas, lidos: dm.itens.length };
   }
   return { novos: 0, subiram: 0, motivo: "Outra pessoa gravou ao mesmo tempo; tenta de novo na próxima." };
 }
