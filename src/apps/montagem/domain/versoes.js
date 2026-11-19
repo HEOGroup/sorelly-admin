@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.48", data:"2026-11-19", titulo:"Atendimento Sorelly: tabela do Financeiro com chave Pix junto da conta e alerta de Nova venda só 3 vezes", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Tabela do bloco Financeiro em 4 colunas: Forma, Conta e chave Pix, Valor e Comprovante. A chave Pix da conta direcionada fica colada na conta, com o botão Copiar, e continua visível até o financeiro conferir. Fundo das linhas em dourado claro."},
+  {tipo:"melhoria", area:"Financeiro → Direcionar (alerta Nova venda)", txt:"A sirene e a voz tocam só 3 vezes (a cada 4 segundos); depois o aviso fica calado na tela até alguém clicar."}
+ ]},
  {v:"0.21.47", data:"2026-11-19", titulo:"Link de pagamento: tela A descontar e aviso Aguardando no e-SiTef", itens:[
   {tipo:"novo", area:"Link de pagamento → Descontados no acerto", txt:"Nova visão A descontar: todos os links pagos e confirmados que ainda não abateram acerto, com a situação (Entra no acerto, ou Pago hoje: só no próximo acerto). Clicar numa linha abre o Incluir link já com ele escolhido. A outra visão, Descontados, continua igual."},
   {tipo:"melhoria", area:"Link de pagamento → Importar e-SiTef", txt:"Linhas AGU e NOV (aguardando pagamento) aparecem como Aguardando, com o aviso \"entra quando o e-SiTef confirmar\", no lugar de \"Situação não reconhecida\"."}

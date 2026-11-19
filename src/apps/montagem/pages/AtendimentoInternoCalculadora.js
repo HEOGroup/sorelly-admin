@@ -564,7 +564,7 @@ function AtendimentoInterno(){
   // 16/11/2026 (Marcus): na conta, em cima o CNPJ e a empresa (ex.: CNPJ 34 · Sorelly Atacadista) e embaixo a conta (ex.: Safra 34)
   var contaEmDuasLinhas = function(txt){ var pt = String(txt||"").split(" · "); if(pt.length<3) return e("span",{className:"break-words"}, txt || "—");
     return e("span",{className:"flex flex-col leading-tight", title:txt}, e("span",null, pt.slice(0, pt.length-1).join(" · ")), e("b",{className:"text-[11px]"}, pt[pt.length-1])); };
-  var GRID_FIN = "grid min-h-8 grid-cols-[minmax(0,.9fr)_minmax(0,2.2fr)_6rem_minmax(0,1.5fr)] items-center gap-2 px-2 py-1 text-center text-[13px]";
+  var GRID_FIN = "grid min-h-8 grid-cols-[minmax(0,.7fr)_minmax(0,3fr)_6rem_minmax(0,1.9fr)] items-center gap-2 px-2 py-1 text-center text-[13px]";   // 19/11/2026 (Marcus, opção C): Forma · Conta e chave Pix · Valor · Comprovante
   var STATUS_FIN = {aguardando:["Aguardando o financeiro definir e enviar as contas","#F59E0B"], conta:["Contas definidas: anexe os comprovantes","#38BDF8"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
   var trocaParte = function(i, j, patch){ var l = lancFin.linhas[i]; d({type:"FIN_LINHA", id:lancFin.id, i:i, patch:{partes:l.partes.map(function(p,k){ return k===j ? Object.assign({}, p, patch) : p; })}}); };
   // 16/11/2026 (Marcus: "compacta melhor"): título, botões e avisos na MESMA linha (os filhos entram direto na linha, "contents"); só a tabela de contas ocupa a largura toda
@@ -585,17 +585,20 @@ function AtendimentoInterno(){
       e("span",{className:"text-[13px] text-muted-foreground"}, alterado ? "Há diferença de brinde nova: reenvie ao financeiro, espere a conta e anexe o comprovante." : tudoComComprovante ? "Tudo anexado: o financeiro já pode conferir." : "Falta anexar algum comprovante.")),
     lancFin && lancFin.finalizado && !lancFin.conferido && e("p",{className:"text-[13px] font-semibold text-primary"},"Comprovantes enviados: aguardando o financeiro conferir.")),
     // 16/11/2026 (Marcus: "fora do padrão, compactar"): uma linha por conta, tudo em tabela única (Forma, Conta inteira, Valor, Situação), sem cartão dentro de cartão, sem corte "..." e sem valor dourado
+    // 19/11/2026 (Marcus, opção C): quatro colunas (Forma, Conta e chave Pix, Valor, Comprovante); a chave Pix da conta direcionada fica COLADA na conta, com o botão Copiar, e continua visível até o financeiro conferir
     lancFin && e("div",{className:"flex w-full flex-col"},
-      e("div",{className:GRID_FIN+" bg-black/30 text-[11px] font-bold uppercase tracking-[.05em]"}, e("span",null,"Forma"), e("span",null,"Conta"), e("span",null,"Valor"), e("span",null,"Situação")),
+      e("div",{className:GRID_FIN+" bg-primary/[0.18] text-[11px] font-bold uppercase tracking-[.05em]"}, e("span",null,"Forma"), e("span",null,"Conta e chave Pix"), e("span",null,"Valor"), e("span",null,"Comprovante")),
       lancFin.linhas.reduce(function(acc,l,i){ var sk = statusLinhaFin(l), st = STATUS_FIN[sk], nomeF = l.tipo==="brinde" ? "Diferença do brinde" : formaDe(l.forma).label;
         var partes = (sk!=="isento" && sk!=="aguardando") ? (l.partes||[]) : [];
-        var linha = function(chave, conta, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 "+(acc.length%2 ? "bg-white/[0.03]" : "")}, e("b",null,nomeF), contaEmDuasLinhas(conta), e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
+        var linha = function(chave, contaNo, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 py-1.5 "+(acc.length%2 ? "bg-primary/[0.12]" : "bg-primary/[0.07]")}, e("b",null,nomeF), contaNo, e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
+        var contaNo = function(txt, ck){ var pt = String(txt||"").split(" · "), dupla = pt.length>=3;
+          return e("span",{className:"flex flex-col items-center gap-1.5 py-0.5", title:txt||""}, e("span",{className:"leading-tight"}, dupla ? pt.slice(0, pt.length-1).join(" · ") : (txt || "—"), dupla && e("b",{className:"text-[11px]"}, " · "+pt[pt.length-1])),
+            ck && e("span",{className:"inline-flex max-w-full items-center gap-2 overflow-hidden rounded-md border border-primary/25 bg-primary/[0.14] pl-2.5"}, e("span",{className:"break-all font-bold "+MONO, "aria-label":"Chave Pix da conta"}, ck.chave), e(CopiarChave,{texto:ck.chave, dados:ck.dados}))); };
         var marca = e("span",{className:"justify-self-center rounded-md px-2 py-0.5 text-[11px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0]);
-        if(!partes.length){ acc.push(linha(i+"-s", "—", l.valor, marca)); return acc; }
+        if(!partes.length){ acc.push(linha(i+"-s", contaNo("—", null), l.valor, marca)); return acc; }
         partes.forEach(function(p,j){
-          var ckP = lancFin.finalizado || p.ok ? null : chaveDaParte(s, p.descricao);   // chave Pix da conta direcionada, para passar à revendedora (17/11/2026)
-          acc.push(linha(i+"-"+j, p.descricao||"—", p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
-            ckP && e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"break-all font-bold "+MONO, "aria-label":"Chave Pix da conta"}, ckP.chave), e(CopiarChave,{texto:ckP.chave, dados:ckP.dados})),
+          var ckP = p.ok ? null : chaveDaParte(s, p.descricao);   // chave Pix da conta direcionada, para passar à revendedora: fica visível até o financeiro conferir (19/11/2026)
+          acc.push(linha(i+"-"+j, contaNo(p.descricao||"—", ckP), p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
             p.ok ? e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"font-bold text-success"},"✓ conferido"),
               !p.comprovante && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Anexar comprovante",
                 e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},

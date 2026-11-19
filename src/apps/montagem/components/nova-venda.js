@@ -1,7 +1,6 @@
 // Sorelly Admin — components/nova-venda.js
 // ALERTA ALTO DE "NOVA VENDA" (Marcus, 12/11/2026): quando entra um pedido novo na fila do Direcionar (atendimento interno ou representante), quem confere pagamentos (o Lucas e quem a autorização
-// financeiro_confere marcar) ouve um som forte e uma voz dizendo "Nova venda", e vê um aviso grande no lado direito da tela, em QUALQUER tela em que estiver. O aviso fica até clicar; enquanto ficar sem clicar,
-// repete som e voz a cada 20 segundos. Clicar leva ao Direcionar. Lê a fila que já vem do servidor (módulo pag), então chega em todos os computadores. Toca sempre, mesmo com as notificações do admin desligadas (é alerta de trabalho: o Lucas precisa ouvir).
+// financeiro_confere marcar) ouve um som forte e uma voz dizendo "Nova venda", e vê um aviso grande no lado direito da tela, em QUALQUER tela em que estiver. O aviso fica até clicar; o som e a voz tocam só 3 vezes (a cada 4 s) e depois o aviso fica calado na tela. Clicar leva ao Direcionar. Lê a fila que já vem do servidor (módulo pag), então chega em todos os computadores. Toca sempre, mesmo com as notificações do admin desligadas (é alerta de trabalho: o Lucas precisa ouvir).
 // Só avisa pedido que chegou depois de a pessoa abrir o sistema (ou até 2 minutos antes), para não gritar com a fila antiga a cada recarga.
 // Teste: o botão "Testar alerta" do Direcionar dispara o mesmo aviso com um pedido de mentira (nada é gravado).
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
@@ -14,7 +13,7 @@ import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var EVENTO_TESTE = "sorelly:teste-nova-venda";
-var REPETE_MS = 4000, TOLERANCIA_MS = 120000;   // toca sem parar (sirene + voz a cada 4 s) até alguém clicar
+var REPETE_MS = 4000, TOLERANCIA_MS = 120000, VEZES = 3;   // 19/11/2026 (Marcus): sirene + voz tocam SÓ 3 vezes (a cada 4 s); depois só o aviso fica na tela, calado, até alguém clicar
 var CANAL = "sorelly:nova-venda";
 // avisa as outras abas abertas do sistema neste computador que o alerta foi atendido (todas calam ao mesmo tempo)
 function avisarAbas(){ try{ if(window.BroadcastChannel){ var c = new BroadcastChannel(CANAL); c.postMessage("atendido"); c.close(); } }catch(x){} }
@@ -73,8 +72,8 @@ function NovaVendaAlerta(p){
   useEffect(function(){ if(!window.BroadcastChannel) return undefined; var c = new BroadcastChannel(CANAL);
     c.onmessage = function(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} setPendentes([]); };
     return function(){ c.close(); }; }, []);
-  // repete som e voz enquanto ninguém clicar
-  useEffect(function(){ if(!pendentes.length) return undefined; var t = setInterval(chamar, REPETE_MS); return function(){ clearInterval(t); }; }, [pendentes.length]);
+  // repete som e voz até completar 3 vezes (a 1ª já tocou quando o pedido chegou); depois cala e o aviso continua na tela
+  useEffect(function(){ if(!pendentes.length) return undefined; var vezes = 1, t = setInterval(function(){ if(vezes>=VEZES){ clearInterval(t); return; } vezes++; chamar(); }, REPETE_MS); return function(){ clearInterval(t); }; }, [pendentes.length]);
   if(!recebe || !pendentes.length) return null;
   var ultimo = pendentes[0], mais = pendentes.length-1;
   var fechar = function(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} setPendentes([]); avisarAbas(); };
