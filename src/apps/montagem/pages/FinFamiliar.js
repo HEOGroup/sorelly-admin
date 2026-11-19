@@ -6,7 +6,7 @@ import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-con
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
-import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
+import { abrirAnexo, buscarAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -381,6 +381,7 @@ function DetPrest(p){   // o que abre embaixo da linha do prestador (Prestadores
   var nr = useState({data:hojeIso(), valor:"", origem:"", forma:"PIX", contaTxt:"", pixRev:false}), r = nr[0], setR = nr[1];
   var ed = useState(false), editando = ed[0], dr = useState(null), rasc = dr[0], aD = useState(false), aberD = aD[0], aR = useState(false), aberR = aR[0];   // formulários de lançar: fechados até clicar em + Lançar
   var irCartao = function(id){ setTimeout(function(){ var el = document.getElementById(id); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 80); };   // o cartão de lançar fica embaixo das colunas: a tela desce até ele
+  var vr = useState(null), ver = vr[0];   // comprovante aberto no cartão: {l, nome, url}
   var cf = useState(null), conf = cf[0], pedir = function(msg, fn){ cf[1]({msg:msg, fn:fn}); };   // "Tem certeza?" antes de excluir (Marcus, 18/11/2026: a dívida da Truck Plaza foi apagada sem aviso)
   var recente = function(a, b){ return a.data.localeCompare(b.data); };   // do mais antigo (em cima) para o mais novo (embaixo) (Marcus, 18/11/2026)
   var bx = baixaDividas(ff, x.id), sd = saldoPrestador(ff, x.id), socios = ff.personas.filter(function(q){ return q.tipo==="SOCIO"; });
@@ -398,14 +399,16 @@ function DetPrest(p){   // o que abre embaixo da linha do prestador (Prestadores
   // COMPROVANTE (Marcus, 19/11/2026): o Pix automático guarda o comprovante no próprio PIX (ff.pix); pago lançado à mão ou vindo do Direcionar guarda no repasse. A imagem fica no servidor (/api/anexos, módulo ff).
   var linhasRp = ff.repasses.filter(function(y){ return y.prestId===x.id; }).sort(recente).map(function(y){ var auto = !!y.origemPixLancId, dir = !!y.origemDirecionar, rot = auto ? "PIX automático" : dir ? "Direcionar" : "Lançado à mão";
     var px = auto ? ((ff.pix || []).filter(function(q){ return q.id===y.origemPixLancId; })[0] || null) : null, fonte = px || y, usado = px && (ff.pixUsados || {})[px.id];
-    return {id:y.id, pixId:px ? px.id : "", data:br(y.data), forma:y.forma || "—", quem:((y.origem==="PIX revendedora" ? (px || {}).origem : "") || y.origem || "—"), origem:(y.forma && y.forma!=="PIX" ? y.forma+" · " : "")+rot, valor:y.valor, trava:auto || dir, acao:auto ? "Automático" : dir ? "Direcionar" : "Excluir", compKey:fonte.compKey || "", comp:fonte.compKey ? "Anexado" : "Sem comprovante", usado:usado ? (usado.rev || "revendedora") : ""}; });
+    return {id:y.id, pixId:px ? px.id : "", data:br(y.data), forma:y.forma || "—", quem:((y.origem==="PIX revendedora" ? (px || {}).origem : "") || y.origem || "—"), origem:(y.forma && y.forma!=="PIX" ? y.forma+" · " : "")+rot, valor:y.valor, trava:auto || dir, acao:auto ? "Automático" : dir ? "Direcionar" : "Excluir", compKey:fonte.compKey || "", usado:usado ? (usado.rev || "revendedora") : ""}; });
   var subirComp = function(l, arq){ if(!arq) return; lerAnexo(arq).then(function(a){ return enviarAnexo("ff", a); }).then(function(sv){ acao(c, l.pixId ? "pix_comp" : "repasse_comp", {id:l.pixId || l.id, key:sv.key, nome:arq.name, tipo:arq.type}); }, function(err){ c.d({type:"AVISO", txt:((err && err.message) ? err.message+" " : "")+"Não consegui anexar o comprovante."}); }); };
+  // O PRÓPRIO VALOR é o link do comprovante (Marcus, 19/11/2026): com comprovante o valor fica sublinhado e abre o comprovante num cartão (um clique fecha); sem comprovante o valor é normal e o clique oferece anexar (foto ou PDF).
+  var abrirComp = function(l){ buscarAnexo(l.compKey).then(function(r){ if(r.mime==="application/pdf") return abrirAnexo(l.compKey); vr[1]({l:l, nome:r.nome || "", url:r.url}); }).catch(function(){ c.d({type:"AVISO", txt:"Não consegui abrir o comprovante."}); }); };
+  var celValor = function(v, l){ return l.compKey
+    ? e("button",{type:"button", title:"Abrir o comprovante deste pagamento", "aria-label":"Abrir o comprovante de "+BK(v), onClick:function(ev){ ev.stopPropagation(); abrirComp(l); }, className:"cursor-pointer font-semibold underline decoration-1 underline-offset-2 hover:opacity-80"}, BK(v))
+    : e("label",{title:"Sem comprovante. Clique para anexar (foto ou PDF).", onClick:function(ev){ ev.stopPropagation(); }, className:"cursor-pointer hover:underline hover:decoration-dotted hover:underline-offset-2"}, BK(v),
+        e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Anexar comprovante de "+BK(v), className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; subirComp(l, f); }})); };
   var quebra = function(v){ return e("span",{className:"inline-block whitespace-normal break-words leading-[13px]"}, v); };   // nome e origem quebram em linhas em vez de empurrar a tabela para o lado
-  var colsRp = [{k:"data", t:"Data", w:"4.5rem"}, {k:"quem", t:"Quem pagou", render:function(v, l){ return e(React.Fragment,null, e(DescTip,{v:v, n:3}), l.usado ? e("span",{className:"block text-[11px] font-semibold leading-[13px] text-primary", title:"Este PIX já foi usado no acerto de "+l.usado+": não entra de novo."}, "usado no acerto") : null); }}, {k:"valor", t:"Pago", w:"5.25rem", fmt:BK, cor:function(){ return "text-success"; }},
-    {k:"comp", t:"Comprovante", w:"7rem", render:function(v, l){ return e("span",{className:"inline-flex items-center justify-center gap-1"},
-      l.compKey ? botaoLinha("Ver", "Abrir o comprovante", function(){ abrirAnexo(l.compKey).catch(function(){ c.d({type:"AVISO", txt:"Não consegui abrir o comprovante."}); }); }) : null,
-      e("label",{title:l.compKey ? "Trocar o comprovante (foto ou PDF)" : "Anexar o comprovante (foto ou PDF)", onClick:function(ev){ ev.stopPropagation(); }, className:"inline-flex h-[18px] cursor-pointer items-center px-2 text-[11px] font-semibold leading-none hover:underline"}, l.compKey ? "Trocar" : "Anexar",
-        e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Anexar comprovante", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; subirComp(l, f); }}))); }},
+  var colsRp = [{k:"data", t:"Data", w:"4.5rem"}, {k:"quem", t:"Quem pagou", render:function(v, l){ return e(React.Fragment,null, e(DescTip,{v:v, n:3}), l.usado ? e("span",{className:"block text-[11px] font-semibold leading-[13px] text-primary", title:"Este PIX já foi usado no acerto de "+l.usado+": não entra de novo."}, "usado no acerto") : null); }}, {k:"valor", t:"Pago", w:"5.25rem", fmt:BK, cor:function(){ return "text-success"; }, render:function(v, l){ return celValor(v, l); }},
     {k:"acao", t:"Excluir", w:"4.75rem", render:function(v, l){ if(l.usado) return botaoLinha("Soltar", "Soltar o PIX do acerto de "+l.usado+" (só se o acerto foi cancelado)", function(){ if(window.confirm("Soltar este PIX do acerto de "+l.usado+"?\n\nSó solte se o acerto foi cancelado. Se o acerto já foi concluído, o mesmo valor entra duas vezes.")) acao(c, "pix_soltar", {id:l.pixId}); });
       return l.trava ? e("span",{className:"cursor-help", title:l.origem+" · não se exclui aqui."}, v) : botaoLinha("Excluir", "Excluir repasse", function(){ pedir("o pago de "+BK(l.valor)+" de "+l.data, function(){ acao(c, "repasse_del", {id:l.id}); }); }); }}];
 
@@ -431,6 +434,13 @@ function DetPrest(p){   // o que abre embaixo da linha do prestador (Prestadores
   var rolagem = function(el, mw){ return e("div",{className:"min-w-0 flex-1 overflow-x-auto [&_td]:!h-[22px] [&_td]:!px-1.5 [&_td]:!py-0.5 [&_td]:!text-[11px] [&_td]:!leading-[14px] [&_th]:!h-6 [&_th]:!px-0 [&_th]:!text-[11px] [&_th_button]:!gap-0.5 [&_th_button]:!px-1.5 [&_tbody_tr:last-child_td]:!border-b-2 [&_tbody_tr:last-child_td]:!border-b-white/40", "data-sem-arrastar":""}, mw ? e("div",{style:{minWidth:mw}}, el) : el); };   // letra de 11 px e células justas: as quatro colunas cabem sem rolar para o lado
 
   var grade = e("div",{className:"grid min-w-0 grid-cols-1 bg-[#1b2a4a] @min-[1155px]:grid-cols-[12rem_minmax(38.5rem,2.6fr)_minmax(22rem,1fr)]"},
+    ver && e("div",{role:"dialog", "aria-label":"Comprovante do pagamento", className:"fixed inset-0 z-[100] grid cursor-pointer place-items-center bg-black/70 p-4", onClick:function(){ vr[1](null); }},
+      e("div",{className:"flex max-h-[92vh] max-w-[92vw] cursor-default flex-col gap-2 rounded-lg border border-white/25 bg-[#0a1226] p-2", onClick:function(ev){ ev.stopPropagation(); }},
+        e("div",{className:"flex h-8 items-center justify-between gap-3 px-1 text-[13px] font-semibold"}, e("span",null, "Comprovante · "+BK(ver.l.valor)+" · "+ver.l.data),
+          e("span",{className:"flex gap-1"},
+            e("label",{className:MINI+" inline-flex cursor-pointer items-center", title:"Trocar o comprovante (foto ou PDF)"}, "Trocar", e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Trocar comprovante", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; vr[1](null); subirComp(ver.l, f); }})),
+            e("button",{type:"button", className:MINI, onClick:function(){ vr[1](null); }}, "Fechar"))),
+        e("img",{src:ver.url, alt:"Comprovante de "+BK(ver.l.valor), className:"max-h-[82vh] max-w-full rounded object-contain"}))),
     conf && e("div",{role:"alertdialog", className:"col-span-full flex flex-wrap items-center justify-center gap-3 border-b-2 border-destructive bg-[#431616] px-2 py-1.5 text-[13px] font-semibold"},
       e("span",null, "Tem certeza que quer excluir "+conf.msg+"?"),
       e(Botao,{principal:true, onClick:function(){ var fn = conf.fn; cf[1](null); fn(); }}, "Sim"),
@@ -457,7 +467,7 @@ function DetPrest(p){   // o que abre embaixo da linha do prestador (Prestadores
     e("div",{className:COL},
       e("div",{className:CAB, title:"O que já foi pago ao prestador. O repasse liquida a dívida mais antiga primeiro."}, e("span",null, "Pago"), e("button",{type:"button", className:MINI, onClick:function(){ aR[1](!aberR); if(!aberR) irCartao("cartao-r-"+x.id); }}, aberR ? "Fechar" : "+ Lançar")),
       rolagem(e(TabelaPlanilha,{cols:colsRp, linhas:linhasRp, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, alturaMax:"22rem", vazio:"Nenhum pago lançado."})),
-      e("div",{className:RODA_G, style:{gridTemplateColumns:"4.5rem minmax(0,1fr) 5.25rem 7rem 4.75rem"}}, celT("Total"), celT(""), celT(BK(totRp), "text-success"), celT(""), celT(""))));
+      e("div",{className:RODA_G, style:{gridTemplateColumns:"4.5rem minmax(0,1fr) 5.25rem 4.75rem"}}, celT("Total"), celT(""), celT(BK(totRp), "text-success"), celT(""))));
   // cartão de lançar: um bloco à parte DENTRO do bloco do prestador, embaixo das quatro colunas (Marcus, 18/11/2026: "mais um cardzinho para lançar nova dívida")
   var cartao = function(id, titulo, fecha, campos, botao){ return e("div",{id:id, className:"m-2 rounded-lg border border-white/25 bg-[#0a1226]"},
     e("div",{className:"flex h-8 items-center justify-between border-b border-[#3d4f77] px-2 text-[11px] font-bold uppercase"}, e("span",null, titulo), e("button",{type:"button", className:MINI, onClick:fecha}, "Fechar")),

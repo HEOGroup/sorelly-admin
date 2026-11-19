@@ -122,6 +122,21 @@ se2 = reducer(se2, {type:"FIN_ENVIAR", internoId:"INT-T2", nome:"Rev Teste Silva
 t("acerto pago só com o Pix adiantado: nada entra na fila do Direcionar", ((se2.dp && se2.dp.pix) || []).filter(x => x.internoId==="INT-T2").length===0);
 t("e o repasse do ff continua o mesmo (1 por Pix)", se2.ff.repasses.length===7);
 
+// ---------- 6b) Contas a pagar: a dívida do prestador mostra os comprovantes dos pagamentos que a quitaram ----------
+console.log("6b) Contas a pagar");
+{
+  let sd = Object.assign({}, inicial(), {ff:s.ff});
+  sd = reducer(sd, {type:"FF", op:"divida_add", prestId:"pr2", data:"2026-11-01", valor:1150, prazo:"", descricao:"Serviço teste", por:"T"});
+  sd = reducer(sd, {type:"FF", op:"pix_comp", id:idsAcerto[3], key:"an_conta1pagar9", nome:"c.jpg", tipo:"image/jpeg", por:"T"});   // o Pix de R$ 1.000,00 (Beta) tem comprovante; o de R$ 150,00 não
+  const it = ffm.itensDividasPrestadores(sd.ff, "2026-11-19").find(x => x.id.startsWith("ffd|") && x.nome.includes("Prestador Beta"));
+  t("a dívida quitada aparece em Contas a pagar como paga", it && it.status==="pago", JSON.stringify(it && it.status));
+  t("traz o comprovante do Pix de R$ 1.000,00 (e só ele)", it && it.comps.length===1 && it.comps[0].key==="an_conta1pagar9" && it.comps[0].valor===1000, JSON.stringify(it && it.comps));
+  t("sabe que foi paga por Pix (para mostrar Falta anexar quando não houver)", it && it.pagoPorPix===true);
+  const sd2 = reducer(sd, {type:"FF", op:"pix_comp", id:idsAcerto[3], key:"", por:"T"});
+  const it2 = ffm.itensDividasPrestadores(sd2.ff, "2026-11-19").find(x => x.id.startsWith("ffd|") && x.nome.includes("Prestador Beta"));
+  t("sem comprovante: lista vazia", it2 && it2.comps.length===0 && it2.pagoPorPix===true);
+}
+
 // ---------- 7) a tela do prestador (bloco Pago) desenha a coluna Comprovante ----------
 console.log("7) tela do prestador (desenho no Node)");
 {
@@ -135,13 +150,44 @@ console.log("7) tela do prestador (desenho no Node)");
   const c = {s:sv, d(){}, ff:sv.ff, por:"Teste", pode:true};
   const desenha = (prest) => renderToStaticMarkup(e(Ctx.Provider, {value:cx}, e(tela.DetPrest, {c, x:sv.ff.prest.find(p => p.id===prest)})));
   const html = desenha("pr1");
-  if(process.env.DEPURAR) console.log(html.replace(/<[^>]+>/g, "|").replace(/\|+/g, "|").slice(-1800));
-  t("a tabela Pago tem a coluna Comprovante", html.includes("Comprovante"));
-  t("o Pix com comprovante mostra Ver e Trocar", html.includes(">Ver<") && html.includes("Trocar"));
-  t("o Pix sem comprovante mostra Anexar", html.includes("Anexar"));
+  t("NÃO há mais coluna Comprovante: o valor é o link", !html.includes(">Comprovante<") && !html.includes(">Anexar<"));
+  t("Pix COM comprovante: o valor é um botão sublinhado que abre o comprovante", (() => { const i = html.indexOf('aria-label="Abrir o comprovante de'); return i>0 && html.slice(i, i+260).includes("underline") && html.slice(i, i+260).includes("634,55"); })());
+  t("Pix SEM comprovante: valor normal que oferece anexar (foto ou PDF)", html.includes('aria-label="Anexar comprovante de R$ 500,00"') && html.includes("image/*,application/pdf"));
   t("o Pix usado no acerto aparece marcado", html.includes("usado no acerto") && html.includes("Soltar"));
-  t("tem o seletor de arquivo (foto ou PDF)", html.includes('type="file"') && html.includes("image/*,application/pdf"));
-  t("o outro prestador (Beta) também desenha sem erro", desenha("pr2").includes("Comprovante"));
+  t("o outro prestador (Beta) também desenha sem erro", desenha("pr2").includes("R$ 1.150,00") || desenha("pr2").includes("Anexar comprovante de"));
+}
+
+// ---------- 8) importação dos comprovantes que já estão no Atendimento ----------
+console.log("8) importar comprovantes do Atendimento (só casa par único)");
+{
+  const imp = await jiti.import("@/apps/montagem/domain/comprovantes-importar");
+  const IMG = "data:image/jpeg;base64,AAAA";
+  const ts = (iso) => Date.parse(iso+"T15:00:00-03:00");
+  const lf = (id, nome, dia, valor, comp) => ({id, nome, enviadoTs:ts(dia), linhas:[{tipo:"pagamento", forma:"pix", valor, partes:[{descricao:"Conta X", valor, comprovante:comp}]}]});
+  const pag = {
+    lf_a: lf("LFa", "Rev Teste Silva de Souza", "2026-11-13", 500, {nome:"a.jpg", url:IMG}),
+    lf_b: lf("LFb", "Rev Teste Silva", "2026-11-18", 634.55, {nome:"b.jpg", url:IMG}),
+    lf_c: lf("LFc", "Outra Pessoa Qualquer", "2026-11-15", 999, {nome:"c.jpg", url:IMG}),
+    lf_d: lf("LFd", "Rev Teste Silva", "2026-11-13", 150, {nome:"d.pdf", url:"data:application/pdf;base64,AAAA"}),
+    lf_e: lf("LFe", "Rev Teste Silva", "2026-11-19", 1000, null),
+    outra: {id:"x", linhas:[]},
+  };
+  const ffi = JSON.parse(JSON.stringify(s.ff));
+  let rr = imp.casarComprovantes(pag, ffi);
+  t("casa os 2 pares únicos", rr.casados.length===2, JSON.stringify(rr.casados.map(c => [c.lfId, c.pixId])));
+  t("o de R$ 500,00 vai para o Pix de 13/11", rr.casados.some(c => c.lfId==="LFa" && ffi.pix.find(x => x.id===c.pixId).valor===500));
+  t("o sem Pix correspondente fica em semPix", rr.semPix.length===1 && rr.semPix[0].lfId==="LFc");
+  t("PDF e sem foto não entram", rr.total===3 && rr.semImagem===1);
+  t("a imagem NUNCA aparece no resultado", !JSON.stringify(rr).includes("base64"));
+  const ffd = JSON.parse(JSON.stringify(ffi)); ffd.pix.push(Object.assign({}, ffd.pix.find(x => x.valor===500 && x.data==="2026-11-13"), {id:"pxcopia"}));
+  rr = imp.casarComprovantes(pag, ffd);
+  t("dois Pix iguais: NÃO grava (ambíguo)", rr.ambiguos.length===1 && rr.ambiguos[0].lfId==="LFa" && !rr.casados.some(c => c.lfId==="LFa"));
+  const pag2 = Object.assign({}, pag, {lf_a2: lf("LFa2", "Rev Teste Silva", "2026-11-13", 500, {nome:"a2.jpg", url:IMG})});
+  rr = imp.casarComprovantes(pag2, ffi);
+  t("dois comprovantes para o mesmo Pix: NÃO grava nenhum", rr.ambiguos.filter(c => c.valor===500).length===2 && !rr.casados.some(c => c.valor===500));
+  const ffc = JSON.parse(JSON.stringify(ffi)); ffc.pix.find(x => x.valor===500 && x.data==="2026-11-13").compKey = "an_jatem00001";
+  t("Pix que já tem comprovante não é trocado", !imp.casarComprovantes(pag, ffc).casados.some(c => c.lfId==="LFa"));
+  t("data muito diferente não casa", imp.casarComprovantes({lf_z: lf("LFz", "Rev Teste Silva de Souza", "2026-12-20", 500, {nome:"z.jpg", url:IMG})}, ffi).casados.length===0);
 }
 
 console.log("\n"+(falha ?"FALHOU: "+falha+" de "+(ok+falha) : "TUDO CERTO: "+ok+" verificações"));

@@ -113,9 +113,11 @@ function itensDividasPrestadores(ff, hj){
     (bx.lista || []).forEach(function(d){
       var b = bx.porId[d.id]; if(!b) return;
       var falta = Math.round((b.falta || 0)*100)/100, quitada = falta<=0.005, venc = prazoDaDivida(d, hj), ult = quitada ? (b.fechouEm || d.data) : "";
+      // comprovantes dos pagamentos que abateram esta dívida (Marcus, 19/11/2026: o comprovante aparece também em Contas a pagar): do Pix (ff.pix) ou do próprio repasse
+      var comps = (b.cred || []).filter(function(c){ return c.tipo==="pix"; }).map(function(c){ var rp = ff.repasses.find(function(q){ return q.id===c.rid; }) || {}, px = rp.origemPixLancId ? (ff.pix || []).find(function(q){ return q.id===rp.origemPixLancId; }) : null, f = px || rp; return f.compKey ? {key:f.compKey, valor:c.v, data:c.d} : null; }).filter(Boolean);
       var atraso = !quitada && venc<hj ? Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(venc+"T00:00:00")) / 86400000)) : 0;
       out.push({id:"ffd|"+d.id, chave:"ffd|"+d.id, ff:true, ffAba:"ffprest", nome:pr.nome+" · "+(d.titulo || d.descricao || d.codigo || "Dívida"), nat:"", natNome:"Prestador"+(pr.servico ? " · "+pr.servico : ""), filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família",
-        venc:venc, emissao:d.data || "", valor:quitada ? d.valor : falta, valorTitulo:d.valor, status:quitada ? "pago" : "apagar", baixa:ult, mes:String(quitada ? ult : venc).slice(0, 7), atraso:atraso, rateioTxt:pers[pr.responsavelId] || "", saidaTxt:"—", formaTxt:"Pix"});
+        venc:venc, emissao:d.data || "", valor:quitada ? d.valor : falta, valorTitulo:d.valor, status:quitada ? "pago" : "apagar", baixa:ult, mes:String(quitada ? ult : venc).slice(0, 7), atraso:atraso, rateioTxt:pers[pr.responsavelId] || "", saidaTxt:"—", formaTxt:"Pix", comps:comps, pagoPorPix:(b.cred || []).some(function(c){ return c.tipo==="pix"; })});
     });
   });
   return out;

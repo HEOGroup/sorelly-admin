@@ -4,7 +4,8 @@
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
  {v:"0.21.61", data:"2026-11-19", titulo:"Pix adiantado: comprovante nos prestadores e acerto sem pagamento em dobro", itens:[
-  {tipo:"novo", area:"Financeiro → Financeiro familiar → Prestadores", txt:"A tabela Pago de cada prestador ganhou a coluna Comprovante, com Ver e Anexar (ou Trocar). Vale para o Pix de revendedora e para o pago lançado à mão. A foto vira JPEG pequeno e fica guardada no servidor, não só no navegador."},
+  {tipo:"novo", area:"Financeiro → Financeiro familiar → Prestadores", txt:"Na tabela Pago de cada prestador o próprio VALOR do pagamento é o link do comprovante: com comprovante o valor fica sublinhado e, ao clicar, abre a imagem num cartão (um clique fecha); sem comprovante o valor é normal e o clique oferece anexar (foto ou PDF). Vale para o Pix de revendedora e para o pago lançado à mão. A foto vira JPEG pequeno e fica guardada no servidor, não só no navegador."},
+  {tipo:"novo", area:"Financeiro → Contas a pagar", txt:"A dívida de prestador paga mostra na coluna Comprovante (visão Pago) o comprovante de cada pagamento que a quitou (Ver, ou Ver 1, Ver 2). Sem comprovante aparece Falta anexar."},
   {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"O Pix que a revendedora já mandou a um prestador ANTES do acerto entra sozinho como pagamento já pago (linha confirmada), sem lançar de novo, sem voltar para a fila do Direcionar e sem criar outro repasse. O Pix fica marcado como usado no acerto e não entra em nenhum outro."},
   {tipo:"melhoria", area:"Financeiro → Financeiro familiar", txt:"Pix usado num acerto não pode ser excluído nem ter o valor mudado. Se o acerto foi cancelado, o botão Soltar libera o Pix."}]},
  {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
