@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.66", data:"2026-11-19", titulo:"Prestadores: nome de quem pagou em no máximo 2 palavras, numa linha só", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Cadastro de prestadores", txt:"Na tabela Pago, Quem pagou mostra só 1 ou 2 nomes, sempre numa linha; o nome completo aparece ao passar o mouse. A Descrição da dívida mostra até 3 palavras numa linha e o texto inteiro também aparece ao passar o mouse. O bloco Contas de prestadores saiu da tela: o banco (e a conta que recebe o Pix) agora se edita no cartão Editar do prestador, que cria a conta quando ela não existe."},
+ ]},
  {v:"0.21.65", data:"2026-11-19", titulo:"Lançamento de pagamentos: o total do mês não muda e os Pix seguem o ciclo novo", itens:[
   {tipo:"correção", area:"Financeiro → Lançamento de pagamentos", txt:"Tudo o que foi pago no mês quita primeiro a data MAIS ANTIGA do mês, sem mudar nenhum valor cadastrado (ex.: Higor, novembro continua R$ 2.000,00: os R$ 1.159,15 pagos quitam 06/11, que fica com R$ 40,85, e 20/11 fica com R$ 800,00). Só quando o mês inteiro está pago e ainda sobra entra o ajuste \"Diferença enviada a mais\" com desconto na próxima data. Aviso na linha: \"R$ X passou para dd/mm\" e \"veio de dd/mm\"."},
   {tipo:"correção", area:"Financeiro → Fornecedores e Negociações", txt:"Ao mudar o ciclo de pagamento de um fornecedor (ou as datas do mês), os Pix já lançados nas datas antigas passam sozinhos para a data nova onde caem. Antes ficavam soltos e o mês aparecia em aberto (Higor: dia 5 → dia 6)."}
