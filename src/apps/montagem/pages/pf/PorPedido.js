@@ -10,7 +10,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { CampoSel, MenuMulti, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { acertoPorPedido, alocado, lerAlocs, pagosDoPedido, pedidosDoForn, pfReduz, resumoPedidoPf, semIdent, sugerirDivisao, textoAlocs } from "@/apps/montagem/domain/pf";
+import { acertoPorPedido, alocado, lerAlocs, novoCodigoLink, pagosDoPedido, pedidosDoForn, pfReduz, resumoPedidoPf, semIdent, sugerirDivisao, textoAlocs } from "@/apps/montagem/domain/pf";
 import { buscarAnexo } from "@/apps/montagem/lib/anexo";
 import { htmlPedidos, msgPedidos } from "@/apps/montagem/lib/relatorio-pedidos-pf";
 import { INPUT } from "@/apps/montagem/ui/input";
@@ -143,18 +143,21 @@ function ModalSugestao(p){
 // conteudo: "completo" (padrão, igual a hoje) | "um" | "varios". Com pedido escolhido, as ações abaixo valem só para ele(s).
 function EscopoRelatorio(p){
   var c = p.c, pf = c.pf, fid = p.fid, a = acertoPorPedido(pf, p.chave), todos = pedidosDoForn(pf, fid).filter(function(pd){ return pd.semNF>0.005 || pagosDoPedido(pf, pd.id).length; });
-  var ids = p.ids, setIds = p.setIds, sm = useState(""), msg = sm[0];
+  var ids = p.ids, setIds = p.setIds, sm = useState(""), msg = sm[0], sb = useState(false), boleto = sb[0];   // boleto: desligado = só Pix (igual ao acerto normal)
   var semIdLanc = pf.lancamentos.filter(function(l){ return l.fornId===fid && !l.aguardaComp && semIdent(l)>0.005; });
-  var link = function(){ var t = Object.keys(pf.linksPedido || {}).find(function(k){ var x = pf.linksPedido[k]; return x.fornId===fid && x.pedidos.join(",")===ids.slice().map(Number).sort(function(m, n){ return m-n; }).join(","); }); return t ? window.location.origin+"/acerto/"+t : ""; };
+  var link = function(){ var t = Object.keys(pf.linksPedido || {}).find(function(k){ var x = pf.linksPedido[k]; return x.fornId===fid && x.pedidos.join(",")===ids.slice().map(Number).sort(function(m, n){ return m-n; }).join(",") && !!x.boleto===boleto; }); return t ? window.location.origin+"/acerto/"+t : ""; };
   var lk = ids.length ? link() : "";
   var comprovantes = function(){
     var ls = []; ids.forEach(function(id){ pagosDoPedido(pf, Number(id)).forEach(function(x){ if(x.l.arqKey && ls.indexOf(x.l)<0) ls.push(x.l); }); });
     var mapa = {}; return Promise.all(ls.map(function(l){ return buscarAnexo(l.arqKey).then(function(r){ mapa[l.id] = r && r.url || ""; }, function(){ mapa[l.id] = ""; }); })).then(function(){ return mapa; });
   };
-  var montar = function(){ return comprovantes().then(function(m){ return htmlPedidos(pf, fid, ids.map(Number), function(l){ return m[l.id] || ""; }, {geradoEm:new Date().toISOString().slice(0, 10)}); }); };
+  var montar = function(){ return comprovantes().then(function(m){ return htmlPedidos(pf, fid, ids.map(Number), function(l){ return m[l.id] || ""; }, {geradoEm:new Date().toISOString().slice(0, 10), boleto:boleto}); }); };
   var ver = function(){ var w = window.open("", "_blank"); montar().then(function(h){ var u = URL.createObjectURL(new Blob([h], {type:"text/html"})); if(w) w.location.href = u; else window.open(u, "_blank"); setTimeout(function(){ URL.revokeObjectURL(u); }, 60000); }); };
   var baixar = function(){ montar().then(function(h){ var u = URL.createObjectURL(new Blob([h], {type:"text/html"})), el = document.createElement("a"); el.href = u; el.download = "pedidos-"+String(p.fnome || "fornecedor").toLowerCase().replace(/[^a-z0-9]+/g, "-")+".html"; document.body.appendChild(el); el.click(); el.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500); }); };
-  var gerarLink = function(){ if(!ids.length) return aviso(c, "Escolha o pedido.", "alerta"); if(!lk) tenta(c, "link_pedidos", {fornId:fid, pedidos:ids.map(Number)}); };
+  // cria o link (se ainda não existe) com um código sorteado aqui, para a mensagem já sair com ele
+  var garantirLink = function(){ if(lk) return lk; if(!ids.length){ aviso(c, "Escolha o pedido.", "alerta"); return ""; } var t = novoCodigoLink(); return tenta(c, "link_pedidos", {fornId:fid, pedidos:ids.map(Number), boleto:boleto, token:t}) ? window.location.origin+"/acerto/"+t : ""; };
+  var gerarLink = function(){ garantirLink(); };
+  var gerarMsg = function(){ if(!c.edita && !lk) return aviso(c, "Só financeiro e diretoria geram o link.", "alerta"); var u = garantirLink(); if(u) sm[1](msgPedidos(pf, fid, ids.map(Number), u, boleto)); };
   var copiar = function(t, ok){ try { navigator.clipboard.writeText(t).then(function(){ aviso(c, ok); }); } catch(x){ aviso(c, "Não consegui copiar.", "alerta"); } };
   return e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-2.5 text-center ring-1 ring-[#3B82F6]/40"},
     e("b",{className:"text-[11px] uppercase"}, "Conteúdo do relatório"),
@@ -162,13 +165,13 @@ function EscopoRelatorio(p){
     p.conteudo==="um" && e(CampoSel,{t:"Pedido", value:ids[0] ? String(ids[0]) : "", opcoes:[["", "Selecione"]].concat(todos.map(function(pd){ return [String(pd.id), pd.numero]; })), onChange:function(x){ setIds(x ? [Number(x)] : []); sm[1](""); }}),
     p.conteudo==="varios" && e(MenuMulti,{t:"Pedidos", opcoes:todos.map(function(pd){ return [String(pd.id), pd.numero]; }), valor:ids.map(String), plural:"pedidos", vazio:"Nenhum pedido", onChange:function(l){ setIds(l.map(Number)); sm[1](""); }}),
     p.conteudo!=="completo" && semIdLanc.length>0 && e("p",{className:"rounded-md bg-[#FBBF24]/15 px-2 py-1 text-[13px] text-[#FBBF24]"}, semIdLanc.length+" pagamento(s) deste fornecedor ainda sem identificação de pedido. Eles NÃO entram no relatório por pedido; revise antes de enviar."),
-    p.conteudo!=="completo" && a && a.pedidos.length===0 && null,
+    p.conteudo!=="completo" && e("label",{className:"flex cursor-pointer items-center justify-center gap-2 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:boleto, onChange:function(ev){ sb[1](ev.target.checked); sm[1](""); }}), "Incluir boleto no relatório e na mensagem (sem marcar: só o valor em Pix)"),
     p.conteudo!=="completo" && ids.length>0 && e("div",{className:"flex flex-col gap-2"},
       e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:lk || "Clique em Gerar link", "aria-label":"Link dos pedidos", className:INPUT+" h-8! min-w-0 flex-1 text-center text-[13px]!", onFocus:function(ev){ ev.target.select(); }}),
         lk ? e(Bt,{ic:"copy", onClick:function(){ copiar(lk, "Link copiado"); }}, "Copiar") : e(Bt,{ic:"link", disabled:!c.edita, onClick:gerarLink}, "Gerar link")),
       e("div",{className:"flex flex-wrap justify-center gap-2"},
         e(Bt,{ic:"eye", onClick:ver}, "Ver como o fornecedor vê"), e(Bt,{ic:"download-simple", onClick:baixar}, "Baixar HTML"),
-        e(Bt,{ic:"chat-circle-dots", onClick:function(){ sm[1](msgPedidos(pf, fid, ids.map(Number), lk)); }}, "Gerar mensagem"),
+        e(Bt,{ic:"chat-circle-dots", onClick:gerarMsg}, "Gerar mensagem"),
         msg && e(Bt,{ic:"copy", onClick:function(){ copiar(msg, "Mensagem copiada"); }}, "Copiar mensagem")),
       msg && e("textarea",{rows:9, value:msg, "aria-label":"Mensagem", onChange:function(ev){ sm[1](ev.target.value); }, className:INPUT+" h-auto! py-2 text-[13px]!"}),
       e("p",{className:"text-[11px]"}, "O link mostra só os pedidos escolhidos e os comprovantes dos pagamentos ligados a eles. Não dá acesso ao fechamento completo nem a outros pedidos.")));

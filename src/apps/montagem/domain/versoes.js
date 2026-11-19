@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.40", data:"2026-11-19", titulo:"Relatório por pedido: boleto opcional e mensagem igual à do acerto", itens:[
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"No relatório por pedido, a caixa \"Incluir boleto no relatório e na mensagem\" vem desmarcada: o HTML, o link e a mensagem mostram só o valor em Pix, igual ao acerto normal. Marcada, os três passam a mostrar também o boleto (valor, vencimento e se está pago)."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"A mensagem por pedido segue o formato da mensagem normal do acerto (Total do pedido em Pix, Já enviado, Em aberto, Pix enviados) e já sai com o link do novo HTML: Gerar mensagem cria o link na hora, sem precisar clicar antes em Gerar link."}
+ ]},
  {v:"0.21.39", data:"2026-11-19", titulo:"Brinde de indicação: forma de pagamento da diferença e nome da peça em uma linha", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"No Brinde de indicação, a funcionária escolhe a forma de pagamento da diferença (Pix, Link, Crédito...) antes de enviar ao financeiro; antes ia sempre como Pix. O nome da peça fica em uma linha só, com letra menor."}
  ]},

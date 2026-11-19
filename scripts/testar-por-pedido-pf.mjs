@@ -128,5 +128,22 @@ console.log("9. Sugerir divisão (só proposta; grava o que for confirmado)");
   t("lote com um item errado: nada é gravado (tudo ou nada)", !(ruim.patch && ruim.patch.pf));
 }
 
+console.log("10. Boleto opcional (HTML, link e mensagem) e mensagem no formato normal");
+{
+  const sem = R.htmlPedidos(s.pf, 23, [138], () => "", {});
+  const com = R.htmlPedidos(s.pf, 23, [138], () => "", { boleto:true });
+  t("sem marcar: HTML só com Pix (sem boleto)", !/Boleto/.test(sem) && /somente Pix/.test(sem) && /Valor em Pix/.test(sem));
+  t("marcado: HTML com o boleto, vencimento e situação", /Boleto · R\$\s?3\.857,85 · vence 21\/11\/2026 · em aberto/.test(com) && /Pix e boleto/.test(com));
+  const m1 = R.msgPedidos(s.pf, 23, [138], "https://x/acerto/abc", false), m2 = R.msgPedidos(s.pf, 23, [138], "https://x/acerto/abc", true);
+  t("mensagem no formato da normal (Total, Já enviado, Pix enviados, link)", /Segue o acerto do pedido \*ROMANEIO/.test(m1) && /💰 Total do pedido \(Pix\)/.test(m1) && /✅ Já enviado/.test(m1) && /📄 Pix enviados/.test(m1) && /Confira a listagem e os comprovantes aqui:\nhttps:\/\/x\/acerto\/abc/.test(m1));
+  t("sem marcar: mensagem sem boleto", !/🧾/.test(m1));
+  t("marcado: mensagem com o boleto", /🧾 Boleto: \*R\$\s?3\.857,85\* · vence 21\/11\/2026 · em aberto/.test(m2));
+  const cod = P.novoCodigoLink();
+  const pfLiga = JSON.parse(JSON.stringify(s.pf)); pfLiga.fornecedores.find((f) => f.id===23).porPedido = true;
+  const r1 = P.pfReduz({ pf:pfLiga, usuario:16 }, { type:"PF", op:"link_pedidos", por:"Teste", fornId:23, pedidos:[138], boleto:true, token:cod });
+  t("link com boleto usa o código que a tela mandou (o mesmo da mensagem)", r1.patch && r1.patch.pf.linksPedido[cod] && r1.patch.pf.linksPedido[cod].boleto===true);
+  t("link com boleto e sem boleto são diferentes", Object.keys(r1.patch.pf.linksPedido).length===2);
+}
+
 console.log("\n"+ok+" OK, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

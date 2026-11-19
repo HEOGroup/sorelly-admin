@@ -1214,7 +1214,7 @@ function pfReduz(s, a){
       var fL = F(a.fornId); if(!fL || !fL.porPedido) return recusa("Este fornecedor não usa a identificação por pedido.");
       var idsL = (a.pedidos||[]).map(Number).filter(function(id){ var p = ped(id); return p && p.fornId===fL.id && !p.ajusteChave && !p.auto; });
       if(!idsL.length) return recusa("Escolha pelo menos um pedido.");
-      tokenPedidos(pf, fL.id, idsL, a.por); return ok("Link dos pedidos gerado");
+      tokenPedidos(pf, fL.id, idsL, a.por, !!a.boleto, a.token); return ok("Link dos pedidos gerado");
     }
 
     // ---- fornecedor (salvarFornecedor / excluirFornecedor / addFornRapido)
@@ -1577,14 +1577,14 @@ function sugerirDivisao(pf, chave){
   });
   return out;
 }
+function novoCodigoLink(){ var b = new Uint8Array(20); globalThis.crypto.getRandomValues(b); return Array.from(b, function(n){ return "abcdefghijkmnpqrstuvwxyz23456789".charAt(n%32); }).join(""); }
 // link do relatório por pedido: um código por escopo (fornecedor + pedidos escolhidos). Muda o pf.
-function tokenPedidos(pf, fid, ids, por){
+function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
   var lista = ids.map(Number).filter(function(x){ return x>0; }).sort(function(a, b){ return a-b; }); pf.linksPedido = pf.linksPedido||{};
-  var ja = Object.keys(pf.linksPedido).find(function(t){ var x = pf.linksPedido[t]; return x.fornId===fid && x.pedidos.join(",")===lista.join(","); });
+  var ja = Object.keys(pf.linksPedido).find(function(t){ var x = pf.linksPedido[t]; return x.fornId===fid && x.pedidos.join(",")===lista.join(",") && !!x.boleto===!!boleto; });
   if(ja) return ja;
-  var b = new Uint8Array(20); globalThis.crypto.getRandomValues(b);
-  var t = Array.from(b, function(n){ return "abcdefghijkmnpqrstuvwxyz23456789".charAt(n%32); }).join("");
-  pf.linksPedido[t] = {fornId:fid, pedidos:lista, em:hojeIso(), por:por||""};
+  var t = typeof sugerido==="string" && /^[a-z0-9]{20}$/.test(sugerido) && !pf.linksPedido[sugerido] ? sugerido : novoCodigoLink();
+  pf.linksPedido[t] = {fornId:fid, pedidos:lista, boleto:!!boleto, em:hojeIso(), por:por||""};
   return t;
 }
 
@@ -1601,5 +1601,5 @@ export {
   mqEhAuto, mqDisponivel, mqJanelasDoMes, mqOrdinal, mqManualNaJanela, mqDistribuicao, excedenteJanela, mqDistribuido, mqSobra, mqMesesComSaldo, mqMapaAplicado, mqAplicado, mqCandidatas,
   mqSincronizarBruto, mqPreviewFech, mqPreviewDist,
   ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz,
-  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos, sugerirDivisao
+  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos, sugerirDivisao, novoCodigoLink
 };

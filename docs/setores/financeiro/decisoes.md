@@ -597,3 +597,8 @@ Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `
 - Pedido do Nickolas ("Sim, faça o botão"), depois de ver que os pagos por pedido ficavam R$ 0,00 sem identificação. Botão na área Pedidos do acerto: propõe a divisão dos Pix SEM identificação pela ordem de vencimento da parte Pix de cada pedido NESTE acerto (empate: data do pedido), até o saldo de cada um (`sugerirDivisao` em `domain/pf.js`).
 - É só proposta: grava apenas o que a pessoa deixar marcado e confirmar (op `lanc_pedidos_lote`, tudo ou nada; histórico com `sugestao:true`). Nunca vira adiantamento sozinha e não mexe no que já foi identificado.
 - Com os dados de hoje da Xangai (acerto de 30/11), a sugestão manda os 8 Pix (R$ 8.977,68) para o Romaneio 005457 (vence 19/11, antes da Fatura 5499 de 30/11).
+
+## 19/11/2026 — Relatório por pedido: boleto opcional e mensagem no formato do acerto (Nickolas, v0.21.40)
+- Caixa "Incluir boleto no relatório e na mensagem" (desmarcada por padrão). Desmarcada: HTML, link e mensagem só com o valor em Pix (igual ao acerto normal). Marcada: os três mostram também as parcelas com nota (boleto, cartão, cheque), com vencimento e situação. A opção fica gravada no link (`pf.linksPedido[código].boleto`): link com e sem boleto são códigos diferentes.
+- Mensagem por pedido no mesmo formato da mensagem normal (💰 Total do pedido em Pix, ✅ Já enviado, ⏳ Em aberto, 📄 Pix enviados, link, fecho). "Gerar mensagem" cria o link na hora (código sorteado na tela e gravado pela op `link_pedidos` com `token`), para a mensagem sair sempre com o link do novo HTML.
+- Mesmo dia: o Nickolas confirmou a sugestão de divisão: os 8 Pix da Xangai de 30/11 (R$ 8.977,68) ficaram no Romaneio 005457.
