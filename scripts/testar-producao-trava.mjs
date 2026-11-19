@@ -58,5 +58,14 @@ confere("a travada fica como estava", r.patch.pr.lancamentos["2026-11-18"].some(
 r = prReduz(s, { op: "dia_salvar", admin: true, por: "Marcus", agora: HOJE, dia: "2026-11-10", linhas: [{ func: "Ana Teste", codigo: "BB1512", qtd: 160, valor: 40, unidade: "SERENITY" }] });
 confere("Diretoria corrige dia antigo", r.patch.pr && r.patch.pr.lancamentos["2026-11-10"][0].qtd === 160);
 
+// envio do dia em lote (Leci, Didi, Dávila): vários códigos de uma vez, todos ou nenhum
+r = prReduz(s, { op: "mov_lote", admin: true, por: "Marcus", agora: HOJE, func: "Leci", dia: HOJE, itens: [{ codigo: "bb1512", qtd: 100 }, { codigo: "B5259", qtd: "50" }] });
+confere("lote grava 2 envios da Leci", r.patch.pr && r.patch.pr.movCasa.length === 2 && r.patch.pr.movCasa.every((m) => m.func === "Leci"));
+confere("lote guarda código em maiúsculas", r.patch.pr.movCasa[0].codigo === "BB1512");
+r = prReduz(s, { op: "mov_lote", admin: true, por: "Marcus", agora: HOJE, func: "Didi", dia: HOJE, itens: [{ codigo: "BB1512", qtd: 100 }, { codigo: "", qtd: 5 }] });
+confere("lote com linha errada não grava nada", !r.patch.pr && /Linha 2/.test(r.msg));
+r = prReduz(s, { op: "mov_lote", admin: true, por: "Marcus", agora: HOJE, dia: HOJE, itens: [{ codigo: "X1", qtd: 5 }] });
+confere("envio sem nome é da Dávila", r.patch.pr.movCasa[0].func === "Davila Aline");
+
 console.log(ok + " ok, " + mal + " falharam");
 process.exit(mal ? 1 : 0);

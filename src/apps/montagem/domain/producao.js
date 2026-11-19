@@ -26,9 +26,17 @@ var utcDe = function(dia){ var a = String(dia).split("-").map(Number); return Da
 var UNIDADES = ["SORELLY", "SERENITY", "CASA"];   // CASA = produção feita em casa (16/11/2026, Marcus): entra na grade e no filtro de filial, mas fica FORA do bônus (paga por dia)
 // quem NÃO ganha bônus nem aparece na Premiação (Marcus, 16/11/2026: "Taxa não ganha nada"); só se muda aqui, no código
 // 18/11/2026 (Marcus: "a Dávila está fora do bônus"): ela é da produção externa; mesmo se um dia dela voltar como Sorelly, não entra no bônus. Ela aparece PRIMEIRO na grade da Produção (só para a Diretoria).
-var EXTERNAS = {"Davila Aline":1};
-var SEM_BONUS = {'Ingred "Taxa"':1, "Davila Aline":1};
+var EXTERNAS = {"Davila Aline":1, "Didi":1};   // só fazem produção em casa (Dávila e Didi, tia do Marcus); a Leci é funcionária e só tem as linhas de unidade Externa como casa
+var SEM_BONUS = {'Ingred "Taxa"':1, "Davila Aline":1, "Didi":1};
 function ehExterna(nome){ return !!EXTERNAS[trim(nome)]; }
+var PADRAO_EXTERNA = "Davila Aline";   // envios antigos (sem nome) são dela
+/** quem faz produção em casa: as três de sempre mais qualquer nome com linha Externa ou envio anotado */
+function listaExternas(pr){
+  var out = ["Davila Aline", "Leci", "Didi"], tem = function(n){ return out.some(function(o){ return trim(o).toLowerCase()===trim(n).toLowerCase(); }); };
+  (pr.movCasa||[]).forEach(function(m){ var n = trim(m.func) || PADRAO_EXTERNA; if(!tem(n)) out.push(n); });
+  Object.keys(pr.lancamentos||{}).forEach(function(d){ (pr.lancamentos[d]||[]).forEach(function(l){ if(l.unidade==="CASA" && trim(l.func) && !tem(l.func)) out.push(trim(l.func)); }); });
+  return out;
+}
 /** linha da produção externa: filial Casa OU funcionária externa (mesmo se um dia voltou como Sorelly) */
 function eCasa(l){ return l.unidade==="CASA" || ehExterna(l.func); }
 // PAGAMENTOS (16/11/2026, Marcus: "pagar toda sexta-feira"): produção em casa = R$ 130,00 por dia trabalhado (dia com peça lançada na filial Casa), paga na sexta que fecha a semana (sábado a sexta); bônus do mês = primeira sexta a partir do dia 5 do mês seguinte. Só se muda no código.
@@ -266,21 +274,23 @@ function controleDaCasa(pr, ano, mes){
  * valor = soma do que cada dia vale (valorDiaCasa: R$ 130,00 por dia até 15/11; peças × R$ 0,45 de 16/11 em diante); recebido = dias marcados como pagos (inclusive pagamento de dia que depois mudou); aReceber = valor − recebido;
  * enviadoFin = o que já subiu ao Financeiro e ainda não foi pago. pecas = peças devolvidas já prontas no mês.
  */
-function resumoExterna(pr, ano, mes){
+function resumoExterna(pr, ano, mes, func){
+  var f = func ? trim(func).toLowerCase() : null, deles = function(n){ return !f || trim(n).toLowerCase()===f; };
   var m = ano+"-"+p2(mes), dias = {}, dp = pr.diasPagos||{}, r = {pecas:0, dias:0, valor:0, recebido:0, aReceber:0, enviadoFin:0};
-  linhasDoPeriodo(pr, m+"-01", ultimoDiaDoMes(m), null).filter(eCasa).forEach(function(l){ var q = num(l.qtd); if(q<=0 || !l.func) return; var k = l.func+"|"+l.dia, x = dias[k] || (dias[k] = {func:l.func, dia:l.dia, pecas:0}); x.pecas += q; });
+  linhasDoPeriodo(pr, m+"-01", ultimoDiaDoMes(m), null).filter(eCasa).forEach(function(l){ var q = num(l.qtd); if(q<=0 || !l.func || !deles(l.func)) return; var k = l.func+"|"+l.dia, x = dias[k] || (dias[k] = {func:l.func, dia:l.dia, pecas:0}); x.pecas += q; });
   Object.keys(dias).forEach(function(k){ var d = dias[k], v = valorDiaCasa(pr, d.func, d.dia); r.pecas += d.pecas; r.dias++; r.valor += v; if(dp[k]) r.recebido += v; });
-  Object.keys(dp).forEach(function(k){ var d = k.split("|")[1] || ""; if(!dias[k] && ehExterna(k.split("|")[0]) && d.slice(0, 7)===m){ var v = num(dp[k].valor); r.dias++; r.valor += v; r.recebido += v; } });   // dia pago que depois saiu da grade
-  pagamentosDaProducao(pr, hojeSP()).forEach(function(q){ if(q.tipo==="Produção externa" && q.envio && !q.pago) r.enviadoFin += num(q.envio.valor); });
+  Object.keys(dp).forEach(function(k){ var d = k.split("|")[1] || ""; if(!dias[k] && ehExterna(k.split("|")[0]) && deles(k.split("|")[0]) && d.slice(0, 7)===m){ var v = num(dp[k].valor); r.dias++; r.valor += v; r.recebido += v; } });   // dia pago que depois saiu da grade
+  pagamentosDaProducao(pr, hojeSP()).forEach(function(q){ if(q.tipo==="Produção externa" && deles(q.func) && q.envio && !q.pago) r.enviadoFin += num(q.envio.valor); });
   r.diasPecas = Object.keys(dias).length; r.valor = r2(r.valor); r.recebido = r2(r.recebido); r.aReceber = r2(Math.max(0, r.valor-r.recebido)); r.enviadoFin = r2(r.enviadoFin);
-  var sc = situacaoCasa(pr), sit = sc.tot; r.enviadoPecas = sit.enviado; r.devolvidoPecas = sit.devolvido; r.comEla = sit.comEla; r.codigosComEla = sc.linhas.filter(function(l){ return l.comEla>0; }).length;
+  var sc = situacaoCasa(pr, func), sit = sc.tot; r.enviadoPecas = sit.enviado; r.devolvidoPecas = sit.devolvido; r.comEla = sit.comEla; r.codigosComEla = sc.linhas.filter(function(l){ return l.comEla>0; }).length;
   return r;
 }
 
 /** Situação por código da produção externa: enviado a ela, feitas, devolvido (da grade, filial Casa) e o que está com ela. Começa em 16/11/2026. */
-function situacaoCasa(pr){
-  var dev = []; Object.keys(pr.lancamentos||{}).forEach(function(d){ if(d<CASA_CONTROLE_DESDE) return; (pr.lancamentos[d]||[]).forEach(function(l){ if(eCasa(l) && num(l.qtd)>0) dev.push({dia:d, codigo:l.codigo, qtd:num(l.qtd)}); }); });
-  return situacaoPorCodigo(pr.movCasa||[], dev);
+function situacaoCasa(pr, func){
+  var f = func ? trim(func).toLowerCase() : null, deles = function(n){ return !f || trim(n).toLowerCase()===f; };
+  var dev = []; Object.keys(pr.lancamentos||{}).forEach(function(d){ if(d<CASA_CONTROLE_DESDE) return; (pr.lancamentos[d]||[]).forEach(function(l){ if(eCasa(l) && num(l.qtd)>0 && deles(l.func)) dev.push({dia:d, codigo:l.codigo, qtd:num(l.qtd)}); }); });
+  return situacaoPorCodigo((pr.movCasa||[]).filter(function(m){ return deles(m.func || PADRAO_EXTERNA); }), dev);
 }
 
 // ---------- pagamentos (toda QUARTA-FEIRA) ----------
@@ -372,8 +382,7 @@ function prReduz(s, a){
       if(neg) return recusa("Quantidade e valor não podem ser negativos.");
       if(a.admin!==true && !diaAbertoFuncionaria(a.dia, agora)) return recusa("Este dia está travado. Só a Diretoria altera dias que já passaram.");
       if(a.admin!==true){   // 18/11/2026 (Marcus): as funcionárias só anotam a produção; a produção externa (a que faz em casa) é só da Diretoria. As linhas dela ficam como estão e não entram nem saem pela tela da funcionária.
-        var casaN = {}; Object.keys(pr.lancamentos).forEach(function(dd){ (pr.lancamentos[dd]||[]).forEach(function(l){ if(l.unidade==="CASA") casaN[trim(l.func).toLowerCase()] = 1; }); });
-        if(ls.some(function(l){ return l.unidade==="CASA" || casaN[trim(l.func).toLowerCase()]; })) return recusa("A produção externa é só da Diretoria.");
+        if(ls.some(function(l){ return l.unidade==="CASA" || ehExterna(l.func); })) return recusa("A produção externa é só da Diretoria.");
         // DIA TRAVADO: quem já tem linhas lançadas no dia não muda mais pela tela da funcionária (só a Diretoria corrige); o preço vem do último lançamento do mesmo código, nunca do que veio digitado
         var trav = travadasDoDia(pr, a.dia), eTrav = function(l){ return !!trav[trim(l.func).toLowerCase()]; }, chv = function(l){ return trim(l.func).toLowerCase()+"|"+l.codigo+"|"+l.qtd; };
         var antes = (pr.lancamentos[a.dia]||[]).filter(function(l){ return !eCasa(l) && eTrav(l); });
@@ -438,8 +447,15 @@ function prReduz(s, a){
     case "mov_add": {   // 18/11/2026 (Marcus): anota o que é ENVIADO a ela, por código (a devolução vem da grade)
       var vm = validarEnvio(a); if(vm.erro) return recusa(vm.erro);
       pr.movCasa = pr.movCasa || []; pr.seq = (pr.seq||0)+1;
-      var nv = Object.assign({id:pr.seq, por:por, em:agora}, vm.mov); pr.movCasa.push(nv);
-      log("mov_add", nv.dia+" · "+nv.codigo+" · "+nv.qtd+" enviadas, "+nv.feitas+" feitas"); return ok("Envio de "+nv.qtd+" peças ("+nv.codigo+") anotado.");
+      var nv = Object.assign({id:pr.seq, por:por, em:agora}, vm.mov, {func:trim(vm.mov.func) || PADRAO_EXTERNA}); pr.movCasa.push(nv);
+      log("mov_add", nv.func+" · "+nv.dia+" · "+nv.codigo+" · "+nv.qtd+" enviadas, "+nv.feitas+" feitas"); return ok("Envio de "+nv.qtd+" peças ("+nv.codigo+") anotado.");
+    }
+    case "mov_lote": {   // 19/11/2026 (Marcus: "é lançamento do dia, elas sempre lançam mais de uma peça"): vários códigos de uma vez, todos com a mesma data; se uma linha estiver errada, nada é gravado
+      var itens = Array.isArray(a.itens) ? a.itens : []; if(!itens.length) return recusa("Informe ao menos um código e a quantidade.");
+      var novos = []; for(var li=0; li<itens.length; li++){ var vl = validarEnvio({dia:a.dia, func:a.func, codigo:itens[li].codigo, qtd:itens[li].qtd, feitas:0, obs:itens[li].obs || a.obs}); if(vl.erro) return recusa("Linha "+(li+1)+": "+vl.erro); novos.push(vl.mov); }
+      pr.movCasa = pr.movCasa || []; var totalLote = 0;
+      novos.forEach(function(m2){ pr.seq = (pr.seq||0)+1; pr.movCasa.push(Object.assign({id:pr.seq, por:por, em:agora}, m2, {func:trim(m2.func) || PADRAO_EXTERNA})); totalLote += m2.qtd; });
+      log("mov_lote", (trim(a.func) || PADRAO_EXTERNA)+" · "+a.dia+" · "+novos.length+" códigos, "+totalLote+" peças enviadas"); return ok("Envio de "+totalLote+" peças ("+novos.length+" códigos) anotado.");
     }
     case "mov_feitas": {   // quantas ela já fez daquele envio (ela informa)
       var mv = (pr.movCasa||[]).find(function(x){ return String(x.id)===String(a.id); }); if(!mv) return recusa("Envio não encontrado.");
@@ -527,4 +543,4 @@ export { situacaoCasa, CASA_CONTROLE_DESDE, prDemo, prMigrar, prReduz, hojeSP, s
   valorLinha, limparLinha, limparLinhas, montarMapa, categoriaDe, agregar, tendencia, ranking,
   intervaloPeriodo, intervaloAnterior, rotuloIntervalo, linhasDoDia, linhasDoPeriodo, diasComLancamento, diaAnterior, diaSeguinte,
   painelPeriodo, resumoDoDia, textoDoDia, nomesParaLancamento, semProducaoRecente, categoriaDaLinha,
-  diaAbertoFuncionaria, ehExterna, eCasa, resumoExterna, precoPorCodigo, travadasDoDia, BONUS_DIAS, BONUS_PAGA_DIA, bonusDoDia, pecasPorDia, bonusPelosDias, ajusteDoMes, pecasDoMes, diasTrabalhados, metaPorDia, premiacaoDoMes };
+  diaAbertoFuncionaria, listaExternas, ehExterna, eCasa, resumoExterna, precoPorCodigo, travadasDoDia, BONUS_DIAS, BONUS_PAGA_DIA, bonusDoDia, pecasPorDia, bonusPelosDias, ajusteDoMes, pecasDoMes, diasTrabalhados, metaPorDia, premiacaoDoMes };

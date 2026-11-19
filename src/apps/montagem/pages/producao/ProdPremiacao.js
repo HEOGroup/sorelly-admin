@@ -72,7 +72,7 @@ function AbaProdPremiacao(){
           e("span",{className:"flex-1"}),
           e("span",{className:"text-[13px] font-semibold text-white"}, "Pagamento em "+dataBr), x.leitura && e("span",{className:"text-[13px] font-semibold text-white"}, "Somente consulta")),
         e(TabelaPlanilha,{key:"grade"+mesTxt, cols:cols, linhas:linhas, chave:"id", grade:true, compacta:true, barraFina:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, linhaCls:function(r){ return (r.par ? "[&&>td]:!bg-[#2b3550] " : "")+(r.tipo==="Peças" ? "[&&>td:first-child]:!z-20" : ""); }, vazio:"Nenhuma produção lançada neste mês."})),
-      e("div",{className:"grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"},
+      e("div",{className:"grid grid-cols-1 items-stretch gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"},
         e(BlocoPainel,{titulo:"Pagamento do bônus", dir:formatarReais(pagar.reduce(function(t, r){ return t+r.bonus; }, 0)), compacto:true},
           e(TabelaPlanilha,{key:"pag"+mesTxt, cols:colsP, linhas:pagar, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalP, vazio:"Nenhuma produção lançada neste mês."})),
         e(BlocoPainel,{titulo:"Regras do bônus", compacto:true},

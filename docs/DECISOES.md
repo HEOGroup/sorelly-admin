@@ -2959,3 +2959,9 @@ Marcus: "trava os dias pra ninguém poder mexer". A funcionária só lança hoje
 - Caixa "Incluir boleto no relatório e na mensagem" (desmarcada por padrão). Desmarcada: HTML, link e mensagem só com o valor em Pix (igual ao acerto normal). Marcada: os três mostram também as parcelas com nota (boleto, cartão, cheque), com vencimento e situação. A opção fica gravada no link (`pf.linksPedido[código].boleto`): link com e sem boleto são códigos diferentes.
 - Mensagem por pedido no mesmo formato da mensagem normal (💰 Total do pedido em Pix, ✅ Já enviado, ⏳ Em aberto, 📄 Pix enviados, link, fecho). "Gerar mensagem" cria o link na hora (código sorteado na tela e gravado pela op `link_pedidos` com `token`), para a mensagem sair sempre com o link do novo HTML.
 - Mesmo dia: o Nickolas confirmou a sugestão de divisão: os 8 Pix da Xangai de 30/11 (R$ 8.977,68) ficaram no Romaneio 005457.
+
+## 19/11/2026 · Produção em casa: mais duas pessoas e estoque enviado em lote
+Marcus: mais duas pessoas fazem peças em casa, no mesmo cálculo (R$ 0,45 por peça), e cada uma precisa de um campo para lançar o estoque enviado. Feito: menu Pessoa na tela Produção externa (cada pessoa com o seu resumo, estoque, movimentações e pagamentos); cada envio guarda o nome (os antigos são da primeira pessoa); o estoque enviado é o lançamento do DIA (uma data, várias linhas, preço do código vindo da DevMaster, total da remessa). Uma funcionária que também faz em casa continua com a produção interna normal: só a linha de unidade Externa conta como casa. Para pagar pelo Financeiro, cada pessoa precisa estar cadastrada como prestadora de serviço com a chave Pix.
+
+## 19/11/2026 · Regra de sistema: blocos lado a lado
+Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a mesma altura e a mesma barra de título; o botão de ação do bloco vai no canto esquerdo da barra azul (acao do BlocoPainel). Anotado em docs/design/PADRAO-VISUAL.md e no CLAUDE.md.

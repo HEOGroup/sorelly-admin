@@ -140,3 +140,5 @@ Hoje a peça chega por foto e texto no WhatsApp (modelo, custo, quantidade, forn
 
 ## Git
 Branch `master`. O GitHub Actions (`.github/workflows/ci.yml`) roda lint e build em todo PR e push: com X vermelho, não fazer merge. Rodar `npm run verificar` antes de subir. Só commitar quando o Marcus pedir.
+
+- **REGRA FIXA (19/11/2026): blocos lado a lado têm a MESMA altura e a mesma barra de título; o botão de ação do bloco vai no CANTO ESQUERDO da barra azul (`acao` do `BlocoPainel`), nunca numa faixa extra.** Grade com `items-stretch`. Detalhes na seção "VALE HOJE" de `docs/design/PADRAO-VISUAL.md`.

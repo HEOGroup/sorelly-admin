@@ -113,9 +113,8 @@ function EditorDia(p){
   var totalRodape = function(l2){ return cols.map(function(c, i){ return i===0 ? "TOTAL · "+l2.length : i===iq ? formatarInteiro(l2.reduce(function(t, r){ return t+(Number(r.qtd) || 0); }, 0)) : i===iv ? formatarReais(l2.reduce(function(t, r){ return t+r.total; }, 0)) : ""; }); };
   var status = restrito ? (diaFechado ? "Dia travado" : travado ? "Lançado e travado" : "Rascunho") : sSalvo[0]==="pendente" ? "Salvando" : sSalvo[0]==="salvo" ? "Salvo" : "Salvamento automático";
   // quem aparece na lista de funcionárias: o cadastro e quem já tem linha no dia
-  var casaNomes = {}; Object.keys(pr.lancamentos).forEach(function(dd){ (pr.lancamentos[dd] || []).forEach(function(l){ if(l.unidade==="CASA") casaNomes[String(l.func || "").trim().toLowerCase()] = 1; }); });   // quem faz em casa não aparece para a funcionária
   var nomes = nomesProducaoRh(x.s).slice(); nomesParaLancamento(pr).concat(ed.linhas.map(function(l){ return l.func; })).forEach(function(n){ if(n && !nomes.some(function(m){ return igual(m, n); })) nomes.push(n); });
-  if(!x.admin) nomes = nomes.filter(function(n){ return !casaNomes[String(n || "").trim().toLowerCase()] && !ehExterna(n); });   // nomes do RH (setor Produção) primeiro; depois quem já está no cadastro ou na tela
+  if(!x.admin) nomes = nomes.filter(function(n){ return !ehExterna(n); });   // nomes do RH (setor Produção) primeiro; depois quem já está no cadastro ou na tela
 
   // MESMO VISUAL da tela Produção (Marcus, 16/11/2026: "fontes mais padronizadas, as cores"): barra azul de título, faixa azul de controles com os mesmos campos e botões, tabela de 13 px.
   var branco = " bg-white !text-[#14233f] hover:!bg-white/90";

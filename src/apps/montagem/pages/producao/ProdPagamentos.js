@@ -25,7 +25,7 @@ function AbaProdPagamentos(props){
   var pendentesEnvio = x.admin ? pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).map(function(q){ return q.func; }).join("|") : "";
   useEffect(function(){ pendentesEnvio.split("|").filter(Boolean).forEach(function(nome){ var ws = semAcento(nome).split(/\s+/).filter(Boolean), f = ((cf.pf && cf.pf.fornecedores) || []).filter(function(g){ var n = semAcento(g.nome); return g.tipo==="prestador" && ws.every(function(w){ return n.indexOf(w)>=0; }); })[0]; garantirDestino(f); }); pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).forEach(function(q){ if(!temConta(q)) criaConta(q); }); }, [pendentesEnvio, Object.keys(x.pr.envios||{}).join(), !!(cf.s.cp && cf.s.cp.destinos), !!(cf.s.cpe && cf.s.cpe.lanc)]);   // eslint-disable-line react-hooks/exhaustive-deps
   if(!x.admin && !x.leitura) return casca(props && props.semRaiz, e(BlocoPainel,{titulo:"Pagamentos da produção", compacto:true}, e(Aviso,null, "Somente a diretoria acessa.")));
-  var lista = pagamentosDaProducao(x.pr, hoje);
+  var lista = pagamentosDaProducao(x.pr, hoje).filter(function(q){ return !(props && props.func) || String(q.func).trim().toLowerCase()===String(props.func).trim().toLowerCase(); });   // uma pessoa por vez (escolhida na tela Produção externa)
   // prestador do Financeiro com o mesmo nome (todas as palavras do nome da produção estão no nome do cadastro)
   var prestadorDe = function(nome){ var ws = semAcento(nome).split(/\s+/).filter(Boolean); return ((cf.pf && cf.pf.fornecedores) || []).filter(function(f){ var n = semAcento(f.nome); return f.tipo==="prestador" && ws.every(function(w){ return n.indexOf(w)>=0; }); })[0] || null; };
 
@@ -74,7 +74,7 @@ function AbaProdPagamentos(props){
   // PAGAMENTOS, um por SEMANA (segunda a domingo, paga na quarta): semana, quando paga, peças, valor da semana, quanto já foi pago e quanto falta (Marcus, 19/11/2026: "arruma os pagamentos, está estranho")
   var pecasDe = function(p){ return p.tipo==="Bônus" ? null : p.dias.reduce(function(t, d){ return t+(((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===p.func && eCasa(l); }).reduce(function(t2, l){ return t2+(Number(l.qtd)||0); }, 0)); }, 0); };
   var semanaDe = function(p){ return p.tipo==="Bônus" ? p.detalhe.split(" · ")[0] : formatarDia(somaDias(p.data, -9)).slice(0, 5)+" a "+formatarDia(somaDias(p.data, -3)).slice(0, 5); };
-  var varias = lista.some(function(p){ return p.tipo==="Bônus"; }) || lista.some(function(p){ return p.func!==lista[0].func; });
+  var varias = lista.some(function(p){ return p.tipo==="Bônus"; }) || lista.some(function(p){ return p.func!==lista[0].func; });   // com a pessoa escolhida só sobram as linhas dela
   var linhas = lista.map(function(p){
     var situ = p.pago ? "Pago" : p.envio ? (Math.abs(p.envio.valor-p.valor)>0.005 ? "Valor mudou" : "Enviado ao Financeiro") : p.data<hoje ? "Atrasado" : "A enviar";
     var jaPago = p.pago ? p.pago.valor : Math.max(0, Math.round((p.total-p.bruto)*100)/100);

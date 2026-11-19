@@ -16,7 +16,7 @@ function validarEnvio(a){
   if(codigo.length<2) return {erro:"Informe o código da peça."};
   if(!(qtd>0)) return {erro:"Informe a quantidade enviada."};
   if(feitas<0 || feitas>qtd) return {erro:"As feitas precisam ficar entre 0 e "+qtd+"."};
-  return {mov:{dia:a.dia, codigo:codigo, qtd:qtd, feitas:feitas, obs:String(a.obs || "").trim()}};
+  return {mov:{dia:a.dia, func:String(a.func || "").trim(), codigo:codigo, qtd:qtd, feitas:feitas, obs:String(a.obs || "").trim()}};
 }
 
 /**

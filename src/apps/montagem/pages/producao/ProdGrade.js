@@ -6,7 +6,7 @@
 import { ProdModelos } from "@/apps/montagem/pages/producao/ProdModelos";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { META_DIA_PADRAO, ROTULO_UNIDADE, UNIDADES, bonusDoDia, diaDaSemana, ehExterna, resumoExterna, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, nomeMes, somaDias } from "@/apps/montagem/domain/producao";
+import { META_DIA_PADRAO, ROTULO_UNIDADE, UNIDADES, bonusDoDia, diaDaSemana, eCasa, ehExterna, resumoExterna, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, nomeMes, somaDias } from "@/apps/montagem/domain/producao";
 import { EditorDia } from "@/apps/montagem/pages/producao/ProdEditorDia";
 import { BtFaixa, CAMPO_FAIXA, FaixaAzul, GRADE_LIMPA, Raiz, grupoBtn, usePr } from "@/apps/montagem/pages/producao/visualProd";
 import { e, useState } from "@/shared/react";
@@ -23,8 +23,8 @@ function AbaProdGrade(){
   // soma por funcionária e dia (nomes iguais sem diferenciar maiúscula e minúscula entram juntos; o nome mostrado é o da grafia com mais peças)
   var por = {}, dias = {}, comDado = {};
   linhas.forEach(function(l){
-    var q = Number(l.qtd) || 0, nm = String(l.func || "").trim() || "Sem nome", k = nm.toLowerCase(), g = por[k] || (por[k] = {nome:nm, graf:{}, dia:{}, unid:{}, total:0});
-    g.unid[l.unidade || ""] = 1; g.graf[nm] = (g.graf[nm] || 0)+q; g.dia[l.dia] = (g.dia[l.dia] || 0)+q; g.total += q; dias[l.dia] = (dias[l.dia] || 0)+q; comDado[l.dia] = 1;
+    var q = Number(l.qtd) || 0, nm = String(l.func || "").trim() || "Sem nome", k = nm.toLowerCase(), g = por[k] || (por[k] = {nome:nm, graf:{}, dia:{}, diaB:{}, unid:{}, total:0});
+    g.unid[l.unidade || ""] = 1; if(eCasa(l)) g.temCasa = true; else g.diaB[l.dia] = (g.diaB[l.dia] || 0)+q; g.graf[nm] = (g.graf[nm] || 0)+q; g.dia[l.dia] = (g.dia[l.dia] || 0)+q; g.total += q; dias[l.dia] = (dias[l.dia] || 0)+q; comDado[l.dia] = 1;
   });
   var diasMes = [];
   // TODOS os dias do mês, do 1 ao último (Marcus, 16/11/2026: "cadê os dias 17 em diante?"); domingo e hoje ficam marcados no topo da coluna
@@ -34,8 +34,8 @@ function AbaProdGrade(){
   var rows = Object.keys(por).map(function(k){
     var g = por[k], melhor = Object.keys(g.graf).sort(function(a, b){ return g.graf[b]-g.graf[a]; })[0];
     var casa = !Object.keys(g.unid).some(function(u){ return u!=="CASA"; }) || ehExterna(melhor);   // só produz em casa: fora do bônus (paga por dia), então Bônus e Falta ficam em traço
-    var bonusMes = Object.keys(g.dia).reduce(function(t, dd){ return t+bonusDoDia(g.dia[dd]); }, 0);   // bônus por DIA: R$ 15 (300), R$ 20 (350), R$ 25 (400+), somado no mês
-    var r = {id:k, nome:melhor, casa:casa, total:g.total, bonus:casa ? (ehExterna(melhor) ? resumoExterna(pr, Number(mes.slice(0, 4)), Number(mes.slice(5, 7))).valor : "—") : bonusMes};   // a externa recebe pelas peças (diária até 15/11, R$ 0,45 por peça depois), não bônus
+    var bonusMes = Object.keys(g.diaB).reduce(function(t, dd){ return t+bonusDoDia(g.diaB[dd]); }, 0);   // bônus só das peças internas (a produção em casa paga R$ 0,45 por peça, sem bônus)   // bônus por DIA: R$ 15 (300), R$ 20 (350), R$ 25 (400+), somado no mês
+    var r = {id:k, nome:melhor, casa:casa, total:g.total, bonus:(casa || g.temCasa) ? (casa ? 0 : bonusMes)+resumoExterna(pr, Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), melhor).valor : bonusMes};   // a externa recebe pelas peças (diária até 15/11, R$ 0,45 por peça depois), não bônus
     diasMes.forEach(function(dd){ r["d"+dd] = g.dia[dd] || 0; });
     return r;
   }).sort(function(a, b){ return (b.casa ? 1 : 0)-(a.casa ? 1 : 0) || b.total-a.total; });   // a produção externa (Dávila) vem PRIMEIRO, só para a Diretoria; depois quem mais fez
