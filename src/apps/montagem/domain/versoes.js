@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.52", data:"2026-11-19", titulo:"Link de pagamento: importar tudo do e-SiTef, nomes já gravados corrigidos e Compras para o Agendamento", itens:[
+  {tipo:"melhoria", area:"Link de pagamento → Importar e-SiTef", txt:"Agora o relatório entra inteiro: as linhas aguardando pagamento (AGU) e novas (NOV) viram Link gerado, e o que o Admin tinha expirado, mas o e-SiTef ainda espera, volta a Link gerado. A caixa Incluir continua valendo para deixar de fora os links das representantes."},
+  {tipo:"correção", area:"Link de pagamento", txt:"Os nomes já gravados com erro (Ale Andra Cri Thinye) são corrigidos sozinhos quando o nome certo já existe em outro link ou na lista de revendedoras. Os demais se corrigem importando o mesmo arquivo de novo."},
+  {tipo:"melhoria", area:"Acessos → Agendamento", txt:"O setor Agendamento passa a abrir Compras e estoque e Pedidos de material (só para pedir material). Aprovar e liberar compra continua só com quem tem a autorização."}
+ ]},
  {v:"0.21.51", data:"2026-11-19", titulo:"Atendimento Sorelly: selo At. - Nome na lista de hoje", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Na lista de hoje, o selo de quem está em atendimento agora mostra At. - Nome (antes Atendendo · Nome). O nome da funcionária aparece em qualquer largura de tela."}
  ]},
