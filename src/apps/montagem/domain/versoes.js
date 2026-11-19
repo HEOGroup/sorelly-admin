@@ -6,7 +6,10 @@ var VERSOES = [
  {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Cada combinado avulso ganhou o horário de início e de fim e o campo Bate ponto (Sim ou Não), para marcar se a pessoa precisa registrar o ponto naquele dia."}]},
  {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
-  {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."}]},
+  {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."},
+  {tipo:"novo", area:"RH → Acessos e autorizações", txt:"A coluna Ação virou um menu suspenso: Bloquear ou Liberar, Copiar acesso (mensagem com endereço, usuário e senha para mandar no WhatsApp) e Gerar senha nova. Corrigi também a entrada 0.21.56 do registro de versões, que estava sem o fecho."},
+  {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"A coluna Setor mostra onde cada pessoa trabalha mesmo com acesso Total ou Direção (Anamaria e Ana Beatriz: Financeiro; Amanda de Miranda: Inadimplência). Cada pessoa ganhou uma bolinha na cor do grupo, a planilha tem fundo azul, os menus e botões têm um azul claro de fundo, letra de 11 px, e o texto de todos os menus está centralizado."}
+]},
  {v:"0.21.59", data:"2026-11-19", titulo:"Canal de denúncias: a lista atualiza sozinha", itens:[
   {tipo:"melhoria", area:"Canal de denúncias", txt:"A lista de denúncias recarrega sozinha a cada 30 segundos e ao voltar para a aba. Denúncia nova aparece sem precisar abrir a tela de novo."}
  ]},
