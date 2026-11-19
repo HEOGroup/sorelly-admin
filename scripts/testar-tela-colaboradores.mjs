@@ -55,6 +55,23 @@ try {
   t("Negociações › Todas: só hora extra = Dinheiro, com as colunas Forma, Hora extra e Joias", !!ful && ful.forma==="Dinheiro" && ["Forma", "Hora extra (dinheiro)", "Joias (combinado)"].every((n) => td.cols.some((c2) => c2.t===n)));
   const td2 = jv.negTodas(cj, [{id:"x2", nome:"Beltrana Brinde", setor:"Agendamento", h1:20, h2:"", h3:"", sab:"", forma:"Dinheiro + joias"}]);
   t("Negociações › Todas: a forma escolhida na ficha vale", td2.linhas.find((l) => l.nome==="Beltrana Brinde").forma==="Dinheiro + joias");
+  // combinados avulsos (ex.: domingo 9h às 15h, R$ 150 em dinheiro + R$ 168 em joias): ficam na negociação da pessoa e somam na lista
+  const td3 = jv.negTodas(cj, [{id:"x3", nome:"Camille Avulso", setor:"Agendamento", h1:20, h2:"", h3:"", sab:"", acordos:[{id:"a1", data:"2026-11-22", texto:"Domingo 9h às 15h", din:150, joias:168, sit:"Combinado"}, {id:"a2", data:"2026-11-29", texto:"Domingo 9h às 12h", din:100, joias:null, sit:"Pago"}]}]);
+  const cam = td3.linhas.find((l) => l.nome==="Camille Avulso");
+  t("Combinados avulsos somam dinheiro e joias na lista", !!cam && cam.avulsoDin===250 && cam.avulsoJoias===168 && td3.cols.some((c2) => c2.t==="Avulsos (joias)"));
+  const rhA = JSON.parse(JSON.stringify(rhD)); rhA.negoc = rhA.negoc || (await jiti.import("@/apps/montagem/domain/rh")).negocPadrao(); const pessoa0 = rhA.negoc && rhA.negoc.pessoas && rhA.negoc.pessoas[0];
+  if(pessoa0){
+    const { NegCard } = await jiti.import("@/apps/montagem/pages/RH");
+    pessoa0.acordos = [{id:"a1", data:"2026-11-22", texto:"Domingo 9h às 15h", din:150, joias:168, sit:"Combinado"}];
+    const hc = renderToString(React.createElement(NegCard, { c:{ s:{usuario:16, rh:rhA}, rh:rhA, d(){}, por:"Teste", veSalario:true }, id:pessoa0.id, fechar(){} }));
+    t("Ficha da negociação mostra Combinados avulsos, com o botão Novo combinado e o total", /Combinados avulsos/.test(hc) && /Novo combinado/.test(hc) && /Total:/.test(hc) && /Domingo 9h/.test(hc) && /Forma de pagamento/.test(hc));
+    pessoa0.acordos = [];
+    t("Sem combinados, a ficha avisa e deixa anotar", /Nenhum combinado anotado/.test(renderToString(React.createElement(NegCard, { c:{ s:{usuario:16, rh:rhA}, rh:rhA, d(){}, por:"Teste", veSalario:true }, id:pessoa0.id, fechar(){} }))));
+    delete pessoa0.acordos;
+    const gravou = rhReduz({ rh:rhA }, { type:"RH", op:"neg_pessoa_set", por:"Teste", id:pessoa0.id, patch:{ acordos:[{id:"a1", data:"2026-11-22", texto:"Domingo 9h às 15h", din:150, joias:168, sit:"Combinado"}] } });
+    const depois = (gravou.patch.rh || rhA).negoc.pessoas.find((x) => x.id===pessoa0.id);
+    t("Combinados avulsos são gravados na negociação da pessoa", !!depois && Array.isArray(depois.acordos) && depois.acordos[0].joias===168 && depois.acordos[0].din===150);
+  }
 } catch(x){ t("Negociações › Todas", false, String(x && x.stack || x).slice(0, 300)); }
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

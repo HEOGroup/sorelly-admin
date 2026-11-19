@@ -338,7 +338,7 @@ var REGRAS_NEG = ["Completar as horas definidas para ter direito ao valor.", "A 
 function negDados(c){
   var rh = c.rh, neg = rh.negoc || negocPadrao(), colabs = colaboradoresRh(c.s), din = function(v){ return v===null || v===undefined ? "" : v; };
   var linhas = neg.pessoas.map(function(p){ var x = colabs.find(function(y){ return y.id===p.id; }), ef = negocEfetiva(rh, p.id), sem = ef.h1===null && ef.h2===null && ef.sab===null, pend = /pendente|vincular|confirmar/i.test(p.obs||"");
-    return {id:p.id, forma:p.forma||"", nome:p.nome, setor:p.grupoId==="g-dir" ? "Diretoria" : (x ? x.setor : "—"), grupo:ef.grupo, h1:din(ef.h1), h2:din(ef.h2), h3:din(ef.h3), sab:din(ef.sab), maxDia:din(ef.maxDia), vezesSem:din(ef.vezesSem), sabMes:din(ef.sabMes), sit:sem ? "Sem valor" : pend ? "A confirmar" : "Completa", obs:p.obs||""}; })
+    return {id:p.id, forma:p.forma||"", acordos:p.acordos||[], nome:p.nome, setor:p.grupoId==="g-dir" ? "Diretoria" : (x ? x.setor : "—"), grupo:ef.grupo, h1:din(ef.h1), h2:din(ef.h2), h3:din(ef.h3), sab:din(ef.sab), maxDia:din(ef.maxDia), vezesSem:din(ef.vezesSem), sabMes:din(ef.sabMes), sit:sem ? "Sem valor" : pend ? "A confirmar" : "Completa", obs:p.obs||""}; })
     .sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
   var moeda = function(v){ return v==="" ? "" : BK(v); };
   var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"grupo", t:"Grupo"}, {k:"h1", t:"1 hora", fmt:moeda}, {k:"h2", t:"2 horas", fmt:moeda}, {k:"h3", t:"3 horas", fmt:moeda}, {k:"sab", t:"Sábado", fmt:moeda},
@@ -352,6 +352,28 @@ function negCampos(c, alvo, aoSet, padrao, larga){
   var mo = function(k, t2){ return e(CampoDin,{key:k, t:rotP(t2, k), id:"neg-"+alvo.id+k, value:alvo[k]===null || alvo[k]===undefined ? null : alvo[k], onChange:function(v){ var o = {}; o[k] = v==="" || v===null || Number(v)===0 ? null : Number(v); aoSet(o); }}); };
   var nu = function(k, t2){ return e("div",{key:k, className:"min-w-0"+(larga ? " col-span-2" : "")}, e(Rotulo,{t:rotP(t2, k), id:"neg-"+alvo.id+k}), e("input",{id:"neg-"+alvo.id+k, type:"number", min:0, value:alvo[k]===null || alvo[k]===undefined ? "" : alvo[k], className:CAMPO+" text-center tabular-nums", onChange:function(ev){ var o = {}; o[k] = ev.target.value==="" ? null : Number(ev.target.value); aoSet(o); }})); };
   return [mo("h1", "1 hora"), mo("h2", "2 horas"), mo("h3", "3 horas"), mo("sab", "Sábado"), nu("maxDia", "Máximo por dia"), nu("vezesSem", "Vezes por semana"), nu("sabMes", "Sábados por mês")];
+}
+// Combinados avulsos de uma pessoa (Marcus, 19/11/2026): cada combinado tem o dia, o que foi combinado (ex.: domingo das 9h às 15h), o valor em dinheiro e o valor em joias (preço de venda das peças).
+// Ficam na própria negociação da pessoa (campo "acordos"); a coluna Situação marca o que já foi pago.
+function negAcordos(c, p, setP){
+  var lista = Array.isArray(p.acordos) ? p.acordos : [], mudar = function(id, patch){ setP({acordos:lista.map(function(a){ return a.id===id ? Object.assign({}, a, patch) : a; })}); };
+  var novo = function(){ setP({acordos:lista.concat([{id:"ac"+Date.now().toString(36), data:hojeIso(), texto:"", din:null, joias:null, sit:"Combinado"}])}); };
+  var tot = function(k){ return lista.reduce(function(s, a){ return s + (Number(a[k])||0); }, 0); };
+  var cab = function(t2){ return e("span",{className:"text-center text-[11px] font-bold uppercase tracking-[.05em]"}, t2); };
+  var GRADE = "grid grid-cols-[9rem_minmax(12rem,1fr)_8rem_8rem_8rem_2rem] items-end gap-2";
+  var linhas = lista.map(function(a){ return e("div",{key:a.id, className:GRADE},
+    e("input",{type:"date", value:a.data||"", "aria-label":"Dia do combinado", className:CAMPO+" text-center", onChange:function(ev){ mudar(a.id, {data:ev.target.value}); }}),
+    e(CampoTexto,{t:"", id:"ac-t-"+a.id, value:a.texto||"", onChange:function(v){ mudar(a.id, {texto:v}); }}),
+    e(CampoDin,{t:"", id:"ac-d-"+a.id, value:a.din===null || a.din===undefined ? null : a.din, onChange:function(v){ mudar(a.id, {din:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
+    e(CampoDin,{t:"", id:"ac-j-"+a.id, value:a.joias===null || a.joias===undefined ? null : a.joias, onChange:function(v){ mudar(a.id, {joias:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
+    e(CampoSel,{t:"", id:"ac-s-"+a.id, value:a.sit||"Combinado", onChange:function(v){ mudar(a.id, {sit:v}); }, opcoes:[["Combinado", "Combinado"], ["Pago", "Pago"]]}),
+    e("button",{type:"button", "aria-label":"Remover combinado", title:"Remover", onClick:function(){ if(window.confirm("Remover este combinado?")) setP({acordos:lista.filter(function(x){ return x.id!==a.id; })}); }, className:"h-8 text-[13px] hover:text-red-400"}, "✕")); });
+  return e(FichaCaixa,{key:"ac", t:"Combinados avulsos", dir:e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "ex.: domingo das 9h às 15h · R$ 150,00 em dinheiro + R$ 168,00 em joias")},
+    e("div",{className:"flex flex-col gap-2"},
+      lista.length ? e("div",{className:GRADE}, cab("Dia"), cab("Combinado"), cab("Dinheiro"), cab("Joias (peças)"), cab("Situação"), "") : e("span",{className:"text-[13px]"}, "Nenhum combinado anotado."),
+      linhas,
+      e("div",{className:"flex flex-wrap items-center justify-between gap-2"}, e(Botao,{onClick:novo}, "Novo combinado"),
+        lista.length ? e("span",{className:"text-[13px] tabular-nums"}, "Total: "+BK(tot("din"))+" em dinheiro + "+BK(tot("joias"))+" em joias") : null)));
 }
 function NegCard(pp){
   var c = pp.c, d = negDados(c), neg = d.neg, p = neg.pessoas.find(function(x){ return x.id===pp.id; });
@@ -371,6 +393,7 @@ function NegCard(pp){
       e(CampoSel,{key:"forma", t:"Forma de pagamento", id:"neg-forma", value:p.forma||"", onChange:function(v){ setP({forma:v}); }, opcoes:[["", "Automática"], ["Dinheiro", "Dinheiro"], ["Joias", "Joias"], ["Dinheiro + joias", "Dinheiro + joias"]]}),
       negCampos(c, p, setP, g),
       e(CampoTexto,{t:"Observação", id:"neg-obs", cls:"col-span-2 md:col-span-4", value:p.obs||"", onChange:function(v){ setP({obs:v}); }}))),
+    negAcordos(c, p, setP),
     e(FichaCaixa,{key:"r", t:"Regras de todos os grupos"}, e("div",{className:"flex flex-col gap-1 text-[13px]"}, REGRAS_NEG.map(function(t2){ return e("span",{key:t2}, t2); })))];
   return e(FichaMoldura,{t:"Negociação · "+p.nome, largo:true, fechar:pp.fechar, esquerda:esquerda, direita:direita,
     rodape:[e(Botao,{key:"d", onClick:function(){ if(window.confirm("Remover a negociação de "+p.nome+"?")){ acao(c, "neg_pessoa_del", {id:p.id}); pp.fechar(); } }}, "Remover negociação"), e(Botao,{key:"f", principal:true, onClick:pp.fechar}, "Fechar")]});
@@ -627,4 +650,4 @@ function AbaRhJoias(){
   if(typeof window!=="undefined"){ window.__visaoRh = "neg"; window.__negTipo = "joias"; }
   return e(AbaRhColab);
 }
-export { FormColab, AbaRhJoias, AbaRhEscala42, AbaRhVisao, AbaRhPresenca, AbaRhRelatorio, AbaRhColab, AbaRhAdv, AbaRhExp, AbaRhHoras, AbaRhNegoc, AbaRhConfig };
+export { NegCard, FormColab, AbaRhJoias, AbaRhEscala42, AbaRhVisao, AbaRhPresenca, AbaRhRelatorio, AbaRhColab, AbaRhAdv, AbaRhExp, AbaRhHoras, AbaRhNegoc, AbaRhConfig };

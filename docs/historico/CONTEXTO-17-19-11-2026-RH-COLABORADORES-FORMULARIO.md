@@ -19,6 +19,7 @@ Dados reais (CPF, salário, telefone) NÃO estão aqui: ficam no servidor e nos 
 | 10 | Formulário online para cada funcionário preencher | Um link por pessoa, sem login. O RH confere e só então aplica no cadastro | seção 2 |
 | 11 | Telefone particular e mensagem para a Maria enviar | Coluna Telefone com ⧉, coluna "Msg para funcionário" com ⧉, mensagem pronta para a Maria no alto | `pages/rh/FormularioFunc.js` |
 | 12 | Links de todos já prontos | A janela cria sozinha o link de todos os ativos ao abrir | idem |
+| 14 | Combinados avulsos: uma nova negociação pontual (ex.: domingo das 9h às 15h por R$ 150,00 + R$ 168,00 em joias) | Bloco na ficha da negociação de cada pessoa: dia, combinado, dinheiro, joias (preço de venda das peças), situação, total. Aparece também na lista Dinheiro + joias | `negAcordos` em `pages/RH.js` (campo `acordos` da pessoa) |
 | 13 | Faixa azul sem botões lado a lado | Tudo em menu suspenso. O menu Visão fica curto; ao escolher Negociações, abre ao lado o menu da FORMA, nesta ordem: Dinheiro / Joias / Dinheiro + joias (e Por pessoa / Pagamentos / Resumo em Joias). Eu tinha juntado tudo no Visão e o Marcus não quis: os menus ficam SEPARADOS, ao lado | `SegAzul` (agora um select) |
 
 ## 2. Formulário dos funcionários (como funciona)
@@ -55,6 +56,7 @@ Teste: `node scripts/testar-ficha-func.mjs` (18 verificações).
 - Negociações: tirar Kesiane e Amanda de Miranda. Lucas Oliveira e Nickolas são Diretoria. Grupo novo: Camilly, Helen e Michele (Cadastro de revendedoras) e Rayssa (Cadastro de peças).
 - **Negociação = o que o RH combina com cada pessoa. A forma é Dinheiro, Joias ou Dinheiro + joias.** A Ana Paula recebe em joias (não tem dinheiro fixo).
 - **"Brinde" = pagar a funcionária com joias.** Exemplo: R$ 122,00 em joias para fazer 2 horas extras.
+- **Nova negociação avulsa:** abra a pessoa em Negociações e clique em **Novo combinado**, dentro de Combinados avulsos. Valor em joias = preço de venda das peças.
 - A Maria Claudia (código 38) é a responsável pelo RH. Ela já tem acesso igual ao do Marcus.
 - Escolha de opções = menu suspenso, nunca botões lado a lado (regra de 09/11/2026, reforçada em 18/11).
 - Faixa azul: menu Visão curto e, ao escolher Negociações, abre AO LADO o menu da forma (Dinheiro / Joias / Dinheiro + joias, a ordem que o Marcus escreveu) (não juntos no Visão).

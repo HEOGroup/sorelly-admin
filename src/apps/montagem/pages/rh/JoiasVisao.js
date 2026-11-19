@@ -47,13 +47,14 @@ function negTodas(c, heLinhas){
   heLinhas.forEach(function(l){
     var g = grupos.find(function(o){ return (o.colabId && o.colabId===l.id) || o.k===norm(l.nome); }); if(g) usados[g.k] = 1;
     var he = temHe(l), jo = !!(g && (g.neg || g.itens.length)), forma = l.forma || (he && jo ? "Dinheiro + joias" : jo ? "Joias" : he ? "Dinheiro" : "Sem valor");   // a forma escolhida pela diretoria na ficha vale; sem escolha, sai do que está cadastrado
-    linhas.push({id:l.id, heId:l.id, joiasK:g ? g.k : "", nome:l.nome, setor:l.setor, forma:forma, he:he ? heTxt(l) : "—", joias:g ? combinadoTxt(g.neg) : "—"});
+    var ac = Array.isArray(l.acordos) ? l.acordos : [], somaAc = function(k){ return ac.reduce(function(s, a){ return s + (Number(a[k])||0); }, 0); };
+    linhas.push({id:l.id, heId:l.id, joiasK:g ? g.k : "", nome:l.nome, setor:l.setor, forma:forma, he:he ? heTxt(l) : "—", joias:g ? combinadoTxt(g.neg) : "—", avulsoDin:somaAc("din"), avulsoJoias:somaAc("joias")});
   });
   grupos.forEach(function(g){ if(usados[g.k]) return;
-    linhas.push({id:g.k, heId:"", joiasK:g.k, nome:g.nome, setor:g.setor || "—", forma:"Joias", he:"—", joias:combinadoTxt(g.neg)}); });
+    linhas.push({id:g.k, heId:"", joiasK:g.k, nome:g.nome, setor:g.setor || "—", forma:"Joias", he:"—", joias:combinadoTxt(g.neg), avulsoDin:0, avulsoJoias:0}); });
   linhas.sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
   var COR_FORMA = {"Dinheiro":"text-emerald-400", "Joias":"text-amber-400", "Dinheiro + joias":"text-sky-400", "Sem valor":""};
-  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"forma", t:"Forma", cor:function(l){ return COR_FORMA[l.forma] || ""; }}, {k:"he", t:"Hora extra (dinheiro)"}, {k:"joias", t:"Joias (combinado)"}];
+  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"forma", t:"Forma", cor:function(l){ return COR_FORMA[l.forma] || ""; }}, {k:"he", t:"Hora extra (dinheiro)"}, {k:"joias", t:"Joias (combinado)"}, {k:"avulsoDin", t:"Avulsos (dinheiro)", fmt:brl}, {k:"avulsoJoias", t:"Avulsos (joias)", fmt:brl}];
   return {cols:cols, linhas:linhas};
 }
 
