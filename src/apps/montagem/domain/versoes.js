@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.49", data:"2026-11-19", titulo:"Atendimento Sorelly: sem botão Cliente aguardando na lista e sem a caixa do desconto de crédito", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Saiu o botão Cliente aguardando da lista de hoje: a chegada agora é marcada na ficha, no relógio do topo (Marcar agora). A caixa do desconto de crédito, com borda e botão Entendi, virou uma linha de texto."}
+ ]},
  {v:"0.21.48", data:"2026-11-19", titulo:"Atendimento Sorelly: tabela do Financeiro com chave Pix junto da conta e alerta de Nova venda só 3 vezes", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Tabela do bloco Financeiro em 4 colunas: Forma, Conta e chave Pix, Valor e Comprovante. A chave Pix da conta direcionada fica colada na conta, com o botão Copiar, e continua visível até o financeiro conferir. Fundo das linhas em dourado claro."},
   {tipo:"melhoria", area:"Financeiro → Direcionar (alerta Nova venda)", txt:"A sirene e a voz tocam só 3 vezes (a cada 4 segundos); depois o aviso fica calado na tela até alguém clicar."}
