@@ -1246,7 +1246,7 @@ function reducer(s, a){
       var abertasF = [], pagosF = [];
       // 12/11/2026 (Marcus): a diferença do brinde também sobe para o Direcionar (antes só os pagamentos subiam, e o pedido sumia da fila)
       novoF.linhas.forEach(function(l, i){ if((l.tipo!=="pagamento" && l.tipo!=="brinde") || l.isento) return;
-        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:"pix", valor:l.valor, linha:i, brinde:true}); return; }
+        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:l.forma ? formaDp(l.forma) : "pix", valor:l.valor, linha:i, brinde:true}); return; }   // forma escolhida no Atendimento chega ao Direcionar (19/11/2026)
         if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
         else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
       return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
@@ -1256,7 +1256,7 @@ function reducer(s, a){
       var lfQ = (s.lancFin||[]).find(function(x){ return x.internoId===a.internoId; });
       if(!lfQ || lfQ.conferido || lfQ.cancelado) return s;
       var cobertas = []; ((s.dp && s.dp.pix) || []).forEach(function(x){ if(x.internoId===a.internoId && x.status==="fila") cobertas = cobertas.concat(x.linhas||[]); });   // linhas do lançamento que já estão numa fila
-      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:"pix", valor:l.valor, linha:i, brinde:true}); });
+      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:l.forma==="link" ? "link" : (l.forma==="credito" || l.forma==="debito") ? "maquininha" : "pix", valor:l.valor, linha:i, brinde:true}); });
       if(!abQ.length) return s;
       var rsQ = lfQ.resumo || {};
       return Object.assign({}, s, dpReduz(s, {op:"int_pedir", idPedido:"PB"+a.internoId, internoId:a.internoId, nome:lfQ.nome, atendente:lfQ.por||"", vendas:rsQ.vendido||0, aPagar:rsQ.aPagar||0, abertas:abQ, pagos:[]}).patch);

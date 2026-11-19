@@ -570,39 +570,76 @@ function descontoSaiu(pf, j){ var aj = ajusteDaChave(pf, j.chave), fid = j.fornI
   return somaPorChave(out, "chave"); }
 function ajustarExcessos(pf){
   var vencDe = function(j){ return j.itens.filter(function(l){ return eSem(l) && !l.pd.ajusteChave; }).reduce(function(m, l){ return l.p.venc>m ? l.p.venc : m; }, "") || j.fim; };
-  var dbr = function(d){ return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); };
-  var antes = JSON.stringify(pf.pedidos.filter(function(pd){ return pd.ajusteChave; }));
-  // regra anterior (18/11/2026): os pares "Saldo pago a mais → passou para" saem; a sobra volta para a data de origem e vira ajuste
-  var n0 = pf.lancamentos.length;
+  var dbr = function(d){ return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); }, dm = function(c){ var l = c.split("|")[1]; return l.slice(8,10)+"/"+l.slice(5,7); };
+  var antesPd = JSON.stringify(pf.pedidos.filter(function(pd){ return pd.ajusteChave; }));
+  // 1) tira os pares automáticos e os ajustes e refaz a conta do zero (o que não mudar volta igual, com o mesmo id)
+  var paresVelhos = {}; pf.lancamentos.forEach(function(l){ if(l.auto && l.par && (l.paraChave || l.deChave)){ var k = l.paraChave ? l.chave+">"+l.paraChave : l.deChave+">"+l.chave; (paresVelhos[k] = paresVelhos[k]||[]).push(l); } });
+  var antesL = pf.lancamentos.length;
   pf.lancamentos = pf.lancamentos.filter(function(l){ return !(l.auto && (l.paraChave || l.deChave)); });
-  var mudou = pf.lancamentos.length!==n0;
-  // tira os ajustes, refaz a conta do zero e devolve com o mesmo id (o histórico não muda à toa)
   var velhos = {}; pf.pedidos.forEach(function(pd){ if(pd.ajusteChave) velhos[pd.ajusteChave] = pd; });
   pf.pedidos = pf.pedidos.filter(function(pd){ return !pd.ajusteChave; }); invalidar(pf);
-  var novos = [];
+  var novos = [], pares = [];
   pf.fornecedores.forEach(function(f){
     if(f.id===PT_FORN) return;
-    var js = janelasDoForn(pf, f.id), desc = {};   // desc[chave] = desconto que a data já recebeu de ajustes anteriores
-    var totalDe = function(j){ return r2(j.total-(desc[j.chave]||0)); }, abertoDe = function(j){ return r2(Math.max(0, totalDe(j)-pagoJanela(pf, j.chave))); };
+    var js = janelasDoForn(pf, f.id), desc = {}, entra = {}, sai = {};   // desc = desconto de ajuste; entra/sai = pago passado entre datas do MESMO mês
+    var totalDe = function(j){ return r2(j.total-(desc[j.chave]||0)); }, pagoDe = function(j){ return r2(pagoJanela(pf, j.chave)+(entra[j.chave]||0)-(sai[j.chave]||0)); };
+    var abertoDe = function(j){ return r2(Math.max(0, totalDe(j)-pagoDe(j))); }, semMq = function(k){ return !(mqAplicado(pf, k.chave)>0.005); };
+    // 2) o MÊS manda (Lucas, 19/11/2026: "se coloquei 2.000 em novembro, vai ser 2.000 em novembro"): tudo o que foi pago no mês quita primeiro a data MAIS ANTIGA
+    //    do mês (regra da casa: o Pix quita a parcela aberta mais antiga), sem mudar nenhum valor cadastrado. O que sobra do mês fica na última data e vira o passo 3.
+    var porMes = {}; js.forEach(function(j){ if(ajustaExcesso(pf, j.chave)) (porMes[j.mes] = porMes[j.mes]||[]).push(j); });
+    Object.keys(porMes).forEach(function(mes){
+      var g = porMes[mes].slice().sort(function(a, b){ return a.limite.localeCompare(b.limite); }), resto = r2(g.reduce(function(t, j){ return t+pagoJanela(pf, j.chave); }, 0));
+      var dif = g.map(function(j, i){ var alvo = i===g.length-1 ? resto : r2(Math.min(resto, j.total)); resto = r2(resto-alvo); return {j:j, d:r2(alvo-pagoJanela(pf, j.chave))}; });
+      var sobra = dif.filter(function(x){ return x.d<-0.005; }), falta = dif.filter(function(x){ return x.d>0.005; });
+      falta.forEach(function(fx){ sobra.forEach(function(sx){
+        var v = r2(Math.min(fx.d, -sx.d)); if(v<=0.005) return;
+        sai[sx.j.chave] = r2((sai[sx.j.chave]||0)+v); entra[fx.j.chave] = r2((entra[fx.j.chave]||0)+v); fx.d = r2(fx.d-v); sx.d = r2(sx.d+v); pares.push({de:sx.j, para:fx.j, valor:v, fid:f.id});
+      }); });
+    });
     js.forEach(function(j){
       if(!ajustaExcesso(pf, j.chave)) return;
-      var exc = r2(pagoJanela(pf, j.chave)-totalDe(j)); if(exc<=0.005) return;
+      var exc = r2(pagoDe(j)-totalDe(j));
+      if(exc<=0.005) return;
+      // 3) o mês inteiro pago e ainda sobra: a dívida da data sobe (ajuste "Diferença enviada a mais") e o mesmo valor sai das próximas datas em aberto
       var parcelas = [{forma:"pix_revendedora", venc:vencDe(j), valor:exc, conta:"—", status:"Pendente"}], resto = exc, para = [];
       js.forEach(function(k){
-        if(resto<=0.005 || k.limite<=j.limite || mqAplicado(pf, k.chave)>0.005) return;
+        if(resto<=0.005 || k.limite<=j.limite || !semMq(k)) return;
         var v = r2(Math.min(resto, abertoDe(k))); if(v<=0.005) return;
         parcelas.push({forma:"pix_revendedora", venc:vencDe(k), valor:-v, conta:"—", status:"Pendente"});
         desc[k.chave] = r2((desc[k.chave]||0)+v); resto = r2(resto-v); para.push(brl(v)+" descontado em "+dbr(k.limite));
       });
       var pd = velhos[j.chave] || {id:pf.seq.P++};
-      Object.assign(pd, {fornId:f.id, numero:AJUSTE_NOME, data:parcelas[0].venc, total:r2(exc-(exc-resto)), nfTipo:"sem", comNF:0, semNF:r2(exc-(exc-resto)), cnpj:"Sem NF", nfNum:"",
-        descricao:"Ajuste automático: os pagamentos da data "+dbr(j.limite)+" passaram do total em "+brl(exc)+". A dívida da data subiu "+brl(exc)+(para.length ? "; "+para.join("; ") : "; não há data seguinte em aberto para descontar")+".",
+      Object.assign(pd, {fornId:f.id, numero:AJUSTE_NOME, data:parcelas[0].venc, total:resto, nfTipo:"sem", comNF:0, semNF:resto, cnpj:"Sem NF", nfNum:"",
+        descricao:"Ajuste automático: os pagamentos de "+mesLabel(j.mes+"-01")+" passaram do total do mês em "+brl(exc)+". A dívida da data "+dbr(j.limite)+" subiu "+brl(exc)+(para.length ? "; "+para.join("; ") : "; não há data seguinte em aberto para descontar")+".",
         limite:j.limite, pixMin:0, ajusteChave:j.chave, auto:true, parcelas:parcelas});
       novos.push(pd);
     });
   });
+  // pares do mesmo mês: −X na data que passou e +X na data que recebeu ("Crédito", conferido, automático). Igual ao que já existia = volta o mesmo
+  var hoje = hojeIso();
+  pares.forEach(function(x){
+    var k = x.de.chave+">"+x.para.chave, v = paresVelhos[k];
+    if(v && v.length===2 && v.every(function(l){ return Math.abs(Math.abs(l.valor)-x.valor)<0.005; })){ pf.lancamentos = pf.lancamentos.concat(v); return; }
+    var par = "t"+pf.seq.L, base = {fornId:x.fid, data:hoje, conta:"Crédito", arqNome:"", arqTipo:"", arqData:"", conferido:true, conferidoEm:hoje, par:par, auto:true};
+    pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:x.de.chave, mes:x.de.mes, limite:x.de.limite, revendedora:"Pago do mês → quita "+dm(x.para.chave)+" (data mais antiga)", valor:-x.valor, paraChave:x.para.chave}, base));
+    pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:x.para.chave, mes:x.para.mes, limite:x.para.limite, revendedora:"Pago do mês ← veio de "+dm(x.de.chave), valor:x.valor, deChave:x.de.chave}, base));
+  });
   pf.pedidos = pf.pedidos.concat(novos); invalidar(pf);
-  return mudou || JSON.stringify(novos)!==antes;
+  return pf.lancamentos.length!==antesL || JSON.stringify(novos)!==antesPd;
+}
+// mudou o ciclo (ou as datas do mês) de um fornecedor: os Pix lançados nas datas antigas passam para a data nova onde caem (Lucas, 19/11/2026: Higor, dia 5 → dia 6)
+function religarLancamentos(pf, fid){
+  invalidar(pf);
+  var js = janelasDoForn(pf, fid), tem = {}, n = 0, mapa = {}; js.forEach(function(j){ tem[j.chave] = j; });
+  pf.lancamentos.forEach(function(l){
+    if(l.fornId!==fid || tem[l.chave]) return;
+    var lim = String(l.chave).split("|")[1]; if(!/^\d{4}-\d{2}-\d{2}$/.test(lim||"")) return;
+    var novo = fid+"|"+limiteDoVenc(pf, fid, lim), j = tem[novo]; if(!j) return;
+    mapa[l.chave] = novo; l.chave = novo; l.limite = j.limite; l.mes = j.mes; n++;
+  });
+  pf.lancamentos.forEach(function(l){ if(l.fornId!==fid) return; if(l.deChave && mapa[l.deChave]) l.deChave = mapa[l.deChave]; if(l.paraChave && mapa[l.paraChave]) l.paraChave = mapa[l.paraChave]; });
+  invalidar(pf);
+  return n;
 }
 // saldo que falta numa data passa para a 1ª data do mês seguinte (Lucas, 17/11/2026): move/divide as parcelas Pix da data,
 // da mais nova para a mais antiga, sem mudar o total do pedido. Point fica fora (conta corrente com tela própria).
@@ -1232,7 +1269,9 @@ function pfReduz(s, a){
       var p1 = a.patch||{};
       if(p1.nome!==undefined){ p1.nome = String(p1.nome).trim(); if(!p1.nome) return recusa("Informe o nome do fornecedor."); }
       if(p1.ciclo){ p1.ciclo = {periodicidade:p1.ciclo.periodicidade||"custom", cortes:limpaCortes(p1.ciclo.cortes).length ? limpaCortes(p1.ciclo.cortes) : [31], prazoDias:parseInt(p1.ciclo.prazoDias)||0}; }
-      Object.assign(f1, p1); return ok("Fornecedor atualizado");
+      Object.assign(f1, p1);
+      var nRel = p1.ciclo ? religarLancamentos(pf, f1.id) : 0;
+      return ok("Fornecedor atualizado"+(nRel ? " · "+nRel+" Pix passaram para as datas novas" : ""));
     }
     case "forn_del": {
       var f2 = F(a.id); if(!f2) return recusa("Fornecedor não encontrado.");
@@ -1253,8 +1292,7 @@ function pfReduz(s, a){
       if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
       if(fid2===PT_FORN && ptMesTem(pf, a.data.slice(0,7))) return recusa(ptMsgRepetido(a.data));
       var ePrest2 = ehPrestador(F(fid2)), pixMin = num(a.pixMin);
-      if(ePrest2 && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
-      if(ePrest2 && pixMin<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
+      // 19/11/2026 (Lucas): a "Negociação do prestador" (data limite e Pix mínimo) saiu da janela do pedido; não é mais obrigatória
       var todas = expandirParcelas(a.linhas);
       if(todas.some(function(p){ return !FORMAS[p.forma] || !DATA_OK.test(p.venc); })) return recusa("Há parcela com forma de pagamento ou data inválida.");
       var pCom = c>0.005 ? todas.filter(function(p){ return FORMAS[p.forma].nf==="com"; }) : [], pSem = s2>0.005 ? todas.filter(function(p){ return FORMAS[p.forma].nf==="sem"; }) : [];
@@ -1265,7 +1303,7 @@ function pfReduz(s, a){
       var num1 = a.numero||"s/nº", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
       var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
-      if(ePrest2){ novoPd.limite = a.limite; novoPd.pixMin = pixMin; }
+      if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
       var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);
       if(impLim.length) novoPd.avisoLimite = motivoImpacto(impLim);
@@ -1285,8 +1323,6 @@ function pfReduz(s, a){
       var pagasE = pe.parcelas.filter(function(p){ return p.status==="Pago"; });
       if(fidE!==pe.fornId && pagasE.length) return recusa("Este pedido já tem parcela paga: não dá para trocar o fornecedor. Estorne as baixas antes.");
       var ePrestE = ehPrestador(F(fidE));
-      if(ePrestE && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
-      if(ePrestE && num(a.pixMin)<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
       var todasE = expandirParcelas(a.linhas);
       if(todasE.some(function(p){ return !FORMAS[p.forma] || !DATA_OK.test(p.venc); })) return recusa("Há parcela com forma de pagamento ou data inválida.");
       var sobraE = todasE.slice(), mantidas = [];
@@ -1317,7 +1353,7 @@ function pfReduz(s, a){
       pe.fornId = fidE; pe.numero = a.numero||"s/nº"; pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
-      if(ePrestE){ pe.limite = a.limite; pe.pixMin = num(a.pixMin); } else { delete pe.limite; delete pe.pixMin; }
+      if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)
       pe.parcelas = todasParc;
       var impE = a.semLimite ? [] : impactoPedido(pf, pe); if(impE.length) pe.avisoLimite = motivoImpacto(impE); else delete pe.avisoLimite;
       pe.historico = (pe.historico||[]).concat([{em:new Date().toISOString().slice(0, 16).replace("T", " "), por:a.por||"", mudou:mud.join(" · ")}]);
@@ -1389,9 +1425,10 @@ function pfReduz(s, a){
       if(!F(a.fornId) || !a.mes) return recusa("Escolha o fornecedor e o mês.");
       if(bl.some(function(b){ return b.fim.slice(0,7)!==a.mes; }) && !a.forcar) return recusa("Há data(s) de fechamento fora de "+mesLabel(a.mes+"-01")+". Salvar assim mesmo?", true);
       pf.acertos[a.fornId+"|"+a.mes] = bl;
+      religarLancamentos(pf, a.fornId);   // Pix das datas antigas passam para as novas (19/11/2026)
       return ok(bl.length===1 ? "Data limite definida — pagamento único no mês" : bl.length+" datas limite definidas para o mês");
     }
-    case "acerto_reset": { delete pf.acertos[a.fornId+"|"+a.mes]; return ok("Mês voltou ao ciclo do cadastro — "+cicloLabel(F(a.fornId))); }
+    case "acerto_reset": { delete pf.acertos[a.fornId+"|"+a.mes]; religarLancamentos(pf, a.fornId); return ok("Mês voltou ao ciclo do cadastro — "+cicloLabel(F(a.fornId))); }
 
     // ---- maquininha (salvarPassada / excluirPassada / salvarFechamento / limparFechamento / salvarDist / voltarAuto / salvarBaixa / estornarBaixa / setMqForn)
     case "mq_passada_add": case "mq_passada_set": {

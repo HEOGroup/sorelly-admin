@@ -400,11 +400,7 @@ function JanelaPedido(p){
       e("select",{value:ped.catNovo, "aria-label":"Categoria", className:INPUT+" h-10! cursor-pointer", onChange:function(ev){ p.setPed(Object.assign({}, ped, {catNovo:ev.target.value})); }}, FORN_CATS.map(function(k){ return e("option",{key:k}, k); })),
       e(Btn,{onClick:addRapido}, "Adicionar"),
       e(Btn,{neutro:true, onClick:function(){ p.setPed(Object.assign({}, ped, {nova:false})); }}, "Cancelar")),
-    ehPrestador(forn(pf, ped.fornId)) && !ped.nova && e("div",{className:"flex flex-col gap-3 rounded-xl bg-[#3B82F6]/10 p-3 ring-1 ring-[#3B82F6]/40"},
-      Rot("Negociação do prestador"),
-      e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-        e(Campo,{rot:"Pagar até (data limite)"}, e(Txt,{type:"date", value:ped.limite, label:"Data limite", onChange:function(v){ upd({limite:v}); }})),
-        e(Campo,{rot:"Valor mínimo de cada pix (R$)"}, e(Txt,{type:"number", value:ped.pixMin, label:"Valor mínimo de pix", onChange:function(v){ upd({pixMin:v}); }})))),
+    // "Negociação do prestador" (data limite e Pix mínimo) saiu em 19/11/2026: não servia para nada e atrapalhava (Lucas)
     e(Campo,{rot:"O que estamos pagando (itens e combinado — aparece em Ver negociação)"}, e(Txt,{value:ped.descricao, ph:"Ex.: 3 refis de tinta + 9 bolsas de tinta, combinado R$ 3.600,00", label:"Resumo da negociação", onChange:function(v){ upd({descricao:v}); }})),
     Rot("Divisão da nota fiscal"),
     e("div",{className:"grid grid-cols-1 gap-1.5 sm:grid-cols-3"}, NF_SEG.map(function(x){ var on = ped.nf===x[0];

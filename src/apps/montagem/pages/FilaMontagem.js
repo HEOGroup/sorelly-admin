@@ -6,7 +6,8 @@
 // Embaixo: os últimos registros de montagem. Filtro e ordem no nome de cada coluna (TabelaPlanilha). Dinheiro só para a supervisão e a diretoria.
 import { JanelaMontar } from "@/apps/montagem/components/janela-montar";
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { Aviso, Bloco, Botao, brl } from "@/apps/montagem/components/padrao-fin";
+import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { Aviso, Botao, brl } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { filaMontagem, listagemDe } from "@/apps/montagem/domain/regras";
@@ -23,11 +24,17 @@ var VERDE = "text-emerald-400", AMARELO = "text-amber-300";
 var SIT = {pendente:"Pendente", montado:"Já montado", sem:"Sem preferências"};
 var COR_SIT = {pendente:AMARELO+" font-semibold", montado:VERDE+" font-semibold", sem:""};
 
+// Nome em letra normal (Marcus, 19/11/2026: nada em caixa alta): "MIRYANNE DO ROCIO" vira "Miryanne do Rocio"; de, da, do, das, dos e e ficam em minúscula
+var LIGA = {de:1, da:1, do:1, das:1, dos:1, e:1};
+function nomeBonito(t){
+  return String(t || "").trim().toLowerCase().split(/\s+/).map(function(w, i){ return w && (i>0 && LIGA[w] ? w : w.charAt(0).toUpperCase()+w.slice(1)); }).join(" ");
+}
+
 // linhas da tabela de revendedoras: pendentes primeiro, depois as que atualizaram por último (como no admin antigo)
 function linhasRevendedoras(lista){
   var ordem = {pendente:0, montado:1, sem:2};
   return (lista || []).map(function(r){ var sit = !r.temPreferencias ? "sem" : r.jaMontado ? "montado" : "pendente";
-    return {id:r.id, nome:r.nome, sitK:sit, sit:SIT[sit], cidade:r.cidade || "", estado:r.estado || "", telefone:r.telefone || "", at:r.atualizadoEm || "",
+    return {id:r.id, nome:nomeBonito(r.nome), sitK:sit, sit:SIT[sit], cidade:nomeBonito(r.cidade), estado:r.estado || "", telefone:r.telefone || "", at:r.atualizadoEm || "",
       dia:diaSP(r.atualizadoEm), hora:horaSP(r.atualizadoEm), categorias:r.categorias || 0, ouro:r.ouro, prata:r.prata, montagem:diaSP(r.ultimaMontagem)}; })
     .sort(function(a, b){ return ordem[a.sitK]-ordem[b.sitK] || (a.at<b.at ? 1 : a.at>b.at ? -1 : 0) || a.nome.localeCompare(b.nome, "pt-BR"); });
 }
@@ -35,7 +42,7 @@ function linhasRevendedoras(lista){
 // kits das listagens abertas: os que estão sendo montados agora e os próximos 15 da fila
 function linhasListagens(s){
   var abertas = function(k){ var l = listagemDe(s, k); return l && !l.fechada; };
-  var linha = function(k, sit){ var l = listagemDe(s, k) || {}; return {id:k.id, sit:sit, rev:k.rev || "", rep:l.rep || "", horario:l.horario || "", data:String(l.data || "").slice(0, 10), mont:k.montId!=null ? nomeDe(k.montId) : ""}; };
+  var linha = function(k, sit){ var l = listagemDe(s, k) || {}; return {id:k.id, sit:sit, rev:nomeBonito(k.rev), rep:nomeBonito(l.rep), horario:l.horario || "", data:String(l.data || "").slice(0, 10), mont:k.montId!=null ? nomeBonito(nomeDe(k.montId)) : ""}; };
   var montando = (s.kits || []).filter(function(k){ return k.status==="montando" && abertas(k); }).map(function(k){ return linha(k, "Montando agora"); });
   return montando.concat(filaMontagem(s).slice(0, 15).map(function(k, i){ return linha(k, "Próximo "+(i+1)); }));
 }
@@ -76,7 +83,7 @@ function AbaFilaMontagem(){
   var colsReg = [{k:"rev", t:"Revendedora"}, {k:"quem", t:"Montado por"}].concat(dinheiro ? [{k:"valor", t:"Valor do kit", fmt:function(v){ return v>0 ? brl(v) : "A definir"; },
       render:function(v, l){ return v>0 ? brl(v) : e(Botao,{onClick:function(ev){ ev.stopPropagation(); sv[1](l.reg); }}, "Definir valor"); }}] : [],
     [{k:"prefs", t:"Preferências"}, {k:"dur", t:"Duração"}, {k:"dia", t:"Concluído em", data:true, fmt:dataBR}, {k:"hora", t:"Hora"}]);
-  var linhasReg = ((regs.dados && regs.dados.data) || []).map(function(r){ return {id:r.id, reg:r, rev:r.resellerNome, quem:r.staffNome, valor:r.valorKit, prefs:r.usouPreferencias ? "Sim" : "Não",
+  var linhasReg = ((regs.dados && regs.dados.data) || []).map(function(r){ return {id:r.id, reg:r, rev:nomeBonito(r.resellerNome), quem:nomeBonito(r.staffNome), valor:r.valorKit, prefs:r.usouPreferencias ? "Sim" : "Não",
     dur:duracao(Date.parse(r.concluidoEm)-Date.parse(r.iniciadoEm)), dia:diaSP(r.concluidoEm), hora:horaSP(r.concluidoEm)}; });
 
   return e(Pagina,null,
@@ -84,17 +91,17 @@ function AbaFilaMontagem(){
       apiAtiva() && e(Botao,{onClick:atualizar, desabilitado:fila.carregando}, fila.carregando ? "Lendo o app…" : "Atualizar do app"),
       apiAtiva() && e(Botao,{principal:true, onClick:function(){ san[1](true); }}, "Análise geral")),
     !apiAtiva() && e(SemServidor,null),
-    lst.length>0 && e(Bloco,{t:"Listagens de hoje"},
-      e(TabelaPlanilha,{semContagem:true, cols:[{k:"sit", t:"Situação", cor:function(l){ return l.sit==="Montando agora" ? VERDE+" font-semibold" : ""; }}, {k:"rev", t:"Revendedora"}, {k:"rep", t:"Representante"},
+    lst.length>0 && e(BlocoBarra,{cor:"azul", compacto:true, t:"Listagens de hoje"},
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, cols:[{k:"sit", t:"Situação", cor:function(l){ return l.sit==="Montando agora" ? VERDE+" font-semibold" : ""; }}, {k:"rep", t:"Representante"}, {k:"rev", t:"Revendedora"},
         {k:"horario", t:"Horário"}, {k:"mont", t:"Montadora"}], linhas:lst, aoClicar:function(l){ sk[1](l.id); }})),
-    apiAtiva() && e(Bloco,{t:"Revendedoras"},
-      e(TabelaPlanilha,{limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
+    apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Revendedoras"},
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
         cols:[{k:"sit", t:"Situação", cor:function(l){ return COR_SIT[l.sitK]; }}, {k:"nome", t:"Revendedora"}, {k:"cidade", t:"Cidade"}, {k:"estado", t:"UF"}, {k:"telefone", t:"Telefone"},
           {k:"dia", t:"Atualização", data:true, fmt:dataBR}, {k:"hora", t:"Hora"}, {k:"categorias", t:"Categorias"}, {k:"ouro", t:"Ouro", fmt:pct}, {k:"prata", t:"Prata", fmt:pct},
           {k:"montagem", t:"Última montagem", data:true, fmt:dataBR}],
         linhas:revs})),
-    apiAtiva() && e(Bloco,{t:"Últimos registros de montagem"},
-      e(TabelaPlanilha,{semContagem:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
+    apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Últimos registros de montagem"},
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
     san[0] && e(AnaliseGeral,{fechar:function(){ san[1](false); }}),
     sk[0] && e(JanelaMontar,{key:sk[0], kitId:sk[0], fechar:function(){ sk[1](null); }}),
     sv[0] && e(JanelaValor,{reg:sv[0], fechar:function(){ sv[1](null); }, salvo:function(){ sv[1](null); regs.recarregar(); }}));

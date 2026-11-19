@@ -12,7 +12,7 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Contas a pagar:** a dívida de prestador (`ffd|...`) traz `comps` (comprovantes dos Pix/repasses que a quitaram); na visão Pago a coluna Comprovante mostra Ver (ou Ver 1, Ver 2) e "Falta anexar" quando foi paga por Pix sem comprovante.
 - **Importar o que já está no Atendimento:** `node --env-file=.env.local scripts/importar-comprovantes-atendimento.mjs` (relatório, não grava) casa o comprovante de cada pagamento Pix do acerto (módulo pag, lf_) com o Pix de `ff.pix` por revendedora, valor e data (até 3 dias). Só casa par ÚNICO dos dois lados; dúvida vai para "ambíguos". `--gravar` só depois de o Marcus ver a lista. Nunca troca comprovante que já existe.
 - **Dado real:** o comprovante InfinitePay de R$ 1.000,00 (Karine → Maicon Willian de Souza, Rebel Mode, 19/11/2026) NÃO foi anexado ao Pix `pxmwnsddmu1ns`: só com pedido do Marcus.
-- Teste: `node scripts/testar-pix-adiantado.mjs` (60 verificações). Versão 0.21.61.
+- Teste: `node scripts/testar-pix-adiantado.mjs` (60 verificações). Versão 0.21.67.
 
 ## 19/11/2026 · Acessos e autorizações simplificada (Marcus: "está muito complexa, simplifica no estilo do Cadastro de prestadores")
 - Visão Pessoas (`pages/AcessosPessoas.js`): UMA tabela com poucas colunas (Pessoa, Grupo de acesso, Perfil, Módulos, Situação e ação), uma linha por pessoa; grupo e perfil se mudam na própria linha; só edita quem está em `EDITORES`. Sem detalhe embaixo (o Marcus pediu "muito menos informações, como o Contas a pagar"). As visões antigas continuam num menu suspenso: Telas por grupo, Autorizações por tipo e Avisos.
@@ -2936,7 +2936,7 @@ Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `
 - **Ainda sem chave:** Higor (só o texto CPF), Julia Marketing, Ulisses Detran, Lucas Castilho, Marcus Poupança e Dávila Aline: a chave precisa ser digitada na tela Chaves Pix.
 - **Teste:** `node scripts/testar-chaves-destinos.mjs` (13 verificações).
 
-## 18/11/2026 — 68 Gang conferido; prestadores em 3 colunas; Pix adiantado da revendedora (construído em 19/11/2026, v0.21.61)
+## 18/11/2026 — 68 Gang conferido; prestadores em 3 colunas; Pix adiantado da revendedora (construído em 19/11/2026, v0.21.67)
 - **68 Gang acertado com o resumo do Marcus:** pago R$ 33.669,86, falta R$ 3.000,00 (só a 320i); M2 OS e troca de DRL quitadas. Removido o repasse duplicado `rp77` (R$ 4.500,00, "Cartão de crédito" lançado como Pix; o cartão 6x de 06/08 ficou) e lançado à mão o Pix da Karine Thauany Batista de Souza de 18/11 (R$ 634,55). Nomes dos Pix automáticos de novembro passam a mostrar o nome do PIX lançado.
 - **Pix adiantado da revendedora (regra do Marcus; CONSTRUÍDA em 19/11/2026, veja a decisão daquele dia):** quando a revendedora paga Pix direto a fornecedor ou prestador ANTES do acerto (ex.: Karine, R$ 634,55 em 18/11, sem acerto ainda), o acerto que a funcionária puxar no Atendimento interno tem que vir com esse valor JÁ PAGO, sem lançar de novo e sem criar um segundo repasse no prestador. O lançamento manual de 18/11 no 68 Gang é o registro do adiantamento até lá. Na DevMaster não há baixa dela depois de 23/10.
 - **Telas:** prestadores em três colunas lado a lado (Prestador, Dívidas, Pago) com totais na linha de baixo alinhados às colunas; dados do prestador em tabela e botão Editar abre um cartão (sócio travado quando já há dívida ou pago); lançar dívida e lançar pago em cartão próprio; Excluir pede "Tem certeza?"; descrição e nome de quem pagou mostram poucas palavras e o texto inteiro aparece ao passar o mouse; listas em ordem de data (antigo em cima); prestadores finalizados ficam fechados atrás do botão "Finalizados" e reabrem sozinhos quando se lança dívida nova.
@@ -2994,3 +2994,23 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - **68 Gang:** o Pix de R$ 634,55 da Karine (18/11) apareceu duas vezes (o manual de 18/11 e o Pix lançado depois, que gera repasse sozinho). Tirado o manual: pago R$ 33.669,86, falta R$ 3.000,00. Regra: quando o Pix entra no Financeiro, não manter lançamento manual do mesmo valor.
 - **Tenda (FHC TENDA):** os Pix de 14/10 (R$ 217 + R$ 300 + R$ 300 + R$ 300) estavam certos; lançada a dívida de R$ 1.117,00 que faltava. Saldo R$ 0,00, finalizada.
 - **Bônus Diego:** os Pix da Karine (R$ 500,00 em 13/11) e outro Pix (R$ 338,30 em 13/11) entraram como Pix e viraram repasse; falta R$ 69,00 da dívida de R$ 1.300,00.
+## 19/11/2026 · Direcionar: forma de pagamento da diferença do brinde (Lucas)
+- Problema: a diferença do brinde do Atendimento Sorelly entrava no Direcionar sempre como Pix (reducer `FIN_ENVIAR`/`FIN_FILA`), sem lugar para trocar; a revendedora pagou no cartão e a equipe não conseguia lançar.
+- Agora: na linha "Diferença do brinde" do Direcionar há a escolha Pix / Cartão / Link (operação `parte_forma` em domain/direcionar-pix.js; só para a parte do brinde e só com o pedido na fila). A lista de contas segue a forma. As contas escolhidas para a forma antiga saem. Reenvio do Atendimento mantém a forma escolhida.
+- A forma escolhida no Atendimento (Brinde de indicação, versão 0.21.39) já chega ao Direcionar (reducer `FIN_ENVIAR`/`FIN_FILA`); trocar no Direcionar continua possível, e um reenvio com forma escolhida no Atendimento vale mais que a troca anterior.
+
+## 19/11/2026 · Negociações: sai a "Negociação do prestador" (Lucas)
+- Pedido: "remover essa parte da negociação prestador, creio que não serve para nada e atrapalha".
+- A janela do pedido (pages/pf/Negociacoes.js) não tem mais "Pagar até (data limite)" nem "Valor mínimo de cada pix"; `pedido_add`/`pedido_editar` (domain/pf.js) não exigem mais. Os valores antigos dos pedidos continuam guardados (aparecem só na lista informativa de prestadores).
+- **Higor Segurança (mesmo dia):** o ciclo do cadastro mudou de "dia 5 e 20" para "dia 6 e 20" em 19/11/2026 às 14h54 (pf versão 468). As parcelas vencem no dia 5 e os Pix estavam ligados ao dia 05: 20 lançamentos ficaram soltos e cada mês (maio a outubro) mostrava R$ 1.200,00 em aberto. O ciclo 6/20 e as datas 06 foram escolha do Lucas e ficam; a correção religa os Pix (ver a entrada "o MÊS manda" abaixo).
+
+## 19/11/2026 · Lançamento de pagamentos: o MÊS manda; Pix seguem o ciclo novo (Lucas)
+- Pedido: "não quero que mude os valores de mês: se eu coloquei que era 2000 em novembro vai ser 2000 em novembro independente da data da parcela".
+- **Regra nova do pago a mais (substitui a de 18/11):** (1) tudo o que foi pago no mês quita primeiro a data MAIS ANTIGA do mês (regra da casa: o Pix quita a parcela aberta mais antiga), sem mudar nenhum valor cadastrado: par de lançamentos automáticos "Crédito" (−X na data que passou, +X na que recebeu; `ajustarExcessos` em domain/pf.js). (2) Só se o mês inteiro estiver pago e ainda sobrar: ajuste "Diferença enviada a mais" (+X na data e −X nas próximas datas em aberto). Continua só de novembro/2026 em diante e fora a Point e datas com maquininha.
+- Efeito hoje: Office Graf (R$ 70,90 de 15/11 → 30/11), Lucas Castilho (R$ 15,60 de 10/11 → 23/11) e Higor (os R$ 1.159,15 lançados em 20/11 quitam 06/11: falta R$ 40,85 em 06/11 e R$ 800,00 em 20/11) deixam de ter ajuste e passam a ter o par no mesmo mês; os valores das datas voltam a ser os cadastrados.
+- **Ciclo mudado:** Higor teve o ciclo trocado de 5/20 para 6/20 e as parcelas para o dia 06 (Lucas, 19/11/2026); os 20 Pix de maio a outubro ficaram ligados ao dia 05, que não existe mais, e cada mês aparecia com R$ 1.200,00 em aberto. Agora mudar o ciclo (`forn_set`) ou as datas do mês (`acerto_set`/`acerto_reset`) religa os Pix às datas novas (`religarLancamentos`). Os dados do Higor são religados uma vez no banco.
+
+
+## 19/11/2026 — Prestadores: nome curto, uma linha só
+- Pedido do Marcus: em Quem pagou (tabela Pago) aparecem só 1 ou 2 nomes e nunca duas linhas; o nome inteiro aparece ao passar o mouse. Descrição da dívida: até 3 palavras numa linha, texto inteiro ao passar o mouse.
+- **Contas de prestadores (Marcus, 19/11/2026: "isso edita no prestador, pode excluir"):** o bloco saiu da tela. O banco e a conta que recebe o Pix se editam no cartão Editar do prestador (cria a conta se não existir). Os dados das contas continuam no sistema; o Pix que cai numa conta ligada ao prestador continua virando pagamento sozinho.
