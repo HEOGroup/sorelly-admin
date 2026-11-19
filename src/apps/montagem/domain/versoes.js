@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.53", data:"2026-11-19", titulo:"Atendimento Sorelly: tela responsiva, nome em todo selo At. e isenção do desconto do brinde por atraso", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"A tela se adapta à largura: em bloco estreito o topo vira células com o nome em cima e o valor embaixo, o relógio usa 2 ou 3 colunas e Vendas e Acerto (e os dois brindes) ficam um embaixo do outro. Os rótulos quebram de linha em vez de passar por cima do campo. A lista da esquerda ficou mais larga em telas médias."},
+  {tipo:"correção", area:"Atendimento interno → Listagem de hoje", txt:"O selo At. - Nome agora mostra o nome de quem iniciou o atendimento (antes só aparecia depois de enviar o pagamento ao financeiro)."},
+  {tipo:"novo", area:"Atendimento interno → Brindes", txt:"Quem atende pode isentar o desconto do brinde por atraso de chegada (tolerância de 30 min): caixa Não descontar o brinde (a cliente avisou). Fica gravado quem isentou."}
+ ]},
  {v:"0.21.52", data:"2026-11-19", titulo:"Link de pagamento: importar tudo do e-SiTef, nomes já gravados corrigidos e Compras para o Agendamento", itens:[
   {tipo:"melhoria", area:"Link de pagamento → Importar e-SiTef", txt:"Agora o relatório entra inteiro: as linhas aguardando pagamento (AGU) e novas (NOV) viram Link gerado, e o que o Admin tinha expirado, mas o e-SiTef ainda espera, volta a Link gerado. A caixa Incluir continua valendo para deixar de fora os links das representantes."},
   {tipo:"correção", area:"Link de pagamento", txt:"Os nomes já gravados com erro (Ale Andra Cri Thinye) são corrigidos sozinhos quando o nome certo já existe em outro link ou na lista de revendedoras. Os demais se corrigem importando o mesmo arquivo de novo."},
