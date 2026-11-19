@@ -24,6 +24,8 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { atrasoUteisDe, avaliarKit, condsDaDevmaster } from "@/apps/montagem/domain/revendedoras-internas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { nomeParecido as nomeParecidoPx } from "@/apps/montagem/domain/pix-adiantados";
+import { abrirAnexo } from "@/apps/montagem/lib/anexo";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -157,7 +159,18 @@ function AtendimentoInterno(){
   var ma = useState(false), mAberto = ma[0], setMAberto = ma[1];                 // incluir atendimento à mão
   var mf = useState({nome:"", hora:"", cond:""}), mForm = mf[0], setMForm = mf[1];
   var ml = useState("padrao"), modLocal = ml[0], setModLocal = ml[1];             // kit mostrado na tabela quando ninguém está selecionada
-  var vk = useState(null), verKit = vk[0], setVerKit = vk[1];                    // kit da tabela de comissões escolhido na barrinha (null = o da revendedora)
+  // PIX ADIANTADO: antes de enviar ao financeiro, o servidor MARCA os Pix usados neste atendimento (idempotente; se o Pix já foi usado em outro acerto, recusa e a linha sai). Sem Pix adiantado, envia direto.
+  var enviarFin = function(){
+    var seguir = function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:ehInd ? 0 : (form.vendaBruta||0), aPagar:ehInd ? excInd : (dv.totalAPagar||0)}); };
+    var ids = linhasEnvio.filter(function(l){ return l.pixFfId; }).map(function(l){ return l.pixFfId; }), tinha = !!lancFin && lancFin.linhas.some(function(l){ return l.pixFfId; });
+    if(!ids.length && !tinha) return seguir();
+    chamar("POST", "/pix-adiantados", {internoId:sel.id, rev:sel.nome, ids:ids}).then(function(r){
+      var rec = (r && r.recusados) || [];
+      if(rec.length){ var fora = rec.map(function(x){ return x.id; }); up({pagamentos:form.pagamentos.filter(function(q){ return fora.indexOf(q.pixFfId)<0; }), pixAuto:(form.pixAuto||[]).concat(fora)}); d({type:"AVISO", txt:"Um Pix já pago não pôde ser usado: "+rec[0].motivo+" Ele saiu da lista; confira os pagamentos."}); return; }
+      seguir();
+    }, function(){ d({type:"AVISO", txt:"Não consegui confirmar o Pix já pago com o servidor. Tente de novo."}); });
+  };
+  var vk = useState(null), verKit = vk[0], setVerKit = vk[1];                  // kit da tabela de comissões escolhido na barrinha (null = o da revendedora)
   var rk = useState({}), regrasOk = rk[0], setRegrasOk = rk[1];                  // regra por regra passada para a revendedora
   var bn = useState({codigo:"", valor:null}), bnIn = bn[0], setBnIn = bn[1];       // lançar brinde Normal
   var bb = useState({codigo:"", valor:null}), bbIn = bb[0], setBbIn = bb[1];       // lançar brinde Select (BB)
@@ -195,15 +208,16 @@ function AtendimentoInterno(){
     if(!sel || visor || sel.status==="acertado" || (form.pagamentos||[]).length>0) return;
     var lf = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }); if(!lf) return;
     var linhas = (lf.linhas||[]).filter(function(l){ return l.tipo==="pagamento" && l.forma && l.valor>0; }); if(!linhas.length) return;
-    up({pagamentos:linhas.map(function(l){ var o = {data:hoje, anexo:null, forma:l.forma, valor:l.valor, bandeira:l.bandeira || "", parcelas:l.parcelas || 1, descricao:(l.partes && l.partes[0] && l.partes[0].descricao) || ""}; if(l.linkSolId){ o.linkSolId = l.linkSolId; o.jaPagoLink = true; } return o; })});
+    up({pagamentos:linhas.map(function(l){ var o = {data:hoje, anexo:null, forma:l.forma, valor:l.valor, bandeira:l.bandeira || "", parcelas:l.parcelas || 1, descricao:(l.partes && l.partes[0] && l.partes[0].descricao) || ""}; if(l.linkSolId){ o.linkSolId = l.linkSolId; o.jaPagoLink = true; } if(l.pixFfId){ o.pixFfId = l.pixFfId; o.jaPagoPix = true; } return o; })});
   }, [sel ? sel.id : "", (form.pagamentos||[]).length, (s.lancFin||[]).length]);   // eslint-disable-line react-hooks/exhaustive-deps
   // 16/11/2026 (Marcus/Edna): crédito lançado pela Garantia (Garantia → Créditos) entra sozinho em "Desconto de crédito" assim que existe valor vendido; só uma vez por atendimento (se a funcionária apagar, não volta)
   useEffect(function(){ if(!sel || visor || sel.status==="acertado" || form===FORM_ACERTO_VAZIO || form.creditoPuxado || !(form.vendaBruta>0)) return;
     var cd = creditoDisponivel(s, sel.nome); if(!(cd>0)) return;
     up(form.garantia>0 ? {creditoPuxado:true} : {garantia:cd, creditoPuxado:true, creditoPuxadoValor:cd}); }, [sel ? sel.id : null, form.vendaBruta>0, s.gr]);   // eslint-disable-line react-hooks/exhaustive-deps
   // LINKS JÁ PAGOS entram SOZINHOS como pagamento (Marcus, 16/11/2026): o setor Link de pagamento manda, a funcionária não precisa clicar. A função vem de mais abaixo (precisa do valor do acerto); um link por vez, e o que a funcionária tirar não volta (form.linksAuto)
-  var autoLinks = useRef(null);
-  useEffect(function(){ var fn = autoLinks.current; autoLinks.current = null; if(fn) fn(); });
+  // PIX ADIANTADO (Marcus, 19/11/2026): o Pix que a revendedora já mandou a um prestador ANTES do acerto entra sozinho como pagamento já resolvido (mesmo modelo do link já pago). Um por vez, depois dos links: duas mudanças na mesma volta se apagariam.
+  var autoLinks = useRef(null), autoPix = useRef(null), pxs = useState({chave:"", lista:[]}), pxAd = pxs[0], setPxAd = pxs[1];
+  useEffect(function(){ var fn = autoLinks.current, fp = autoPix.current; autoLinks.current = null; autoPix.current = null; var fez = fn ? fn() : false; if(!fez && fp) fp(); });
   useEffect(function(){ setVerKit(null); }, [sel ? sel.id : null, sel ? sel.nome : null]);
   // agenda e tabela do kit ficam à direita em dropdown; ao iniciar um atendimento os dois fecham (dá para abrir de novo)
   var ga = useState(true), agendaAberta = ga[0], setAgendaAberta = ga[1];
@@ -403,6 +417,14 @@ function AtendimentoInterno(){
   // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela (erro #300 do React) ao fechar a aba do atendimento.
   useEffect(function(){ if(sel && !jaFeito && !sel.bipou && !visor) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null, visor]);
   useEffect(function(){ if(visor && sel) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho||{})); }, [visor, sel ? JSON.stringify(sel.rascunho||{}) : ""]);
+  // Pix adiantado (19/11/2026): busca no servidor os Pix que a revendedora já mandou antes do acerto (o ff é só dos sócios). Fica ANTES do `if(!sel) return` (regra dos hooks).
+  var chavePx = sel && !jaFeito && !visor ? sel.id+"|"+sel.nome : "";
+  useEffect(function(){
+    if(!chavePx || !apiAtiva()){ if(pxAd.chave) setPxAd({chave:"", lista:[]}); return; }
+    var vivo = true, desde = ""; (s.acertosConsignado||[]).forEach(function(r){ if(r && !r.demo && r.data && r.data>desde && nomeParecidoPx(r.rev || r.nome || "", sel.nome)) desde = r.data; });   // último acerto da revendedora no sistema
+    chamar("GET", "/pix-adiantados?nome="+encodeURIComponent(sel.nome)+"&internoId="+encodeURIComponent(sel.id)+(desde ? "&desde="+desde : "")).then(function(r){ if(vivo) setPxAd({chave:chavePx, lista:(r && r.pix) || []}); }).catch(function(){ if(vivo) setPxAd({chave:chavePx, lista:[]}); });   // sem acesso ou sem servidor: segue sem Pix adiantado
+    return function(){ vivo = false; };
+  }, [chavePx]);   // eslint-disable-line react-hooks/exhaustive-deps
   // Kit retornando: busca as 3 últimas vendas na DevMaster uma vez e guarda no atendimento
   useEffect(function(){
     if(!sel || sel.tipo!=="retornando" || visor || sel.vendasDm || sel.vendasDmErro || !codDm) return;
@@ -537,6 +559,7 @@ function AtendimentoInterno(){
   var lancFin = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }) || null;
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
   var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
+    if(p.pixFfId) return Object.assign(base, {pixFfId:p.pixFfId, partes:[{descricao:p.descricao || "PIX DIRETO", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Pix já pago antes do acerto (Financeiro familiar): não volta ao Direcionar"});   // 19/11/2026: já está em ff.pix com o repasse; o acerto só CONSOME o Pix
     return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
   // Brinde de indicação (Marcus, 17/11/2026): o que passar do valor liberado é pago na hora, pela mesma diferença do brinde (financeiro define a conta, a funcionária anexa o comprovante)
   // 17/11/2026 (Marcus: "valor liberado deve vir do setor de indicação"): o valor liberado é o do prêmio do pedido APROVADO (aguardando retirada) da revendedora em Cadastro de revendedoras › Indicações; ao finalizar, a retirada é confirmada lá
@@ -550,7 +573,7 @@ function AtendimentoInterno(){
   var excInd = ehInd ? Math.max(0, Math.round((totalInd-liberadoInd)*100)/100) : 0;
   var linhasEnvio = ehInd ? (excInd>0 ? [{tipo:"brinde", forma:sel.formaDifInd||"", valor:excInd, partes:parteVazia(excInd)}] : [])
     : linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
-  var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor]; })); };
+  var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor, l.pixFfId || ""]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
   var fechouPagamentos = ehInd || dv.quitado || dv.acordoValido || form.recusouNegociar;
   var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito && (!ehInd || !excInd || !!sel.formaDifInd);   // brinde de indicação: a funcionária escolhe COMO a revendedora pagou a diferença (Edna, 19/11/2026: ia sempre como Pix e ela pagou no crédito)
@@ -571,7 +594,7 @@ function AtendimentoInterno(){
     e("div",{className:"flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1 bg-black/30 px-2 py-1"},
     e("div",{className:"contents"},
       e("b",{className:"text-[13px] uppercase tracking-wide"}, "Financeiro"+(lancFin ? (lancFin.conferido ? " · tudo conferido" : " · enviado às "+hhmmDeTs(lancFin.enviadoTs)) : "")),
-      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, className:(dv.excedenteBrinde>0 && podeEnviar ? "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)]" : ""), onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:ehInd ? 0 : (form.vendaBruta||0), aPagar:ehInd ? excInd : (dv.totalAPagar||0)}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
+      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, className:(dv.excedenteBrinde>0 && podeEnviar ? "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)]" : ""), onClick:enviarFin}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
     (!lancFin || alterado) && linhasEnvio.length>0 && !fechouPagamentos && e("p",{className:"text-[13px] font-semibold text-muted-foreground"},"Para enviar: feche todas as formas de pagamento (sem valor pendente) ou resolva a negociação."),
     alterado && e("p",{className:"text-[13px] font-semibold text-warning"},"Os pagamentos mudaram depois do envio: reenvie para o financeiro conferir de novo."),
     // etapa 1: comprovantes dos pagamentos anexados → OK libera os brindes · etapa 2: depois dos brindes (e da diferença, se houver) → finaliza e o financeiro confere
@@ -977,7 +1000,15 @@ function AtendimentoInterno(){
     var ja = form.linksAuto || [], falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100); if(!(falta>0.009)) return;
     var x = linksPagos.find(function(y){ return y.usavel && ja.indexOf(y.sol.id)<0; }); if(!x) return;
     var sol = x.sol, valor = Math.min(sol.valor, falta); if(!(valor>0)) return;
-    up({linksAuto:ja.concat([sol.id]), pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
+    up({linksAuto:ja.concat([sol.id]), pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); return true; };
+  // PIX ADIANTADO (Marcus, 19/11/2026, caso Karine: 4 Pix a prestadores antes do acerto): a lista vem do servidor (o ff é só dos sócios). O Pix entra como pagamento JÁ PAGO, vai ao financeiro com a conta definida e NUNCA volta à fila do Direcionar nem gera segundo repasse.
+  var pixLista = pxAd.chave===chavePx && chavePx ? pxAd.lista : [];
+  var pixEmUso = {}; form.pagamentos.forEach(function(q){ if(q.pixFfId) pixEmUso[q.pixFfId] = 1; });
+  var faltaPx = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100);
+  autoPix.current = function(){
+    if(!sel || visor || jaFeito || sel.status==="acertado" || !dv.previaBase || form===FORM_ACERTO_VAZIO || !(faltaPx>0.009)) return;
+    var ja = form.pixAuto || [], x = pixLista.find(function(y){ return ja.indexOf(y.id)<0 && !pixEmUso[y.id] && y.valor<=faltaPx+0.009; }); if(!x) return;
+    up({pixAuto:ja.concat([x.id]), pagamentos:form.pagamentos.concat([{forma:"pix", valor:x.valor, parcelas:1, bandeira:"", data:x.data, pixFfId:x.id, jaPagoPix:true, descricao:x.conta}])}); };
   // Link já pago POR FORA (gerado fora do sistema): registra no setor Link de pagamento como pago e já entra como pagamento (Marcus, 11/11/2026)
   var meioPorConta = function(conta){ var ms = (s.lp && s.lp.meios) || [], m = ms.find(function(x){ return x.tipo==="LINK" && x.cnpjId && String(conta||"").replace(/\s+/g, " ").endsWith(" - "+x.cnpjId); }); return m ? m.id : ""; };
   var registrarPorFora = function(){
@@ -1002,6 +1033,15 @@ function AtendimentoInterno(){
     linksAguardando.map(function(sol){ var gerado = sol.status==="gerado";
       return e("div",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"},
         (sol.paraAtendimento ? (gerado ? "Link gerado pela Hellen" : "Pedido enviado à Hellen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))); })) : null;
+  // Pix que a revendedora JÁ mandou antes do acerto (Marcus, 19/11/2026): aparecem como já pagos, sem lançar de novo. O nome do prestador não aparece aqui; o comprovante só abre para quem vê o Financeiro familiar.
+  var diaBr = function(iso){ var p = String(iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : iso; };
+  var blocoPix = !jaFeito && pixLista.length>0 ? e("div",{className:"flex flex-col border-t border-foreground/25"},
+    e("span",{className:CAP+" px-2 pt-2 text-center"}, "Pix já pagos antes do acerto"),
+    pixLista.map(function(x){ var entrou = !!pixEmUso[x.id], coube = x.valor<=faltaPx+0.009;
+      return e("div",{key:x.id, className:"flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-2 py-1.5 text-[13px]"},
+        e("span",{className:"font-semibold"}, "Já pago · "+din(x.valor)+" · "+diaBr(x.data)),
+        e("span",{className:"whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.03em] text-primary"}, entrou ? "Entrou no acerto" : !dv.previaBase ? "Entra quando lançar a venda" : coube ? "Entra sozinho" : "Maior que o valor a pagar: fica para o próximo acerto"),
+        x.compKey && s.ff ? e("button",{type:"button", className:"h-8 rounded-md border border-foreground/25 px-2 text-[11px] font-semibold hover:bg-white/10", onClick:function(){ abrirAnexo(x.compKey).catch(function(){ d({type:"AVISO", txt:"Não consegui abrir o comprovante."}); }); }}, "Ver comprovante") : null); })) : null;
   var listaFormas = e("div",{className:"flex flex-col"}, formas.map(function(f,i){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));
@@ -1014,7 +1054,7 @@ function AtendimentoInterno(){
   var GPAG = " grid-cols-[minmax(0,1.5fr)_3.5rem_6.5rem_2rem]";
   var tabPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+GPAG}, e("span",null,"Forma"), e("span",null,"Parc."), e("span",null,"Valor"), e("span")),
     form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN.replace("min-h-9","min-h-8")+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
-      e("span",{className:"whitespace-nowrap"}, rotForma(q.forma, formaDe(q.forma).label)+(q.bandeira ? " · "+q.bandeira : "")+(q.jaPagoLink ? " · já pago no link" : "")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
+      e("span",{className:"whitespace-nowrap"}, rotForma(q.forma, formaDe(q.forma).label)+(q.bandeira ? " · "+q.bandeira : "")+(q.jaPagoLink ? " · já pago no link" : "")+(q.jaPagoPix ? " · já pago antes do acerto" : "")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
       jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
@@ -1030,7 +1070,7 @@ function AtendimentoInterno(){
     return e("div",{key:c[0], className:"flex min-h-8 flex-wrap items-center justify-center gap-x-2 bg-card px-2"}, e("span",{className:CAP+" whitespace-nowrap"}, c[0]), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums "+c[2]}, c[1])); })));
   var est1 = e("div",{className:"flex min-w-0 flex-1 flex-col gap-2 p-2"},
     // 16/11/2026 (Marcus: "compactar, tem que ter linhas de tabela"): totais, forma, entrada, pagamentos lançados e Financeiro num bloco só, linhas de 32 px
-    cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, blocoLinks, tabPag, pPag), "", "p-0")));
+    cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, blocoLinks, blocoPix, tabPag, pPag), "", "p-0")));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){

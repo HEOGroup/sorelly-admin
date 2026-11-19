@@ -45,4 +45,4 @@ Também em aberto, com outro setor: R$ 150,00 do dia 01/10 contra a tela da DevM
 | Desatualizado | 5 | Saldos da Amanda e da 68 Gang em 21/10 (depois corrigidos), R$ 7.800 do Pix Itaú Black (Financeiro familiar puxado de novo e igual em 29/10), reiniciar o servidor (27/10) |
 | Era de outro setor e já decidido | 13 | Kits novos (3), Encomendas e reposições (3), Representantes (3), Escala 42h (RH), Contratos de terceiros (RH), Plano 45/60 (Agendamento), Meta do Cadastro |
 
-- **18/11/2026 · Pix adiantado da revendedora (Marcus):** o acerto no Atendimento interno tem que vir com o valor que a revendedora já pagou direto ao fornecedor antes do acerto (caso Karine, R$ 634,55 no 68 Gang). A construir; até lá o valor fica lançado à mão no prestador.
+- **18/11/2026 · Pix adiantado da revendedora (Marcus):** o acerto no Atendimento interno tem que vir com o valor que a revendedora já pagou direto ao fornecedor antes do acerto (caso Karine, R$ 634,55 no 68 Gang). CONSTRUÍDO em 19/11/2026 (v0.21.61): o Pix entra no acerto como já pago e fica marcado "usado no acerto"; veja `docs/DECISOES.md` de 19/11/2026. Falta só conferir com o primeiro acerto real da Karine.

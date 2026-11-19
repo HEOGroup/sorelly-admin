@@ -221,12 +221,13 @@ function ffReduz(s, a){
     case "pix_meta": { ff.pixMeta[a.personaId+"|"+a.ym] = r2(a.valor); return ok("Meta salva", "PIX revendedoras", "Definiu meta de PIX", nomeP(a.personaId)+" · "+nomeMes(a.ym), money(a.valor)); }
     case "pix_add": { var pv2 = r2(a.valor); if(!a.personaId || !a.data || !(pv2>0)) return recusa("Informe data, valor e pessoa."); var l = {id:uid("px"), personaId:a.personaId, data:a.data, valor:pv2, origem:String(a.origem||"").trim(), contaId:a.contaId||"", forma:a.forma||"PIX", auditoria:"PENDENTE", auditadoPor:""}; ff.pix.push(l); syncRepasse(l);
       return ok("PIX anotado (aguardando conferência)", "PIX revendedoras", "Lançou PIX", (l.origem||"sem nome")+" · "+nomeP(a.personaId), money(pv2)); }
-    case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
+    case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); if((ff.pixUsados||{})[lx.id] && a.patch && a.patch.valor!==undefined && r2(a.patch.valor)!==r2(lx.valor)) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[lx.id].rev||"uma revendedora")+": o valor não muda."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
     // editar o PIX anotado (Lucas, 18/11/2026): só enquanto estiver "Aguardando" a conferência
     case "pix_editar": { var le = ff.pix.find(function(x){ return x.id===a.id; }); if(!le) return recusa("PIX não encontrado.");
       if((le.auditoria||"PENDENTE")!=="PENDENTE") return recusa("PIX já conferido não pode ser alterado.");
       var pe = a.patch||{}, ve = pe.valor!==undefined ? r2(pe.valor) : le.valor;
       if(!(ve>0)) return recusa("Informe o valor do PIX.");
+      if((ff.pixUsados||{})[le.id] && r2(ve)!==r2(le.valor)) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[le.id].rev||"uma revendedora")+": o valor não muda.");
       if(pe.data!==undefined && !/^\d{4}-\d{2}-\d{2}$/.test(pe.data)) return recusa("Informe a data do PIX.");
       var antesE = money(le.valor)+" · "+(le.origem||"sem nome")+" · "+le.data;
       if(pe.data!==undefined) le.data = pe.data;
@@ -236,7 +237,22 @@ function ffReduz(s, a){
       (le.hist = le.hist||[]).push({em:new Date().toISOString().slice(0,10), por:por, antes:antesE});
       syncRepasse(le);
       return ok("PIX alterado", "PIX revendedoras", "Editou PIX", (le.origem||"sem nome")+" (antes: "+antesE+")", money(le.valor)); }
-    case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
+    // COMPROVANTE do Pix (Marcus, 19/11/2026): a imagem fica no servidor (/api/anexos, módulo ff); aqui só a chave. Vale em Pix já conferido também (anexar não muda valor nem conta). a.key vazio = tirar o comprovante.
+    case "pix_comp": { var lc = ff.pix.find(function(x){ return x.id===a.id; }); if(!lc) return recusa("PIX não encontrado.");
+      if(a.key && !/^an_[a-z0-9]{6,40}$/.test(String(a.key))) return recusa("Comprovante inválido.");
+      if(a.key){ lc.compKey = String(a.key); lc.compNome = String(a.nome||"").slice(0, 120); lc.compTipo = String(a.tipo||"").slice(0, 60); } else { delete lc.compKey; delete lc.compNome; delete lc.compTipo; }
+      return ok(a.key ? "Comprovante anexado" : "Comprovante retirado", "PIX revendedoras", a.key ? "Anexou comprovante" : "Retirou comprovante", lc.origem||"sem nome", money(lc.valor)); }
+    // soltar o PIX de um acerto cancelado (a marca "usado no acerto" sai e o PIX volta à lista da revendedora). Só Diretoria/sócios chegam aqui (módulo ff).
+    case "pix_soltar": { var lt = ff.pix.find(function(x){ return x.id===a.id; }); if(!lt) return recusa("PIX não encontrado."); if(!(ff.pixUsados||{})[lt.id]) return recusa("");
+      var revT = ff.pixUsados[lt.id].rev || ""; delete ff.pixUsados[lt.id]; return ok("PIX solto do acerto", "PIX revendedoras", "Soltou PIX do acerto", (lt.origem||"sem nome")+(revT ? " · acerto de "+revT : ""), money(lt.valor)); }
+    // o mesmo para um pago lançado à mão ou vindo do Direcionar (não vem de PIX do ff): o comprovante fica no próprio repasse
+    case "repasse_comp": { var rc = ff.repasses.find(function(x){ return x.id===a.id; }); if(!rc) return recusa("Não encontrado.");
+      if(rc.origemPixLancId) return recusa("Esse pago veio de um PIX: o comprovante fica no PIX.");
+      if(a.key && !/^an_[a-z0-9]{6,40}$/.test(String(a.key))) return recusa("Comprovante inválido.");
+      if(a.key){ rc.compKey = String(a.key); rc.compNome = String(a.nome||"").slice(0, 120); rc.compTipo = String(a.tipo||"").slice(0, 60); } else { delete rc.compKey; delete rc.compNome; delete rc.compTipo; }
+      return ok(a.key ? "Comprovante anexado" : "Comprovante retirado", "Prestadores", a.key ? "Anexou comprovante" : "Retirou comprovante", rc.origem, money(rc.valor)); }
+    case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado.");
+      if((ff.pixUsados||{})[ld.id]) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[ld.id].rev||"uma revendedora")+": não se exclui. Se o acerto não vale mais, o Atendimento solta o PIX no próprio acerto."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
     case "pix_div": { var lv = ff.pix.find(function(x){ return x.id===a.id; }); if(!lv) return recusa("PIX não encontrado."); var tp = a.tipo==="conta" ? "conta" : a.tipo==="data" ? "data" : "valor";
       if(tp==="valor"){ var nv = r2(a.valor); if(!(nv>0)) return recusa("Informe o valor que entrou de verdade."); if(lv.valorOriginal==null) lv.valorOriginal = lv.valor; lv.valor = nv; }
       else if(tp==="data"){ if(!a.data) return recusa("Informe a data em que entrou."); if(lv.dataOriginal==null) lv.dataOriginal = lv.data; lv.data = a.data; }

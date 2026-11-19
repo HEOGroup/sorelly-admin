@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.61", data:"2026-11-19", titulo:"Pix adiantado: comprovante nos prestadores e acerto sem pagamento em dobro", itens:[
+  {tipo:"novo", area:"Financeiro → Financeiro familiar → Prestadores", txt:"A tabela Pago de cada prestador ganhou a coluna Comprovante, com Ver e Anexar (ou Trocar). Vale para o Pix de revendedora e para o pago lançado à mão. A foto vira JPEG pequeno e fica guardada no servidor, não só no navegador."},
+  {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"O Pix que a revendedora já mandou a um prestador ANTES do acerto entra sozinho como pagamento já pago (linha confirmada), sem lançar de novo, sem voltar para a fila do Direcionar e sem criar outro repasse. O Pix fica marcado como usado no acerto e não entra em nenhum outro."},
+  {tipo:"melhoria", area:"Financeiro → Financeiro familiar", txt:"Pix usado num acerto não pode ser excluído nem ter o valor mudado. Se o acerto foi cancelado, o botão Soltar libera o Pix."}]},
  {v:"0.21.56", data:"2026-11-19", titulo:"Encomendas: botão Mudar para encomenda", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ficha do pedido", txt:"Pedido lançado como reposição que na verdade era encomenda: botão Mudar para encomenda na ficha. O pedido perde a taxa e o prazo de 24 horas e segue o caminho da encomenda (Novo, Conferindo, Separando, Concluído)."},
  {v:"0.21.55", data:"2026-11-19", titulo:"RH › Acessos e autorizações simplificada", itens:[
