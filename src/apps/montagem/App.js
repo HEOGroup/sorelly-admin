@@ -37,7 +37,7 @@ import { abaDoCaminho, caminhoDaAba, setorDaAba } from "@/apps/montagem/router/s
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { PESSOAS_CLIMA, PESSOAS_DENUNCIAS } from "@/apps/montagem/domain/nr1";
+import { nr1Alertas, PESSOAS_CLIMA, PESSOAS_DENUNCIAS } from "@/apps/montagem/domain/nr1";
 import { PESSOAS_ATIVIDADES_FIN } from "@/apps/montagem/domain/atividades-fin";
 import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
 import { MenuSetor } from "@/apps/montagem/components/barra-menu";
@@ -152,6 +152,8 @@ function App(){
     var t = function(){ srv.chamar("GET", "/denuncias?novas=1").then(function(j){ (j.ids||[]).forEach(function(id){ d({type:"ALERTA_ADD", tipo:"denuncia_nova", chave:"den:"+id, titulo:"Nova denúncia no Canal de ética", texto:"Chegou uma denúncia. Abra o Canal de denúncias, em Recursos Humanos.", aba:"denuncias", critico:true, para:[Number(srv.pessoaDaConta())]}); }); }).catch(function(){}); };
     t(); var iv = setInterval(t, 120000); return function(){ clearInterval(iv); };
   }, [s.logado]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Prazos da NR-1 (19/11/2026): Marcus e Maria recebem o alerta quando uma ação vence em até 3 dias ou está atrasada; confere a cada 10 minutos
+  useEffect(function(){ if(!s.logado || !s.rh || PESSOAS_CLIMA.indexOf(Number(srv.pessoaDaConta()))<0) return; var t = function(){ nr1Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.rh, s.logado]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ var t = function(){ if(!s.logado || !s.p45) return; p45Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.p45, s.logado]);
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)

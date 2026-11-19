@@ -7,8 +7,22 @@ var VERSOES = [
   {tipo:"novo", area:"Financeiro → Financeiro familiar → Prestadores", txt:"A tabela Pago de cada prestador ganhou a coluna Comprovante, com Ver e Anexar (ou Trocar). Vale para o Pix de revendedora e para o pago lançado à mão. A foto vira JPEG pequeno e fica guardada no servidor, não só no navegador."},
   {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"O Pix que a revendedora já mandou a um prestador ANTES do acerto entra sozinho como pagamento já pago (linha confirmada), sem lançar de novo, sem voltar para a fila do Direcionar e sem criar outro repasse. O Pix fica marcado como usado no acerto e não entra em nenhum outro."},
   {tipo:"melhoria", area:"Financeiro → Financeiro familiar", txt:"Pix usado num acerto não pode ser excluído nem ter o valor mudado. Se o acerto foi cancelado, o botão Soltar libera o Pix."}]},
+ {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Cada combinado avulso ganhou o horário de início e de fim e o campo Bate ponto (Sim ou Não), para marcar se a pessoa precisa registrar o ponto naquele dia."}]},
+ {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
+  {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."},
+  {tipo:"novo", area:"RH → Acessos e autorizações", txt:"A coluna Ação virou um menu suspenso: Bloquear ou Liberar, Copiar acesso (mensagem com endereço, usuário e senha para mandar no WhatsApp) e Gerar senha nova. Corrigi também a entrada 0.21.56 do registro de versões, que estava sem o fecho."},
+  {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"A coluna Setor mostra onde cada pessoa trabalha mesmo com acesso Total ou Direção (Anamaria e Ana Beatriz: Financeiro; Amanda de Miranda: Inadimplência). Cada pessoa ganhou uma bolinha na cor do grupo, a planilha tem fundo azul, os menus e botões têm um azul claro de fundo, letra de 11 px, e o texto de todos os menus está centralizado."}
+]},
+ {v:"0.21.59", data:"2026-11-19", titulo:"Canal de denúncias: a lista atualiza sozinha", itens:[
+  {tipo:"melhoria", area:"Canal de denúncias", txt:"A lista de denúncias recarrega sozinha a cada 30 segundos e ao voltar para a aba. Denúncia nova aparece sem precisar abrir a tela de novo."}
+ ]},
+ {v:"0.21.58", data:"2026-11-19", titulo:"NR-1: alerta de prazo", itens:[
+  {tipo:"novo", area:"RH → Segurança do trabalho", txt:"Marcus e Maria recebem um alerta quando uma ação da NR-1 vence em até 3 dias, vence hoje ou está atrasada. Concluir a ação encerra os alertas dela."}
+ ]},
  {v:"0.21.56", data:"2026-11-19", titulo:"Encomendas: botão Mudar para encomenda", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ficha do pedido", txt:"Pedido lançado como reposição que na verdade era encomenda: botão Mudar para encomenda na ficha. O pedido perde a taxa e o prazo de 24 horas e segue o caminho da encomenda (Novo, Conferindo, Separando, Concluído)."},
+ ]},
  {v:"0.21.55", data:"2026-11-19", titulo:"RH › Acessos e autorizações simplificada", itens:[
   {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"A tela ficou muito mais simples, como o Contas a pagar: uma tabela só, uma linha por pessoa, com poucas colunas (Pessoa, Grupo de acesso, Perfil, Módulos, Situação e a ação Liberar ou Bloquear). O acesso tem três níveis numa escolha só, na própria linha: Acesso total (grupo Acesso total mais perfil Diretoria, igual aos sócios), Direção (tudo, menos os Configuradores) ou Por setor (então escolhe o setor e os módulos). Nomes curtos e padronizados. Escolher Acesso total ou Direção também tira a lista de telas presa na conta (a Priscila estava presa em 25 setores, sem o Financeiro). Sem detalhe embaixo. O botão Módulos abre uma janela com as caixas de marcar. Visual do Financeiro: bloco com barra azul, título em maiúsculas, menu de visões no canto da barra, planilha compacta (letra de 11 px) e linhas brancas. Só altera quem é da lista."},
   {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"As abas lado a lado viraram um menu suspenso: Pessoas, Telas por grupo, Autorizações por tipo e Avisos. A aba Contas foi para dentro de Pessoas. Saiu o bloco antigo de contas com senha padrão da visão Telas por grupo."}]},

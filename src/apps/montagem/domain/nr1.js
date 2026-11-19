@@ -69,6 +69,17 @@ function nr1Atividades(n){
   var atV = n.atV || 1, ids = {}; base.forEach(function(x){ ids[x.id] = 1; });
   return base.concat(padrao.filter(function(x){ return (x.v || 1) > atV && !ids[x.id]; }));
 }
+// Alertas de prazo (19/11/2026): ação não concluída que vence em até 3 dias ou já passou do prazo. Cada situação gera UM alerta por ação (a chave não repete). Quem recebe: Marcus e Maria (tipo "nr1_prazo" em domain/avisos.js).
+function nr1Alertas(s, hoje){
+  var n = (s.rh && s.rh.nr1) || nr1Padrao(), h = hoje || hojeIso(), out = [];
+  n.acoes.forEach(function(a){
+    if(a.situacao==="concluida" || !a.prazo) return;
+    var dias = Math.round((Date.parse(a.prazo+"T12:00:00") - Date.parse(h+"T12:00:00"))/86400000);
+    if(dias<0) out.push({tipo:"nr1_prazo", chave:"nr1:"+a.id+":atraso:"+a.prazo, titulo:"NR-1 atrasada: "+a.titulo, texto:"O prazo era "+diaBr(a.prazo)+". Abra a Segurança do trabalho e atualize a situação.", aba:"rhseg"});
+    else if(dias<=3) out.push({tipo:"nr1_prazo", chave:"nr1:"+a.id+":vence:"+a.prazo, titulo:"NR-1 vence "+(dias===0 ? "hoje" : "em "+dias+(dias===1 ? " dia" : " dias"))+": "+a.titulo, texto:"Prazo em "+diaBr(a.prazo)+". Abra a Segurança do trabalho.", aba:"rhseg"});
+  });
+  return out;
+}
 function nr1EstadoAt(x, hoje){
   if(x.situacao==="feita") return {t:"Feita", cor:"ok"};
   if(x.prazo && x.prazo < (hoje || hojeIso())) return {t:"Atrasada", cor:"ruim"};
@@ -158,4 +169,4 @@ var PESSOAS_DENUNCIAS = [16, 38];
 // quem abre a Pesquisa de clima (pessoaId): Marcus e Maria Claudia (RH), decisão de 18/11/2026. O servidor confere a mesma lista (src/server/clima.js); aqui só esconde a tela.
 var PESSOAS_CLIMA = [16, 38];
 
-export { PESSOAS_CLIMA, PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };
+export { nr1Alertas, PESSOAS_CLIMA, PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };
