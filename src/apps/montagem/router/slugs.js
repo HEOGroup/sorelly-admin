@@ -197,6 +197,8 @@ export const SLUG_DA_ABA = {
   celrep: "app-representante",
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
+  fffaturas: "ff-faturas-do-cartao",   // Financeiro › Faturas (19/11/2026)
+  findm: "arrumar-na-devmaster",   // Financeiro › Arrumar na DevMaster (19/11/2026)
   finativ: "atividades-do-financeiro",   // Financeiro › Atividades (18/11/2026): só o Marcus
   resultado: "resultado-do-mes",
   previsaofat: "previsao-de-faturamento",

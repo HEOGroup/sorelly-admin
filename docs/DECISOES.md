@@ -3,6 +3,17 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 19/11/2026 (Financeiro familiar: separado da empresa, aba Faturas e limpeza)
+- **Dois contas a pagar, separados:** o da Sorelly e o do familiar. Cada pagamento aparece em UM só. Pergunta 1: a despesa é de quem? (define onde aparece). Pergunta 2: de qual conta saiu o dinheiro? (só mostra a origem). Salário e adiantamento: despesa da empresa; no familiar é ENTRADA (pró-labore recebido), nunca gasto.
+- **68 Gang (M2 Competition) é 100% particular do Marcus**, pago com Pix de revendedora: fica no familiar. O financiamento do BMW M2 (boleto Banco Volkswagen, R$ 12.602,80, dia 28) também.
+- **Contas do pai (nomes do Marcus):** "Marco Itaú PJ" = a conta Itaú PF do pai que a empresa usa (no sistema: "Conta Itaú Black", duas vezes); "Marco Itaú PF" = a conta pessoal do pai (salário); "Marechal" = conta que o Marcus usa pela mãe (não tem nada a lançar). O cartão Itaú Black é outra coisa. Nomes ainda a unificar, em etapas. O extrato Itaú dos cruzamentos de 16/11 é da Marco Itaú PJ (não da PF).
+- **Faturas do cartão:** palavra nova "Faturas" no menu do Financeiro (`pages/FinFamiliarFaturas.js`, `domain/faturas-cartao.js`, dados em `ff.faturas`). Mês da fatura = mês do vencimento (fecha dia 18, vence dia 25). Baixa e exclusão só com prova (fatura ou extrato); duplicidade se tira só das parcelas FUTURAS, nunca do histórico.
+- **Nubank:** fecha dia 24 e vence dia 03 do mês seguinte. Crédito Nubank: 4 parcelas de R$ 3.006,17 no dia 14.
+
+## 19/11/2026 (Financeiro: aba Arrumar na DevMaster)
+- **Pedido do Marcus:** tela de "coisas para arrumar na DevMaster" logo à direita de Relatórios, no estilo do Resumo geral. Feita: `pages/ArrumarDevmaster.js`, `src/server/arrumar-devmaster.js`, rota `/api/arrumar-devmaster` (só leitura, cache de 5 min; Financeiro e Diretoria). Lista título por título: sem vencimento, ano do vencimento errado (0226 → sugere 2026) e baixado com saldo. A DevMaster nunca é gravada pelo Admin: o pessoal corrige lá e aperta Atualizar agora. A aba Atividades (só o Marcus) continua mostrando só as contagens.
+- Em 19/11 havia 14 títulos (R$ 2.477,85): 12 comissões e km sem vencimento (R$ 2.211,24), 1 comissão com vencimento 21/11/0226 (R$ 238,01) e 1 troco de 2023 baixado com saldo (R$ 28,60). Feriado: o pessoal volta na segunda-feira.
+
 ## 19/11/2026 · Amanda de Miranda: acesso total (Marcus: "a Amanda de Miranda acesso total também")
 - A exceção de 11/11/2026 acabou: a Amanda de Miranda passa a ver os salários dos funcionários e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia, Empréstimos). `SEM_SALARIO` e `ABAS_VETADAS` em `domain/equipe.js` ficam vazias.
 - A conta de login dela no servidor (perfil e setores) o Marcus ajusta em RH › Pessoas › Acessos e autorizações. Priscila (37) já era acesso total na tela.

@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.44", data:"2026-11-19", titulo:"Financeiro: Arrumar na DevMaster e Faturas do cartão", itens:[
+  {tipo:"novo", area:"Financeiro → Arrumar na DevMaster", txt:"Tela nova, logo à direita de Relatórios. Lista título por título o que está errado na DevMaster e só se corrige lá: título a pagar sem vencimento, com o ano do vencimento errado (ex.: 21/11/0226) e título baixado que ainda tem saldo. Mostra número, emissão, fornecedor, histórico, valor, o que corrigir e onde. Lida da DevMaster só em leitura; depois de corrigir lá, aperte Atualizar agora. Financeiro e Diretoria abrem."},
+  {tipo:"novo", area:"Financeiro → Faturas", txt:"Palavra nova no menu do Financeiro. Cada linha da fatura do cartão Itaú Black (jul a out/2026, mais a prévia de nov) é comparada com as contas lançadas no cartão: mostra o que falta no sistema, o que sobra e se o total fecha. Só leitura; as faturas ficam em ff.faturas no servidor. Só os sócios abrem."}
+ ]},
  {v:"0.21.43", data:"2026-11-19", titulo:"Acesso: Amanda de Miranda com acesso total", itens:[
   {tipo:"melhoria", area:"RH → Acessos", txt:"A Amanda de Miranda passa a ter acesso total: vê os salários dos funcionários e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia e Empréstimos), como a Priscila e os sócios. A exceção de 11/11/2026 acabou."}]},
  {v:"0.21.42", data:"2026-11-19", titulo:"RH › Contratos refeitos no padrão do sistema", itens:[
