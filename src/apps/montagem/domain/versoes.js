@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.50", data:"2026-11-19", titulo:"Link de pagamento: nomes do e-SiTef corrigidos", itens:[
+  {tipo:"correção", area:"Link de pagamento → Importar e-SiTef", txt:"Os nomes importados saíam com a letra s trocada por espaço (Ale Andra Cri Thinye). Por isso o link pago não entrava sozinho no Atendimento. Corrigido. Importar de novo o mesmo arquivo conserta os nomes que já estão no sistema."}
+ ]},
  {v:"0.21.49", data:"2026-11-19", titulo:"Atendimento Sorelly: sem botão Cliente aguardando na lista e sem a caixa do desconto de crédito", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Saiu o botão Cliente aguardando da lista de hoje: a chegada agora é marcada na ficha, no relógio do topo (Marcar agora). A caixa do desconto de crédito, com borda e botão Entendi, virou uma linha de texto."}
  ]},

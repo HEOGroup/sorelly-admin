@@ -508,7 +508,7 @@ function linksParaAcertoPorNome(s, nome, hoje){
   return linksParaAcerto({lp:Object.assign({}, s.lp, {solicitacoes:lista})}, nome, hoje);
 }
 // Nome de pessoa com maiúscula só na inicial (o e-SiTef manda ZELINDA APARECIDA RIBAS e espaço sobrando): da, de, do, das, dos e e ficam minúsculos.
-function nomeProprio(n){ var peq = {da:1, de:1, do:1, das:1, dos:1, e:1}; return String(n || "").replace(/s+/g, " ").trim().toLowerCase().split(" ").map(function(w, i){ return i>0 && peq[w] ? w : w.charAt(0).toUpperCase()+w.slice(1); }).join(" "); }
+function nomeProprio(n){ var peq = {da:1, de:1, do:1, das:1, dos:1, e:1}; return String(n || "").replace(/\s+/g, " ").trim().toLowerCase().split(" ").map(function(w, i){ return i>0 && peq[w] ? w : w.charAt(0).toUpperCase()+w.slice(1); }).join(" "); }
 // IMPORTADOR DO E-SITEF (Marcus, 16/11/2026): o relatório de transações do e-SiTef (CSV) é a verdade sobre quem pagou. Cada linha vira (ou atualiza) uma solicitação, sem duplicar: a chave é o NSU.
 // linha = {nsu, pedido (nome), valor (R$), status (código do e-SiTef), criadoEm, pagoEm, parcelas, autorizacao, bandeira}
 var STATUS_ESITEF = {CON:"pago", ABA:"abandonada", EXP:"expirado", NEG:"negada", PPN:"antifraude"};
@@ -526,6 +526,8 @@ function esitefPlanejar(lp, linhas, hoje){
     if(sol){ usados[sol.id] = 1;
       var aberto = sol.status==="solicitado" || sol.status==="gerado";
       if(aberto || (para==="pago" && !foiPago(sol))) return {linha:l, acao:"atualizar", solId:sol.id, para:para, fora:!!ign[nsu]};
+      // 19/11/2026: nomes importados com o erro antigo (Ale Andra Cri Thinye...) não casavam com a agenda do Atendimento. Importar de novo o mesmo arquivo conserta só o nome (a situação não muda).
+      if(sol.importadoEsitef && sol.esitefNsu===nsu && nomeProprio(l.pedido)!==sol.revendedora) return {linha:l, acao:"atualizar", solId:sol.id, para:sol.status, soNome:true, fora:!!ign[nsu]};
       return {linha:l, acao:sol.esitefNsu ? "igual" : "vincular", solId:sol.id, para:sol.status, fora:!!ign[nsu]}; }
     return {linha:l, acao:"nova", para:para, revisar:para==="pago" && diaDe(l.pagoEm || l.criadoEm)<hoje, fora:!!ign[nsu]};
   });
@@ -697,7 +699,9 @@ function lpReduz(s, a){
           lp.solicitacoes.push(ns); cN++;
         } else if(it.acao==="atualizar" || it.acao==="vincular"){
           var x = sol1(it.solId); if(!x) return; var de = x.status;
+          if(it.soNome){ var nm2 = nomeProprio(l.pedido); (x.historico = x.historico || []).push({em:agora, por:por, de:x.status, para:x.status, nota:"Nome corrigido pelo relatório do e-SiTef (antes: "+x.revendedora+")"}); x.revendedora = nm2; if(!x.representante) x.representante = repDaRevendedora(lp, nm2); cA++; return; }
           x.esitefNsu = String(l.nsu); x.autorizacao = l.autorizacao || x.autorizacao || ""; if(l.bandeira) x.bandeira = l.bandeira;
+          if(x.importadoEsitef && l.pedido) x.revendedora = nomeProprio(l.pedido);   // o nome vem sempre do e-SiTef nos links importados
           if(it.acao==="atualizar"){ x.status = it.para; if(it.para==="pago"){ x.pagoEm = l.pagoEm || agora; if(!x.geradoEm) x.geradoEm = l.criadoEm || agora; if(l.parcelas) x.parcelas = Math.round(num(l.parcelas)); x.expiraEm = ""; } }
           (x.historico = x.historico || []).push({em:agora, por:por, de:de, para:x.status, nota:"Confirmado pelo relatório do e-SiTef (NSU "+l.nsu+")"}); cA++;
         } else cI++;
