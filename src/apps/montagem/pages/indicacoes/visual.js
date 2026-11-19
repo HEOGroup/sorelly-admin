@@ -9,6 +9,8 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { useIndAoVivo } from "@/apps/montagem/lib/indicacoes-servidor";
+import { use } from "@/apps/montagem/state/context";
 import { e, useEffect } from "@/shared/react";
 
 var LARANJA = "#F97316";
@@ -101,4 +103,17 @@ function Passos(p){
   }));
 }
 
-export { Bt, BtMini, Selo, Avatar, Resumo, BarraFiltros, Busca, FiltroData, Chip, Alternar, Secao, FaixaBloco, BuscaFaixa, AlternarFaixa, Janela, Colunas, Painel, Passos, degrade, corDe, cap1 };
+// ───────────── espera dos dados do app (Indicações ao vivo, 19/11/2026) ─────────────
+// Com servidor, as 5 telas leem o app por /api/indicacoes/estado (lib/indicacoes-servidor.js). Enquanto não chega: aviso curto; erro: o motivo e "Tentar de novo".
+// Erro numa releitura mantém a tela com o último dado e mostra o aviso em cima. Servidor sem gravação no app: aviso de somente leitura.
+function AvisoLinha(p){ return e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-lg px-3 py-1 text-center text-[13px] font-semibold", style:{color:p.cor, background:p.cor+"1F", boxShadow:"inset 0 0 0 1px "+p.cor+"66"}}, p.children); }
+function Espera(p){
+  var v = useIndAoVivo(), ind = use().state.ind;
+  if(!ind || !v.pronto) return v.erro ? e(AvisoLinha,{cor:"#F87171"}, v.erro, e(Bt,{ic:"arrow-clockwise", onClick:v.atualizar}, "Tentar de novo")) : e(AvisoLinha,{cor:"#93C5FD"}, "Carregando as indicações do app.");
+  var avisos = [];
+  if(v.erro) avisos.push(e(AvisoLinha,{key:"erro", cor:"#F87171"}, "Não foi possível atualizar agora: "+v.erro, e(Bt,{ic:"arrow-clockwise", onClick:v.atualizar}, "Tentar de novo")));
+  if(v.aoVivo && ind.gravacao && !ind.gravacao.app) avisos.push(e(AvisoLinha,{key:"leitura", cor:"#FBBF24"}, "Somente leitura: este servidor ainda não grava no app (agendar, retirar, cancelar e moedas ficam bloqueados)."));
+  return avisos.concat([e(p.corpo, {key:"corpo"})]);
+}
+
+export { Bt, BtMini, Selo, Avatar, Resumo, BarraFiltros, Busca, FiltroData, Chip, Alternar, Secao, FaixaBloco, BuscaFaixa, AlternarFaixa, Janela, Colunas, Painel, Passos, Espera, degrade, corDe, cap1 };

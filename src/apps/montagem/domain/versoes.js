@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.68", data:"2026-11-19", titulo:"Indicações ao vivo: ligadas ao app, à Kommo e ao balcão do admin antigo", itens:[
+  {tipo:"novo", area:"Cadastro de revendedoras → Indicações", txt:"Funil, Resgates de prêmios, Retiradas, Revendedoras e moedas e Histórico passam a ler o app ao vivo (antes era uma cópia parada de 17/11). Agendar, confirmar retirada, cancelar, creditar moedas, pedido no balcão e mudar etapa do funil gravam no app, como no admin antigo. As telas são as mesmas."},
+  {tipo:"novo", area:"Cadastro de revendedoras → Indicações", txt:"Dados de balcão (peças, valor em venda, data da retirada, em contato, maleta) e a planilha antiga vieram do admin antigo: 114 pedidos e 1.239 linhas. Enquanto o antigo ainda é usado, a cópia do balcão pode rodar sozinha a cada 2 minutos (ADMIN_ANTIGO_DATABASE_URL no servidor)."},
+  {tipo:"melhoria", area:"Indicações → Resgates de prêmios", txt:"Data passada (até 30 dias) registra a retirada que já aconteceu e abre a conferência; \"Retirar junto\" agenda e confirma vários pedidos da mesma revendedora numa visita (mesmas peças, valor dividido pelo prêmio)."},
+  {tipo:"melhoria", area:"Indicações → Funil", txt:"Mover para Kit entregue credita 1.000 moedas no app (dá para desmarcar quando já foram dadas à mão); Kit entregue não muda. Nova indicação busca a indicadora no app, pede os mesmos dados obrigatórios do admin antigo e cria o lead na Kommo. O motivo da cancelada vem da Kommo."},
+  {tipo:"melhoria", area:"Atendimento Sorelly → Brinde de indicação", txt:"O pedido aprovado vem do app e \"Finalizar\" confirma a retirada no app."}
+ ]},
  {v:"0.21.67", data:"2026-11-19", titulo:"Pix adiantado: comprovante nos prestadores e acerto sem pagamento em dobro", itens:[
   {tipo:"novo", area:"Financeiro → Financeiro familiar → Prestadores", txt:"Na tabela Pago de cada prestador o próprio VALOR do pagamento é o link do comprovante: com comprovante o valor fica sublinhado e, ao clicar, abre a imagem num cartão (um clique fecha); sem comprovante o valor é normal e o clique oferece anexar (foto ou PDF). Vale para o Pix de revendedora e para o pago lançado à mão. A foto vira JPEG pequeno e fica guardada no servidor, não só no navegador."},
   {tipo:"novo", area:"Financeiro → Contas a pagar", txt:"A dívida de prestador paga mostra na coluna Comprovante (visão Pago) o comprovante de cada pagamento que a quitou (Ver, ou Ver 1, Ver 2). Sem comprovante aparece Falta anexar."},

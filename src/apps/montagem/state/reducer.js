@@ -34,7 +34,7 @@ import { pfReduz, fornDoDestino } from "@/apps/montagem/domain/pf";
 import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
 import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
-import { indReduz } from "@/apps/montagem/domain/indicacoes";
+import { indReduz, CONFIG_PADRAO as CONFIG_IND } from "@/apps/montagem/domain/indicacoes";
 import { ceReduz } from "@/apps/montagem/domain/compras-estoque";
 import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
@@ -365,6 +365,13 @@ function reducer(s, a){
     case "CL": { var rCl = clReduz(s, a);
       return com(s, rCl.patch, rCl.msg); }
     case "IND": { var rInd = indReduz(s, a); return com(s, rInd.patch, rInd.msg); }   // Indicações (funil, resgates de prêmio, moedas)
+    // Indicações ao vivo (19/11/2026, lib/indicacoes-servidor.js): estado vindo do servidor (app + banco). arquivo:null = a planilha antiga não mudou (fica a que já está aqui)
+    case "IND_SERVIDOR": {
+      var antInd = s.ind || {};
+      if(a.ind) return com(s, {ind:Object.assign({}, a.ind, {config:Object.assign({}, CONFIG_IND, antInd.config || {}), arquivo:a.ind.arquivo!=null ? a.ind.arquivo : (antInd.arquivo || []), aoVivo:true, erroServidor:null})}, a.msg, a.tom);
+      if(a.erro) return com(s, {ind:Object.assign({}, antInd, {erroServidor:a.erro})});
+      return com(s, {}, a.msg, a.tom);
+    }
     case "CPC": { var rCpc = cpcReduz(s, a); return com(s, rCpc.patch, rCpc.msg); }   // Cadastro de peças (lotes, custo, preço sugerido, pedidos à DevMaster)
     case "PP": { var rPp = ppReduz(s, a); return com(s, rPp.patch, rPp.msg); }   // Pedidos de peças da produção ao Cadastro de peças (pedir, OK, pronto, não temos, aviso)
     case "PR": { var rPr = prReduz(s, a); return com(s, rPr.patch, rPr.msg); }   // Produção de peças (lançamento diário, painel, bônus)

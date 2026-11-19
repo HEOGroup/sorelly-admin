@@ -4,6 +4,8 @@
 //   AbaIndHistorico — histórico paginado (planilha antiga + kits entregues no sistema) com filtros.
 // Regras e dados em domain/indicacoes.js (estado s.ind); aqui só o desenho. Moedas: entrar em "Kit entregue" credita a indicadora.
 // Peças visuais (faixa de indicadores, barra de filtros, janela em colunas, selos) em pages/indicacoes/visual.js.
+// AO VIVO (19/11/2026): com servidor, o funil vem do app e mover um cartão corrige a etapa no app (como o "Mudar etapa" do admin antigo): "Kit entregue" não muda
+// e ir para "Kit entregue" credita 1.000 moedas, salvo se desmarcar. Nova indicação busca a indicadora no app e cria o lead na Kommo. A edição da indicada é só do modo navegador.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Pagina, Tab, Td, LINHA } from "@/apps/montagem/components/padrao";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
@@ -11,7 +13,8 @@ import { ETAPAS_FUNIL, SITUACOES_TRABALHO, buscarRevendedoras, diasEntre, estado
   indicacaoDe, indicadoresFunil, legendaDaTaxa, linkWhatsapp, nomeRev, proximaEtapa, rotuloFunil, semDdi, taxaFormatada, textoDaPaginacao } from "@/apps/montagem/domain/indicacoes";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
-import { Alternar, Avatar, Bt, BtMini, Busca, BuscaFaixa, Chip, Colunas, FaixaBloco, FiltroData, Janela, Painel, Passos, Resumo, Secao, Selo, cap1 } from "@/apps/montagem/pages/indicacoes/visual";
+import { Alternar, Avatar, Bt, BtMini, Busca, BuscaFaixa, Chip, Colunas, Espera, FaixaBloco, FiltroData, Janela, Painel, Passos, Resumo, Secao, Selo, cap1 } from "@/apps/montagem/pages/indicacoes/visual";
+import { carregarInd, useBuscaRevendedoras } from "@/apps/montagem/lib/indicacoes-servidor";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { COMPACTO } from "@/apps/montagem/components/bloco-painel";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -25,6 +28,9 @@ var CAMPO = INPUT+" w-full text-center";
 function Entrada(p){ return e(Campo,{rot:p.rot, className:p.className}, e("input",{type:p.type||"text", value:p.v==null ? "" : p.v, placeholder:p.ph, onChange:function(ev){ p.set(ev.target.value); }, className:CAMPO})); }
 function Erro(p){ return p.t ? e("p",{className:"rounded-lg bg-[#EF4444]/15 px-3 py-2 text-[13px] font-bold text-[#F87171] ring-1 ring-[#EF4444]/40"}, p.t) : null; }
 var diaDe = function(iso){ return iso ? String(iso).slice(0,10) : ""; };
+// manda a ação e só fecha a janela se deu certo (ao vivo o app pode recusar; no modo navegador o dispatch não devolve nada)
+function despachar(d, a, depois){ return Promise.resolve(d(a)).then(function(ok){ if(ok!==false && depois) depois(); return ok!==false; }); }
+var lidoDoApp = function(ind){ return ind && ind.aoVivo && ind.lidoEm ? " · lido do app às "+String(ind.lidoEm).slice(11, 16) : ""; };
 // cor do selo de tempo na etapa: até 2 dias verde, até 6 âmbar, 7 ou mais vermelho
 var corTempo = function(dias){ return dias<=2 ? "#4ADE80" : dias<=6 ? "#FBBF24" : "#EF4444"; };
 
@@ -56,6 +62,15 @@ function CamposIndicada(p){
   return e("div",{className:"flex flex-col gap-2"}, dados, perfil);
 }
 var FORM_VAZIO = function(){ return {situacao:"nao", nomeEmpresa:"", cargo:"", tempoAtuacaoEmpresa:"", enderecoEmpresa:"", numeroEmpresa:"", cidadeEmpresa:"", areaAutonoma:"", tempoAutonoma:"", estudaGraduacao:"", cursoGraduacao:""}; };
+// ao vivo, a Nova indicação cria o lead na Kommo: os mesmos obrigatórios do admin antigo e do sorelly-forms (o servidor confere de novo, faltaNaIndicacao)
+function faltaParaKommo(v){
+  var t = function(x){ return String(x==null ? "" : x).trim(); }, dg = function(x){ return String(x==null ? "" : x).replace(/\D/g, ""); }, f = v.form || {}, sit = f.situacao || "nao";
+  if(!t(v.cidade)) return "Informe a cidade da indicada."; if(dg(v.cep).length<8) return "Informe o CEP da indicada (8 números)."; if(!t(v.endereco)) return "Informe o endereço da indicada."; if(!t(v.numero)) return "Informe o número da casa da indicada.";
+  if(sit==="sim" && !(t(f.nomeEmpresa) && t(f.cargo) && t(f.enderecoEmpresa) && t(f.tempoAtuacaoEmpresa))) return "Preencha empresa, cargo, tempo na empresa e endereço da empresa.";
+  if(sit==="autonoma" && !(t(f.areaAutonoma) && t(f.tempoAutonoma))) return "Preencha a área de atuação e o tempo como autônoma.";
+  if(sit==="nao" && f.estudaGraduacao==="sim" && !t(f.cursoGraduacao)) return "Informe o curso de graduação.";
+  return "";
+}
 // mesma recusa do domínio, antes de enviar (a janela só fecha se estiver tudo certo)
 function validarIndicada(ind, v, ignorarId){
   if(!String(v.nome||"").trim()) return "Informe o nome da indicada.";
@@ -68,16 +83,17 @@ function validarIndicada(ind, v, ignorarId){
 // ───────────── Nova indicação (3 colunas: quem indicou | dados da indicada | perfil e registro) ─────────────
 function DialogoNova(p){
   var s = p.s, ind = s.ind, st = useState({busca:"", rev:null, novaNome:"", novaTel:"", digitar:false, etapa:"em_andamento", nome:"", whatsapp:"", cidade:"", cep:"", endereco:"", numero:"", observacao:"", form:FORM_VAZIO()}), v = st[0], setV = st[1];
-  var er = useState(""), erro = er[0];
+  var er = useState(""), erro = er[0], vivo = !!ind.aoVivo, se = useState(false), enviando = se[0];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
-  var achadas = v.rev || v.digitar ? [] : buscarRevendedoras(ind, v.busca).slice(0, 6);
+  var bs = useBuscaRevendedoras(v.rev || v.digitar ? "" : v.busca, vivo);   // ao vivo: busca no app inteiro (DevMaster de reserva)
+  var achadas = v.rev || v.digitar ? [] : vivo ? bs.itens.slice(0, 6) : buscarRevendedoras(ind, v.busca).slice(0, 6);
   var okRev = !!v.rev || (v.digitar && !!String(v.novaNome).trim()), okDados = !!String(v.nome).trim() && semDdi(v.whatsapp).length>=10;
   var salvar = function(){
     var m = ""; if(v.rev==null && !v.digitar) m = "Escolha a indicadora (busque pelo nome ou digite uma nova)."; else if(v.rev==null && !String(v.novaNome).trim()) m = "Informe o nome da indicadora.";
-    if(!m) m = validarIndicada(ind, v, null); if(m){ er[1](m); return; }
+    if(!m) m = validarIndicada(ind, v, null); if(!m && vivo) m = faltaParaKommo(v); if(m){ er[1](m); return; }
     var a = {type:"IND", op:"ind_add", por:p.por, etapa:v.etapa, nome:v.nome, whatsapp:v.whatsapp, cidade:v.cidade, cep:v.cep, endereco:v.endereco, numero:v.numero, observacao:v.observacao || undefined, form:v.form};
     if(v.rev) a.revendedoraId = v.rev.id; else { a.revendedoraNome = v.novaNome; a.revendedoraTelefone = v.novaTel; }
-    p.dispatch(a); p.fechar();
+    er[1](""); se[1](true); despachar(p.dispatch, a, p.fechar).then(function(){ se[1](false); });
   };
   var passos = [{t:"Indicadora", estado:okRev ? "feito" : "atual"}, {t:"Dados da indicada", estado:okDados ? "feito" : okRev ? "atual" : "futuro"}, {t:"Perfil", estado:okRev && okDados ? "atual" : "futuro"}, {t:"Registrar", estado:"futuro"}];
   return e(Janela,{t:"Nova indicação", sub:"Lançamento manual de uma indicação", fechar:p.fechar, tam:"xl", passos:passos},
@@ -88,14 +104,16 @@ function DialogoNova(p){
             e("div",null, e(BtMini,{onClick:function(){ set("digitar", false); }}, "Voltar para a busca")))
         : e("div",{className:"flex flex-col gap-2"}, e("div",{className:"flex"}, e(Busca,{v:v.busca, ph:"Buscar revendedora por nome ou telefone", set:function(x){ set("busca", x); }})),
             achadas.map(function(r){ return e("button",{key:r.id, type:"button", onClick:function(){ set("rev", r); }, className:"flex items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-[13px] hover:bg-white/15"}, e(Avatar,{nome:r.nome, s:22}), r.nome+(r.telefone ? " · "+formatarTelefone(r.telefone) : "")); }),
-            String(v.busca).trim().length>=2 && !achadas.length && e("p",{className:"text-[12.5px] text-white/60"}, "Nenhuma revendedora encontrada."),
-            e("div",null, e(BtMini,{onClick:function(){ setV(Object.assign({}, v, {digitar:true, novaNome:v.busca})); }}, "Digitar uma indicadora nova")))),
+            vivo && bs.carregando && e("p",{className:"text-[13px] text-white/70"}, "Buscando no app."),
+            String(v.busca).trim().length>=2 && !achadas.length && !(vivo && bs.carregando) && e("p",{className:"text-[13px] text-white/70"}, "Nenhuma revendedora encontrada."),
+            !vivo && e("div",null, e(BtMini,{onClick:function(){ setV(Object.assign({}, v, {digitar:true, novaNome:v.busca})); }}, "Digitar uma indicadora nova")))),
       e(Painel,{t:"Dados da indicada", ic:"identification-card", estado:okDados ? "feito" : okRev ? "atual" : undefined}, e(CamposIndicada,{v:v, set:set, parte:"dados"})),
       e(Painel,{t:"Perfil e registro", ic:"clipboard-text", estado:okRev && okDados ? "atual" : undefined},
-        e(Campo,{rot:"Começa em"}, e("select",{value:v.etapa, onChange:function(ev){ set("etapa", ev.target.value); }, className:CAMPO}, e("option",{value:"em_andamento"}, rotuloFunil("em_andamento")), e("option",{value:"criado"}, rotuloFunil("criado")))),
+        !vivo && e(Campo,{rot:"Começa em"}, e("select",{value:v.etapa, onChange:function(ev){ set("etapa", ev.target.value); }, className:CAMPO}, e("option",{value:"em_andamento"}, rotuloFunil("em_andamento")), e("option",{value:"criado"}, rotuloFunil("criado")))),
         e(CamposIndicada,{v:v, set:set, parte:"perfil"}),
         e(Erro,{t:erro}),
-        e("div",{className:"flex flex-wrap items-center justify-center gap-2"}, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Registrar indicação")))));
+        vivo && e("p",{className:"text-[11px] text-white/70"}, "Registra no funil do app e cria o lead na Kommo (funil Cadastro, tag INDICAÇÃO)."),
+        e("div",{className:"flex flex-wrap items-center justify-center gap-2"}, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", disabled:enviando, onClick:salvar}, "Registrar indicação")))));
 }
 
 // ───────────── confirmação de mudança de etapa (cancelar pede motivo; Kit entregue avisa as moedas) ─────────────
@@ -103,14 +121,17 @@ function DialogoMover(p){
   var it = p.item, para = p.para, cfg = p.s.ind.config, nome = it.nome || it.indicadaNome, indicadora = nomeRev(p.s.ind, it.revendedoraId);
   var motivos = cfg.motivosCancelamento || [], st = useState({m:motivos[0]||"outro", livre:"", nota:""}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
-  var cancela = para==="cancelado", credita = para==="finalizado" && cfg.creditarAoFinalizar && !(it.moedasCreditadas>0), estorna = it.etapa==="finalizado" && it.moedasCreditadas>0;
-  var motivo = v.m==="outro" ? String(v.livre).trim() : v.m, ok = !cancela || !!motivo;
-  var confirmar = function(){ var a = {type:"IND", op:"ind_etapa", por:p.por, id:it.id, etapa:para}; if(cancela) a.motivo = motivo; else if(v.nota.trim()) a.nota = v.nota; p.dispatch(a); p.fechar(); };
+  // ao vivo (19/11/2026): ir para Kit entregue credita as moedas no app UMA vez; desmarque quando elas já foram dadas à mão (senão ela recebe em dobro). Regra do admin antigo.
+  var vivo = !!p.s.ind.aoVivo, cr = useState(true), creditar = cr[0], se = useState(false), enviando = se[0];
+  var cancela = para==="cancelado", credita = para==="finalizado" && (vivo ? creditar : cfg.creditarAoFinalizar) && !(it.moedasCreditadas>0), estorna = !vivo && it.etapa==="finalizado" && it.moedasCreditadas>0;
+  var motivo = v.m==="outro" ? String(v.livre).trim() : v.m, ok = (!cancela || !!motivo) && !enviando;
+  var confirmar = function(){ var a = {type:"IND", op:"ind_etapa", por:p.por, id:it.id, etapa:para}; if(cancela) a.motivo = motivo; else if(v.nota.trim()) a.nota = v.nota; if(vivo && para==="finalizado") a.creditarMoedas = creditar; se[1](true); despachar(p.dispatch, a, p.fechar).then(function(){ se[1](false); }); };
   return e(Janela,{t:cancela ? "Cancelar indicação" : "Mover indicação", sub:nome, fechar:p.fechar, tam:"md"},
     e(Colunas,{n:2},
       e(Painel,{t:"Mudança de etapa", ic:"arrows-left-right", estado:"feito"},
         e("div",{className:"flex flex-wrap items-center justify-center gap-2"}, e(Selo,{cor:COR_ETAPA[it.etapa]}, rotuloFunil(it.etapa)), e(Ph,{n:"arrow-right", s:16}), e(Selo,{cor:COR_ETAPA[para]}, rotuloFunil(para))),
         credita && e("p",{className:"rounded-lg bg-[#22C55E]/15 px-3 py-2 text-[13px] font-bold text-[#4ADE80] ring-1 ring-[#22C55E]/40"}, "Ao confirmar, "+indicadora+" recebe "+formatarMoedas(cfg.moedasPorKit)+" pela indicação."),
+        vivo && para==="finalizado" && !(it.moedasCreditadas>0) && e("label",{className:"flex cursor-pointer items-center justify-center gap-2 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:creditar, onChange:function(ev){ cr[1](ev.target.checked); }}), "Creditar "+formatarMoedas(cfg.moedasPorKit)+" (desmarque se já foram dadas à mão)"),
         estorna && e("p",{className:"rounded-lg bg-[#FBBF24]/15 px-3 py-2 text-[13px] font-bold text-[#FBBF24] ring-1 ring-[#FBBF24]/40"}, "As "+formatarMoedas(it.moedasCreditadas)+" creditadas a "+indicadora+" serão estornadas.")),
       e(Painel,{t:cancela ? "Motivo" : "Confirmação", ic:"check-square", estado:"atual"},
         cancela && e("div",{className:"flex flex-col gap-2"},
@@ -161,7 +182,7 @@ function DialogoDetalhe(p){
         edit && e(Erro,{t:erro}),
         e("div",{className:"flex flex-col items-stretch gap-2"},
           !edit && link && e("a",{href:link, target:"_blank", rel:"noopener noreferrer", className:"inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#22C55E]/25 px-3 py-2 text-[13px] font-bold text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35"}, e(Ph,{n:"whatsapp-logo", s:15}), "Chamar no WhatsApp"),
-          !edit && e(Bt,{ic:"note-pencil", onClick:function(){ ed[1](true); }}, "Editar"),
+          !edit && !s.ind.aoVivo && e(Bt,{ic:"note-pencil", onClick:function(){ ed[1](true); }}, "Editar"),
           edit && e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Salvar alterações"), edit && e(Bt,{onClick:function(){ setV(ini()); er[1](""); ed[1](false); }}, "Descartar"),
           e(Bt,{onClick:p.fechar}, "Fechar")))));
 }
@@ -177,8 +198,13 @@ function MenuMoverInd(p){
       e("span",{className:"px-2 py-1 text-[11px] font-semibold uppercase tracking-[.05em]"}, "Mover para"),
       p.destinos.map(function(x){ return e("button",{key:x.k, type:"button", onClick:function(){ st[1](false); p.mover(p.it, x.k); }, className:"h-8 rounded-md px-2 text-left text-[13px] hover:bg-white/10"}, x.titulo); })));
 }
-function AbaIndFunil(){
-  var cx = use(), s = cx.state, d = cx.dispatch, por = nomeDe(s.usuario), ind = s.ind;
+// ao vivo (19/11/2026): Espera mostra "carregando" até o app responder (pages/indicacoes/visual.js)
+function AbaIndFunil(){ return e(Espera,{corpo:CorpoFunil}); }
+function CorpoFunil(){
+  var cx = use(), s = cx.state, d = cx.dispatch, por = nomeDe(s.usuario), ind = s.ind, vivo = !!ind.aoVivo;
+  // ao vivo: Kit entregue não muda (o app recusa: as moedas já caíram) e "Novas" não é destino (regras do app e do admin antigo)
+  var recusaVivo = function(it, para){ if(!vivo) return ""; if(it.etapa==="finalizado") return "Kit entregue não muda: as moedas já foram creditadas no app."; if(para==="criado") return "\"Novas\" não é etapa de destino: escolha Em andamento."; return ""; };
+  var avisa = function(t){ d({type:"IND_SERVIDOR", msg:t, tom:"alerta"}); };
   var st = useState({q:"", nova:false, ver:null, mover:null}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
   var hoje = hojeSP(), ic = indicadoresFunil(ind), t = ic.totais, c = ic.conversao;
@@ -187,12 +213,13 @@ function AbaIndFunil(){
   // mover direto (sem janela) só quando não cancela nem credita/estorna moedas
   var mover = function(it, para){
     if(para===it.etapa) return;
+    var rv = recusaVivo(it, para); if(rv){ avisa(rv); return; }
     var cfg = ind.config, mexeMoeda = para==="finalizado" || (it.etapa==="finalizado" && it.moedasCreditadas>0);
-    if(para==="cancelado" || (mexeMoeda && cfg.creditarAoFinalizar)){ set("mover", {item:it, para:para}); return; }
+    if(para==="cancelado" || (mexeMoeda && (vivo || cfg.creditarAoFinalizar))){ set("mover", {item:it, para:para}); return; }
     d({type:"IND", op:"ind_etapa", por:por, id:it.id, etapa:para});
   };
   var avancar = function(it){ var pr = proximaEtapa(it.etapa); if(!pr) return; if(pr==="finalizado") set("mover", {item:it, para:pr}); else d({type:"IND", op:"ind_avancar", por:por, id:it.id}); };
-  var voltar = function(it){ var an = etapaAnterior(it); if(!an) return; if(it.etapa==="finalizado") set("mover", {item:it, para:an}); else d({type:"IND", op:"ind_voltar", por:por, id:it.id}); };
+  var voltar = function(it){ var an = etapaAnterior(it); if(!an) return; var rv = recusaVivo(it, an); if(rv){ avisa(rv); return; } if(it.etapa==="finalizado") set("mover", {item:it, para:an}); else d({type:"IND", op:"ind_voltar", por:por, id:it.id}); };
   // 17/11/2026 (Marcus: "pegue o funil do cadastro de Kits novos, melhore e compacte"): mesmo desenho do quadro de Kits novos: cartão baixo de duas linhas (nome e dias na etapa; quem indicou e cidade),
   // barra na lateral (verde no prazo, âmbar de 3 a 6 dias, vermelha com 7 ou mais), menu ⋯ para mover. Sem faixa de números no topo (regra de 02/11/2026).
   var destinosDe = function(col){ return colunas.filter(function(x){ return x.k!==col.k; }); };
@@ -212,8 +239,8 @@ function AbaIndFunil(){
   };
   var corBarra = function(it, col){ var dias = Math.max(0, diasEntre(diaDe(it.etapaAlteradaEm), hoje)); return it.etapa==="finalizado" || it.etapa==="cancelado" ? col.cor : corTempo(dias); };
   return e(Pagina,null,
-    e(Secao,{t:"Funil das indicações", dir:"Conversão "+taxaFormatada(c.taxa)+" · "+total.toLocaleString("pt-BR")+(total===1 ? " indicação" : " indicações"), semPad:true,
-      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:v.q, ph:"Buscar por nome, WhatsApp ou indicadora", set:function(x){ set("q", x); }}), e("span",{className:"flex-1"}), e(Botao,{principal:true, onClick:function(){ set("nova", true); }}, "Nova indicação"))},
+    e(Secao,{t:"Funil das indicações", dir:"Conversão "+taxaFormatada(c.taxa)+" · "+total.toLocaleString("pt-BR")+(total===1 ? " indicação" : " indicações")+lidoDoApp(ind), semPad:true,
+      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:v.q, ph:"Buscar por nome, WhatsApp ou indicadora", set:function(x){ set("q", x); }}), e("span",{className:"flex-1"}), vivo && e(Botao,{onClick:function(){ carregarInd(d, true); }}, "Atualizar"), e(Botao,{principal:true, onClick:function(){ set("nova", true); }}, "Nova indicação"))},
       total===0 && e("p",{className:"py-2 text-center text-[13px]"}, "Nenhuma indicação registrada. Use \"Nova indicação\" para lançar a primeira."),
       e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:card, onMover:function(it, de, para){ mover(it, para); }, compacto:true, cabecaFina:true, semMover:true, corBarra:corBarra, onAbrir:function(it){ set("ver", it.id); }, unidade:["indicação","indicações"], vazio:v.q.trim() ? "Nenhuma indicação encontrada nesta etapa." : "Nenhuma indicação nesta etapa."}))),
     v.nova && e(DialogoNova,{s:s, por:por, dispatch:d, fechar:function(){ set("nova", false); }}),
@@ -247,7 +274,8 @@ function ListaSituacao(p){
     e("div",{className:G+" bg-[var(--bloco-colunas)] py-0.5 font-bold uppercase tracking-[.05em] text-white"}, e("span",null,"Situação"), e("span",{className:"text-center"},"Indicadas")),
     p.itens.map(function(x, i){ return e("div",{key:x.t, className:G+" border-t border-white/30 py-0.5 "+(i%2 ? "bg-white/[0.04]" : "")}, e("span",{className:x.cor||""}, x.t), e("b",{className:"text-center tabular-nums "+(x.cor||"")}, x.n.toLocaleString("pt-BR"))); }));
 }
-function AbaIndHistorico(){
+function AbaIndHistorico(){ return e(Espera,{corpo:CorpoHistorico}); }
+function CorpoHistorico(){
   var cx = use(), ind = cx.state.ind, hoje = hojeSP();
   var base = useMemo(function(){
     var out = [], pg = 0;

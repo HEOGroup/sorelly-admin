@@ -2,7 +2,9 @@ import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/indicacoes.js
 // Indicações (setor Cadastro de revendedoras: Michele, supervisor Nickolas), trazido do SorellyAdmin (docs/modulos/indicacoes.md).
 // A revendedora indica alguém no "Indique & Ganhe" e pede prêmio com moedas; aqui a empresa avança a indicação pelo funil, atende o resgate (fila → agendar → retirar) e dá moedas.
-// O app da revendedora e a Kommo NÃO estão ligados: tudo entra por lançamento manual (ops "ind_add", "resgate_add", "moedas_credito"). As moedas ficam num extrato próprio (s.ind.extrato).
+// AO VIVO (19/11/2026): com servidor e login, s.ind vem de /api/indicacoes/estado (src/server/indicacoes.js: app + banco, aoVivo:true) e as ações vão para /api/indicacoes/acao
+// (lib/indicacoes-servidor.js; App.js desvia o dispatch). Ao vivo, o saldo de moedas é o do app (revendedora.moedas) e o extrato traz só os movimentos que se conhecem daqui.
+// SEM servidor (modo navegador) vale o desenho abaixo: tudo entra por lançamento manual (ops "ind_add", "resgate_add", "moedas_credito") e as moedas ficam num extrato próprio (s.ind.extrato).
 // Estado s.ind (só neste navegador). Nasce VAZIO (repositório é público). Dados reais, se existirem, vêm só de domain/indicacoes.local.js (gitignored):
 //   export default {revendedoras:[], premios:[], indicacoes:[], resgates:[], extrato:[], arquivo:[]}  (arquivo = linhas da planilha antiga de retirada de prêmios)
 // Datas ISO no fuso America/Sao_Paulo ("2026-10-16" ou "2026-10-16T14:30:00"), sem depender de UTC. Dinheiro em reais e moedas como números (nada de centavos).
@@ -91,6 +93,7 @@ var etapaEmAberto = function(e){ return e==="solicitado" || e==="aprovado"; };
 var CONFIG_PADRAO = {
   atrasoHoras:24, criticoHoras:48,                              // pedido em aberto há 24h = atrasado, 48h = crítico
   agendaDias:7, horaInicio:"08:00", horaFim:"18:00", passoMinutos:30,   // agendar: de hoje até +6, 08:00 a 18:00, de 30 em 30
+  diasRetroativos:30,                                           // data passada (até 30 dias) = registrar retirada que já aconteceu (regra do admin antigo, 19/10/2026)
   moedasMin:1, moedasMax:100000, motivoMax:120, observacaoMax:2000,     // crédito manual de moedas
   validadeDias:90, aplicarValidade:false,                       // moedas valem 90 dias (no app é regra do app; aqui só informa, a menos que ligue aplicarValidade)
   moedasPorKit:1000, creditarAoFinalizar:true,                  // ASSUMIDO: o app credita ao "Kit entregue"; 1.000 vem do rótulo da planilha antiga. Confirmar com o Marcus
@@ -143,6 +146,7 @@ function novaIndicacao(s, d, agora, por, doArquivo){
 // saldo da revendedora. FIFO: cada crédito vira um lote que vence em validadeDias; o débito consome o lote mais antigo ainda válido.
 // Devolve {saldo, total, vencidas, proximoVencimento:{dia,moedas}|null}. total = soma simples do extrato; saldo = total, ou só o que não venceu se config.aplicarValidade
 function saldoDe(s, revId, hoje){
+  if(s.aoVivo){ var rvv = buscaRevendedoraPorId(s, revId), mv = rvv && rvv.moedas!=null ? Math.round(num(rvv.moedas)) : 0; return {saldo:mv, total:mv, vencidas:0, proximoVencimento:null}; }   // ao vivo: o saldo é o do app
   var h = hoje||hojeSP(), cfg = s.config, val = cfg.validadeDias>0 ? cfg.validadeDias : 0, total = 0, lotes = [];
   var ls = s.extrato.filter(function(l){ return String(l.revendedoraId)===String(revId); }).sort(function(a, b){ return (a.em||"").localeCompare(b.em||"") || (Number(a.id)-Number(b.id)); });
   ls.forEach(function(l){
@@ -172,8 +176,9 @@ function partirIsoAgendamento(iso){
   var base = Math.floor(m/60)*60 + alvo, f = new Date(base*60000);
   return {dia:f.getUTCFullYear()+"-"+p2(f.getUTCMonth()+1)+"-"+p2(f.getUTCDate()), horario:p2(f.getUTCHours())+":"+p2(f.getUTCMinutes())};
 }
-// não aceita dia passado nem horário fora da grade
-function podeConfirmarAgendamento(dia, horario, cfg, hoje){ if(!ehDia(dia)) return false; if(dia<(hoje||hojeSP())) return false; return horariosDeRetirada(cfg).indexOf(horario)>=0; }
+// dia passado só até cfg.diasRetroativos (registrar retirada que já aconteceu); horário dentro da grade
+function primeiroDiaAgendavel(cfg, hoje){ return somaDias(hoje||hojeSP(), -Math.max(0, num(cfg.diasRetroativos))); }
+function podeConfirmarAgendamento(dia, horario, cfg, hoje){ if(!ehDia(dia)) return false; if(dia<primeiroDiaAgendavel(cfg, hoje)) return false; return horariosDeRetirada(cfg).indexOf(horario)>=0; }
 // "Hoje, 14:30" / "Amanhã, 14:30" / "Quinta, 14:30"
 function formatarHorarioAgendado(iso, hoje){
   var p = partirIsoAgendamento(iso); if(!p) return null; var h = hoje||hojeSP();
@@ -454,7 +459,7 @@ function indReduz(s, a){
     case "resgate_agendar": {   // agendar pela primeira vez leva o pedido para "Aguardando retirada"; reagendar só regrava a data
       var ra = res1(); if(!ra) return recusa("Pedido não encontrado."); if(!podeExecutar("aprovar", ra.etapa) && ra.etapa!=="aprovado") return recusa("Esse pedido já foi "+(ra.etapa==="entregue" ? "retirado." : "cancelado."));
       var dia = a.dia, hor = a.horario; if(a.iso){ var pa = partirIsoAgendamento(a.iso); if(!pa) return recusa("Data inválida."); dia = pa.dia; hor = pa.horario; }
-      if(!ehDia(dia)) return recusa("Escolha o dia da retirada."); if(dia<hoje) return recusa("Não dá para agendar em um dia que já passou."); if(horariosDeRetirada(cfg).indexOf(hor)<0) return recusa("Escolha um horário entre "+cfg.horaInicio+" e "+cfg.horaFim+".");
+      if(!ehDia(dia)) return recusa("Escolha o dia da retirada."); if(dia<primeiroDiaAgendavel(cfg, hoje)) return recusa(cfg.diasRetroativos ? "A data da retirada pode voltar no máximo "+cfg.diasRetroativos+" dias." : "Não dá para agendar em um dia que já passou."); if(horariosDeRetirada(cfg).indexOf(hor)<0) return recusa("Escolha um horário entre "+cfg.horaInicio+" e "+cfg.horaFim+".");
       var antes = ra.operacao.dataAgendada; ra.operacao.dataAgendada = montarIsoAgendamento(dia, hor); ra.operacao.atualizadoPor = por; ra.operacao.atualizadoEm = agora;
       if(ra.etapa==="solicitado"){ ra.etapa = "aprovado"; ra.aprovadoEm = agora; ra.historico.push({em:agora, por:por, de:"solicitado", para:"aprovado", nota:"Retirada marcada para "+formatarDia(dia)+" "+hor}); }
       else ra.historico.push({em:agora, por:por, de:"aprovado", para:"aprovado", nota:"Reagendado"+(antes ? " de "+formatarDataHora(antes) : "")+" para "+formatarDia(dia)+" "+hor});
@@ -499,7 +504,7 @@ export { indDemo, indReduz, hojeSP, agoraSP, somaDias, diasEntre, listaDias, jan
   CONFIG_PADRAO, ETAPAS_RESGATE, ETAPAS_FUNIL, ETAPAS_FUNIL_ABAS, ORDEM_FUNIL, SITUACOES_TRABALHO, ETAPA_QUE_CREDITA,
   formatarReais, formatarMoedas, formatarDia, formatarDataHora, semDdi, formatarTelefone, linkWhatsapp, descricaoDoPremio, tempoDecorrido, normalizarCodigosPecas,
   rotuloAba, rotuloItem, explicacaoEtapa, tomEtapa, rotuloFunil, explicacaoFunil, tomFunil, acoesDaEtapa, acaoPrincipal, podeExecutar, etapaSomenteLeitura, etapaEmAberto,
-  saldoDe, extratoDe, horariosDeRetirada, rotuloDiaLongo, rotuloDoChip, opcoesDeDia, faixaDeDias, avancarFaixa, montarIsoAgendamento, partirIsoAgendamento, podeConfirmarAgendamento, formatarHorarioAgendado,
+  saldoDe, extratoDe, horariosDeRetirada, rotuloDiaLongo, rotuloDoChip, opcoesDeDia, faixaDeDias, avancarFaixa, montarIsoAgendamento, partirIsoAgendamento, primeiroDiaAgendavel, podeConfirmarAgendamento, formatarHorarioAgendado,
   horasEsperando, nivelDeAtraso, ordenarFila, contarAtrasados, avisoDeAtraso, buscaRevendedoraPorId, nomeRev, resgateVista, combinaBuscaResgate,
   contagemEtapas, abasDaFila, filaPorEtapa, resgateDe, podeConfirmarEntrega, diferencaDoPremio, avisoDeEstorno, motivoFinal, filtrarBrindeMaleta, textoBrindeMaleta,
   agendamentosDoDia, resgatesSemHorario, contagemPorDia, valorDaRetirada, retiradasDoDia, resumoDoDia, gerarCsvDoDia, nomeDoArquivoCsv,

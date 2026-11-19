@@ -44,7 +44,8 @@ function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
   var l = t.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
-  return l.length ? l : PADRAO;
+  // Indicações ao vivo (19/11/2026): com servidor e login, s.ind vem de /api/indicacoes/estado (app + banco, lib/indicacoes-servidor.js); a cópia de 17/11 no módulo "ind" não sincroniza mais
+  return (l.length ? l : PADRAO).filter(function(c){ return c!=="ind"; });
 }
 // O SERVIDOR SEMPRE MANDA (Leonardo, 06/11/2026): todo perfil, inclusive a Diretoria, sincroniza assim que entra.
 // Acabou a escolha "Este navegador manda / Do servidor" da Diretoria, que pausava tudo até alguém escolher (e escondia os registros do app da representante).

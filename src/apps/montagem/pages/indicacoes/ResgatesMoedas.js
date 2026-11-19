@@ -4,13 +4,16 @@
 //   AbaIndRetiradas    agendamentos (faixa de dias) + Retiradas do dia (resumo e CSV)
 //   AbaIndRevendedoras ranking, cadastro, crédito manual de moedas, extrato e catálogo de prêmios
 // Regras e dados em domain/indicacoes.js (estado s.ind; ações {type:"IND", op, por, ...}). Aqui só o desenho.
+// AO VIVO (19/11/2026): com servidor, s.ind vem do app e as ações vão para lá (lib/indicacoes-servidor.js). Ao vivo some o que só existia na cópia local:
+// cadastro de revendedora, catálogo editável, pedido para quem não tem cadastro no app e "não debitar". Entram a busca no app, a data passada (até 30 dias) e a retirada junto.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro, ESTADO, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
-import { agoraSP, avisoDeEstorno, avisoDeAtraso, buscaRevendedoraPorId, buscarRevendedoras, contagemPorDia, diferencaDoPremio, estadoDaPaginacao, etapaEmAberto, extratoDe, faixaDeDias, filaPorEtapa, filtrarBrindeMaleta, formatarDataHora, formatarDia, formatarMoedas, formatarReais, formatarTelefone, gerarCsvDoDia, hojeSP, horariosDeRetirada, indicadoresMoedas, indicadoresResgates, linkWhatsapp, motivoFinal, nomeDoArquivoCsv, normalizarCodigosPecas, opcoesDeDia, partirIsoAgendamento, podeConfirmarAgendamento, podeConfirmarEntrega, ranking, resgateDe, resgatesSemHorario, agendamentosDoDia, resumoDoDia, rotuloDoChip, avancarFaixa, saldoDe, somaDias, textoBrindeMaleta, textoDaPaginacao, acoesDaEtapa, ETAPAS_RESGATE, rotuloAba, explicacaoEtapa } from "@/apps/montagem/domain/indicacoes";
+import { agoraSP, avisoDeEstorno, avisoDeAtraso, buscaRevendedoraPorId, buscarRevendedoras, contagemPorDia, diferencaDoPremio, estadoDaPaginacao, etapaEmAberto, extratoDe, faixaDeDias, filaPorEtapa, filtrarBrindeMaleta, formatarDataHora, formatarDia, formatarMoedas, formatarReais, formatarTelefone, gerarCsvDoDia, hojeSP, horariosDeRetirada, indicadoresMoedas, indicadoresResgates, linkWhatsapp, motivoFinal, nomeDoArquivoCsv, normalizarCodigosPecas, opcoesDeDia, partirIsoAgendamento, podeConfirmarAgendamento, podeConfirmarEntrega, ranking, resgateDe, resgatesSemHorario, agendamentosDoDia, resumoDoDia, rotuloDoChip, avancarFaixa, saldoDe, somaDias, textoBrindeMaleta, textoDaPaginacao, acoesDaEtapa, ETAPAS_RESGATE, rotuloAba, explicacaoEtapa, primeiroDiaAgendavel, rotuloItem } from "@/apps/montagem/domain/indicacoes";
+import { carregarInd, useBuscaRevendedoras } from "@/apps/montagem/lib/indicacoes-servidor";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { Alternar, AlternarFaixa, Avatar, Bt, Busca, BuscaFaixa, Colunas, FaixaBloco, FiltroData, Janela, Painel, Resumo, Secao, Selo } from "@/apps/montagem/pages/indicacoes/visual";
+import { Alternar, AlternarFaixa, Avatar, Bt, Busca, BuscaFaixa, Colunas, Espera, FaixaBloco, FiltroData, Janela, Painel, Resumo, Secao, Selo } from "@/apps/montagem/pages/indicacoes/visual";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { Kanban } from "@/shared/kanban";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
@@ -32,18 +35,35 @@ function Alerta(p){ var c = p.cor || ESTADO.alerta; return e("div",{className:"f
 var soDigitos = function(v){ return String(v||"").replace(/\D/g, ""); };
 
 // ───────────── escolher revendedora (busca por nome, e-mail, telefone ou número) ─────────────
+// ao vivo (19/11/2026): busca no app inteiro (DevMaster de reserva), como no admin antigo; onPick(id, revendedora) entrega também o saldo que veio da busca
 function SeletorRev(p){
-  var st = useState(""), q = st[0], ind = p.ind, sel = p.valor!=null && p.valor!=="" ? buscaRevendedoraPorId(ind, p.valor) : null;
-  var achados = q.trim().length>=2 ? buscarRevendedoras(ind, q).slice(0, 6) : [];
+  var st = useState(""), q = st[0], ind = p.ind, vivo = !!ind.aoVivo, se = useState(null), escolhida = se[0], bs = useBuscaRevendedoras(q, vivo);
+  var sel = p.valor!=null && p.valor!=="" ? (buscaRevendedoraPorId(ind, p.valor) || (escolhida && String(escolhida.id)===String(p.valor) ? escolhida : null)) : null;
+  var achados = vivo ? bs.itens.slice(0, 6) : (q.trim().length>=2 ? buscarRevendedoras(ind, q).slice(0, 6) : []);
+  var escolher = function(r){ se[1](r); p.onPick(r ? r.id : null, r); st[1](""); };
+  var saldoSel = sel ? (sel.moedas!=null ? sel.moedas : saldoDe(ind, sel.id).saldo) : 0;
   if(sel) return e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-lg bg-black/30 px-3 py-1.5 ring-1 ring-[#F97316]/50"},
-    e("b",{className:"text-[13.5px]"}, sel.nome), e("span",{className:"text-[12px] text-white/70"}, formatarTelefone(sel.telefone)),
-    e(Selo,{cor:"#F3D98B", ic:"coins"}, formatarMoedas(saldoDe(ind, sel.id).saldo)),
-    e(Bt,{ic:"x", onClick:function(){ p.onPick(null); st[1](""); }, className:BTP}, "Trocar"));
+    e("b",{className:"text-[13px]"}, sel.nome), e("span",{className:"text-[13px] text-white/70"}, formatarTelefone(sel.telefone)),
+    sel.origem==="devmaster" ? e(Selo,{cor:"#FBBF24"}, "Sem cadastro no app") : e(Selo,{cor:"#F3D98B", ic:"coins"}, formatarMoedas(saldoSel)),
+    e(Bt,{ic:"x", onClick:function(){ escolher(null); }, className:BTP}, "Trocar"));
   return e("div",{className:"flex flex-col gap-1.5"},
     e(Entrada,{v:q, on:st[1], rot:"Revendedora", ph:"Nome, telefone ou número da revendedora"}),
     achados.length>0 && e("div",{className:"flex flex-col gap-1"}, achados.map(function(r){
-      return e("button",{key:r.id, type:"button", onClick:function(){ p.onPick(r.id); st[1](""); }, className:"flex flex-wrap items-center justify-center gap-x-3 rounded-lg bg-black/30 px-3 py-1.5 text-[13px] ring-1 ring-white/10 hover:ring-[#F97316]/60"}, e("b",null, r.nome), e("span",{className:"text-white/65"}, formatarTelefone(r.telefone)||"Sem telefone"), e("span",{className:MONO+" text-white/65"}, "Nº "+r.id)); })),
-    q.trim().length>=2 && !achados.length && e("p",{className:"text-[12.5px] text-white/65"}, "Nenhuma revendedora encontrada."));
+      return e("button",{key:r.id, type:"button", onClick:function(){ escolher(r); }, className:"flex flex-wrap items-center justify-center gap-x-3 rounded-lg bg-black/30 px-3 py-1.5 text-[13px] ring-1 ring-white/10 hover:ring-[#F97316]/60"}, e("b",null, r.nome), e("span",{className:"text-white/70"}, formatarTelefone(r.telefone)||"Sem telefone"), e("span",{className:MONO+" text-white/70"}, "Nº "+r.id), r.origem==="devmaster" && e("span",{className:"text-[#FBBF24]"}, "Só na DevMaster")); })),
+    vivo && bs.carregando && e("p",{className:"text-[13px] text-white/70"}, "Buscando no app."),
+    q.trim().length>=2 && !achados.length && !(vivo && bs.carregando) && e("p",{className:"text-[13px] text-white/70"}, "Nenhuma revendedora encontrada."));
+}
+// manda a ação e só fecha a janela se deu certo (ao vivo a ação vai ao app e pode ser recusada; no modo navegador o dispatch não devolve nada)
+function despachar(p, a, depois){ return Promise.resolve(p.dispatch(a)).then(function(ok){ if(ok!==false && depois) depois(); return ok!==false; }); }
+// outros pedidos em aberto da mesma revendedora: ela vem uma vez e leva tudo numa venda só (regra do admin antigo, 19/10/2026). Só ao vivo (o servidor faz a retirada junto).
+function outrosEmAberto(ind, r){ return ind.aoVivo ? ind.resgates.filter(function(x){ return x.id!==r.id && String(x.revendedoraId)===String(r.revendedoraId) && etapaEmAberto(x.etapa); }) : []; }
+function Juntos(p){
+  if(!p.lista.length) return null;
+  return e("div",{className:"flex flex-col gap-1 rounded-lg bg-black/25 p-2 text-[13px]"},
+    e("b",null, "Retirar junto"),
+    p.lista.map(function(x){ var on = p.marcados.indexOf(x.id)>=0;
+      return e("label",{key:x.id, className:"flex cursor-pointer items-center justify-center gap-2"}, e("input",{type:"checkbox", checked:on, onChange:function(){ p.set(on ? p.marcados.filter(function(i){ return i!==x.id; }) : p.marcados.concat([x.id])); }}), "Pedido #"+x.id+" · "+x.premioTitulo+" · "+rotuloItem(x.etapa)); }),
+    p.nota && e("span",{className:"text-[11px] text-white/70"}, p.nota));
 }
 
 // ───────────── janelas do pedido de resgate (compartilhadas pelas duas abas) — largas, em colunas ─────────────
@@ -61,27 +81,35 @@ function FormAgendar(p){
   var r = p.r, cfg = p.ind.config, hoje = hojeSP(), ini = partirIsoAgendamento(r.operacao.dataAgendada), opc = opcoesDeDia(cfg, hoje);
   var st1 = useState(ini ? ini.dia : hoje), dia = st1[0], st2 = useState(ini ? ini.horario : ""), hor = st2[0];
   var st3 = useState(!!ini && !opc.some(function(o){ return o.valor===ini.dia; })), outra = st3[0];
-  var reag = r.etapa==="aprovado", pode = podeConfirmarAgendamento(dia, hor, cfg, hoje);
+  var outros = outrosEmAberto(p.ind, r), sj = useState(outros.map(function(x){ return x.id; })), juntos = sj[0], se = useState(false), enviando = se[0];
+  var reag = r.etapa==="aprovado", pode = podeConfirmarAgendamento(dia, hor, cfg, hoje) && !enviando, passou = dia<hoje;
+  // data passada (até 30 dias) = registrar a retirada que já aconteceu: depois de gravar, abre a conferência da retirada (como no admin antigo)
+  var confirmar = function(){ se[1](true); despachar(p, {type:"IND", op:"resgate_agendar", id:r.id, dia:dia, horario:hor, juntos:juntos, por:p.por}).then(function(ok){ se[1](false); if(ok){ if(passou && p.trocar) p.trocar("entregar"); else p.fechar(); } }); };
   return e(Janela,{t:reag ? "Reagendar retirada" : "Agendar retirada", sub:r.nomeRevendedora+" · "+r.premioTitulo, fechar:p.fechar, tam:"lg", passos:[{t:"Pedido", estado:"feito"}, {t:"Dia", estado:"feito", sub:formatarDia(dia)}, {t:"Horário", estado:hor ? "feito" : "atual", sub:hor||undefined}, {t:"Confirmar", estado:pode ? "atual" : "futuro"}]},
     e(Colunas,{n:3},
-      e(PedidoInfo,{r:r}),
+      e(PedidoInfo,{r:r}, e(Juntos,{lista:outros, marcados:juntos, set:sj[1], nota:"Todos ficam com o mesmo dia e horário."})),
       e(Painel,{t:"Dia da retirada", ic:"calendar-blank", estado:"feito"},
         e(CampoRot,{rot:"Dia"}, e("select",{value:outra ? "outra" : dia, "aria-label":"Dia", className:INPUT+" h-10! w-full text-center", onChange:function(ev){ var v = ev.target.value; if(v==="outra"){ st3[1](true); } else { st3[1](false); st1[1](v); } }},
           opc.map(function(o){ return e("option",{key:o.valor, value:o.valor}, o.rotulo); }), e("option",{value:"outra"}, "Outra data…"))),
-        outra && e(CampoRot,{rot:"Data da retirada"}, e(Entrada,{type:"date", min:hoje, v:dia, on:function(v){ st1[1](v); }, rot:"Data da retirada"}))),
+        outra && e(CampoRot,{rot:"Data da retirada"}, e(Entrada,{type:"date", min:primeiroDiaAgendavel(cfg, hoje), v:dia, on:function(v){ st1[1](v); }, rot:"Data da retirada"})),
+        outra && passou && e(Nota,null, "Data passada: registra a retirada que já aconteceu.")),
       e(Painel,{t:"Horário", ic:"clock", estado:hor ? "feito" : "atual"},
         e("div",{className:"grid grid-cols-4 gap-1.5"}, horariosDeRetirada(cfg).map(function(h){ var sel = h===hor;
           return e("button",{key:h, type:"button", onClick:function(){ st2[1](h); }, className:"rounded-lg py-1.5 text-[13px] font-bold "+MONO+" transition "+(sel ? "bg-[#F97316] text-black" : "bg-black/30 ring-1 ring-white/15 hover:bg-white/10")}, h); })),
-        e(Linha,null, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"calendar-blank", disabled:!pode, onClick:function(){ p.dispatch({type:"IND", op:"resgate_agendar", id:r.id, dia:dia, horario:hor, por:p.por}); p.fechar(); }}, reag ? "Confirmar novo horário" : "Confirmar agendamento")))));
+        e(Linha,null, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"calendar-blank", disabled:!pode, onClick:confirmar}, passou ? "Registrar data da retirada" : reag ? "Confirmar novo horário" : "Confirmar agendamento")))));
 }
 function FormEntregar(p){
   var r = p.r, op = r.operacao;
   var st1 = useState((op.codigosPecas||[]).join(" ")), pecas = st1[0], st2 = useState(op.valorVenda!=null ? op.valorVenda : r.premioValor), valor = st2[0];
   var st3 = useState(op.valorDiferencaBrinde||0), dif = st3[0], st4 = useState(op.responsavelNome||p.por), resp = st4[0], st5 = useState(op.observacao||""), obs = st5[0], st6 = useState(false), conf = st6[0];
-  var n = normalizarCodigosPecas(pecas).length, pode = podeConfirmarEntrega({codigosPecas:pecas, valorVenda:valor, revendedoraConfirmou:conf}), df = diferencaDoPremio(valor, r.premioValor), pecasOk = n>0 && !!valor;
+  var outros = outrosEmAberto(p.ind, r), sj = useState(outros.map(function(x){ return x.id; })), juntos = sj[0], se = useState(false), enviando = se[0];
+  // retirada junto: o prêmio de referência é a soma dos pedidos marcados; o servidor divide o valor em venda na proporção de cada prêmio
+  var premioRef = r.premioValor + outros.filter(function(x){ return juntos.indexOf(x.id)>=0; }).reduce(function(t, x){ return t+(Number(x.premioValor)||0); }, 0);
+  var n = normalizarCodigosPecas(pecas).length, pode = podeConfirmarEntrega({codigosPecas:pecas, valorVenda:valor, revendedoraConfirmou:conf}) && !enviando, df = diferencaDoPremio(valor, premioRef), pecasOk = n>0 && !!valor;
+  var confirmar = function(){ se[1](true); despachar(p, {type:"IND", op:"resgate_entregar", id:r.id, juntos:juntos, codigosPecas:pecas, valorVenda:valor, valorDiferencaBrinde:dif||null, responsavelNome:resp, observacao:obs||undefined, revendedoraConfirmou:true, por:p.por}, p.fechar).then(function(){ se[1](false); }); };
   return e(Janela,{t:"Confirmar retirada", sub:r.nomeRevendedora+" · "+r.premioTitulo+" · "+formatarReais(r.premioValor), tam:"xl", fechar:p.fechar, passos:[{t:"Pedido", estado:"feito"}, {t:"Peças e valores", estado:pecasOk ? "feito" : "atual"}, {t:"Conferência", estado:conf ? "feito" : pecasOk ? "atual" : "futuro"}, {t:"Retirada", estado:pode ? "atual" : "futuro"}]},
     e(Colunas,{n:3},
-      e(PedidoInfo,{r:r}),
+      e(PedidoInfo,{r:r}, e(Juntos,{lista:outros, marcados:juntos, set:sj[1], nota:"Mesmas peças; o valor em venda é dividido na proporção de cada prêmio."})),
       e(Painel,{t:"Peças e valores", ic:"diamond", estado:pecasOk ? "feito" : "atual"},
         e(CampoRot,{rot:"Códigos das peças retiradas ("+n+")"}, e("textarea",{value:pecas, "aria-label":"Códigos das peças", rows:3, placeholder:"Separe por espaço, vírgula ou linha", className:INPUT+" h-auto! w-full py-2 text-center", onChange:function(ev){ st1[1](ev.target.value); }})),
         e("div",{className:"grid grid-cols-1 gap-2"},
@@ -92,7 +120,7 @@ function FormEntregar(p){
         e(CampoRot,{rot:"Responsável pela entrega"}, e(Entrada,{v:resp, on:st4[1], rot:"Responsável"})),
         e(CampoRot,{rot:"Observação (opcional)"}, e(Entrada,{v:obs, on:st5[1], rot:"Observação"})),
         e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-[13px] font-bold ring-1 ring-white/10"}, e("input",{type:"checkbox", checked:conf, onChange:function(ev){ st6[1](ev.target.checked); }}), "A revendedora conferiu as peças"),
-        e(Linha,null, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"ok", ic:"check-circle", disabled:!pode, onClick:function(){ p.dispatch({type:"IND", op:"resgate_entregar", id:r.id, codigosPecas:pecas, valorVenda:valor, valorDiferencaBrinde:dif||null, responsavelNome:resp, observacao:obs||undefined, revendedoraConfirmou:true, por:p.por}); p.fechar(); }}, "Confirmar retirada")))));
+        e(Linha,null, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"ok", ic:"check-circle", disabled:!pode, onClick:confirmar}, "Confirmar retirada")))));
 }
 function FormCancelar(p){
   var r = p.r, mots = p.ind.config.motivosCancelamento, st1 = useState(""), esc = st1[0], st2 = useState(""), livre = st2[0], mot = motivoFinal(esc, livre);
@@ -103,7 +131,7 @@ function FormCancelar(p){
         e("div",{className:"flex flex-wrap justify-center gap-1.5"}, mots.map(function(m){ var sel = esc===m;
           return e("button",{key:m, type:"button", onClick:function(){ st1[1](m); }, className:"rounded-lg px-3 py-1.5 text-[13px] font-bold transition "+(sel ? "bg-[#EF4444]/30 text-[#F87171] ring-2 ring-[#EF4444]" : "bg-black/30 ring-1 ring-white/15 hover:bg-white/10")}, m.charAt(0).toUpperCase()+m.slice(1)); })),
         esc==="outro" && e(CampoRot,{rot:"Descreva o motivo"}, e(Entrada,{v:livre, on:st2[1], rot:"Motivo"})),
-        e(Linha,null, e(Bt,{onClick:p.fechar}, "Voltar"), e(Bt,{tipo:"perigo", ic:"x-circle", disabled:!mot, onClick:function(){ p.dispatch({type:"IND", op:"resgate_cancelar", id:r.id, motivo:mot, por:p.por}); p.fechar(); }}, "Confirmar cancelamento")))));
+        e(Linha,null, e(Bt,{onClick:p.fechar}, "Voltar"), e(Bt,{tipo:"perigo", ic:"x-circle", disabled:!mot, onClick:function(){ despachar(p, {type:"IND", op:"resgate_cancelar", id:r.id, motivo:mot, por:p.por}, p.fechar); }}, "Confirmar cancelamento")))));
 }
 // dados de balcão (em contato, vendido no sistema, retirada com a maleta etc.)
 function FormBalcao(p){
@@ -114,7 +142,7 @@ function FormBalcao(p){
   var salvar = function(){
     var d = {type:"IND", op:"resgate_set", id:r.id, emContato:v.emContato, vendidoSistema:v.vendidoSistema, pecasNaoVendidas:v.pecasNaoVendidas, retiradaMaleta:v.retiradaMaleta, responsavelNome:v.responsavelNome, observacao:v.observacao, codigosPecas:v.pecas, por:p.por};
     if(v.retiradaMaleta){ d.dataAcertoMaleta = v.dataAcertoMaleta; d.representanteMaleta = v.representanteMaleta; }
-    p.dispatch(d); p.fechar();
+    despachar(p, d, p.fechar);
   };
   return e(Janela,{t:"Dados do balcão", sub:r.nomeRevendedora+" · "+r.premioTitulo, tam:"xl", fechar:p.fechar},
     e(Colunas,{n:3},
@@ -131,23 +159,24 @@ function FormBalcao(p){
 }
 // novo pedido de resgate (lançamento manual de balcão)
 function FormNovoPedido(p){
-  var ind = p.ind, st1 = useState(null), revId = st1[0], st2 = useState(false), nova = st2[0], st3 = useState(""), nome = st3[0], st4 = useState(""), tel = st4[0];
-  var st5 = useState(""), prem = st5[0], st6 = useState(true), deb = st6[0], st7 = useState(""), obs = st7[0];
-  var pm = ind.premios.find(function(x){ return x.codigo===prem; }), saldo = revId!=null ? saldoDe(ind, revId).saldo : null;
+  var ind = p.ind, vivo = !!ind.aoVivo, st1 = useState(null), revId = st1[0], so = useState(null), revObj = so[0], st2 = useState(false), nova = st2[0] && !vivo, st3 = useState(""), nome = st3[0], st4 = useState(""), tel = st4[0];
+  var st5 = useState(""), prem = st5[0], st6 = useState(true), deb = st6[0] || vivo, st7 = useState(""), obs = st7[0], se = useState(false), enviando = se[0];   // ao vivo o app sempre debita na hora
+  var pm = ind.premios.find(function(x){ return x.codigo===prem; }), saldo = revId!=null ? (revObj && revObj.moedas!=null ? revObj.moedas : saldoDe(ind, revId).saldo) : null;
   var falta = deb && pm && saldo!=null && saldo<pm.custoMoedas;
-  var okRev = nova ? nome.trim().length>0 : revId!=null, podeCriar = okRev && !!pm && !falta;
-  var enviar = function(){ var d = {type:"IND", op:"resgate_add", premioCodigo:prem, debitar:deb, observacao:obs, por:p.por}; if(nova){ d.revendedoraNome = nome; d.revendedoraTelefone = tel; } else d.revendedoraId = revId; p.dispatch(d); p.fechar(); };
+  var okRev = nova ? nome.trim().length>0 : revId!=null, podeCriar = okRev && !!pm && !falta && !enviando;
+  var enviar = function(){ var d = {type:"IND", op:"resgate_add", premioCodigo:prem, debitar:deb, observacao:obs, por:p.por}; if(nova){ d.revendedoraNome = nome; d.revendedoraTelefone = tel; } else d.revendedoraId = revId; se[1](true); despachar(p, d, p.fechar).then(function(){ se[1](false); }); };
   return e(Janela,{t:"Novo pedido", sub:"Lançamento manual de resgate de prêmio", fechar:p.fechar, tam:"xl", passos:[{t:"Revendedora", estado:okRev ? "feito" : "atual"}, {t:"Prêmio", estado:pm ? "feito" : okRev ? "atual" : "futuro"}, {t:"Confirmar", estado:podeCriar ? "atual" : "futuro"}]},
     e(Colunas,{n:3},
       e(Painel,{t:"Revendedora", ic:"user-circle", estado:okRev ? "feito" : "atual"},
-        e(Linha,null, e(Bt,{tipo:!nova ? "marca" : "normal", onClick:function(){ st2[1](false); }, className:BTP}, "Cadastrada"), e(Bt,{tipo:nova ? "marca" : "normal", ic:"user-plus", onClick:function(){ st2[1](true); }, className:BTP}, "Nova revendedora")),
+        !vivo && e(Linha,null, e(Bt,{tipo:!nova ? "marca" : "normal", onClick:function(){ st2[1](false); }, className:BTP}, "Cadastrada"), e(Bt,{tipo:nova ? "marca" : "normal", ic:"user-plus", onClick:function(){ st2[1](true); }, className:BTP}, "Nova revendedora")),
         nova ? e("div",{className:"grid grid-cols-1 gap-2"}, e(CampoRot,{rot:"Nome"}, e(Entrada,{v:nome, on:st3[1], rot:"Nome"})), e(CampoRot,{rot:"Telefone"}, e(Entrada,{v:tel, on:st4[1], rot:"Telefone", modo:"tel"})))
-             : e(SeletorRev,{ind:ind, valor:revId, onPick:st1[1]})),
+             : e(SeletorRev,{ind:ind, valor:revId, onPick:function(id, obj){ st1[1](id); so[1](obj || null); }})),
       e(Painel,{t:"Prêmio", ic:"gift", estado:pm ? "feito" : okRev ? "atual" : undefined},
         ind.premios.length ? e(CampoRot,{rot:"Prêmio"}, e("select",{value:prem, "aria-label":"Prêmio", className:INPUT+" h-10! w-full text-center", onChange:function(ev){ st5[1](ev.target.value); }},
             e("option",{value:""}, "Escolha o prêmio"), ind.premios.map(function(x){ return e("option",{key:x.codigo, value:x.codigo}, x.titulo+" · "+formatarMoedas(x.custoMoedas)); })))
-          : e(Nota,null, "Nenhum prêmio cadastrado. Cadastre no catálogo de prêmios, na aba Revendedoras."),
-        e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-[13px] font-bold ring-1 ring-white/10"}, e("input",{type:"checkbox", checked:deb, onChange:function(ev){ st6[1](ev.target.checked); }}), "Debitar as moedas agora"),
+          : e(Nota,null, vivo ? "O catálogo de prêmios não veio do app. Atualize a tela." : "Nenhum prêmio cadastrado. Cadastre no catálogo de prêmios, na aba Revendedoras."),
+        vivo ? e(Nota,null, "As moedas saem do saldo dela no app na hora; o pedido entra Na fila.")
+          : e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-[13px] font-bold ring-1 ring-white/10"}, e("input",{type:"checkbox", checked:deb, onChange:function(ev){ st6[1](ev.target.checked); }}), "Debitar as moedas agora"),
         falta && e(Alerta,{cor:ESTADO.ruim}, "Saldo insuficiente. Ela tem "+saldo.toLocaleString("pt-BR")+" moedas; o prêmio custa "+pm.custoMoedas.toLocaleString("pt-BR")+".")),
       e(Painel,{t:"Confirmação", ic:"check-square", estado:podeCriar ? "atual" : undefined},
         e(CampoRot,{rot:"Observação (opcional)"}, e(Entrada,{v:obs, on:st7[1], rot:"Observação"})),
@@ -157,7 +186,7 @@ function FormNovoPedido(p){
 function DialogoResgate(p){
   var cx = use(), s = cx.state, ind = s.ind, por = nomeDe(s.usuario), r = resgateDe(ind, p.id);
   if(!r) return null;
-  var base = {r:r, ind:ind, por:por, dispatch:cx.dispatch, fechar:p.fechar};
+  var base = {r:r, ind:ind, por:por, dispatch:cx.dispatch, fechar:p.fechar, trocar:p.trocar};   // trocar("entregar"): data passada registrada, segue para a conferência
   if(p.tipo==="agendar") return e(FormAgendar, base);
   if(p.tipo==="entregar") return e(FormEntregar, base);
   if(p.tipo==="cancelar") return e(FormCancelar, base);
@@ -176,7 +205,7 @@ function MenuAcoesResgate(p){
 }
 function CartaoResgate(p){
   var r = p.it, op = r.operacao, aberto = etapaEmAberto(r.etapa), tel = r.revendedora ? r.revendedora.telefone : "", zap = linkWhatsapp(tel), maleta = textoBrindeMaleta(op);
-  var alterna = function(campo){ var d = {type:"IND", op:"resgate_set", id:r.id, por:p.por}; d[campo] = !op[campo]; p.dispatch(d); };
+  var alterna = function(campo){ var d = {type:"IND", op:"resgate_set", id:r.id, por:p.por}; d[campo] = !op[campo]; p.dispatch(d); };   // ao vivo grava no banco deste sistema (balcão), nunca no app
   var itens = [];
   acoesDaEtapa(r.etapa).forEach(function(a){ var tp = a.acao==="cancelar" ? "cancelar" : a.acao==="aprovar" ? "agendar" : "entregar"; itens.push({t:a.rotulo, perigo:a.tom==="perigo", f:function(){ p.abrir(tp, r); }}); });
   if(r.etapa==="aprovado") itens.push({t:"Reagendar", f:function(){ p.abrir("agendar", r); }});
@@ -215,19 +244,18 @@ function CorpoResgates(){
   };
   var corAtraso = ind0.criticos>0 ? ESTADO.ruim : ESTADO.alerta;
   return e(Pagina,null,
-    e(Secao,{t:"Fila de resgates", semPad:true, dir:ind0.naFila+" na fila · "+ind0.aguardando+" aguardando retirada · "+ind0.retirados+" retirados"+(ind0.atrasados ? " · "+ind0.atrasados+" atrasados" : ""),
-      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:q, ph:"Buscar por nome, telefone, prêmio ou nº", set:st1[1]}), e(AlternarFaixa,{on:maleta, set:st5[1]}, "Retirada com a maleta"), e("span",{className:"flex-1"}), e(Botao,{principal:true, onClick:function(){ st3[1](true); }}, "Novo pedido"))},
+    e(Secao,{t:"Fila de resgates", semPad:true, dir:ind0.naFila+" na fila · "+ind0.aguardando+" aguardando retirada · "+ind0.retirados+" retirados"+(ind0.atrasados ? " · "+ind0.atrasados+" atrasados" : "")+lidoDoApp(ind),
+      faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:q, ph:"Buscar por nome, telefone, prêmio ou nº", set:st1[1]}), e(AlternarFaixa,{on:maleta, set:st5[1]}, "Retirada com a maleta"), e("span",{className:"flex-1"}), ind.aoVivo && e(Botao,{onClick:function(){ carregarInd(cx.dispatch, true); }}, "Atualizar"), e(Botao,{principal:true, onClick:function(){ st3[1](true); }}, "Novo pedido"))},
       aviso && e("div",{onClick:function(){ st4[1](null); }, className:"cursor-pointer p-2"}, e(Alerta,{cor:ESTADO.ruim, ic:"x-circle"}, aviso)),
       e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:function(it){ return e(CartaoResgate,{it:it, por:por, dispatch:cx.dispatch, abrir:abrir}); }, onMover:mover, compacto:true, cabecaFina:true, semMover:true, corBarra:function(it, col){ return etapaEmAberto(it.etapa) ? COR_NIVEL[it.nivel] : col.cor; }, onAbrir:function(it){ if(it.etapa==="solicitado") abrir("agendar", it); else if(it.etapa==="aprovado") abrir("entregar", it); }, unidade:["pedido","pedidos"], vazio:"Nenhum pedido nesta etapa."}))),
-    dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st2[1](null); }}),
+    dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st2[1](null); }, trocar:function(t){ st2[1]({tipo:t, id:dlg.id}); }}),
     novo && e(FormNovoPedido,{ind:ind, por:por, dispatch:cx.dispatch, fechar:function(){ st3[1](false); }}));
 }
+// " · lido do app às 14:32" no canto da barra (ao vivo)
+function lidoDoApp(ind){ return ind && ind.aoVivo && ind.lidoEm ? " · lido do app às "+String(ind.lidoEm).slice(11, 16) : ""; }
 
-function AbaIndResgates(){
-  var s = use().state;
-  if(!s.ind) return e(Pagina,null, e(Nota,null, "Os dados das indicações ainda não foram carregados."));
-  return e(CorpoResgates);
-}
+// ao vivo (19/11/2026): Espera mostra "carregando" até o app responder (pages/indicacoes/visual.js)
+function AbaIndResgates(){ return e(Espera,{corpo:CorpoResgates}); }
 
 // ───────────── Agendamentos e Retiradas do dia ─────────────
 var horaDe = function(iso){ var p = partirIsoAgendamento(iso); return p ? p.horario : "—"; };
@@ -268,14 +296,10 @@ function CorpoRetiradas(){
           linhas:res.itens.map(function(r){ var op = r.operacao; return {id:r.id, pedido:"#"+r.id, nome:r.nomeRevendedora, premio:r.premioTitulo, valor:formatarReais(op.valorVenda!=null ? op.valorVenda : r.premioValor), moedas:r.custoMoedas.toLocaleString("pt-BR"), resp:op.responsavelNome||"—", pecas:(op.codigosPecas||[]).join(" ")||"—", quando:formatarDataHora(r.entregueEm)}; }),
           chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true})
         : e("p",{className:"py-3 text-center text-[13px] text-white/70"}, "Nenhuma retirada em "+formatarDia(diaRet)+".")),
-    dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st4[1](null); }}));
+    dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st4[1](null); }, trocar:function(t){ st4[1]({tipo:t, id:dlg.id}); }}));
 }
 
-function AbaIndRetiradas(){
-  var s = use().state;
-  if(!s.ind) return e(Pagina,null, e(Nota,null, "Os dados das indicações ainda não foram carregados."));
-  return e(CorpoRetiradas);
-}
+function AbaIndRetiradas(){ return e(Espera,{corpo:CorpoRetiradas}); }
 
 // ───────────── Revendedoras: ranking, cadastro, moedas, extrato e prêmios ─────────────
 function FormCredito(p){
@@ -301,7 +325,8 @@ function FormRev(p){   // cadastro e edição
 function SaldoRev(p){
   var sd = saldoDe(p.ind, p.id);
   return e("div",{className:"flex flex-col gap-2"},
-    e(Resumo,{itens:[{t:"Saldo", v:sd.saldo.toLocaleString("pt-BR"), cor:"ouro"}, {t:"Total creditado", v:sd.total.toLocaleString("pt-BR"), cor:"info"}, {t:"Vencidas", v:sd.vencidas.toLocaleString("pt-BR"), cor:sd.vencidas ? "aberto" : "cancelado"}]}),
+    e(Resumo,{itens:p.ind.aoVivo ? [{t:"Saldo no app", v:sd.saldo.toLocaleString("pt-BR"), cor:"ouro"}] : [{t:"Saldo", v:sd.saldo.toLocaleString("pt-BR"), cor:"ouro"}, {t:"Total creditado", v:sd.total.toLocaleString("pt-BR"), cor:"info"}, {t:"Vencidas", v:sd.vencidas.toLocaleString("pt-BR"), cor:sd.vencidas ? "aberto" : "cancelado"}]}),
+    p.ind.aoVivo && e(Nota,null, "Aqui aparecem as indicações creditadas e os pedidos. Créditos manuais e vencimentos ficam no extrato do app."),
     sd.proximoVencimento && e(Nota,null, "Próximo vencimento: "+formatarMoedas(sd.proximoVencimento.moedas)+" em "+formatarDia(sd.proximoVencimento.dia)+"."));
 }
 function JanelaExtrato(p){
@@ -332,7 +357,7 @@ function FormPremio(p){
     e("div",{className:"grid grid-cols-2 gap-2"}, e(CampoRot,{rot:"Código (opcional)"}, e(Entrada,{v:v.codigo, on:function(x){ set("codigo", x); }, rot:"Código"})), custo, e("div",{className:"col-span-2"}, titulo), e("div",{className:"col-span-2"}, valor)), acoes);
 }
 function CorpoRevendedoras(){
-  var cx = use(), s = cx.state, ind = s.ind, por = nomeDe(s.usuario), hoje = hojeSP();
+  var cx = use(), s = cx.state, ind = s.ind, por = nomeDe(s.usuario), hoje = hojeSP(), vivo = !!ind.aoVivo;   // ao vivo: revendedoras, saldo e prêmios são do app (sem cadastro nem edição aqui)
   var st1 = useState(""), q = st1[0], st2 = useState(0), pg = st2[0], st3 = useState(null), dlg = st3[0];   // dlg: {tipo:"extrato"|"creditar"|"editar"|"premio", id}
   var todasRk = useMemo(function(){ var out = [], k = 0; for(;;){ var r = ranking(ind, {q:"", pagina:k, hoje:hoje}); out = out.concat(r.itens.map(function(x){ return Object.assign({}, x, {telefone:formatarTelefone(x.telefone)||"—", acoes:""}); })); if(!r.paginacao.hasMore || k>300) break; k++; } return out; }, [ind]);
   var mo = indicadoresMoedas(ind, hoje), fecha = function(){ st3[1](null); };
@@ -340,7 +365,7 @@ function CorpoRevendedoras(){
   var rvDlg = dlg && (dlg.tipo==="editar" || dlg.tipo==="creditar") ? buscaRevendedoraPorId(ind, dlg.id) : null;
   var premDlg = dlg && dlg.tipo==="premio" ? ind.premios.find(function(x){ return x.codigo===dlg.id; }) : null;
   return e(Pagina,null,
-    e(Secao,{t:"Ranking de revendedoras", semPad:true, dir:todasRk.length.toLocaleString("pt-BR")+" revendedoras"},
+    e(Secao,{t:"Ranking de revendedoras", semPad:true, dir:todasRk.length.toLocaleString("pt-BR")+" revendedoras"+lidoDoApp(ind)},
       todasRk.length ? e(TabelaPlanilha,{cols:[
           {k:"posicao", t:"#"}, {k:"nome", t:"Revendedora"}, {k:"telefone", t:"Telefone"},
           {k:"indicacoes", t:"Indicações"}, {k:"emAndamento", t:"Em andamento"},
@@ -350,19 +375,19 @@ function CorpoRevendedoras(){
           {k:"acoes", t:"Ações", render:function(v, l){ return e("div",{className:"flex justify-center gap-1.5"},
             e("button",{type:"button", title:"Extrato de moedas", onClick:function(){ st3[1]({tipo:"extrato", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Extrato"),
             e("button",{type:"button", title:"Creditar moedas", onClick:function(){ st3[1]({tipo:"creditar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Creditar"),
-            e("button",{type:"button", title:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Editar")); }}],
+            !vivo && e("button",{type:"button", title:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Editar")); }}],
           linhas:todasRk, chave:"id", escura:true, grade:true, limite:100, semContagem:true, semLimpar:true})
         : e("p",{className:"py-3 text-center text-[13px]"}, "Nenhuma revendedora cadastrada.")),
     // cadastro, crédito e catálogo lado a lado (mosaico), sem blocos que abrem e fecham
     e(Mosaico,{min:"24rem"},
-      e(Secao,{ic:"user-plus", t:"Cadastro de revendedora"}, e(FormRev,base)),
+      !vivo && e(Secao,{ic:"user-plus", t:"Cadastro de revendedora"}, e(FormRev,base)),
       e(Secao,{ic:"hand-coins", t:"Crédito manual de moedas"}, e(FormCredito,base)),
-      e(Secao,{ic:"gift", t:"Catálogo de prêmios", dir:String(ind.premios.length)},
-        ind.premios.length ? e(TabelaPlanilha,{cols:[{k:"codigo", t:"Código"}, {k:"titulo", t:"Prêmio"}, {k:"custo", t:"Custo em moedas"}, {k:"valor", t:"Valor"},
-            {k:"acoes", t:"Ações", render:function(v, l){ var x = l.x; return e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"pencil-simple", onClick:function(){ st3[1]({tipo:"premio", id:x.codigo}); }, className:BTP}, "Editar"), e(Bt,{tipo:"perigo", ic:"trash", titulo:"Excluir prêmio", onClick:function(){ if(window.confirm("Excluir o prêmio "+x.titulo+"? Os pedidos antigos continuam com o nome que tinham.")) cx.dispatch({type:"IND", op:"premio_del", codigo:x.codigo, por:por}); }, className:BTP})); }}],
+      e(Secao,{ic:"gift", t:vivo ? "Catálogo de prêmios do app" : "Catálogo de prêmios", dir:String(ind.premios.length)},
+        ind.premios.length ? e(TabelaPlanilha,{cols:[{k:"codigo", t:"Código"}, {k:"titulo", t:"Prêmio"}, {k:"custo", t:"Custo em moedas"}, {k:"valor", t:"Valor"}].concat(vivo ? [] : [
+            {k:"acoes", t:"Ações", render:function(v, l){ var x = l.x; return e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"pencil-simple", onClick:function(){ st3[1]({tipo:"premio", id:x.codigo}); }, className:BTP}, "Editar"), e(Bt,{tipo:"perigo", ic:"trash", titulo:"Excluir prêmio", onClick:function(){ if(window.confirm("Excluir o prêmio "+x.titulo+"? Os pedidos antigos continuam com o nome que tinham.")) cx.dispatch({type:"IND", op:"premio_del", codigo:x.codigo, por:por}); }, className:BTP})); }}]),
             linhas:ind.premios.map(function(x){ return {id:x.codigo, codigo:x.codigo, titulo:x.titulo, custo:x.custoMoedas.toLocaleString("pt-BR"), valor:formatarReais(x.valor), acoes:"", x:x}; }), chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true})
           : e("p",{className:"py-2 text-center text-[13px] text-white/70"}, "Nenhum prêmio cadastrado."),
-        e(FormPremio,base))),
+        !vivo && e(FormPremio,base))),
     dlg && dlg.tipo==="extrato" && e(JanelaExtrato,Object.assign({id:dlg.id, fechar:fecha}, base)),
     rvDlg && dlg.tipo==="creditar" && e(Janela,{t:"Creditar moedas", sub:rvDlg.nome, tam:"md", fechar:fecha},
       e(Colunas,{n:2}, e(Painel,{t:"Saldo atual", ic:"coins", estado:"feito"}, e(SaldoRev,{ind:ind, id:rvDlg.id})), e(Painel,{t:"Crédito", ic:"hand-coins", estado:"atual"}, e(FormCredito,Object.assign({revId:rvDlg.id, fechar:fecha}, base))))),
@@ -374,10 +399,6 @@ function CorpoRevendedoras(){
     premDlg && e(Janela,{t:"Editar prêmio", sub:premDlg.codigo, tam:"md", fechar:fecha}, e(FormPremio,Object.assign({premio:premDlg, fechar:fecha}, base))));
 }
 
-function AbaIndRevendedoras(){
-  var s = use().state;
-  if(!s.ind) return e(Pagina,null, e(Nota,null, "Os dados das indicações ainda não foram carregados."));
-  return e(CorpoRevendedoras);
-}
+function AbaIndRevendedoras(){ return e(Espera,{corpo:CorpoRevendedoras}); }
 
 export { AbaIndResgates, AbaIndRetiradas, AbaIndRevendedoras };
