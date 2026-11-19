@@ -105,5 +105,28 @@ t("desligar a opção", passou(run("forn_por_pedido", { id:23, ativo:false })) &
 t("vínculos e histórico continuam guardados", JSON.stringify(s.pf.lancamentos.map((l) => l.alocs||null))===antes && s.pf.fornecedores.find((f) => f.id===23).porPedidoHist.length===4 && s.pf.fornecedores.find((f) => f.id===23).porPedidoHist[3].ativo===false);
 t("dívida do acerto igual à de antes de tudo", Math.abs(total()-totAntes)<0.005);
 
+console.log("9. Sugerir divisão (só proposta; grava o que for confirmado)");
+{
+  const pfS = JSON.parse(JSON.stringify(pf0)); pfS.fornecedores[0].porPedido = true;
+  const vals = [1707.6, 1000, 1000.28, 1269.6, 1147.2, 736, 1250.4, 866.6];   // os 8 Pix reais da Xangai em 30/11
+  pfS.lancamentos = vals.map((v, i) => ({ id:3000+i, chave:CH, fornId:23, mes:"2026-11", limite:"2026-11-30", data:"2026-11-1"+i, revendedora:"R"+i, valor:v, conta:"—", conferido:false, conferidoEm:"" }));
+  let s2 = { pf:pfS, usuario:16 };
+  const sug = P.sugerirDivisao(s2.pf, CH);
+  const soma = (l) => Math.round(l.reduce((a, x) => a+x, 0)*100)/100;
+  t("sugestão não grava nada sozinha", s2.pf.lancamentos.every((l) => !l.alocs));
+  t("ordem de vencimento: Romaneio (19/11) recebe antes da Fatura (30/11)", sug[0].novas[0].pedidoId===138);
+  const porPed = (id) => soma(sug.flatMap((x) => x.novas.filter((n) => n.pedidoId===id).map((n) => n.valor)));
+  t("toda a sugestão = total pago (8.977,68), sem passar do saldo do Romaneio (9.001,65)", Math.abs(porPed(138)+porPed(137)-8977.68)<0.01 && porPed(138)<=9001.65+0.005, porPed(138)+" / "+porPed(137));
+  t("um Pix pode ser dividido entre pedidos sem virar outro registro", sug.length===8 && s2.pf.lancamentos.length===8);
+  const r = P.pfReduz(s2, { type:"PF", op:"lanc_pedidos_lote", por:"Teste", itens:sug.slice(0, 3).map((x) => ({ id:x.l.id, alocs:x.alocs })) });
+  t("confirmar só 3: só eles são gravados", r.patch && r.patch.pf && r.patch.pf.lancamentos.filter((l) => l.alocs).length===3, r.msg);
+  t("histórico marca que veio da sugestão confirmada", r.patch.pf.lancamentos[0].pedHist[0].sugestao===true);
+  s2 = { pf:r.patch.pf, usuario:16 };
+  const sug2 = P.sugerirDivisao(s2.pf, CH);
+  t("nova sugestão só traz os 5 que faltam e não duplica", sug2.length===5 && !sug2.some((x) => x.l.id<3003));
+  const ruim = P.pfReduz(s2, { type:"PF", op:"lanc_pedidos_lote", por:"Teste", itens:[{ id:3003, alocs:[{ pedidoId:138, valor:1 }] }, { id:3004, alocs:[{ pedidoId:138, valor:999999 }] }] });
+  t("lote com um item errado: nada é gravado (tudo ou nada)", !(ruim.patch && ruim.patch.pf));
+}
+
 console.log("\n"+ok+" OK, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

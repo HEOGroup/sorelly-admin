@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.37", data:"2026-11-19", titulo:"Pagamentos a fornecedores: Sugerir divisão por pedido", itens:[
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"Na área Pedidos do acerto (fornecedor com a opção por pedido, hoje a Xangai), o botão Sugerir divisão propõe para quais pedidos foi o dinheiro dos Pix sem identificação, pela ordem de vencimento dos pedidos e até o saldo de cada um. A janela mostra cada Pix com a sugestão; você desmarca o que não quiser e só grava ao clicar em Confirmar divisão (tudo ou nada). Nada vira adiantamento sozinho e o que já foi identificado não muda."}
+ ]},
  {v:"0.21.36", data:"2026-11-19", titulo:"Link de pagamento: validade de 48 h, escolher o que importa do e-SiTef e Incluir link nos Descontados", itens:[
   {tipo:"correção", area:"Link de pagamento → Meios e acessos", txt:"A validade do link tinha voltado a 12 h no servidor e os links marcavam Expirado cedo demais. Agora vale 48 h de novo (o aviso à revendedora segue em 12 h). Pedido da Hellen."},
   {tipo:"correção", area:"Link de pagamento → Solicitações", txt:"Os links já gerados ganham as 48 h, e os que o sistema tinha marcado Expirado por 12 h (ainda dentro das 48 h) voltam para Link gerado, para a Hellen não refazer o trabalho e as métricas não ficarem erradas."},

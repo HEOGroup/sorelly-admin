@@ -10,7 +10,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { CampoSel, MenuMulti, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { acertoPorPedido, alocado, lerAlocs, pagosDoPedido, pedidosDoForn, pfReduz, resumoPedidoPf, semIdent, textoAlocs } from "@/apps/montagem/domain/pf";
+import { acertoPorPedido, alocado, lerAlocs, pagosDoPedido, pedidosDoForn, pfReduz, resumoPedidoPf, semIdent, sugerirDivisao, textoAlocs } from "@/apps/montagem/domain/pf";
 import { buscarAnexo } from "@/apps/montagem/lib/anexo";
 import { htmlPedidos, msgPedidos } from "@/apps/montagem/lib/relatorio-pedidos-pf";
 import { INPUT } from "@/apps/montagem/ui/input";
@@ -97,7 +97,7 @@ function ModalPedidoInfo(p){
 
 // ───────────── área "Pedidos" do acerto ─────────────
 function BlocoPedidos(p){
-  var c = p.c, a = acertoPorPedido(c.pf, p.chave), si = useState(null), info = si[0];
+  var c = p.c, a = acertoPorPedido(c.pf, p.chave), si = useState(null), info = si[0], sg = useState(false);
   if(!a) return null;
   var linhas = a.pedidos.map(function(r){ return {id:r.pd.id, _r:r, ped:r.pd.numero, neste:brl(r.nesteAcerto), valor:brl(r.valor), ajustes:r.ajustesTotal>0.005 ? "− "+brl(r.ajustesTotal) : "—", pago:brl(r.pagoIdentificado), saldo:brl(Math.max(0, r.saldo)), acao:""}; });
   return e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-2.5 text-center"},
@@ -111,12 +111,32 @@ function BlocoPedidos(p){
       e("span",null, "Pago neste acerto: ", e("b",null, brl(a.pago))),
       e("span",null, "Identificado por pedido: ", e("b",null, brl(a.identificado))),
       e("span",null, "Valor ainda não identificado por pedido: ", e("b",{style:{color:a.naoIdentificado>0.005 ? "#FBBF24" : "#4ADE80"}}, brl(a.naoIdentificado)))),
+    a.naoIdentificado>0.005 && c.edita && e("div",{className:"flex justify-center"}, e(Bt,{forte:true, ic:"magic-wand", titulo:"Propõe a divisão dos Pix sem pedido; só grava depois de você confirmar", onClick:function(){ sg[1](true); }}, "Sugerir divisão")),
+    sg[0] && e(ModalSugestao,{c:c, chave:p.chave, fechar:function(){ sg[1](false); }}),
     a.mq>0.005 && e("div",{className:"flex flex-wrap items-center justify-center gap-2 text-[13px]"},
       e("span",null, "Desconto da maquininha de ", e("b",null, brl(a.mq)), " se refere a:"),
       e("div",{className:"w-64"}, e(CampoSel,{value:a.mqDe ? String(a.mqDe.pedidoId) : "", opcoes:[["", "Não identificado"], ["geral", "Acerto geral"]].concat(a.pedidos.map(function(r){ return [String(r.pd.id), r.pd.numero]; })),
         onChange:function(x){ if(!c.edita) return aviso(c, "Só financeiro e diretoria.", "alerta"); if(x) tenta(c, "ajuste_pedido", {chave:p.chave, pedidoId:x}); }}))),
     a.ajuste>0.005 && e("p",{className:"text-[11px]"}, "Diferença enviada a mais neste acerto: "+brl(a.ajuste)+" (acerto geral). Os Pix a mais entram no pedido quando forem identificados como adiantamento."),
     info && e(ModalPedidoInfo,{c:c, pd:info, fechar:function(){ si[1](null); }}));
+}
+
+// ───────────── SUGERIR DIVISÃO (19/11/2026): proposta dos Pix sem pedido, por ordem de vencimento; grava só o que for confirmado ─────────────
+function ModalSugestao(p){
+  var c = p.c, pf = c.pf, sug = sugerirDivisao(pf, p.chave), su = useState(null), usar = su[0] || sug.map(function(x){ return x.l.id; });
+  var nome = function(id){ var pd = pf.pedidos.find(function(x){ return x.id===id; }); return pd ? pd.numero : "Pedido "+id; };
+  var alterna = function(id){ su[1](usar.indexOf(id)>=0 ? usar.filter(function(x){ return x!==id; }) : usar.concat([id])); };
+  var escolhidos = sug.filter(function(x){ return usar.indexOf(x.l.id)>=0; });
+  var tot = function(f){ return escolhidos.reduce(function(s, x){ return s+f(x); }, 0); };
+  var confirmar = function(){ if(!escolhidos.length) return aviso(c, "Marque pelo menos um pagamento.", "alerta"); if(tenta(c, "lanc_pedidos_lote", {itens:escolhidos.map(function(x){ return {id:x.l.id, alocs:x.alocs}; })})) p.fechar(); };
+  return e(Modal,{t:"Sugerir divisão por pedido", largo:true, fechar:p.fechar, sub:"Proposta pela ordem de vencimento dos pedidos deste acerto, até o saldo de cada um. Nada é gravado até você confirmar. Os pagamentos continuam os mesmos, com os mesmos comprovantes."},
+    !sug.length ? e("p",{className:"text-[13px]"}, "Não há Pix sem identificação que caiba no saldo dos pedidos deste acerto.") :
+    e(TabelaPlanilha,{chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true,
+      cols:[{k:"usar", t:"Usar", render:function(v, l){ return e("input",{type:"checkbox", "aria-label":"Usar a sugestão do Pix de "+l.rev, checked:usar.indexOf(l.id)>=0, onChange:function(){ alterna(l.id); }}); }},
+        {k:"data", t:"Data"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor do Pix"}, {k:"div", t:"Sugestão", render:function(v){ return e("span",{style:{whiteSpace:"normal"}}, v); }}, {k:"resto", t:"Fica sem pedido"}],
+      linhas:sug.map(function(x){ return {id:x.l.id, usar:"", data:dt(x.l.data), rev:x.l.revendedora || "—", valor:brl(x.l.valor), div:x.novas.map(function(n){ return nome(n.pedidoId)+" "+brl(n.valor); }).join(" + "), resto:x.resto>0.005 ? brl(x.resto) : "—"}; })}),
+    sug.length>0 && e("p",{className:"text-[13px]"}, escolhidos.length+" pagamento(s) marcado(s) · "+brl(tot(function(x){ return x.novas.reduce(function(s, n){ return s+n.valor; }, 0); }))+" vai(ão) para os pedidos"),
+    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:p.fechar}, "Cancelar"), sug.length>0 && e(Bt,{forte:true, ic:"check", onClick:confirmar}, "Confirmar divisão")));
 }
 
 // ───────────── "Conteúdo do relatório" da janela Enviar acerto ao fornecedor ─────────────

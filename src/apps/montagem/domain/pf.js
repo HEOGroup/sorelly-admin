@@ -1184,6 +1184,18 @@ function pfReduz(s, a){
       (lP.pedHist = lP.pedHist||[]).push({em:hojeIso(), por:a.por||"", antes:antesP, depois:depoisP});
       return ok("Pagamento de "+brl(lP.valor)+": "+depoisP+(alP.resto>0.005 ? " · "+brl(alP.resto)+" sem identificação de pedido" : ""));
     }
+    case "lanc_pedidos_lote": {   // confirma a sugestão de divisão: vários pagamentos de uma vez; se um não passar, NADA é gravado
+      var itL = a.itens||[]; if(!itL.length) return recusa("Escolha pelo menos um pagamento.");
+      for(var iL = 0; iL<itL.length; iL++){
+        var lL = pf.lancamentos.find(function(x){ return x.id===itL[iL].id; }); if(!lL) return recusa("Pagamento não encontrado.");
+        if(!porPedidoAtivo(pf, lL.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
+        var alL2 = lerAlocs(pf, lL.fornId, lL.valor, itL[iL].alocs||[], lL.id); if(alL2.erro) return recusa("Pix de "+brl(lL.valor)+" ("+(lL.revendedora||"")+"): "+alL2.erro+" Nada foi gravado.");
+        var antL = textoAlocs(pf, lL.alocs), depL = textoAlocs(pf, alL2.alocs); if(antL===depL) continue;
+        if(alL2.alocs.length) lL.alocs = alL2.alocs; else delete lL.alocs;
+        (lL.pedHist = lL.pedHist||[]).push({em:hojeIso(), por:a.por||"", antes:antL, depois:depL, sugestao:true});
+      }
+      return ok(itL.length+" pagamento(s) identificado(s) pela sugestão confirmada");
+    }
     case "ajuste_pedido": {   // desconto da maquininha de uma data: do pedido X ou do acerto geral. Só identifica (não abate de novo)
       var jA = janelaPorChave(pf, a.chave); if(!jA) return recusa("Data não encontrada."); if(!porPedidoAtivo(pf, jA.fornId)) return recusa("Este fornecedor não usa a identificação por pedido.");
       if(!(mqAplicado(pf, a.chave)>0.005)) return recusa("Esta data não tem desconto para identificar.");
@@ -1545,6 +1557,26 @@ function lerAlocs(pf, fid, valorPix, alocs, lancId){
   return {alocs:out, total:tot, resto:r2(valorPix-tot)};
 }
 function textoAlocs(pf, alocs){ return (alocs||[]).length ? alocs.map(function(x){ var pd = pf.pedidos.find(function(p){ return p.id===x.pedidoId; }); return (pd ? pd.numero : "pedido "+x.pedidoId)+" "+brl(x.valor)+(x.adiant ? " (adiantamento)" : ""); }).join(" + ") : "sem identificação"; }
+// SUGESTÃO DE DIVISÃO (19/11/2026, pedido do Nickolas): propõe para quais pedidos foi o dinheiro dos Pix SEM identificação de um acerto,
+// enchendo os pedidos pela ordem do vencimento da parte Pix deles NESTE acerto (depois pela data do pedido), até o saldo de cada um. Nunca passa do saldo
+// (nada vira adiantamento sozinho) e não mexe no que já foi identificado. É só PROPOSTA: a tela mostra e grava só o que a pessoa confirmar (op lanc_pedidos_lote).
+// Devolve [{l, alocs (as que já tinha + as novas), novas:[{pedidoId, valor}], resto (continua sem identificação)}]
+function sugerirDivisao(pf, chave){
+  var j = janelaPorChave(pf, chave); if(!j || !porPedidoAtivo(pf, j.fornId)) return [];
+  var venc = {}; j.itens.forEach(function(l){ if(l.pd.ajusteChave || l.pd.auto || !(FORMAS[l.p.forma] && FORMAS[l.p.forma].nf==="sem")) return; if(!venc[l.pd.id] || l.p.venc<venc[l.pd.id]) venc[l.pd.id] = l.p.venc; });
+  var ids = Object.keys(venc).map(Number).sort(function(a, b){ var pa = pf.pedidos.find(function(x){ return x.id===a; }), pb = pf.pedidos.find(function(x){ return x.id===b; }); return venc[a].localeCompare(venc[b]) || String(pa.data).localeCompare(String(pb.data)) || a-b; });
+  var saldo = {}; ids.forEach(function(id){ var r = resumoPedidoPf(pf, id); saldo[id] = r2(r.pix-r.ajustesTotal-r.pagoPix); });
+  var out = [];
+  lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp && !l.auto && semIdent(l)>0.005; }).forEach(function(l){
+    var livre = semIdent(l), novas = [];
+    ids.forEach(function(id){ if(livre<=0.005 || saldo[id]<=0.005) return; var v = r2(Math.min(livre, saldo[id])); novas.push({pedidoId:id, valor:v}); saldo[id] = r2(saldo[id]-v); livre = r2(livre-v); });
+    if(!novas.length) return;
+    var alocs = (l.alocs||[]).map(function(x){ return Object.assign({}, x); });
+    novas.forEach(function(n){ var ja = alocs.find(function(x){ return x.pedidoId===n.pedidoId; }); if(ja) ja.valor = r2(ja.valor+n.valor); else alocs.push({pedidoId:n.pedidoId, valor:n.valor, adiant:false}); });
+    out.push({l:l, alocs:alocs, novas:novas, resto:livre});
+  });
+  return out;
+}
 // link do relatório por pedido: um código por escopo (fornecedor + pedidos escolhidos). Muda o pf.
 function tokenPedidos(pf, fid, ids, por){
   var lista = ids.map(Number).filter(function(x){ return x>0; }).sort(function(a, b){ return a-b; }); pf.linksPedido = pf.linksPedido||{};
@@ -1569,5 +1601,5 @@ export {
   mqEhAuto, mqDisponivel, mqJanelasDoMes, mqOrdinal, mqManualNaJanela, mqDistribuicao, excedenteJanela, mqDistribuido, mqSobra, mqMesesComSaldo, mqMapaAplicado, mqAplicado, mqCandidatas,
   mqSincronizarBruto, mqPreviewFech, mqPreviewDist,
   ptMeses, ptPed, ptSomaItens, ptSync, ptDados, pfReduz,
-  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos
+  porPedidoAtivo, pedidosDoForn, alocado, semIdent, pagosDoPedido, ajustesDoPedido, resumoPedidoPf, acertoPorPedido, lerAlocs, textoAlocs, tokenPedidos, sugerirDivisao
 };

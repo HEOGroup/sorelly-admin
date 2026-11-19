@@ -592,3 +592,8 @@ Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `
 - **Relatório por pedido** (`lib/relatorio-pedidos-pf.js`): só os pedidos escolhidos, Pix dividido mostra o valor total da transferência e o valor destinado, junta pagamentos de acertos diferentes e mostra o período, com o aviso de escopo exclusivo. Mensagem sem o saldo geral.
 - **Link restrito:** `/acerto/<código>` (código de 20 caracteres em `pf.linksPedido`, escopo = fornecedor + pedidos), somente leitura, comprovantes só dos Pix ligados aos pedidos (`/acerto/<código>/comprovante/<id>`). O link completo antigo (`tokensAcerto`, acertos.sorelly.com.br) não mudou.
 - Teste: `scripts/testar-por-pedido-pf.mjs` (42 verificações).
+
+## 19/11/2026 — Pagamentos a fornecedores: "Sugerir divisão" por pedido (Nickolas, v0.21.37)
+- Pedido do Nickolas ("Sim, faça o botão"), depois de ver que os pagos por pedido ficavam R$ 0,00 sem identificação. Botão na área Pedidos do acerto: propõe a divisão dos Pix SEM identificação pela ordem de vencimento da parte Pix de cada pedido NESTE acerto (empate: data do pedido), até o saldo de cada um (`sugerirDivisao` em `domain/pf.js`).
+- É só proposta: grava apenas o que a pessoa deixar marcado e confirmar (op `lanc_pedidos_lote`, tudo ou nada; histórico com `sugestao:true`). Nunca vira adiantamento sozinha e não mexe no que já foi identificado.
+- Com os dados de hoje da Xangai (acerto de 30/11), a sugestão manda os 8 Pix (R$ 8.977,68) para o Romaneio 005457 (vence 19/11, antes da Fatura 5499 de 30/11).
