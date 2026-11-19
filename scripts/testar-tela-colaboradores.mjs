@@ -62,9 +62,9 @@ try {
   const rhA = JSON.parse(JSON.stringify(rhD)); rhA.negoc = rhA.negoc || (await jiti.import("@/apps/montagem/domain/rh")).negocPadrao(); const pessoa0 = rhA.negoc && rhA.negoc.pessoas && rhA.negoc.pessoas[0];
   if(pessoa0){
     const { NegCard } = await jiti.import("@/apps/montagem/pages/RH");
-    pessoa0.acordos = [{id:"a1", data:"2026-11-22", texto:"Domingo 9h às 15h", din:150, joias:168, sit:"Combinado"}];
+    pessoa0.acordos = [{id:"a1", data:"2026-11-22", ini:"09:00", fim:"15:00", ponto:"Não", texto:"Domingo 9h às 15h", din:150, joias:168, sit:"Combinado"}];
     const hc = renderToString(React.createElement(NegCard, { c:{ s:{usuario:16, rh:rhA}, rh:rhA, d(){}, por:"Teste", veSalario:true }, id:pessoa0.id, fechar(){} }));
-    t("Ficha da negociação mostra Combinados avulsos, com o botão Novo combinado e o total", /Combinados avulsos/.test(hc) && /Novo combinado/.test(hc) && /Total:/.test(hc) && /Domingo 9h/.test(hc) && /Forma de pagamento/.test(hc));
+    t("Ficha da negociação mostra Combinados avulsos, com o botão Novo combinado e o total", /Combinados avulsos/.test(hc) && /Novo combinado/.test(hc) && /Total:/.test(hc) && /Domingo 9h/.test(hc) && /Forma de pagamento/.test(hc) && /Bate ponto/.test(hc) && /Início/.test(hc) && /Fim/.test(hc) && /value="09:00"/.test(hc));
     pessoa0.acordos = [];
     t("Sem combinados, a ficha avisa e deixa anotar", /Nenhum combinado anotado/.test(renderToString(React.createElement(NegCard, { c:{ s:{usuario:16, rh:rhA}, rh:rhA, d(){}, por:"Teste", veSalario:true }, id:pessoa0.id, fechar(){} }))));
     delete pessoa0.acordos;

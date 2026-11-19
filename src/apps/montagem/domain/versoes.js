@@ -3,9 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.60", data:"2026-11-19", titulo:"RH › Negociações: horário e ponto nos combinados avulsos", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Cada combinado avulso ganhou o horário de início e de fim e o campo Bate ponto (Sim ou Não), para marcar se a pessoa precisa registrar o ponto naquele dia."}]},
  {v:"0.21.57", data:"2026-11-19", titulo:"RH › Acessos: tabela cabe na tela", itens:[
   {tipo:"correção", area:"RH → Acessos e autorizações", txt:"A tabela de Pessoas ficava mais larga que a tela e rolava para o lado. As colunas ficaram mais estreitas e a tabela cabe inteira, sem barra de rolagem lateral."}]},
- ]},
  {v:"0.21.59", data:"2026-11-19", titulo:"Canal de denúncias: a lista atualiza sozinha", itens:[
   {tipo:"melhoria", area:"Canal de denúncias", txt:"A lista de denúncias recarrega sozinha a cada 30 segundos e ao voltar para a aba. Denúncia nova aparece sem precisar abrir a tela de novo."}
  ]},
@@ -14,6 +15,7 @@ var VERSOES = [
  ]},
  {v:"0.21.56", data:"2026-11-19", titulo:"Encomendas: botão Mudar para encomenda", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ficha do pedido", txt:"Pedido lançado como reposição que na verdade era encomenda: botão Mudar para encomenda na ficha. O pedido perde a taxa e o prazo de 24 horas e segue o caminho da encomenda (Novo, Conferindo, Separando, Concluído)."},
+ ]},
  {v:"0.21.55", data:"2026-11-19", titulo:"RH › Acessos e autorizações simplificada", itens:[
   {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"A tela ficou muito mais simples, como o Contas a pagar: uma tabela só, uma linha por pessoa, com poucas colunas (Pessoa, Grupo de acesso, Perfil, Módulos, Situação e a ação Liberar ou Bloquear). O acesso tem três níveis numa escolha só, na própria linha: Acesso total (grupo Acesso total mais perfil Diretoria, igual aos sócios), Direção (tudo, menos os Configuradores) ou Por setor (então escolhe o setor e os módulos). Nomes curtos e padronizados. Escolher Acesso total ou Direção também tira a lista de telas presa na conta (a Priscila estava presa em 25 setores, sem o Financeiro). Sem detalhe embaixo. O botão Módulos abre uma janela com as caixas de marcar. Visual do Financeiro: bloco com barra azul, título em maiúsculas, menu de visões no canto da barra, planilha compacta (letra de 11 px) e linhas brancas. Só altera quem é da lista."},
   {tipo:"melhoria", area:"RH → Acessos e autorizações", txt:"As abas lado a lado viraram um menu suspenso: Pessoas, Telas por grupo, Autorizações por tipo e Avisos. A aba Contas foi para dentro de Pessoas. Saiu o bloco antigo de contas com senha padrão da visão Telas por grupo."}]},

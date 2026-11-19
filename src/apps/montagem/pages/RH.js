@@ -357,20 +357,23 @@ function negCampos(c, alvo, aoSet, padrao, larga){
 // Ficam na própria negociação da pessoa (campo "acordos"); a coluna Situação marca o que já foi pago.
 function negAcordos(c, p, setP){
   var lista = Array.isArray(p.acordos) ? p.acordos : [], mudar = function(id, patch){ setP({acordos:lista.map(function(a){ return a.id===id ? Object.assign({}, a, patch) : a; })}); };
-  var novo = function(){ setP({acordos:lista.concat([{id:"ac"+Date.now().toString(36), data:hojeIso(), texto:"", din:null, joias:null, sit:"Combinado"}])}); };
+  var novo = function(){ setP({acordos:lista.concat([{id:"ac"+Date.now().toString(36), data:hojeIso(), ini:"", fim:"", texto:"", din:null, joias:null, ponto:"Sim", sit:"Combinado"}])}); };
   var tot = function(k){ return lista.reduce(function(s, a){ return s + (Number(a[k])||0); }, 0); };
   var cab = function(t2){ return e("span",{className:"text-center text-[11px] font-bold uppercase tracking-[.05em]"}, t2); };
-  var GRADE = "grid grid-cols-[9rem_minmax(12rem,1fr)_8rem_8rem_8rem_2rem] items-end gap-2";
+  var GRADE = "grid grid-cols-[9rem_6rem_6rem_minmax(12rem,1fr)_8rem_8rem_7rem_8rem_2rem] items-end gap-2";
   var linhas = lista.map(function(a){ return e("div",{key:a.id, className:GRADE},
     e("input",{type:"date", value:a.data||"", "aria-label":"Dia do combinado", className:CAMPO+" text-center", onChange:function(ev){ mudar(a.id, {data:ev.target.value}); }}),
+    e("input",{type:"time", value:a.ini||"", "aria-label":"Horário de início", className:CAMPO+" text-center", onChange:function(ev){ mudar(a.id, {ini:ev.target.value}); }}),
+    e("input",{type:"time", value:a.fim||"", "aria-label":"Horário de fim", className:CAMPO+" text-center", onChange:function(ev){ mudar(a.id, {fim:ev.target.value}); }}),
     e(CampoTexto,{t:"", id:"ac-t-"+a.id, value:a.texto||"", onChange:function(v){ mudar(a.id, {texto:v}); }}),
     e(CampoDin,{t:"", id:"ac-d-"+a.id, value:a.din===null || a.din===undefined ? null : a.din, onChange:function(v){ mudar(a.id, {din:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
     e(CampoDin,{t:"", id:"ac-j-"+a.id, value:a.joias===null || a.joias===undefined ? null : a.joias, onChange:function(v){ mudar(a.id, {joias:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
+    e(CampoSel,{t:"", id:"ac-p-"+a.id, value:a.ponto||"Sim", onChange:function(v){ mudar(a.id, {ponto:v}); }, opcoes:[["Sim", "Sim"], ["Não", "Não"]]}),
     e(CampoSel,{t:"", id:"ac-s-"+a.id, value:a.sit||"Combinado", onChange:function(v){ mudar(a.id, {sit:v}); }, opcoes:[["Combinado", "Combinado"], ["Pago", "Pago"]]}),
     e("button",{type:"button", "aria-label":"Remover combinado", title:"Remover", onClick:function(){ if(window.confirm("Remover este combinado?")) setP({acordos:lista.filter(function(x){ return x.id!==a.id; })}); }, className:"h-8 text-[13px] hover:text-red-400"}, "✕")); });
-  return e(FichaCaixa,{key:"ac", t:"Combinados avulsos", dir:e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "ex.: domingo das 9h às 15h · R$ 150,00 em dinheiro + R$ 168,00 em joias")},
+  return e(FichaCaixa,{key:"ac", t:"Combinados avulsos", dir:e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "ex.: domingo · 09:00 às 15:00 · R$ 150,00 em dinheiro + R$ 168,00 em joias · bate ponto: Não")},
     e("div",{className:"flex flex-col gap-2"},
-      lista.length ? e("div",{className:GRADE}, cab("Dia"), cab("Combinado"), cab("Dinheiro"), cab("Joias (peças)"), cab("Situação"), "") : e("span",{className:"text-[13px]"}, "Nenhum combinado anotado."),
+      lista.length ? e("div",{className:GRADE}, cab("Dia"), cab("Início"), cab("Fim"), cab("Combinado"), cab("Dinheiro"), cab("Joias (peças)"), cab("Bate ponto"), cab("Situação"), "") : e("span",{className:"text-[13px]"}, "Nenhum combinado anotado."),
       linhas,
       e("div",{className:"flex flex-wrap items-center justify-between gap-2"}, e(Botao,{onClick:novo}, "Novo combinado"),
         lista.length ? e("span",{className:"text-[13px] tabular-nums"}, "Total: "+BK(tot("din"))+" em dinheiro + "+BK(tot("joias"))+" em joias") : null)));

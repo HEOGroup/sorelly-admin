@@ -19,7 +19,7 @@ Dados reais (CPF, salário, telefone) NÃO estão aqui: ficam no servidor e nos 
 | 10 | Formulário online para cada funcionário preencher | Um link por pessoa, sem login. O RH confere e só então aplica no cadastro | seção 2 |
 | 11 | Telefone particular e mensagem para a Maria enviar | Coluna Telefone com ⧉, coluna "Msg para funcionário" com ⧉, mensagem pronta para a Maria no alto | `pages/rh/FormularioFunc.js` |
 | 12 | Links de todos já prontos | A janela cria sozinha o link de todos os ativos ao abrir | idem |
-| 14 | Combinados avulsos: uma nova negociação pontual (ex.: domingo das 9h às 15h por R$ 150,00 + R$ 168,00 em joias) | Bloco na ficha da negociação de cada pessoa: dia, combinado, dinheiro, joias (preço de venda das peças), situação, total. Aparece também na lista Dinheiro + joias | `negAcordos` em `pages/RH.js` (campo `acordos` da pessoa) |
+| 14 | Combinados avulsos: uma nova negociação pontual (ex.: domingo das 9h às 15h por R$ 150,00 + R$ 168,00 em joias) | Bloco na ficha da negociação de cada pessoa: dia, horário de início e fim, combinado, dinheiro, joias (preço de venda das peças), se bate ponto (Sim ou Não), situação, total. Aparece também na lista Dinheiro + joias | `negAcordos` em `pages/RH.js` (campo `acordos` da pessoa) |
 | 13 | Faixa azul sem botões lado a lado | Tudo em menu suspenso. O menu Visão fica curto; ao escolher Negociações, abre ao lado o menu da FORMA, nesta ordem: Dinheiro / Joias / Dinheiro + joias (e Por pessoa / Pagamentos / Resumo em Joias). Eu tinha juntado tudo no Visão e o Marcus não quis: os menus ficam SEPARADOS, ao lado | `SegAzul` (agora um select) |
 
 ## 2. Formulário dos funcionários (como funciona)
