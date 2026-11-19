@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.34", data:"2026-11-19", titulo:"Link das peças: tela de resposta enviada e pedir mais peças em tela cheia", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Ao enviar a resposta, abre uma tela cheia de confirmação (peças escolhidas e total) com o botão Pedir mais peças. Pedir mais peças agora abre em tela cheia, sem ficar atrás da barra de baixo. O envio tem limite de tempo e avisa se a internet demorar, em vez de ficar travado em Enviando."},
+ ]},
  {v:"0.21.33", data:"2026-11-19", titulo:"Produção: bônus por dia, dias travados, lançamento da funcionária e Produção externa em formato de estoque", itens:[
   {tipo:"regra", area:"Produção › Premiação", txt:"Bônus pelo DIA: 300 a 349 peças = R$ 15,00 · 350 a 399 = R$ 20,00 · 400 ou mais = R$ 25,00 · menos de 300 = nada. O bônus do mês é a soma dos dias. Pagamento no dia 11 do mês seguinte (novembro paga em 11/12/2026). Produção externa fica fora. Valores em BONUS_DIAS e BONUS_PAGA_DIA (domain/producao.js). Substitui as faixas por % dos dias."},
   {tipo:"melhoria", area:"Produção › Premiação", txt:"Tela refeita: grade do mês com DUAS linhas por funcionária (Peças e Bônus por dia, e o Total), bloco Pagamento do bônus (dias de R$ 15, R$ 20 e R$ 25, valor, data e situação) e bloco Regras. Saíram Posição, Faixa, Falta e Ajuste. A grade da Produção perdeu a coluna Falta."},
