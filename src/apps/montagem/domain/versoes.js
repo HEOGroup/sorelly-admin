@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.39", data:"2026-11-19", titulo:"Brinde de indicação: forma de pagamento da diferença e nome da peça em uma linha", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"No Brinde de indicação, a funcionária escolhe a forma de pagamento da diferença (Pix, Link, Crédito...) antes de enviar ao financeiro; antes ia sempre como Pix. O nome da peça fica em uma linha só, com letra menor."}
+ ]},
  {v:"0.21.38", data:"2026-11-19", titulo:"RH › Negociações: combinados avulsos com dinheiro e joias", itens:[
   {tipo:"novo", area:"RH → Colaboradores", txt:"Na ficha da negociação de cada pessoa há o bloco Combinados avulsos: dia, o que foi combinado (ex.: domingo das 9h às 15h), valor em dinheiro, valor em joias (preço de venda das peças) e situação (Combinado ou Pago), com o total no pé. Novo combinado cria a linha. A lista Dinheiro + joias ganhou as colunas Avulsos (dinheiro) e Avulsos (joias)."}]},
  {v:"0.21.37", data:"2026-11-19", titulo:"Pagamentos a fornecedores: Sugerir divisão por pedido", itens:[

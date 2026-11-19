@@ -548,12 +548,12 @@ function AtendimentoInterno(){
   var resgateInd = resgatesDela.find(function(r){ return r.etapa==="aprovado"; }) || null;
   var liberadoInd = resgateInd ? (Number(resgateInd.premioValor)||0) : (Number(sel.valorLiberado)||0);
   var excInd = ehInd ? Math.max(0, Math.round((totalInd-liberadoInd)*100)/100) : 0;
-  var linhasEnvio = ehInd ? (excInd>0 ? [{tipo:"brinde", forma:"", valor:excInd, partes:parteVazia(excInd)}] : [])
+  var linhasEnvio = ehInd ? (excInd>0 ? [{tipo:"brinde", forma:sel.formaDifInd||"", valor:excInd, partes:parteVazia(excInd)}] : [])
     : linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
   var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
   var fechouPagamentos = ehInd || dv.quitado || dv.acordoValido || form.recusouNegociar;
-  var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito;
+  var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito && (!ehInd || !excInd || !!sel.formaDifInd);   // brinde de indicação: a funcionária escolhe COMO a revendedora pagou a diferença (Edna, 19/11/2026: ia sempre como Pix e ela pagou no crédito)
   var linhasPagFin = lancFin ? lancFin.linhas.filter(function(l){ return l.tipo==="pagamento"; }) : [];
   var semPendencia = function(ls){ return ls.length>0 && ls.every(function(l){ return l.isento || (statusLinhaFin(l)!=="aguardando" && (l.partes||[]).every(function(q){ return !!q.comprovante || !!q.ok; })); }); };   // 17/11/2026 (Edna, Gislaine): conta já conferida pelo financeiro não trava o OK, mesmo sem comprovante anexado
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
@@ -1235,7 +1235,8 @@ function AtendimentoInterno(){
       e("div",{className:CABT+GRID_IND}, e("span",null,"Código"), e("span",null,"Peça"), e("span",null,"Valor"), e("span")),
       pecasInd.length===0 && e("div",{className:LIN+" grid-cols-1 min-h-9"}, e("span",null,"Nenhuma peça lançada")),
       pecasInd.map(function(x,i){ return e("div",{key:x.codigo, className:LIN+GRID_IND},
-        e("b",{className:MONO}, x.codigo), e("span",{className:"break-words"}, x.descricao || "—"),
+        e("b",{className:MONO}, x.codigo), e("span",{className:"min-w-0 truncate text-[11px]", title:x.descricao || ""}, x.descricao || "—"),   // padrao-ok: Marcus pediu o nome da peça em uma linha só, com "..." (19/11/2026)
+        
         (x.valor>0 || jaFeito) ? n15(din(x.valor)) : e(CampoReais,{value:x.valor||null, label:"Valor da peça "+x.codigo, className:INPUT+" h-8! w-full bg-primary/[0.12]! text-right "+MONO, onChange:function(v){ salvaInd(pecasInd.map(function(y,j){ return j===i ? Object.assign({}, y, {valor:v||0}) : y; })); }}),
         !jaFeito ? e(Remover,{label:"Remover peça "+x.codigo, onClick:function(){ salvaInd(pecasInd.filter(function(y,j){ return j!==i; })); }}) : e("span")); }),
       // 17/11/2026 (Marcus: "mais centralizado, está tudo errado"): três células iguais lado a lado, rótulo em cima e valor embaixo, tudo centralizado
@@ -1245,6 +1246,10 @@ function AtendimentoInterno(){
           (jaFeito || resgateInd) ? n15(din(liberadoInd)) : e(CampoReais,{value:liberadoInd||null, label:"Valor liberado do brinde", className:INPUT+" h-8! w-36 bg-primary/[0.12]! text-center "+MONO, onChange:function(v){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{valorLiberado:v||0}}); }})),
         e("div",{className:"flex min-h-14 flex-col items-center justify-center gap-1 border-t px-2 py-1.5 font-semibold sm:border-l sm:border-t-0 "+(excInd>0 ? "border-destructive bg-destructive/15" : "border-success bg-success/15")},
           e("span",{className:CAP}, excInd>0 ? "Diferença a pagar" : "Dentro do valor liberado"), n15(din(excInd), excInd>0 ? "text-destructive" : "text-success")))),
+    excInd>0 && !jaFeito && e("div",{className:"flex flex-wrap items-center justify-center gap-2 border-t border-foreground/25 p-2"},
+      e("label",{htmlFor:"formaDifInd", className:CAP}, "Forma de pagamento da diferença"),
+      e("select",{id:"formaDifInd", value:sel.formaDifInd||"", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{formaDifInd:ev.target.value}}); }, className:INPUT+" h-8! w-56 bg-primary/[0.12]! text-center text-[13px]!"},
+        e("option",{value:""}, "Escolha a forma"), formas.map(function(f){ return e("option",{key:f.k, value:f.k}, rotForma(f.k, f.label)); }))),
     excInd>0 && caixaFinanceiro,
     excInd>0 && !jaFeito && e("p",{className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"},
       !lancFin ? "Envie a diferença ao financeiro para ele definir a conta." : alterado ? "A diferença mudou: reenvie ao financeiro." : tudoComComprovante ? "Comprovante anexado: pode finalizar." : "Anexe o comprovante da diferença."),
