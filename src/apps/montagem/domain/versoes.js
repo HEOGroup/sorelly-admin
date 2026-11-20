@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.72", data:"2026-11-20", titulo:"Financeiro: Cadastro (Bancos e Formas de pagamento), Controle e barra lateral compacta", itens:[
+  {tipo:"novo", area:"Financeiro → Cadastro → Formas de pagamento", txt:"Cópia dos tipos de numerário do PDV da DevMaster: para qual banco cada forma manda o dinheiro, o dono (Sorelly, Mayz, Serenity, Axis, pessoa ou fornecedor), se está visível no PDV, usos e valor em 90 dias, último uso e o que arrumar na DevMaster. Nomes em letra normal. Só leitura."},
+  {tipo:"novo", area:"Financeiro → Cadastro → Bancos", txt:"Os bancos da DevMaster com dono, tipo (conta, maquininha, caixa de passagem), agência e conta, quantas formas caem em cada um, uso em 90 dias e o que arrumar (código 749 do Sicredi, nome com erro, banco sem uso). Filtro Só a arrumar e Sem uso em 90 dias."},
+  {tipo:"melhoria", area:"Financeiro → menu", txt:"Arrumar na DevMaster e Atividades ficam juntas na palavra Controle. Telas no visual da Contas a receber (peça components/planilha-cheia.js), com a setinha comum, sem mãozinha."},
+  {tipo:"correção", area:"Financeiro → Contas a receber", txt:"PIX - BANHO aparece como Pontual (a forma dá baixa em CAIXA PIX PONTUAL na DevMaster, 504 de 504 em 180 dias). Setinha comum na tabela, sem mãozinha."},
+  {tipo:"melhoria", area:"Barra lateral", txt:"Mais compacta (linhas de 26 px, ícones menores). Geral e Setores viram botões de abrir e fechar, e o Geral começa fechado para os setores aparecerem melhor."}
+ ]},
  {v:"0.21.71", data:"2026-11-20", titulo:"Contas a receber no mesmo desenho da Contas a pagar, com comprovante e agrupamento", itens:[
   {tipo:"novo", area:"Financeiro → Receber → Contas a receber", txt:"A tela é o clone da Contas a pagar: uma tabela só, faixa azul com Visão (Separado ou Total), Situação (A receber, Recebidas ou Todas), Período, Busca e Colunas, filtro e ordem no nome de cada coluna, e colunas que cada pessoa abre, fecha e reordena. Lê os pagamentos da DevMaster (só leitura), mês a mês, de 2022 até hoje."},
   {tipo:"novo", area:"Financeiro → Receber → Contas a receber", txt:"Coluna Comprovante: o comprovante que a funcionária anexou no Atendimento interno aparece como Ver (foto ou PDF). A ligação é pela mesma revendedora, o mesmo valor e a data até 3 dias de diferença, só quando o par é único. Pix do Atendimento sem comprovante mostra Falta anexar. O botão Abrir mostra a ficha do pagamento."},

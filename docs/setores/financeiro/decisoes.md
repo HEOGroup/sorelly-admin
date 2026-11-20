@@ -474,6 +474,19 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - **29/10/2026** (diário, linha 1429; · Contas a pagar direto da DevMaster): Marcus (a mãe questionou o 175 mil e o pago): o sistema tem que chamar a DevMaster, não o admin antigo. Já pago e Falta pagar agora vêm da leitura do servidor; data do pagamento = data de débito. Pendente: o dia 01/10 tem R$ 150,00 a mais que a tela da DevMaster do Marcus.
 - **29/10/2026** (diário, linha 1429; · Contas a pagar direto da DevMaster): **Preferências do kit trazidas do admin antigo (28/10/2026).** Estrutura de 19 blocos lida de `kit_block` e salva em `preferencias-kit.local.js`. O admin antigo já tem a pergunta de tamanho (30/09). Respostas das revendedoras não estão no banco antigo. Detalhes em `docs/negocio/KIT-PERFEITO.md`.
 
+## 20/11/2026 (Financeiro: Cadastro de bancos e formas de pagamento)
+- **Pedido do Marcus:** copiar a DevMaster no nosso sistema (bancos e tipos de numerário), para ir criando o próprio sistema e sair dela. Menu do Financeiro, à direita de Relatórios: **Cadastro ▾** (Bancos, Formas de pagamento) e **Controle ▾** (Arrumar na DevMaster, Atividades). Telas no mesmo visual da Contas a receber (`components/planilha-cheia.js`).
+- **Feito (só leitura):** `src/server/cadastro-fin.js`, rota `/api/cadastro-fin`, `pages/CadastroFin.js`. O DONO de cada forma sai do banco onde ela dá baixa. Esconder ou mostrar no PDV continua na DevMaster (o Marcus sabe fazer); forma nova ou renome vai para o Financeiro lançar.
+- **Pix Banho = Pontual (conferido na DevMaster):** PIX - BANHO dá baixa em CAIXA PIX PONTUAL (504 de 504 em 180 dias); a Ellos tem a forma própria PIX ELLOS BRUTOS (CAIXA PIX ELLOS BANHO). Antes só havia um banho, a Pontual.
+- **Achados para arrumar na DevMaster:** PIX - CAIXA ECONÔMICA - ANAMARIA cai no Santander Anamaria; 3 contas Sicredi com código 749 (o certo é 748); "CAIXA PIX MARDEIRA COR"; Sicredi Ana Beatriz PF com código de caixa (CXA); formas visíveis no PDV sem uso há 90 dias (o Marcus já mexeu em Pix Charme e 3D Acrílicos em 20/11).
+
+## 20/11/2026 (Formas de pagamento do PDV da DevMaster e alinhamento com o Admin)
+- **Foto salva:** as formas de pagamento do painel do PDV em 20/11/2026 estão em `docs/negocio/FORMAS-DE-PAGAMENTO-PDV-DEVMASTER.md` (só no computador do Marcus, fora do Git), com o que observei e 6 perguntas abertas. Objetivo do Marcus: alinhar DevMaster e Admin e corrigir na DevMaster o que estiver estranho.
+- **Contas a receber (decidido no dia):** coluna CNPJ = primeiro nome da empresa (Sorelly 34, Mayz 46, Serenity 59, Axis 67 = CNPJ do Lucas); pessoa com nome exato (Marco PJ, Marco PF, Marcus, Anamaria, Lucas); fornecedor com o nome dele; maquininhas P = Pontual; nunca "Família e sócios". "PIX - BANHO" aparece como Ellos por suposição do Marcus. Tabela compacta (fonte 10 px, linhas de 18 px), rolagem por linha inteira, sem páginas.
+
+## 20/11/2026 (Barra lateral compacta)
+- **Pedido do Marcus:** compactar a barra lateral e deixar o GERAL fechado para os setores aparecerem melhor. Linhas de 26 px, ícones de 20 px, GERAL e SETORES viram botões de abrir e fechar (a escolha fica no navegador, `sorelly_menu_grupos`); com o grupo fechado aparece só a tela aberta, se for dele. Exceção ao padrão de 32 px aprovada pelo Marcus (`padrao-ok`).
+
 ## 09/11/2026 — Pix da representante: o app PEDE a conta (alinhamento para o Leonardo)
 - Erro no app real (Leonardo): a representante escolhe a conta numa lista. **Errado.** O app só informa forma, valor, parcelas e comprovante, e PEDE a conta. O pedido vai ao Direcionar (Financeiro). As regras do Lucas respondem sozinhas; o que elas não resolvem fica na fila. O app não espera: mostra "Aguardando conta" e avisa quando a conta chega.
 - O Lucas define as contas **por REPRESENTANTE**, antes (Regras e contas). À noite ele divide as contas à mão entre as representantes.

@@ -184,6 +184,9 @@ function App(){
   // grupos do menu lateral (Geral/Setores/Sistema, 28/10/2026): fecha/abre cada um, lembra a escolha; sem chave = aberto
   try{ localStorage.removeItem("sorelly_grupos_menu"); }catch(x){}   // o menu abre sempre inteiro: apaga a escolha antiga de grupos fechados
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
+  // barra lateral (Marcus, 20/11/2026): GERAL começa FECHADO para os setores aparecerem melhor; GERAL e SETORES abrem e fecham clicando no título; a escolha fica neste navegador
+  var sgf = useState(function(){ try{ var v = JSON.parse(localStorage.getItem("sorelly_menu_grupos") || "null"); return v && typeof v==="object" ? v : {geral:true}; }catch(x){ return {geral:true}; } }), gruposFechados = sgf[0];
+  var alternaGrupo = function(id){ var o = Object.assign({}, gruposFechados); o[id] = !o[id]; sgf[1](o); try{ localStorage.setItem("sorelly_menu_grupos", JSON.stringify(o)); }catch(x){} };
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
   // barra do topo aberta 100% (todas as telas do setor à vista) ou recolhida (listas suspensas); lembra a escolha neste navegador
   var ba = useState(function(){ try{ return localStorage.getItem("sorelly_barra_aberta")!=="0"; }catch(x){ return true; } }), barraAberta = ba[0], setBarraAberta = ba[1];
@@ -276,14 +279,14 @@ function App(){
   var podeMenu = function(n){ return n.perm ? String(n.perm).split(",").some(function(k){ return temAutorizacao(k, s.usuario); }) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
-  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:17}));
-    return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
-    e(Icon,{n:st.ic, s:13, peso: on ? "fill" : "duotone"})); };
+  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-5 shrink-0 place-items-center rounded-md", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:14}));
+    return e("span",{className:"grid size-5 shrink-0 place-items-center rounded-md", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
+    e(Icon,{n:st.ic, s:12, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
   var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
   var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
     return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
-      className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
+      className:"flex min-h-[26px] w-full items-center gap-2 rounded-md px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},   // padrao-ok: linha de 26 px na barra lateral, mais compacta, a pedido do Marcus (20/11/2026)
       tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
   var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
@@ -335,12 +338,14 @@ function App(){
         visao==="marcus" && s.usuario===16 && e("button",{key:"voltar-admin", title:"Voltar para o sistema da Sorelly", onClick:function(){ d({type:"VISAO_MENU", v:"admin"}); navigate(caminhoDaAba("visaogeral")); setMenu(false); }, className:"mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-white/10 px-2.5 text-left text-[13px] font-semibold leading-tight hover:bg-white/15"}, "← Sorelly Admin"),
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
-          // menu sempre aberto, sem botão de abrir/fechar (Marcus, 02/11/2026): o título do grupo é só um rótulo
-          return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
-            e("div",{className:"mt-1.5 px-1.5 pb-0 first:mt-0"},
-              e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
-            lst.map(linhaSetor),
-            g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
+          // título do grupo vira botão de abrir e fechar (Marcus, 20/11/2026; antes, 02/11/2026, era só um rótulo). Fechado mostra só a tela aberta, se ela for do grupo.
+          var fechado = !!gruposFechados[g[0]], visiveis = fechado ? lst.filter(function(st){ return st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); }); }) : lst;
+          return e("div",{key:g[0], className:"flex flex-col gap-px"},
+            e("button",{type:"button", onClick:function(){ alternaGrupo(g[0]); }, "aria-expanded":!fechado, title:fechado ? "Abrir "+g[1] : "Fechar "+g[1],
+              className:"mt-1 flex h-[22px] w-full items-center justify-between rounded-md bg-white/5 px-2 text-[11px] font-bold uppercase tracking-wider text-foreground hover:bg-white/10 first:mt-0"},   // padrao-ok: título de grupo de 22 px na barra lateral (20/11/2026)
+              e("span",null, g[1]+(fechado ? " · "+lst.length : "")), e(Icon,{n:fechado ? "chevron" : "chevrondown", s:11})),
+            visiveis.map(linhaSetor),
+            !fechado && g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
         !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && visao!=="pontual" && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
         visao!=="pontual" && urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
