@@ -3025,3 +3025,12 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 ## 19/11/2026 — Prestadores: nome curto, uma linha só
 - Pedido do Marcus: em Quem pagou (tabela Pago) aparecem só 1 ou 2 nomes e nunca duas linhas; o nome inteiro aparece ao passar o mouse. Descrição da dívida: até 3 palavras numa linha, texto inteiro ao passar o mouse.
 - **Contas de prestadores (Marcus, 19/11/2026: "isso edita no prestador, pode excluir"):** o bloco saiu da tela. O banco e a conta que recebe o Pix se editam no cartão Editar do prestador (cria a conta se não existir). Os dados das contas continuam no sistema; o Pix que cai numa conta ligada ao prestador continua virando pagamento sozinho.
+
+## 19/11/2026 — Contas a receber vira clone da Contas a pagar, com comprovante
+- Pedido do Marcus: "copiar a tela de Contas a pagar igual 100% e fazer um Contas a receber". Os pagamentos das revendedoras (inclusive os que entram em Itaú PJ Marco, Pontual e contas das empresas) já aparecem na DevMaster; faltava o comprovante e o mesmo desenho.
+- Tela: `pages/ContasReceberLista.js` (`/contas-a-receber`), clone de `pages/ContasPagarLista.js` (usa o mesmo `SeletorPeriodo`, `menuSusp` e `TabelaPlanilha`). A tela antiga ficou em `/contas-a-receber-resumo`. Situação: A receber = acerto - loja com saldo (regra de 27/10/2026); o resto é Recebida.
+- Comprovante: vem do Atendimento interno (`s.lancFin`) e é ligado ao título da DevMaster por `domain/comprovantes-receber.js` (mesma revendedora, mesmo valor, data até 3 dias, par único; entra também a diferença de brinde paga por Pix). Nada é copiado nem gravado: a tela só lê. Em novembro, 36 comprovantes ligaram e 1 ficou em dúvida (não liga).
+- Falta anexar só aparece no Pix do Atendimento interno (representante "Sorelly"): o Pix das representantes não passa pelo Atendimento.
+- Servidor: `/api/contas-receber/titulos` aceita `&ano=` (antes só lia o ano de hoje).
+- Os 27 comprovantes do Atendimento sem Pix no Financeiro familiar NÃO vão para o familiar: pertencem à Contas a receber (conta Itaú PJ Marco é conta de empresa, o mesmo nome escrito de duas formas).
+- Contas a receber, ajuste de 20/11/2026 (Marcus): todo pagamento de acerto do Atendimento interno ou da calculadora das representantes cai nesta tela; ganhou o filtro Agrupar (por representante ou por revendedora, grupos fechados que abrem ao clicar) e a faixa de filtros ficou compacta (28 px).

@@ -191,8 +191,8 @@ async function lerMes(m, ano, soNao, ctx, antigo) {
   return linhas;
 }
 
-export async function titulosDoMes(mes, soNao = false) {
-  const ano = anoAtualBR(), nm = mesAtualBR(), m = Number(mes) || 0, todos = !m && soNao, chave = ano + "-" + (todos ? "todos-nao" : (m || nm) + (soNao ? "-nao" : ""));
+export async function titulosDoMes(mes, soNao = false, anoPedido = 0) {
+  const anoP = Number(anoPedido) || 0, ano = anoP >= 2022 && anoP <= anoAtualBR() ? anoP : anoAtualBR(), nm = ano === anoAtualBR() ? mesAtualBR() : 12, m = Number(mes) || 0, todos = !m && soNao, chave = ano + "-" + (todos ? "todos-nao" : (m || nm) + (soNao ? "-nao" : ""));
   const cache = (G.__sorellyCRT2 = G.__sorellyCRT2 || {});
   if (cache[chave] && Date.now() - cache[chave].em < 10 * 60 * 1000) return cache[chave].dados;
   const ctx = await base();

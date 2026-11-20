@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.71", data:"2026-11-20", titulo:"Contas a receber no mesmo desenho da Contas a pagar, com comprovante e agrupamento", itens:[
+  {tipo:"novo", area:"Financeiro → Receber → Contas a receber", txt:"A tela é o clone da Contas a pagar: uma tabela só, faixa azul com Visão (Separado ou Total), Situação (A receber, Recebidas ou Todas), Período, Busca e Colunas, filtro e ordem no nome de cada coluna, e colunas que cada pessoa abre, fecha e reordena. Lê os pagamentos da DevMaster (só leitura), mês a mês, de 2022 até hoje."},
+  {tipo:"novo", area:"Financeiro → Receber → Contas a receber", txt:"Coluna Comprovante: o comprovante que a funcionária anexou no Atendimento interno aparece como Ver (foto ou PDF). A ligação é pela mesma revendedora, o mesmo valor e a data até 3 dias de diferença, só quando o par é único. Pix do Atendimento sem comprovante mostra Falta anexar. O botão Abrir mostra a ficha do pagamento."},
+  {tipo:"novo", area:"Financeiro → Receber → Contas a receber", txt:"Novo filtro Agrupar: Sem agrupar, Por representante ou Por revendedora. Cada grupo mostra quantos pagamentos, o total e quantos estão a receber; clicar no grupo abre e fecha. A faixa de filtros ficou bem menor (controles de 28 px). A tabela inteira ficou compacta (letra de 11 px) e a linha de grupo é azul suave, com o nome à esquerda e o total embaixo da coluna Valor."},
+  {tipo:"melhoria", area:"Financeiro → Receber", txt:"A tela antiga (mapa do dinheiro, CNPJs e contas) continua no endereço /contas-a-receber-resumo."}]},
  {v:"0.21.70", data:"2026-11-19", titulo:"RH › Acessos: confirmação dentro da tela", itens:[
   {tipo:"correção", area:"RH → Acessos e autorizações", txt:"Escolher Acesso total ou Gerar senha nova usava uma caixa de confirmação do navegador. O navegador bloqueia essas caixas depois de algumas vezes e o clique não fazia nada (\"não dá para editar\"). A confirmação agora é uma janela do próprio sistema, e o aviso de acesso copiado aparece em verde na tela."}]},
  {v:"0.21.69", data:"2026-11-19", titulo:"Fila de montagem: sem Listagens, sem totais no título e sem a mãozinha", itens:[

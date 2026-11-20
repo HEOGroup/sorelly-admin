@@ -4,8 +4,9 @@ export const runtime = "nodejs";
 //   GET /api/contas-receber/titulos?mes=10            os títulos de um mês
 //   GET /api/contas-receber/titulos?nao=1             só o acerto - loja (não pagou) de todos os meses
 //   GET /api/contas-receber/titulos?mes=10&nao=1      só o acerto - loja de um mês
+//   acrescente &ano=2025 para ler outro ano (padrão: o ano de hoje)
 import { erro, json, rota } from "@/server/http";
 import { podeModulo } from "@/server/permissoes";
 import { titulosDoMes } from "@/server/contas-receber";
 
-export const GET = rota(async (req, { url, eu }) => podeModulo(eu, "contasreceber") ? json(await titulosDoMes(url.searchParams.get("mes"), url.searchParams.get("nao") === "1")) : erro("Só o Financeiro e a Diretoria abrem esta tela.", 403));
+export const GET = rota(async (req, { url, eu }) => podeModulo(eu, "contasreceber") ? json(await titulosDoMes(url.searchParams.get("mes"), url.searchParams.get("nao") === "1", url.searchParams.get("ano"))) : erro("Só o Financeiro e a Diretoria abrem esta tela.", 403));

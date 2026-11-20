@@ -272,4 +272,4 @@ function TelaContas(props){
 
 function AbaCtaLista(){ return e(TelaContas,{modo:"pagar"}); }
 function AbaCtaPagas(){ return e(TelaContas,{modo:"pagas"}); }
-export { AbaCtaLista, AbaCtaPagas };
+export { AbaCtaLista, AbaCtaPagas, SeletorPeriodo, faixaDe, menuSusp, CNPJ_LETRA };   // a Contas a receber (ContasReceberLista.js) usa as mesmas peças: mesmo seletor de período e mesmo menu suspenso
