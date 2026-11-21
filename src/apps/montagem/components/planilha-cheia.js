@@ -9,9 +9,17 @@ import { PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { e } from "@/shared/react";
 
 var PAGINA_CHEIA = PADRAO_BLOCOS+" -mx-4 -mb-4 -mt-4 md:-mx-6 md:-mb-6 md:-mt-6 [&>section]:!rounded-none [&>section]:!border-t-0 [&>section]:!border-l-[4px] [&>section]:!border-r-[4px] [&>section]:!border-b-[4px]";
-var CLS_FINA = "flex min-h-0 flex-1 flex-col [&_table_td]:!text-[10px] [&_table_th]:!text-[10px] [&_table_td]:!h-[var(--lh,18px)] [&_table_tbody_tr]:[scroll-snap-align:start] [&_table_td]:!px-[1px] [&_table_th]:!px-[1px] [&_table_th_button]:!px-0 [&_table_th_button]:!gap-0.5 [&_table_th_button]:!tracking-normal [&_table_th_span]:!tracking-normal [&_table_th_button>span]:!hidden [&_table_td]:!py-0 [&_table_td]:!leading-none [&_table_th]:!h-[16px] [&_table_th_button]:!h-[14px] [&_table_th_button]:!py-0 [&_table_th_button]:!leading-none [&_table_th_button]:!text-[10px] [&_table_th_span]:!text-[10px] [&_table_th_span]:!leading-none [&_table_th]:!py-0 [&_table_tr]:!h-[var(--lh,18px)] [&_table_td_button]:!text-[10px] [&_table_td_a]:!text-[10px] [&_.overflow-x-auto]:!cursor-default [&_table_tr]:!cursor-default [&_table_td]:!cursor-default";   // padrao-ok: tabela fina pedida pelo Marcus (20/11/2026)
+var CLS_FINA_BASE = "flex min-h-0 flex-1 flex-col [&_table_td]:!text-[10px] [&_table_th]:!text-[10px] [&_table_td]:!h-[var(--lh,18px)] [&_table_tbody_tr]:[scroll-snap-align:start] [&_table_th_button]:!px-0 [&_table_th_button]:!gap-0.5 [&_table_th_button]:!tracking-normal [&_table_th_span]:!tracking-normal [&_table_th_button>span]:!hidden [&_table_td]:!py-0 [&_table_td]:!leading-none [&_table_th]:!h-[16px] [&_table_th_button]:!h-[14px] [&_table_th_button]:!py-0 [&_table_th_button]:!leading-none [&_table_th_button]:!text-[10px] [&_table_th_span]:!text-[10px] [&_table_th_span]:!leading-none [&_table_th]:!py-0 [&_table_tr]:!h-[var(--lh,18px)] [&_table_td_button]:!text-[10px] [&_table_td_a]:!text-[10px] [&_.overflow-x-auto]:!cursor-default [&_table_tr]:!cursor-default [&_table_td]:!cursor-default";   // padrao-ok: tabela fina pedida pelo Marcus (20/11/2026)
+// espaço lateral das células: 1 px (colado, Contas a receber) ou 5 px (Contas a pagar, que tem muitas colunas; Marcus, 20/11/2026: "tá muito grudado, dá um mini espacinho"). As duas versões ficam escritas por inteiro para o Tailwind gerar as classes.
+var CLS_FINA = CLS_FINA_BASE+" [&_table_td]:!px-[1px] [&_table_th]:!px-[1px]";
+var CLS_FINA_ESPACO = CLS_FINA_BASE+" [&_table_td]:!px-[5px] [&_table_th]:!px-[5px]";
 var CLS_BARRA = "flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-1.5 py-1 [&_button]:!h-[18px] [&_button]:!py-0 [&_button]:!leading-none [&_button]:!px-1 [&_button]:!text-[10px] [&_button]:!justify-center [&_button]:!border-white/25 [&_button]:!bg-white/10";   // padrao-ok: barra de filtros compacta (20/11/2026)
+var CLS_BARRA_TAB = "flex flex-wrap items-stretch justify-start border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] [&_button]:!h-[18px] [&_button]:!py-0 [&_button]:!leading-none [&_button]:!px-1 [&_button]:!text-[10px] [&_button]:!justify-center [&_button]:!border-white/25 [&_button]:!bg-white/10";   // padrao-ok: barra em forma de tabela, controles de 18 px (Marcus, 20/11/2026)
 var CLS_CAMPO = "min-w-0 rounded border border-white/25 bg-white/10 text-center text-[10px] font-medium text-white outline-none placeholder:text-white/70 focus-visible:ring-2 focus-visible:ring-primary";   // padrao-ok: campo de 18 px e letra de 10 px (20/11/2026)
+
+/** Barra em forma de TABELA: cada controle numa célula com o título em cima e linha separando; começa na esquerda (Buscar primeiro). */
+function BarraTabela(p){ return e("div",{className:CLS_BARRA_TAB+" [&>div:first-child]:border-l [&>div:first-child]:border-l-white/25"}, p.children); }
+function CelulaBarra(p){ return e("div",{className:"flex flex-col items-stretch border-r border-white/25"}, e("span",{className:"border-b border-white/25 px-2 py-0.5 text-center text-[9px] font-semibold uppercase leading-none tracking-wide text-white"}, p.rotulo), e("div",{className:"flex flex-1 items-center justify-center px-1.5 py-0.5"}, p.children)); }   // padrao-ok: título da célula de 9 px, como cabeçalho de coluna, com linha separando o título do controle (Marcus, 20/11/2026)
 
 /** Barra azul de filtros, centralizada. */
 function BarraMini(p){ return e("div",{className:CLS_BARRA}, p.children); }
@@ -46,4 +54,4 @@ function refCheia(dicas){
   };
 }
 
-export { PAGINA_CHEIA, CLS_FINA, BarraMini, CampoMini, BuscaMini, AvisoMini, refCheia };
+export { PAGINA_CHEIA, CLS_FINA, CLS_FINA_ESPACO, BarraTabela, CelulaBarra, BarraMini, CampoMini, BuscaMini, AvisoMini, refCheia };

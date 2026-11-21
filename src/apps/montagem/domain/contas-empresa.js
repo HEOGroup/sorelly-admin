@@ -7,6 +7,7 @@ import { globLocal } from "@/lib/glob-local";
 
 import { parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { funcionarios } from "@/apps/montagem/domain/pessoas";
+import { casarPagos, tipoDaParcela } from "@/apps/montagem/domain/casar-pagos";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
 var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
@@ -158,7 +159,22 @@ function setLancamentos(l){
 // Pix revendedora lançado pela equipe em Pagamentos a fornecedores (Point, Pontual, MegaSul...): entra dentro do fornecedor e já conta como PAGO.
 // O que o DevMaster já registrou (até a última baixa de Pix do fornecedor) vale o DevMaster; o Pix da equipe só conta depois disso, sem duplicar. Só fornecedores (prestadores não entram).
 var PF_ITENS = [], PF_OCULTOS = {}, _pfSig = "";
+// Parcelas JÁ PAGAS de Pagamentos a fornecedores (pf.pedidos[].parcelas com status "Pago"), por fornecedor canônico: base do cruzamento exato com os títulos abertos da DevMaster (domain/casar-pagos.js, 20/11/2026).
+var PF_PARC = [], _pfpSig = "";
+function setPfParcelas(pf){
+  var peds = (pf && pf.pedidos) || [], n = 0, s = 0, hd = new Date(), hoje = hd.getFullYear()+"-"+String(hd.getMonth()+1).padStart(2, "0")+"-"+String(hd.getDate()).padStart(2, "0");
+  peds.forEach(function(p){ (p.parcelas || []).forEach(function(x){ if(x.status==="Pago"){ n++; s += Number(x.valor) || 0; } }); });
+  var sig = peds.length+"|"+n+"|"+s.toFixed(2)+"|"+((pf && pf.fornecedores) || []).length+"|"+hoje; if(sig===_pfpSig) return; _pfpSig = sig; PF_PARC = [];
+  var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
+  peds.forEach(function(ped){
+    var f = fn[ped.fornId]; if(!f || f.tipo==="prestador") return;   // prestador: o nome na DevMaster não bate com o do Admin
+    var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
+    // parcela "Pago" com data de amanhã em diante é erro da planilha (pagamento não acontece no futuro): não baixa conta nenhuma
+    (ped.parcelas || []).forEach(function(x, k){ if(x.status!=="Pago" || !(Number(x.valor)>0) || !x.venc || String(x.venc).slice(0, 10)>hoje) return; PF_PARC.push({id:ped.id+"#"+k, canon:canon, venc:String(x.venc).slice(0,10), valor:r2(Number(x.valor)), tipo:tipoDaParcela(x.forma), ped:ped.numero || ("Pedido "+ped.id)}); });
+  });
+}
 function setPf(pf){
+  setPfParcelas(pf);
   var lanc = (pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+lanc.filter(function(l){ return l.aguardaComp; }).length+"|"+((pf && pf.fornecedores) || []).length;
   if(sig===_pfSig) return; _pfSig = sig; PF_ITENS = []; PF_OCULTOS = {};
   if(!lanc.length) return;
@@ -198,7 +214,7 @@ function comBaixas(l){
 function itensEmpresa(){
   var l = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens();
   l = PF_ITENS.length ? l.filter(function(i){ return !PF_OCULTOS[i.id]; }).concat(PF_ITENS) : l;
-  return comFilial(comBaixas(l));
+  return comFilial(casarPagos(comBaixas(l), PF_PARC));
 }
 // CNPJ trocado à mão (Nayale, 02/11/2026): guardado em CLASSE com a chave "fil|<conta>"; vale também para a conta já paga
 function comFilial(l){

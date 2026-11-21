@@ -228,7 +228,7 @@ function TabelaPlanilha(p){
         e("tbody",null,
           p.totalCab && corpo.length>0 && e("tr",{key:"total-cab"}, p.totalCab(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); })),
           corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-center text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))),
-        p.totalRodape && e("tfoot",null, e("tr",null, p.totalRodape(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-t-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); }))))), barrasBase)),
+        p.totalRodape && e("tfoot",null, e("tr",null, p.totalRodape(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-t-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+(p.grade ? " border-x border-x-white/15 border-b" : "")+cel}, x); }))))), barrasBase)),
     (pagOn && (nPag>1 || p.aoMudarLimite)) && e("div",{className:"flex flex-nowrap items-center justify-between gap-3 whitespace-nowrap px-1 text-[11px]"},   // RODAPÉ SIMPLES, UMA LINHA, PEQUENO (Marcus, 16/11/2026): esquerda = faixa · centro = páginas (só se há mais de uma) · direita = linhas por página. padrao-ok: controles menores a pedido do Marcus
       e("span",{className:"min-w-0 flex-1"}, ((pagAtual-1)*p.limite+1).toLocaleString("pt-BR")+" a "+Math.min(pagAtual*p.limite, linhas.length).toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR")),
       nPag>1 && e("div",{className:"flex items-center gap-1"},
