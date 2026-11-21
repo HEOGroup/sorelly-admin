@@ -67,13 +67,14 @@ function ArvoreData(p){
         e("label",{className:"flex flex-1 cursor-pointer items-center gap-2"}, e("input",{type:"checkbox", checked:st===2, ref:function(el){ if(el) el.indeterminate = st===1; }, onChange:function(){ alterna(lista); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, rot))),
       aberto && filhos);
   };
-  var inp = "h-8 w-full rounded-md border border-border bg-card px-2 text-[13px] [color-scheme:dark]";
+  var inp = "h-8 w-full rounded-md border border-white/40 bg-white/10 px-2 text-[13px] text-white [color-scheme:dark]";
   return e("div",{className:"flex flex-col"},
-    e("div",{className:"flex flex-wrap gap-1 px-3 py-1"}, atalhos.map(function(a){ return e("button",{key:a[0], type:"button", onClick:a[1], className:"h-8 rounded-md border border-border bg-card px-2 text-[13px] hover:bg-white/10"}, a[0]); })),
+    e("div",{className:"flex flex-wrap gap-1 px-3 py-1"}, atalhos.map(function(a){ return e("button",{key:a[0], type:"button", onClick:a[1], className:"h-8 rounded-md border border-white/40 bg-white/10 px-2 text-[13px] hover:bg-white/20"}, a[0]); })),
     e("div",{className:"grid grid-cols-2 gap-2 px-3 py-1"},
       e("label",{className:"flex flex-col text-[11px] font-bold uppercase"}, "De", e("input",{type:"date", value:faixa.de, onChange:function(ev){ var f = {de:ev.target.value, ate:faixa.ate}; setFaixa(f); porIntervalo(f.de, f.ate); }, className:inp})),
       e("label",{className:"flex flex-col text-[11px] font-bold uppercase"}, "Até", e("input",{type:"date", value:faixa.ate, onChange:function(ev){ var f = {de:faixa.de, ate:ev.target.value}; setFaixa(f); porIntervalo(f.de, f.ate); }, className:inp}))),
-    e("div",{className:"max-h-64 overflow-y-auto border-t border-border"},
+    e("div",{className:"flex items-center gap-3 border-y border-white/25 bg-white/10 px-3 py-1 text-[11px]"}, e("button",{type:"button", onClick:function(){ p.aoFiltrar(null); }, className:"whitespace-nowrap font-semibold text-white underline hover:text-primary"}, "Selecionar tudo"), e("button",{type:"button", onClick:function(){ p.aoFiltrar(new Set()); }, className:"whitespace-nowrap font-semibold text-white underline hover:text-primary"}, "Desmarcar tudo")),
+    e("div",{className:"max-h-64 overflow-y-auto"},
       anos.map(function(a){ var lista = [].concat.apply([], Object.keys(arv[a]).map(function(m){ return arv[a][m]; }));
         return caixa(lista, a, 0, "a"+a, Object.keys(arv[a]).sort().reverse().map(function(m){ var dm = arv[a][m].slice().sort().reverse();
           return caixa(dm, MES_ABREV[+m-1]+"/"+a.slice(2), 1, "m"+a+m, dm.map(function(v){ return caixa([v], texto(v, c), 2, "d"+v, null); })); })); }),
@@ -92,19 +93,26 @@ function MenuColuna(p){
   var alterna = function(v){ var s = new Set(marc || todos); if(s.has(v)) s.delete(v); else s.add(v); p.aoFiltrar(s.size===todos.length ? null : s); };
   // COM BUSCA escrita, "Selecionar o que aparece" deixa marcado SÓ o que a busca achou (igual ao Google Planilhas): escreveu "marcus" e clicou = só as linhas do Marcus. Clicar de novo, já só com elas marcadas, volta a mostrar tudo (Marcus, 12/11/2026).
   var todosVis = function(){ if(busca){ var so = marc && marc.size===vis.length && vis.every(function(v){ return marc.has(v); }); p.aoFiltrar(so || vis.length===todos.length ? null : new Set(vis)); return; } var s = new Set(marc || todos); if(tudoMarcado){ vis.forEach(function(v){ s.delete(v); }); } else vis.forEach(function(v){ s.add(v); }); p.aoFiltrar(s.size===todos.length ? null : s); };
-  var item = "flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-white/10";
-  var menu = e("div",{ref:ref, role:"dialog", "aria-label":"Filtro da coluna "+c.t, onPointerDown:function(ev){ ev.stopPropagation(); }, style:pos ? {top:pos.top, left:pos.left} : {visibility:"hidden"}, className:"fixed z-50 flex w-72 max-h-[calc(100vh-1rem)] overflow-y-auto flex-col rounded-lg border border-border bg-popover py-1 text-left font-normal normal-case tracking-normal text-foreground shadow-xl"},
+  var fina = !!p.fina;   // tabela fina = menu fino (24 px, letra 11 px); as outras seguem 32 px e 13 px
+  var item = fina ? "flex h-6 w-full items-center gap-2 px-2 text-left text-[11px] hover:bg-white/10" : "flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-white/10";   // padrao-ok: menu do filtro fino, como a tabela fina (Marcus, 20/11/2026)
+  var selTudo = function(){ p.aoFiltrar(busca && vis.length!==todos.length ? new Set(vis) : null); };   // sem busca: tudo marcado; com busca: só o que a busca achou (regra de 12/11/2026)
+  var desTudo = function(){ if(busca){ var s = new Set(marc || todos); vis.forEach(function(v){ s.delete(v); }); p.aoFiltrar(s.size===todos.length ? null : s); } else p.aoFiltrar(new Set()); };   // sem busca: nada marcado (depois é só marcar os que quer); com busca: desmarca só o que a busca achou
+  var tituloF = function(t0){ return e("div",{key:"tf", className:"flex shrink-0 items-center justify-center px-2 text-[11px] font-bold text-white", style:{height:"24px", background:"var(--bloco-titulo)"}}, t0); };   // padrao-ok: barra de título do menu do filtro (24 px), no azul do sistema
+  var faixaF = function(t0){ return e("div",{key:"f"+t0, className:"flex shrink-0 items-center justify-center border-y border-white/25 bg-white/10 px-2 text-[11px] font-semibold text-white", style:{height:"18px"}}, t0); };   // padrao-ok: faixa de seção do menu do filtro (18 px), igual às faixas da janela Lançar recebimento
+  var menu = e("div",{ref:ref, role:"dialog", "aria-label":"Filtro da coluna "+c.t, onPointerDown:function(ev){ ev.stopPropagation(); }, style:pos ? {top:pos.top, left:pos.left, background:"#1b3463", borderColor:"var(--bloco-titulo)"} : {visibility:"hidden"}, className:"fixed z-50 flex "+(fina ? "w-64" : "w-72")+" max-h-[calc(100vh-1rem)] overflow-y-auto flex-col rounded-md border-2 pb-1 text-left font-normal normal-case tracking-normal text-white shadow-xl"},
+    tituloF("Filtro · "+c.t),
+    faixaF("Ordenar"),
     e("button",{type:"button", className:item+(p.ordem && p.ordem.dir===1 ? " text-primary" : ""), onClick:function(){ p.aoOrdenar(1); }}, "Ordenar de A a Z"),
     e("button",{type:"button", className:item+(p.ordem && p.ordem.dir===-1 ? " text-primary" : ""), onClick:function(){ p.aoOrdenar(-1); }}, "Ordenar de Z a A"),
     p.ordem && e("button",{type:"button", className:item, onClick:function(){ p.aoOrdenar(0); }}, "Tirar a ordenação"),
-    e("div",{className:"my-1 border-t border-border"}),
-    c.data ? e(ArvoreData,{col:c, valores:todos, filtro:marc, aoFiltrar:p.aoFiltrar}) : e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); if(busca) p.aoFiltrar(vis.length===todos.length ? null : new Set(vis)); if(p.aoFechar) p.aoFechar(); } }, className:"h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
-    !c.data && e("label",{className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:tudoMarcado && vis.length>0, onChange:todosVis, className:"size-4 accent-[#E8B84B]"}), busca ? "Selecionar o que aparece" : "Selecionar tudo"),
+    faixaF(c.data ? "Datas" : "Buscar"),
+    c.data ? e(ArvoreData,{col:c, valores:todos, filtro:marc, aoFiltrar:p.aoFiltrar}) : e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); if(busca) p.aoFiltrar(vis.length===todos.length ? null : new Set(vis)); if(p.aoFechar) p.aoFechar(); } }, className:(fina ? "h-6 text-[11px]" : "h-8 text-[13px]")+" w-full rounded-md border border-white/40 bg-white/10 px-2.5 text-white outline-none placeholder:text-white/70 focus-visible:ring-2 focus-visible:ring-white"})),   // padrao-ok: busca do menu fino (24 px)
+    !c.data && e("div",{className:item+" justify-between border-y border-white/25 bg-white/10"}, e("span",{className:"flex gap-3"}, e("button",{type:"button", onClick:selTudo, className:"whitespace-nowrap font-semibold text-white underline hover:text-primary"}, "Selecionar tudo"), e("button",{type:"button", onClick:desTudo, className:"whitespace-nowrap font-semibold text-white underline hover:text-primary"}, "Desmarcar tudo")), e("span",{className:"whitespace-nowrap text-[11px]"}, vis.length+(vis.length===1 ? " valor" : " valores"))),
     !c.data && e("div",{className:"max-h-64 overflow-y-auto"},
-      vis.slice(0, LIMITE_LISTA).map(function(v){ return e("label",{key:String(v), className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:!marc || marc.has(v), onChange:function(){ alterna(v); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, texto(v, c))); }),
-      vis.length>LIMITE_LISTA && e("div",{className:"px-3 py-1 text-[12px] text-muted-foreground"}, "Mostrando "+LIMITE_LISTA+" de "+vis.length+". Use a busca para achar o resto."),
-      !vis.length && e("div",{className:"px-3 py-1 text-[12px] text-muted-foreground"}, "Nada encontrado.")),
-    marc && e("div",{className:"mt-1 border-t border-border pt-1"}, e("button",{type:"button", className:item, onClick:function(){ p.aoFiltrar(null); }}, "Limpar o filtro desta coluna")));
+      vis.slice(0, LIMITE_LISTA).map(function(v){ return e("label",{key:String(v), className:item+" cursor-pointer border-b border-white/20"}, e("input",{type:"checkbox", checked:!marc || marc.has(v), onChange:function(){ alterna(v); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, texto(v, c))); }),
+      vis.length>LIMITE_LISTA && e("div",{className:"px-3 py-1 text-[11px] text-white"}, "Mostrando "+LIMITE_LISTA+" de "+vis.length+". Use a busca para achar o resto."),
+      !vis.length && e("div",{className:"px-3 py-1 text-[11px] text-white"}, "Nada encontrado.")),
+    marc && e("div",{className:"mt-1 border-t border-white/25 pt-1"}, e("button",{type:"button", className:item, onClick:function(){ p.aoFiltrar(null); }}, "Limpar o filtro desta coluna")));
   return e("span",{ref:anc, className:"hidden"}, createPortal(menu, document.body));
 }
 
@@ -174,7 +182,7 @@ function TabelaPlanilha(p){
             p.semFiltro ? e("div",{className:"flex h-[30px] w-full items-center justify-center whitespace-nowrap px-2.5 "+cabTx+" "+(escura ? "text-foreground" : "text-[#1a1306]")}, c.t) : e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:"flex h-[30px] w-full items-center justify-center gap-1.5 whitespace-nowrap px-2.5 "+cabTx+" cursor-default "+(escura ? "hover:bg-white/10 " : "hover:bg-black/10 ")+(f ? (escura ? "bg-[#E8B84B]/25 text-[#F5E7BE]" : "bg-[#1a1306] text-[#F5E7BE]") : (escura ? "text-foreground" : "text-[#1a1306]"))},
               c.t, o!==0 && e("span",{"aria-hidden":true}, o===1 ? "▲" : "▼"), e("span",{"aria-hidden":true, className:f ? "" : "opacity-60"}, f ? "◆" : "▾")),
             c.acao && e("button",{type:"button", title:c.acao.titulo, "aria-label":c.acao.titulo, onClick:function(ev){ ev.stopPropagation(); c.acao.onClick(); }, className:"absolute right-1 top-1 grid size-6 place-items-center rounded text-[13px] font-bold "+(escura ? "text-foreground hover:bg-white/15" : "text-[#1a1306] hover:bg-black/15")}, c.acao.rotulo),
-            aberto===c.k && e(MenuColuna,{col:c, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
+            aberto===c.k && e(MenuColuna,{col:c, fina:p.fina, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
               aoFechar:function(){ setAberto(null); }, aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },
               aoOrdenar:function(d){ setOrdem(d ? {k:c.k, dir:d} : null); setAberto(null); }}), bordasFixas(c, true));
         })); };

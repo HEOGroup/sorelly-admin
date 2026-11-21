@@ -82,4 +82,17 @@ function rotuloMeio(m){ if(!m) return ""; var adq = m.adq && m.adq!=="Outro" ? m
 /** Nome de pessoa para tabela e lista: nome próprio, sem maiúsculas gritando. */
 function nomePessoa(n){ return nomePropio(n); }
 
-export { NOME_CURTO_CNPJ, bancoDeConta, nomeCurto, nomePropio, nomePessoa, rotuloMeio, numeroCnpj, rotuloCnpj, rotuloDestino, rotuloPrestadorFamilia, junta };
+/** Rotativo e Conta Garantida são LIMITE de crédito dentro de outra conta, não conta: Pix não vai para eles (Marcus, 26/10 e 20/11/2026). */
+function contaRecebePix(nome){ return !/rotativ|conta garantida/i.test(String(nome || "")); }
+
+/** Conta de um CNPJ na lista de lançar pagamento: "Banco · nº", sem o nome da empresa e com bolinha (Marcus, 20/11/2026).
+ *  "Sicredi Sorelly 34" → "Sicredi · 34" · "Itaú Empresas 34" → "Itaú Empresas · 34" · "Safra Serenity" (bloco 59) → "Safra · 59" · "Sicredi H&O App" (bloco HO) → "Sicredi · H&O". Itaú Marco PJ fica como está. */
+function rotuloContaCnpj(nome, cnpjId){
+  var t = String(nome == null ? "" : nome).replace(/\s+/g, " ").trim(), id = String(cnpjId || "").toUpperCase();
+  if(!t || id==="ITM") return t;
+  var num = id==="HO" ? "H&O" : id;
+  var resto = t.replace(/\b(Sorelly|Mayz|Serenity|Axis)\b/gi, " ").replace(/\bH&O\b/gi, " ").replace(/\bApps?\b/gi, " ").replace(new RegExp("\\s"+num.replace(/&/g, "&")+"\\s*$"), " ").replace(/\s+/g, " ").trim();
+  return resto ? resto+(num ? " · "+num : "") : t;
+}
+
+export { contaRecebePix, rotuloContaCnpj, NOME_CURTO_CNPJ, bancoDeConta, nomeCurto, nomePropio, nomePessoa, rotuloMeio, numeroCnpj, rotuloCnpj, rotuloDestino, rotuloPrestadorFamilia, junta };

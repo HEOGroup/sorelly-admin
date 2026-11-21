@@ -30,7 +30,7 @@ function pixAdiantadosDe(ff, nome, opcoes){
   return ff.pix.filter(function(x){
     if(!x || !(x.valor>0) || !x.origem || !x.data) return false;
     if(x.auditoria==="REJEITADO" || x.auditoria==="NAOIDENT") return false;
-    if(x.personaId==="familia") return false;   // transferência entre contas da casa não é pagamento de revendedora
+    if(x.personaId==="familia" || x.semAcerto) return false;   // transferência entre contas da casa não é pagamento de revendedora
     if(!(x.data>desde)) return false;
     var u = usos[x.id]; if(u && u.internoId!==o.internoId) return false;   // já consumido por outro acerto
     return nomeParecido(x.origem, nome);
@@ -50,6 +50,7 @@ function sincronizarUso(ff0, args){
     var x = (ff.pix || []).find(function(y){ return y.id===id; });
     if(!x){ recusados.push({id:id, motivo:"Pix não encontrado."}); return; }
     if(usos[id] && usos[id].internoId!==a.internoId){ recusados.push({id:id, motivo:"Esse Pix já foi usado em outro acerto."}); return; }
+    if(x.semAcerto){ recusados.push({id:id, motivo:"Esse lançamento é outro recebimento, não Pix antes do acerto."}); return; }
     if(!nomeParecido(x.origem, a.rev)){ recusados.push({id:id, motivo:"Esse Pix não é desta revendedora."}); return; }
     if(!usos[id]){ usos[id] = {internoId:a.internoId, rev:a.rev, em:a.em || new Date().toISOString(), por:a.por || "", valor:r2(x.valor)}; marcados.push(id); }
   });

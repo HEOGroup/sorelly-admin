@@ -12,9 +12,9 @@ export const GET = rota(async (req, { eu, url }) => {
   const nome = url.searchParams.get("nome") || "";
   if (nome.trim().length < 3) return erro("Informe o nome da revendedora.", 400);
   const lista = await listarPixAdiantados({ nome, desde: url.searchParams.get("desde") || "", internoId: url.searchParams.get("internoId") || "" });
-  // quem não abre o Financeiro familiar (módulo ff) vê só valor, data e a conta; o comprovante é do sócio
-  const socio = podeModulo(eu, "ff");
-  return json({ pix: lista.map((x) => ({ id: x.id, data: x.data, valor: x.valor, conta: x.conta, auditoria: x.auditoria, meu: x.meu, compKey: socio ? x.compKey : "" })) });
+  // quem não abre o Financeiro familiar (módulo ff) vê só valor, data e a conta; o comprovante do Pix de sócio é do sócio, o do Pix da empresa (lançado em Contas a receber) é do Financeiro
+  const socio = podeModulo(eu, "ff"), fin = podeModulo(eu, "contasreceber");
+  return json({ pix: lista.map((x) => ({ id: x.id, data: x.data, valor: x.valor, conta: x.conta, auditoria: x.auditoria, meu: x.meu, compKey: (x.fonte === "rcb" ? fin : socio) ? x.compKey : "" })) });
 });
 
 export const POST = rota(async (req, { eu }) => {

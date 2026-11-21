@@ -297,3 +297,10 @@ export async function listaAgenda({ forcar = false } = {}) {
   G.__sorellyAgenda = Object.assign({}, c, { pend });
   return pend;
 }
+
+// Lista curta das revendedoras ATIVAS (cadastro "Ativa" na DevMaster e condicional aberto com previsão em 2026), só código, nome e representante.
+// Usada para escolher a revendedora ao lançar um Pix antes do acerto em Contas a receber (Marcus, 20/11/2026: "tem que puxar do sistema, só as ativas"). Aproveita o cache da lista, sem as vendas.
+export async function revendedorasAtivasBasico({ forcar = false } = {}) {
+  const base = await listaBase({ forcar });
+  return base.itens.filter((i) => i.situacao === "Ativa").map((i) => ({ cod: String(i.cod), nome: i.nome, representante: i.representante || "" }));
+}
