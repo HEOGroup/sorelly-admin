@@ -49,6 +49,7 @@ mod.set("cp", { versao: 1, conteudo: { destinos: [   // o menu do Direcionar
   { id: "d_fam", nome: "Sócio Um", tipo: "FAMILIA", personaId: "p1", ativo: true },
   { id: "d_pf", nome: "Prestador Alfa", tipo: "PRESTADOR", personaId: "p1", prestFamId: "pr1", ativo: true },
   { id: "d_pf2", nome: "Prestador Alfa", tipo: "PRESTADOR", ativo: true },
+  { id: "d_pf3", nome: "Prestador Alfa", tipo: "PRESTADOR", ativo: true, personaId: "p1" },
   { id: "d_inativo", nome: "Inativo", tipo: "FORNECEDOR", ativo: false },
   { id: "d_sem", nome: "Prestador Sem Conta", tipo: "PRESTADOR", ativo: true }] } });
 mod.set("sc", { versao: 1, conteudo: { saldosContas: { blocos: [{ id: "34", nome: "Sorelly Atac · 34" }, { id: "46", nome: "Sorelly Comércio · 46" }], contas: [
@@ -105,7 +106,10 @@ r = await lanca(fin, Object.assign({}, soc, { destinoId: "d_fam", data: "2026-11
 t("destino Família/sócio entra na Família sem conta definida", r.ok && mod.get("ff").conteudo.pix.some((x) => x.valor === 31 && x.personaId === "p1" && x.contaId === ""), JSON.stringify(r));
 await srv.remover(fin, { id: r.id });
 r = await lanca(fin, Object.assign({}, soc, { destinoId: "d_pf2", data: "2026-11-05", valor: 32 }));
-t("prestador sem vínculo no Direcionar: acha o da Família pelo mesmo nome", r.ok && mod.get("ff").conteudo.pix.some((x) => x.valor === 32 && x.contaId === "cb1"), JSON.stringify(r));
+t("destino da SORELLY (sem dono marcado) com o mesmo nome de um prestador da Família NÃO cai no Familiar (21/11/2026: caso Lucas Castilho)", r.ok && !mod.get("ff").conteudo.pix.some((x) => x.valor === 32), JSON.stringify(r));
+await srv.remover(fin, { id: r.id });
+r = await lanca(fin, Object.assign({}, soc, { destinoId: "d_pf3", data: "2026-11-05", valor: 34 }));
+t("destino marcado como da família (tem dono) sem vínculo: acha o da Família pelo mesmo nome", r.ok && mod.get("ff").conteudo.pix.some((x) => x.valor === 34 && x.contaId === "cb1"), JSON.stringify(r));
 await srv.remover(fin, { id: r.id });
 r = await lanca(fin, Object.assign({}, soc, { destinoId: "d_sem", data: "2026-11-06", valor: 33 }));
 t("prestador sem conta na Família fica só em Contas a receber", r.ok && !mod.get("ff").conteudo.pix.some((x) => x.valor === 33), JSON.stringify(r));

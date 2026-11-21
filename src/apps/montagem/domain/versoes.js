@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.81", data:"2026-11-21", titulo:"Lançar recebimento: destino da Sorelly nunca cai no Familiar por nome igual", itens:[
+  {tipo:"correção", area:"Financeiro → Contas a receber → Lançar recebimento", txt:"Prestador do Direcionar SEM dono marcado (lado Sorelly) que tinha o mesmo nome de um prestador do Familiar (caso Lucas Castilho) era levado para o Familiar como saída do Marcus. Agora só o destino marcado como da família (com dono) procura o prestador do Familiar pelo nome; o da Sorelly fica só do lado Sorelly. Teste: scripts/testar-recebimento-antecipado-servidor.mjs (77 conferências)."}
  {v:"0.21.80", data:"2026-11-21", titulo:"Negociações: Lançar pedido só dentro do fornecedor, em tabelas, com regra e 5 propostas na Pontual", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"O botão Lançar pedido saiu do topo da tela e do Resumo geral: agora fica na barra Pedidos do fornecedor escolhido, e a janela abre já com o fornecedor."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações → Lançar pedido", txt:"Janela toda em tabelas (pedido metade e metade, regra, propostas, parcelas), campos de 20 px em caixa clara centralizada, data com calendário, valores em reais que sobem ao digitar e botões em azul embaixo do bloco da esquerda."},

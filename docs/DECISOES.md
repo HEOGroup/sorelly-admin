@@ -3110,3 +3110,8 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - Marcus: clicar em qualquer pagamento abre a venda da revendedora (valor de venda, valor do acerto = soma de todos os pagamentos com os em aberto, valor pago) e os pagamentos dela; link e cartão parcelado são UM pagamento, com as parcelas dentro. Pix, Acerto com loja e Dinheiro da mesma venda ficam separados.
 - Botão Anexar para o Pix sem comprovante; Revendedora é a primeira coluna e fica travada.
 - Pix na conta de prestador da família: entra em Contas a receber e no Familiar como UMA saída (repasse); Contas a pagar não recebe nada; prestador sem conta fica só em Contas a receber.
+
+## 21/11/2026 · Alinhamento de nomes: Higor e Lucas Castilho têm DOIS lados
+- Prestador que a Sorelly e o Marcus pagam existe uma vez de cada lado: Sorelly (Pagamentos a fornecedores) e Marcus (Financeiro familiar). No Direcionar aparecem como Sorelly · Nome e Marcus · Nome. Higor e Lucas Castilho funcionam assim.
+- O Direcionar nunca liga destino da Sorelly ao Familiar pelo nome. Só o destino com dono (personaId) procura por nome; o da Sorelly fica do lado Sorelly. Caso real: o R$ 150,00 de bônus Sorelly para Lucas Castilho (Karine) foi para o Familiar por engano e foi devolvido ao lado Sorelly.
+- CNPJ 46 = Mayz (confirmado pelo Marcus). Nomes pendentes de alinhar: Dávila, Confraternização, Lucas (sócio), Priscila, Amanda de Miranda, Madalosso.
