@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 20/11/2026 (Lançamento universal do dinheiro: alinhamento, nada construído)
+- **Pedido do Marcus:** organizar numa pasta o que ele explicou sobre entradas, saídas, família e cruzamento com a DevMaster. Pasta: `docs/negocio/lancamento-universal/` (00 a 08, com decisões D-01 a D-15 e perguntas P-01 a P-09).
+- **Resumo:** o Lucas deixa de lançar em Pagamentos a fornecedores e lança só em Contas a receber (recebimento e pagamento no mesmo lançamento); pode lançar sem comprovante (fica pendente; coluna Falta comprovante); toda saída de conta da empresa aparece no Contas a pagar; conta da família paga pela empresa vai para a família (qualquer pessoa, com rateio); pagamento complementar por conta pessoal quita sem movimentar contas; Pix que passa do valor vira crédito; Pagamentos a fornecedores ganha o botão de baixar arquivo. Quando a DevMaster registrar, o Admin cruza e não duplica.
+
+
 ## 20/11/2026 (Pix que a revendedora paga antes do acerto: lançar em Contas a receber)
 - **Pedido do Marcus:** o Pix que a revendedora paga antes do acerto é dinheiro que ENTRA na Sorelly, então é lançado em **Contas a receber**, na própria tabela, com uma coluna para isso (não numa tela separada). Só quando o Pix é de conta do Marcus (sócio) ele também cai na Família, sem lançar duas vezes. Eu havia mandado lançar na Família (PIX revendedoras): estava errado.
 - **Feito:** botão "+ Lançar pagamento" no canto direito da barra azul (filtros à esquerda) de `pages/ContasReceberLista.js` (data, valor, revendedora, quem recebeu = Empresa ou sócio, conta, comprovante). Linha na tabela com Situação "Antecipada" e coluna **Acerto** (Aguardando ou Usado em dd/mm); coluna Comp. com Ver ou Anexar; ficha com anexar, trocar e apagar (só enquanto o acerto não usou). Rota `/api/contas-receber/antecipados`; dados no módulo `contasreceber` (chaves `antecipados`, `usados`, `adotados`); lógica em `domain/recebimentos-antecipados.js` e `src/server/recebimentos-antecipados.js`.
@@ -3087,3 +3092,10 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - Marcus: a tela Contas bancárias fica igual à Contas a receber (sem espaço preto, bordas ligadas, letras pequenas, duas barras de título, cabe na tela sem rolar).
 - Lançamento do dia abre com os saldos de ontem; mini OK confirma cada um; botão Fechar não grava; sexta 20/11 (feriado) sem saldos, último dia = quinta 19/11.
 - Contas a receber abre em Recebidas (quase tudo é recebido).
+
+## 21/11/2026 · Contas PF do sócio no "Lançar recebimento" (Marcus)
+- **Pedido:** "quando abre o Marcus tem que aparecer as minhas contas PF (Nubank, Caixa) e embaixo os outros"; o valor que cai nessas contas tem que somar numa caixa de recebimentos no Financeiro familiar, igual aos prestadores.
+- **Regra:** em Lançar recebimento › Sócios › cada sócio, a lista começa pelas contas PF próprias dele (Nubank, Caixa, depois as outras por nome) e os prestadores ficam embaixo. Conta própria = conta da Família que é do sócio, tem o nome dele, não é de prestador, não é cartão e não está na lista de ocultas (Pix rev., +55, FHC Tenda...). Sem conta cadastrada (ou sem acesso à Família) continua "Conta pessoal".
+- **O que muda no dado:** o Pix grava `contaId` (antes ia sem conta). A caixa é a que já existe em Família › PIX revendedoras › "Enviado por favorecido" (Marcus · Nubank, Marcus · Caixa). Conta própria não gera repasse. Nome no campo: `PF · Marcus · Nubank` (lib/nome-conta.js).
+- **Código:** `contasProprias` e `resolverDestino(..., contaId)` em `domain/recebimentos-antecipados.js`; `listar`/`lancar` em `src/server/recebimentos-antecipados.js`; `LancarPix` em `pages/ContasReceberLista.js`. Teste: `node scripts/testar-conta-propria-socio.mjs` (dados de mentira).
+- **Não mexido:** Pix antigos sem conta continuam como estão; padronização dos nomes de fornecedores e prestadores (4 cadastros) segue em aberto.
