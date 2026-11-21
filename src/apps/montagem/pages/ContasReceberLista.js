@@ -63,7 +63,7 @@ function AbaCtaReceber(){
   var cx = use(), s = cx.state;
   var hoje0 = hojeIso(), anoAtual = new Date().getFullYear();
   var sca = useState({}), cache = sca[0], setCache = sca[1], pedidos = useRef({}), ref = useRef({k:"", v:{}});
-  var se = useState("todas"), escopo = se[0], setEscopo = se[1], sv = useState("lista"), vista = sv[0], setVista = sv[1], sq = useState("n"), quem = sq[0], setQuem = sq[1];
+  var se = useState("recebidas"), escopo = se[0], setEscopo = se[1], sv = useState("lista"), vista = sv[0], setVista = sv[1], sq = useState("n"), quem = sq[0], setQuem = sq[1];
   var sp = useState({modo:"meses", filtra:true, atras:false, dDe:hojeYm()+"-01", dAte:hoje0, mDe:hojeYm(), mAte:hojeYm(), aDe:anoAtual, aAte:anoAtual}), per = sp[0], setPerRaw = sp[1];
   var sg0 = useState(""), agr = sg0[0], setAgr = sg0[1], sgf = useState({}), grAb = sgf[0], setGrAb = sgf[1], sa = useState(null), aberta = sa[0], setAberta = sa[1], sbt = useState(""), buscaTxt = sbt[0], setBuscaTxt = sbt[1], sbu = useState(""), busca = sbu[0], setBusca = sbu[1];
   var chavePref = "sorelly_cre_colunas_v1_"+(s.usuario || "x");

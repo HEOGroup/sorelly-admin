@@ -3061,3 +3061,8 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - Servidor: `/api/contas-receber/titulos` aceita `&ano=` (antes só lia o ano de hoje).
 - Os 27 comprovantes do Atendimento sem Pix no Financeiro familiar NÃO vão para o familiar: pertencem à Contas a receber (conta Itaú PJ Marco é conta de empresa, o mesmo nome escrito de duas formas).
 - Contas a receber, ajuste de 20/11/2026 (Marcus): todo pagamento de acerto do Atendimento interno ou da calculadora das representantes cai nesta tela; ganhou o filtro Agrupar (por representante ou por revendedora, grupos fechados que abrem ao clicar) e a faixa de filtros ficou compacta (28 px).
+
+## 20/11/2026 · Contas bancárias igual à Contas a receber
+- Marcus: a tela Contas bancárias fica igual à Contas a receber (sem espaço preto, bordas ligadas, letras pequenas, duas barras de título, cabe na tela sem rolar).
+- Lançamento do dia abre com os saldos de ontem; mini OK confirma cada um; botão Fechar não grava; sexta 20/11 (feriado) sem saldos, último dia = quinta 19/11.
+- Contas a receber abre em Recebidas (quase tudo é recebido).
