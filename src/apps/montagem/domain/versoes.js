@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.76", data:"2026-11-21", titulo:"Cartão do usuário no menu: acesso total só para o Marcus e sem o botão de situação", itens:[
+  {tipo:"melhoria", area:"Menu lateral › cartão do usuário", txt:"O nível de acesso (Acesso total) aparece só no cartão do Marcus; os outros usuários veem o nome e o botão Sair. O botão de situação (Disponível, Em reunião, Ausente) saiu para todos: estar online já significa disponível."}
+ ]},
  {v:"0.21.75", data:"2026-11-21", titulo:"Pagamentos a fornecedores: Resumo geral refeita em dois blocos, com card de detalhe e comprovante", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"Tela em um bloco só (Resumo - Pagamentos) com a barra em tabela da Contas a pagar (Buscar, Mês, Vista, Tipo, Situação) e três faixas: Fornecedores e prestadores de serviços - Sorelly, Prestadores de serviços família e Sorelly + Família (soma de cada bloco e Total geral, já com os filtros). Mesma letra (10 px) e linhas (18 px) da Contas a receber, nada em letra maiúscula, todas as tabelas fechadas por linha branca e linhas de dentro em cinza claro."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"Vista: Separado (padrão, uma linha por janela, sem linha de total), Com total (janelas e linha de total) ou Só total (uma linha por fornecedor com a soma e a data final). Coluna Tipo em todas as tabelas; coluna Observações retirada (o que já estava escrito continua guardado). Número do pedido padronizado (sem zeros, sem asterisco, sem nome do fornecedor)."},

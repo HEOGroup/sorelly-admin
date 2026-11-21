@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 21/11/2026 (Cartão do usuário no menu lateral)
+- **Pedido do Marcus:** "esse negócio de acesso total só o meu é para ser assim; o que os outros funcionários visualizam é somente o nome deles e o botão sair; esse negócio de disponível nem precisa ter de ninguém, está online está disponível".
+- **Regra:** o cartão do usuário no alto do menu mostra o nível de acesso (Acesso total) só para o Marcus (usuário 16). Os demais veem foto, nome e o botão Sair. O botão de situação (Disponível, Em reunião, Ausente; `PilulaSituacao`) não aparece mais para ninguém. O menu da conta (foto, senha, som, tema, tamanho) continua abrindo ao clicar no cartão. Em `components/seletor-acesso.js` e `App.js`.
+
 ## 21/11/2026 (Pagamentos a fornecedores: Resumo geral em dois blocos, card de detalhe e comprovante)
 - **Pedido do Marcus (20/11/2026):** "compacte essa tela e fique dois blocos: fornecedores em cima, da Sorelly, e prestadores da família embaixo". Refeita com ele, ajuste a ajuste, até ele dizer "acertamos à mão" e mandar subir na master.
 - **Estrutura (`pages/pf/Resumo.js`, `/financeiro/pf-resumo`):** título "Resumo - Pagamentos"; uma barra em tabela como a da Contas a pagar (Buscar, Mês, Vista, Tipo, Situação; exceção pedida por ele à regra "filtro só no cabeçalho das colunas"); faixa "Fornecedores e prestadores de serviços - Sorelly"; faixa "Prestadores de serviços família" (prestadores e sócios, estes lidos do Financeiro familiar); faixa "Sorelly + Família" com a soma de cada bloco e o Total geral (o total geral só vale embaixo, nunca num bloco de números no topo). Os filtros valem antes dos totais.
