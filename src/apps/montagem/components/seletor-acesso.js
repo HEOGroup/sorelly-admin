@@ -84,7 +84,7 @@ function ContaMenu(p){
     e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
     e("button",{onClick:function(){ setAberto(!aberto); }, "aria-label":"Minha conta", "aria-expanded":aberto,
         className:(p.compacto ? "flex h-8 w-full" : "flex h-8")+" cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold outline-none hover:bg-primary/15"},
-      foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, nomeDe(s.usuario)), e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),
+      foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, nomeDe(s.usuario)), s.usuario===16 && e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),   // o nível de acesso (Acesso total) aparece só para o Marcus; os outros veem só o nome (Marcus, 21/11/2026)
       e(Icon,{n: aberto ? "chevrondown" : "chevron", s:12, className:p.compacto ? "ml-auto" : ""})),
     aberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(false); }}),
     // painel mínimo (Marcus, 16/11/2026: "tem que ser muito mais simplificado"): sem cabeçalho (o nome já está na barra), 1 coluna de linhas de 32 px, 14 rem
