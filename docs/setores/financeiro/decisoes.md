@@ -661,3 +661,6 @@ Bloco **Avisos do dia** no topo do Direcionar (`domain/cerebro-financeiro.js`, `
 
 ## 21/11/2026 · Contas PF do sócio no "Lançar recebimento" (Marcus)
 Em Lançar recebimento › Sócios, cada sócio abre com as contas PF dele (Nubank, Caixa...) e os prestadores embaixo. O Pix grava a conta e soma na caixa dela em Família › PIX revendedoras. Detalhes no diário geral (`docs/DECISOES.md`, 21/11/2026).
+
+## 21/11/2026 · Negociações: Lançar pedido só dentro do fornecedor, em tabelas, regra e propostas na Pontual (Marcus)
+Janela "Lançar pedido" abre só na tela do fornecedor (botão na barra Pedidos); toda em tabelas; Pontual com regra (linha do que tem nota e linha do Pix) e 5 propostas (6x, 4x, 8x, 1º em 45 dias 5x, 1º em 60 dias 4x); clicar numa proposta abre o bloco de datas e valores com nota e sem nota. Detalhes em `docs/DECISOES.md` de 21/11/2026. Próximo: mesma janela, mais universal, para os outros fornecedores.

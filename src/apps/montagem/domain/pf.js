@@ -1301,8 +1301,8 @@ function pfReduz(s, a){
       if(c>0.005 && Math.abs(c-aCom)>0.005) avisos.push("Com NF: alocado "+brl(aCom)+" de "+brl(c));
       if(s2>0.005 && Math.abs(s2-aSem)>0.005) avisos.push("Sem NF: alocado "+brl(aSem)+" de "+brl(s2));
       if(avisos.length && !a.forcar) return recusa("As parcelas não fecham com a divisão do pedido: "+avisos.join(" · ")+". Salvar mesmo assim?", true);
-      var num1 = a.numero||"s/nº", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
-      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
+      var num1 = a.numero||"---", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
+      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, ref:String(a.ref||"").trim(), nfArq:a.nfArq || null, cpcId:String(a.cpcId||""), data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
       if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
@@ -1351,7 +1351,7 @@ function pfReduz(s, a){
       var antesP = JSON.stringify(pe.parcelas.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; })), depoisP = JSON.stringify(todasParc.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; }));
       if(antesP!==depoisP) mud.push("parcelas: "+pe.parcelas.length+" → "+todasParc.length);
       if(!mud.length) return ok("Nada mudou no pedido.");
-      pe.fornId = fidE; pe.numero = a.numero||"s/nº"; pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
+      pe.fornId = fidE; pe.numero = a.numero||"---"; if(a.ref!==undefined) pe.ref = String(a.ref||"").trim(); if(a.nfArq!==undefined) pe.nfArq = a.nfArq || null; if(a.cpcId!==undefined) pe.cpcId = String(a.cpcId||""); pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
       if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)

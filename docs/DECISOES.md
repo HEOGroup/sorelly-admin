@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 21/11/2026 (Negociações: Lançar pedido só dentro do fornecedor, em tabelas, regra e propostas na Pontual)
+- **Pedido do Marcus:** o lançamento de pedido sai do topo e só abre na tela do fornecedor; a janela é toda em TABELAS (pedido metade e metade, regra, propostas, parcelas); campos de 20 px em caixa clara centralizada; data com calendário; botões azuis (nada de dourado) embaixo do bloco da esquerda.
+- **Regra da Pontual:** uma linha para o que tem nota (boleto) e outra para o Pix: parcelas, forma, 1º vencimento e intervalo em dias (padrão 30% com nota, 6+6, 30 dias). Mudar a regra refaz as propostas só naquele pedido.
+- **5 propostas:** padrão (6x), mais curta (4x), mais longa (8x), 1º em 45 dias (5x) e 1º em 60 dias (4x). Clicar numa proposta abre o bloco com as datas e os valores com nota e sem nota (clicar de novo fecha). A mensagem segue a proposta e pode ser mudada à mão.
+- **Fora da tela por pedido do Marcus:** arquivo das regras, "Conferência" e "O que estamos pagando". Os outros fornecedores usam por ora a tabela de parcelas; próximo passo combinado: a mesma janela, mais universal.
+
 ## 20/11/2026 (Lançamento universal do dinheiro: alinhamento, nada construído)
 - **Pedido do Marcus:** organizar numa pasta o que ele explicou sobre entradas, saídas, família e cruzamento com a DevMaster. Pasta: `docs/negocio/lancamento-universal/` (00 a 08, com decisões D-01 a D-15 e perguntas P-01 a P-09).
 - **Resumo:** o Lucas deixa de lançar em Pagamentos a fornecedores e lança só em Contas a receber (recebimento e pagamento no mesmo lançamento); pode lançar sem comprovante (fica pendente; coluna Falta comprovante); toda saída de conta da empresa aparece no Contas a pagar; conta da família paga pela empresa vai para a família (qualquer pessoa, com rateio); pagamento complementar por conta pessoal quita sem movimentar contas; Pix que passa do valor vira crédito; Pagamentos a fornecedores ganha o botão de baixar arquivo. Quando a DevMaster registrar, o Admin cruza e não duplica.

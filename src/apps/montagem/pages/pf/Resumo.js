@@ -317,7 +317,7 @@ function GeralInterno(P){
     e(Sel,{value:fornSel, label:"Fornecedor", className:"w-96 max-w-full", onChange:function(v){ setForn(v); setSoMaq(false); }}, e("option",{value:""}, "Todos (fornecedores e prestadores)"), e("option",{value:"", disabled:true, style:{background:"#1a1a1a", color:"#F3D98B", fontWeight:"bold"}}, "— Fornecedores —"), fornecedores.map(function(f){ return e("option",{key:f.id, value:String(f.id), style:{background:"#1a1a1a", color:"#fff"}}, f.nome); }), e("option",{value:"", disabled:true, style:{background:"#1a1a1a", color:"#F3D98B", fontWeight:"bold"}}, "— Prestadores de serviço —"), prestadores.map(function(f){ return e("option",{key:f.id, value:String(f.id), style:{background:"#1a1a1a", color:"#fff"}}, f.nome); })),
     false && e("button",{type:"button", onClick:function(){ setSoMaq(!soMaq); }, className:"h-10 rounded-lg px-4 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125", style:{background:soMaq ? "#2563EB" : "#ffffff14"}}, soMaq ? "✓ Só maquininha" : "Só maquininha"),
     f1 && e("button",{type:"button", onClick:function(){ setForn(""); setSoMaq(false); }, className:"h-10 rounded-lg px-4 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125", style:{background:"#ffffff14"}}, "← Voltar ao geral"),
-    f1 ? btnAcao("+ Lançar nova negociação", function(){ P.novaNeg(f1.id); }) : [btnAcao("+ Nova negociação", function(){ P.novaNeg(null); }), btnAcao("+ Novo fornecedor", function(){ P.novoCad("forn"); }), btnAcao("+ Novo prestador de serviço", function(){ P.novoCad("prest"); })]);
+    f1 ? btnAcao("+ Lançar nova negociação", function(){ P.novaNeg(f1.id); }) : [btnAcao("+ Novo fornecedor", function(){ P.novoCad("forn"); }), btnAcao("+ Novo prestador de serviço", function(){ P.novoCad("prest"); })]);
 
   // ── um fornecedor: resumo do mês no alto (com a maquininha na Pontual), atrasos, o mês e o mês seguinte, e os outros meses do ano
   if(f1) return e("div",{className:"flex flex-col gap-3"}, e(PageHead,{t:f1.nome, sub:f1Mq ? "Maquininha, o que pagar, o que foi pago e as negociações" : "O que pagar, o que foi pago e as negociações"}), seletor, e(PainelPontual,{pf:pf, f:f1, hoje:hoje, abertos:abertos, alterna:alterna}));
@@ -402,7 +402,7 @@ function GeralInterno(P){
 // casca da Geral: guarda as janelas de "Lançar negociação" e de "Novo fornecedor / prestador de serviço" (as mesmas das telas de Negociações e Fornecedores)
 function Geral(){
   var c = usePf(), pf = c.pf, sp = useState(null), ped = sp[0], setPed = sp[1], sn = useState(null), novo = sn[0], setNovo = sn[1];
-  var novaNeg = function(fid){ var n = pedidoNovo(pf); if(fid) n = Object.assign({}, n, {fornId:fid}); setPed(n); };
+  var novaNeg = function(fid){ var n = pedidoNovo(pf, fid); setPed(n); };
   return e("div",null, e(GeralInterno,{novaNeg:novaNeg, novoCad:setNovo}),
     ped && e(JanelaPedido,{c:c, pf:pf, ped:ped, setPed:setPed}),
     novo && e(ModalForn,{key:"novo-"+novo, c:c, f:null, prest:novo==="prest", fechar:function(){ setNovo(null); }}));

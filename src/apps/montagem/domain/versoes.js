@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.80", data:"2026-11-21", titulo:"Negociações: Lançar pedido só dentro do fornecedor, em tabelas, com regra e 5 propostas na Pontual", itens:[
+  {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"O botão Lançar pedido saiu do topo da tela e do Resumo geral: agora fica na barra Pedidos do fornecedor escolhido, e a janela abre já com o fornecedor."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações → Lançar pedido", txt:"Janela toda em tabelas (pedido metade e metade, regra, propostas, parcelas), campos de 20 px em caixa clara centralizada, data com calendário, valores em reais que sobem ao digitar e botões em azul embaixo do bloco da esquerda."},
+  {tipo:"novo", area:"Financeiro → Pagamentos → Negociações → Lançar pedido", txt:"Pontual: regra (uma linha para o que tem nota e outra para o Pix) e 5 propostas (padrão 6x, mais curta 4x, mais longa 8x, 1º em 45 dias 5x e 1º em 60 dias 4x); clicar numa proposta abre o bloco com as datas e os valores com nota e sem nota; a mensagem segue a proposta e pode ser mudada à mão. Os outros fornecedores usam a tabela de parcelas."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"Pedido novo guarda a referência, a nota fiscal anexada e a ligação com o pedido de bruto; número do pedido vazio aparece como ---."},
+ ]},
  {v:"0.21.79", data:"2026-11-21", titulo:"Contas a receber: venda do pagamento, comprovante com Anexar e Revendedora travada", itens:[
   {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Ao abrir um pagamento a janela mostra a venda dele: valor de venda (DevMaster), valor do acerto (soma de todos os pagamentos, pagos e em aberto), valor pago e cada pagamento da venda, com as parcelas do cartão e do link. Rota /api/contas-receber/venda (só leitura)."},
   {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Botão Anexar na coluna Comp. dos Pix sem comprovante (representantes também). O arquivo vai por /api/anexos e a ligação com a linha fica em /api/contas-receber/comprovantes (tabela comprovante_receber)."},
