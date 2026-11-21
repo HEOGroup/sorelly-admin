@@ -203,3 +203,26 @@ export async function titulosDoMes(mes, soNao = false, anoPedido = 0) {
   cache[chave] = { em: Date.now(), dados };
   return dados;
 }
+
+// VENDA DE UM PAGAMENTO (Marcus, 21/11/2026): ao abrir um pagamento, a tela mostra a venda dele: valor de venda, acerto (soma de TODOS os pagamentos da venda, pagos ou em aberto), quanto já foi pago e cada pagamento (cartão e link mostram as parcelas).
+//   Pagamentos = títulos da DevMaster (dmabg) do mesmo cliente e da mesma venda (abg_codorigem2). Valor de venda = dmach.ach_valormerc da venda do mesmo cliente faturada no mesmo dia (a venda e o título não têm código em comum:
+//   o título guarda o número do orçamento; se houver mais de uma venda no dia, vale a que mais se aproxima da soma dos pagamentos).
+export async function vendaDoPagamento(codigo, nota, data) {
+  const cod = String(codigo || "").replace(/\W/g, "").slice(0, 6), nt = String(nota || "").replace(/\W/g, "").slice(0, 12), dia = /^\d{4}-\d{2}-\d{2}$/.test(String(data || "")) ? String(data) : "";
+  if (!cod || !nt) return { erro: "Pagamento inválido." };
+  const { formas } = await base();
+  const t = await todasAsPaginas("dmabg", { filtro: { abg_cliente: cod, abg_codorigem2: nt }, campos: ["abg_parcela", "abg_tipodoc", "abg_emissao", "abg_vencimento", "abg_valor", "abg_saldo"] });
+  const titulos = t.map((x) => {
+    const desc = (formas[x.abg_tipodoc] || "").replace(/\s+/g, " ").trim(), g = grupo(desc), val = Number(x.abg_valor) || 0, sal = Number(x.abg_saldo) || 0;
+    return { parc: String(x.abg_parcela || ""), forma: desc || "Sem forma", grupo: g, valor: Math.round(val * 100) / 100, saldo: Math.round(sal * 100) / 100, venc: String(x.abg_vencimento || "").slice(0, 10), emissao: String(x.abg_emissao || "").slice(0, 10), nao: g === "Acerto loja" ? 1 : 0 };
+  }).sort((a, b) => a.parc.localeCompare(b.parc));
+  const soma = titulos.reduce((s, x) => s + x.valor, 0);
+  let venda = null;
+  const d0 = dia || (titulos[0] && titulos[0].emissao);
+  if (d0) {
+    const v = await todasAsPaginas("dmach", { filtro: { ach_cliente: cod, ach_datafat: { between: [d0 + "T00:00:00", d0 + "T23:59:59"] } }, campos: ["ach_codigo", "ach_valormerc", "ach_valordesc", "ach_valortotal"] });
+    v.sort((a, b) => Math.abs((Number(a.ach_valortotal) || 0) - soma) - Math.abs((Number(b.ach_valortotal) || 0) - soma));
+    if (v[0]) venda = { codigo: String(v[0].ach_codigo || ""), venda: Math.round((Number(v[0].ach_valormerc) || 0) * 100) / 100, comissao: Math.round((Number(v[0].ach_valordesc) || 0) * 100) / 100, acertoDevMaster: Math.round((Number(v[0].ach_valortotal) || 0) * 100) / 100, varias: v.length > 1 };
+  }
+  return { titulos, venda };
+}

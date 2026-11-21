@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.79", data:"2026-11-21", titulo:"Contas a receber: venda do pagamento, comprovante com Anexar e Revendedora travada", itens:[
+  {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Ao abrir um pagamento a janela mostra a venda dele: valor de venda (DevMaster), valor do acerto (soma de todos os pagamentos, pagos e em aberto), valor pago e cada pagamento da venda, com as parcelas do cartão e do link. Rota /api/contas-receber/venda (só leitura)."},
+  {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Botão Anexar na coluna Comp. dos Pix sem comprovante (representantes também). O arquivo vai por /api/anexos e a ligação com a linha fica em /api/contas-receber/comprovantes (tabela comprovante_receber)."},
+  {tipo:"melhoria", area:"Financeiro → Contas a receber", txt:"Revendedora é a primeira coluna e fica travada à esquerda quando a tabela rola para o lado, com fundo sem transparência."}
+ ]},
  {v:"0.21.78", data:"2026-11-21", titulo:"Lançar recebimento com as contas PF do sócio; Lançamento de pagamentos refeito; azul-marinho nas tabelas cheias", itens:[
   {tipo:"novo", area:"Financeiro → Receber → Contas a receber → Lançar recebimento", txt:"Em Sócios › cada sócio, a lista abre com as contas PF dele (Marcus: Nubank, Caixa, Sicredi) e, embaixo, os prestadores. Cada conta grava o Pix com a conta certa (PF · Marcus · Nubank) e o valor soma na caixa dessa conta em Família › PIX revendedoras (Enviado por favorecido), sem repasse a prestador. Conta de prestador, cartão e conta de outra pessoa não entram. Sem conta cadastrada continua Conta pessoal. Teste: node scripts/testar-conta-propria-socio.mjs."},
   {tipo:"melhoria", area:"Financeiro → Receber → Contas a receber", txt:"Sai a paginação de baixo (100 por página): a lista corre inteira, igual à Contas a pagar. O botão Lançar recebimento fica no canto direito, na mesma linha dos filtros (o campo Buscar ficou mais estreito para caber)."},

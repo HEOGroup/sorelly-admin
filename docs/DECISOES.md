@@ -3099,3 +3099,8 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - **O que muda no dado:** o Pix grava `contaId` (antes ia sem conta). A caixa é a que já existe em Família › PIX revendedoras › "Enviado por favorecido" (Marcus · Nubank, Marcus · Caixa). Conta própria não gera repasse. Nome no campo: `PF · Marcus · Nubank` (lib/nome-conta.js).
 - **Código:** `contasProprias` e `resolverDestino(..., contaId)` em `domain/recebimentos-antecipados.js`; `listar`/`lancar` em `src/server/recebimentos-antecipados.js`; `LancarPix` em `pages/ContasReceberLista.js`. Teste: `node scripts/testar-conta-propria-socio.mjs` (dados de mentira).
 - **Não mexido:** Pix antigos sem conta continuam como estão; padronização dos nomes de fornecedores e prestadores (4 cadastros) segue em aberto.
+
+## 21/11/2026 · Contas a receber: venda do pagamento
+- Marcus: clicar em qualquer pagamento abre a venda da revendedora (valor de venda, valor do acerto = soma de todos os pagamentos com os em aberto, valor pago) e os pagamentos dela; link e cartão parcelado são UM pagamento, com as parcelas dentro. Pix, Acerto com loja e Dinheiro da mesma venda ficam separados.
+- Botão Anexar para o Pix sem comprovante; Revendedora é a primeira coluna e fica travada.
+- Pix na conta de prestador da família: entra em Contas a receber e no Familiar como UMA saída (repasse); Contas a pagar não recebe nada; prestador sem conta fica só em Contas a receber.
