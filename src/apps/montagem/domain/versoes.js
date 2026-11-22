@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.87", data:"2026-11-22", titulo:"Financeiro familiar: Home em tabela única", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Home da família", txt:"Os 6 cartões coloridos viraram UMA tabela, uma linha por pessoa (pró-labore, contas, Pix e quanto pagar), no mesmo estilo do Prestadores e das Negociações. Cor só para estado: verde = pago/recebido/enviado, vermelho = contas atrasadas. Clicar na linha abre embaixo as contas em aberto da pessoa e os atalhos para as telas dela."}
+ ]},
  {v:"0.21.86", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
   {tipo:"novo", area:"Menu lateral (todos os setores)", txt:"Clicar num setor do menu lateral agora abre a Entrada do setor: botões grandes só com os nomes das telas, sem dados, já filtrados pelo acesso da pessoa. Clicar no nome abre a tela. Setor com uma tela só abre a tela direto. O menu de cima continua igual."}
  ]},
