@@ -18,9 +18,11 @@ import { condEstado, condNovas, condNums } from "@/apps/montagem/domain/condicio
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { ehEncomendas, filaMontagem, nomesEncomendas, semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
+import { pkResumoRevendedora, pkSituacao } from "@/apps/montagem/domain/preferencias-kit";
 import { SEM_KIT, STATUS_LB, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { media3 } from "@/apps/montagem/domain/vendas";
 import { BK, minutos } from "@/apps/montagem/lib/format";
+import { prefDoApp, usePrefsApp } from "@/apps/montagem/lib/prefs-app";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
 import { Relogio, RelogioB } from "@/apps/montagem/ui/relogio";
@@ -82,6 +84,14 @@ function FichaKit(p){
 
 function FilaPlanilha(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
+  usePrefsApp();   // 19/11/2026 (Marcus): a revendedora de cada kit já vem ligada às preferências dela (lidas do app, pelo nome); refaz a tabela quando a leitura chega
+  // preferências da revendedora do kit: "Sem preferências", ou Pendente / Já montado com o resumo de ouro e prata
+  var textoPref = function(k){
+    var r = prefDoApp(k.rev); if(!r || !r.preferencias) return "Sem preferências";
+    var sit = pkSituacao(s, r); if(sit==="sem") return "Sem preferências";
+    var rg = pkResumoRevendedora(s, r).resumoGeral;
+    return (sit==="montado" ? "Já montado" : "Pendente")+(rg ? " · Ouro "+Math.round(rg.ouro)+"% · Prata "+Math.round(rg.prata)+"%" : "");
+  };
   var jm = useState(null), janelaKit = jm[0], setJanelaKit = jm[1];   // kit aberto na janela de montagem (botão Montar)
   var fc = useState(null), fichaId = fc[0], setFichaId = fc[1];   // kit aberto na ficha (clique na revendedora)
   var fila = filaMontagem(s);
@@ -117,7 +127,7 @@ function FilaPlanilha(p){
       var media = semKit ? "—" : k.tipoKit.indexOf("kit_novo")===0 ? "Nova" : k.tipoKit==="reposicao" ? "Reposição" : k.status==="semvalor" ? "—" : k.vendas.length ? BK(media3(k.vendas)) : "Sem vendas";
       var sit = k.pausadoEm ? "Pausado" : STATUS_LB[k.status];
       linhas.push({id:k.id, k:k, l:l, grupo:g,
-        ordem:k.designada ? "Pedido" : pos>=0 ? (pos+1)+"º" : "—", hora:k.horaAtend || "—", nome:(k.prio ? "★ " : "")+k.rev, tipo:tipo[1],
+        ordem:k.designada ? "Pedido" : pos>=0 ? (pos+1)+"º" : "—", hora:k.horaAtend || "—", nome:(k.prio ? "★ " : "")+k.rev, tipo:tipo[1], pref:textoPref(k),
         media:media, valor:semKit ? "—" : k.status==="semvalor" ? "Sem valor" : (k.valor!=null ? BK(k.valor) : "—"),
         sit:sit, mont:k.montId ? nomeDe(k.montId) : (k.status==="pendente" || k.status==="ajuste" ? "Montar" : "—"),
         tmont:k.status==="montando" ? (k.pausadoEm ? "pausado" : "montando") : (tempoFim(k.tempoM, k.fimM) || "—"),
@@ -139,7 +149,8 @@ function FilaPlanilha(p){
     {k:"ordem", t:"Ordem"},
     {k:"hora", t:"Horário", render:function(v){ return e("span",{className:MONO}, v); }},
     {k:"nome", t:"Nome", render:function(v, l){ return celNome(l); }},
-    {k:"tipo", t:"Tipo"}]
+    {k:"tipo", t:"Tipo"},
+    {k:"pref", t:"Preferências", cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-warning" : "text-success")+" font-semibold"; }}]
     .concat(sup ? [{k:"media", t:"Média"}, {k:"valor", t:"Valor do kit", render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
     .concat([
     {k:"sit", t:"Situação", cor:function(l){ return (l.k.pausadoEm ? "text-warning" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
@@ -170,10 +181,14 @@ function FilaPlanilha(p){
   return e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"},
     janelaKit && e(JanelaMontar,{key:janelaKit, kitId:janelaKit, fechar:function(){ setJanelaKit(null); }}),
     aberta && e(FichaKit,{key:aberta.id, s:s, d:d, k:aberta.k, l:aberta.l, sup:sup, euBip:euBip, lista:linhas, fechar:function(){ setFichaId(null); }, ir:setFichaId}),
-    e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true,
+    e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, fina:true, semCaixaAlta:true, semMao:true,
       agrupar:"grupo", linhaGrupo:linhaGrupo, grupoEsquerda:true,
       grupoAberto:function(g){ return !p.fechadas[g]; }, aoGrupo:function(g){ var o = Object.assign({}, p.fechadas); o[g] = !p.fechadas[g]; p.setFechadas(o); },
-      aoClicar:function(l){ setFichaId(l.id); },
+      aoClicar:function(l){
+        // 20/11/2026 (Marcus): clicar na revendedora abre a FICHA DAS PREFERÊNCIAS dela (a de Montar kit, com Iniciar montagem), ligada a este kit; sem preferências no app, abre a janela do kit
+        var rp = prefDoApp(l.k.rev);
+        if(rp && rp.id!=null && p.abrirMontar) p.abrirMontar(rp.id, l.k.id);
+        else if(podeMontar) setJanelaKit(l.k.id); else setFichaId(l.id); },
       vazio:"Nenhum kit nas listagens desse dia."}));
 }
 

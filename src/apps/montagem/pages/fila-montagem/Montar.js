@@ -63,7 +63,7 @@ function ConcluirMontagem(p){
     }
     sv[1](true); se[1]("");
     chamar("POST", "/montagem/registros", {resellerId:p.rev.id, resellerNome:p.rev.nome, staffNome:f.quem, iniciadoEm:ini, concluidoEm:fim, valorKit:dinheiro ? f.valor : 0, usouPreferencias:f.usou==="sim"})
-      .then(function(r){ gravarInicio(p.rev.id, null); sr[1](r); })
+      .then(function(r){ gravarInicio(p.rev.id, null); sr[1](r); if(p.kitId && p.dispatch) p.dispatch({type:"CONCLUIR_M", id:p.kitId}); })   // vindo da Listagens: conclui também o kit dela (a regra das condicionais continua valendo)
       .catch(function(x){ se[1](x.message || "Não foi possível registrar a montagem."); })
       .finally(function(){ sv[1](false); });
   };
@@ -100,7 +100,8 @@ function MontarKit(p){
   useEffect(function(){ if(!inicio) return undefined; var t = setInterval(function(){ sa[1](Date.now()); }, 1000); return function(){ clearInterval(t); }; }, [inicio]);   // eslint-disable-line react-hooks/exhaustive-deps -- sa é estado fixo
   useEffect(function(){ if(inicio){ sl[1](false); return undefined; } var t = setTimeout(function(){ sl[1](true); }, 2*60*1000); return function(){ clearTimeout(t); }; }, [inicio]);   // eslint-disable-line react-hooks/exhaustive-deps -- sl é estado fixo
   var mudaCompacto = function(v){ var on = v==="compacto"; sc[1](on); try { localStorage.setItem(CH_COMPACTO, on ? "1" : "0"); } catch(x){ /* só nesta tela */ } };
-  var iniciar = function(){ var iso = new Date().toISOString(); gravarInicio(p.id, iso); si[1](iso); sl[1](false); };
+  var iniciar = function(){ var iso = new Date().toISOString(); gravarInicio(p.id, iso); si[1](iso); sl[1](false);
+    if(p.kitId) cx.dispatch({type:"INICIAR_M", id:p.kitId, montId:s.usuario}); };   // vindo da Listagens: o kit mostra quem iniciou e o cronômetro (como na listagem antiga)
   var marca = function(k){ var o = Object.assign({}, feitos); o[k] = !o[k]; so[1](o); };
 
   if(det.erro && !d) return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:"Montar kit"}, e(Botao,{onClick:p.voltar}, "Voltar para a fila")), e(Aviso,{tom:"vermelho"}, "Não foi possível carregar a revendedora: "+det.erro));
@@ -137,7 +138,7 @@ function MontarKit(p){
     sl[0] && !inicio && e(Janela,{t:"Não esqueça de iniciar a montagem", sub:"A tela está aberta há 2 minutos e o cronômetro não começou.", fechar:function(){ sl[1](false); },
       colunas:[e("p",{key:"t", className:"col-span-full text-center text-[13px]"}, "Clique em Iniciar montagem quando começar a montar o kit, para o tempo ser contado certo.")],
       rodape:[e(Botao,{key:"o", onClick:function(){ sl[1](false); }}, "Só estou olhando"), e(Botao,{key:"i", principal:true, onClick:iniciar}, "Iniciar montagem agora")]}),
-    sj[0] && e(ConcluirMontagem,{rev:{id:d.id, nome:d.nome}, temPrefs:temPrefs, inicio:inicio, equipe:equipe.dados, dinheiro:dinheiro,
+    sj[0] && e(ConcluirMontagem,{kitId:p.kitId, dispatch:cx.dispatch, rev:{id:d.id, nome:d.nome}, temPrefs:temPrefs, inicio:inicio, equipe:equipe.dados, dinheiro:dinheiro,
       fechar:function(){ sj[1](false); }, concluido:function(){ si[1](null); sj[1](false); p.voltar(true); }}));
 }
 
