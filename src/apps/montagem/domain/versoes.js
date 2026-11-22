@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.97", data:"2026-11-22", titulo:"Menu Família: Contas com A pagar / Pagas", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família", txt:"O menu Família ficou: Home da família, Contas (A pagar / Pagas), PIX revendedoras, Sócios, Cadastro de prestadores, Pró-labores, Relatório, Histórico e Configurações. As duas entradas Contas a pagar da família e Contas pagas da família saíram do menu e viraram uma só, que abre a mesma lista de Contas já em Contas = Família. As telas antigas continuam existindo e abrem pelo botão Abrir na Família. Só quem tem acesso ao Financeiro familiar vê."}]},
+ {v:"0.21.96", data:"2026-11-22", titulo:"Abas abertas: tela que mudou de nome some sozinha", itens:[
+  {tipo:"correção", area:"Menu do setor → Telas abertas", txt:"Quando uma tela muda de nome no menu (como A pagar / Pagas, que virou Pagas e A pagar), a aba antiga que ficou aberta some sozinha. Só some a aba do mesmo setor cuja tela ainda existe no menu com outro nome; tela que saiu do menu de vez não é mexida."}]},
  {v:"0.21.95", data:"2026-11-23", titulo:"Entrada do Financeiro: tela azul com as colunas lado a lado", itens:[
   {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"A Entrada do Financeiro ficou toda em azul escuro (sem fundo preto): cada grupo do menu é uma coluna, todas na mesma linha e na ordem do menu, que encolhem para caber (nunca descem). Título da tela e dos grupos maiores, botões de 13 px com a mesma altura e nomes longos em 2 linhas. Vale para TODOS os setores do menu lateral, cada um na cor dele (setor com uma tela só abre a tela direto)."},
   {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"O título grande da Entrada do Financeiro fica em caixa alta (FINANCEIRO), exceção liberada pelo Marcus à regra de 20/11."}
