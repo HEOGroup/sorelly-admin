@@ -781,6 +781,14 @@ function lpReduz(s, a){
       (dd.historico = dd.historico || []).push({em:agora, por:por, de:dd.status, para:dd.status, nota:"Lançamento à mão no acerto desfeito"});
       return ok("Link tirado dos descontados");
     }
+    // 22/11/2026 (Marcus: "já tem as regras aí"): a migração (lpMigrar) não grava no servidor, porque ao receber o estado só entram as chaves que faltam e o que já existe fica como estava.
+    // Por isso o ajuste único roda como AÇÃO (grava junto): validade de 48 h, parcelas pela regra por valor (até R$ 400 = 4x), links já gerados com 48 h, expirados por 12 h religados e nomes do e-SiTef corrigidos.
+    case "ajustar": {
+      if(lp.ajusteV===1) return recusa("");
+      lp.ajusteV = 1; lp.validadeV = 2; cfg.validadeHoras = 48; cfg.avisoHoras = 12; cfg.faixas = clone(CONFIG_PADRAO.faixas); cfg.minimo = CONFIG_PADRAO.minimo; cfg.parcelaMinima = CONFIG_PADRAO.parcelaMinima; cfg.maxParcelasSemJuros = CONFIG_PADRAO.maxParcelasSemJuros;
+      corrigirValidade48(lp); var nNomes = repararNomesEsitef(lp);
+      return ok("Regras do link ajustadas: validade 48 h, parcelas por valor"+(nNomes ? ", "+nNomes+" nome"+(nNomes===1 ? "" : "s")+" corrigido"+(nNomes===1 ? "" : "s") : ""));
+    }
     case "expirar": {
       var ids = expirados(lp, agora); if(!ids.length) return recusa("");
       lp.solicitacoes.forEach(function(z){ if(ids.indexOf(z.id)>=0){ (z.historico = z.historico || []).push({em:agora, por:"sistema", de:"gerado", para:"expirado", nota:"Validade de "+cfg.validadeHoras+" h vencida"}); z.status = "expirado"; } });

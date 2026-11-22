@@ -3,10 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.21.82", data:"2026-11-22", titulo:"Contas a receber: dívida junto do Pix, lista que se atualiza sozinha e dica da Pontual", itens:[
+ {v:"0.21.83", data:"2026-11-22", titulo:"Contas a receber: dívida junto do Pix, lista que se atualiza sozinha e dica da Pontual", itens:[
   {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Pix lançado para um prestador da Família pode criar a dívida junto (campo divida da chamada de lançar): nascem o Pix, o pagamento e a dívida do mesmo valor, com o pagamento apontando para ela (divId). Primeiro uso: Higor, R$ 485,00, \"Vip sexta e sábado 19 e 20/11\". Ainda sem campo na janela."},
   {tipo:"melhoria", area:"Financeiro → Contas a receber", txt:"Os Pix lançados na tela se atualizam sozinhos: ao abrir, a cada 30 segundos e quando a aba volta ao foco (antes só liam uma vez e o lançamento de outra pessoa não aparecia). Título DevMaster fica entre Forma e Conta, e a forma PIX - BANHO aparece como Pontual também na coluna Conta."},
   {tipo:"melhoria", area:"Atendimento interno e Financeiro → Direcionar", txt:"Contas da Pontual mostram como escrever na DevMaster: a lista Definir a conta (chat) mostra \"· Pontual\" ao lado de PIX - BANHO e das maquininhas \"- P\"; o Direcionar mostra \"DevMaster: PIX - BANHO\" ao lado da Pontual. O valor gravado continua o nome da DevMaster."}
+ ]},
+ {v:"0.21.82", data:"2026-11-22", titulo:"Link de pagamento: validade de 48 h e parcelas pela regra agora gravam no servidor", itens:[
+  {tipo:"correção", area:"Link de pagamento", txt:"A validade de 48 h não tinha gravado no servidor (a migração não grava; ficou em 12 h). Agora um ajuste único roda ao abrir Solicitações: validade 48 h, parcelas pela regra por valor (até R$ 400 = 4x, até R$ 1.500 = 6x, acima = 10x), links já gerados com 48 h, os expirados por 12 h dentro das 48 h voltam a Link gerado e nomes do e-SiTef com erro são corrigidos. Depois dele a Hellen pode mudar em Meios e acessos → Regras."}
  ]},
  {v:"0.21.81", data:"2026-11-21", titulo:"Lançar recebimento: destino da Sorelly nunca cai no Familiar por nome igual", itens:[
   {tipo:"correção", area:"Financeiro → Contas a receber → Lançar recebimento", txt:"Prestador do Direcionar SEM dono marcado (lado Sorelly) que tinha o mesmo nome de um prestador do Familiar (caso Lucas Castilho) era levado para o Familiar como saída do Marcus. Agora só o destino marcado como da família (com dono) procura o prestador do Familiar pelo nome; o da Sorelly fica só do lado Sorelly. Teste: scripts/testar-recebimento-antecipado-servidor.mjs (77 conferências)."}
