@@ -298,14 +298,14 @@ function AbaFfContas(){
   return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
     modal && modal.tipo==="pagar" && e(ModalPagar,{key:modal.x.chave, c:c, x:modal.x, editar:function(){ setModal({tipo:"conta", x:modal.x.conta}); }, fechar:function(){ setModal(null); }}),
     modal && modal.tipo==="conta" && e(FormConta,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
-    e(BlocoPainel,{titulo:"Contas a pagar da família", compacto:true},
+    e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
       e(BarraTabela,null,
+        e("div",{role:"button", tabIndex:0, title:"Lançar uma conta da família", onClick:function(){ setModal({tipo:"conta"}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setModal({tipo:"conta"}); } }, className:"flex w-[124px] shrink-0 cursor-pointer whitespace-nowrap items-center justify-center border-r border-white/25 bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar conta"),   // padrao-ok: botão no INÍCIO da barra, tamanho médio (Marcus, 22/11/2026)
         e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas"})),
         e(CelulaBarra,{rotulo:"Situação"}, e(CampoMini,{valor:f.status, aoMudar:function(v){ set({status:v}); }, rotulo:"Situação", ops:[["", "Todas abertas"], ["pendente", "A pagar"], ["parcial", "Parciais"], ["atrasado", "Atrasadas"]]})),
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),
         e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:f.pessoa, aoMudar:function(v){ set({pessoa:v}); }, rotulo:"Pessoa", ops:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")})),
-        e(CelulaBarra,{rotulo:"Categoria"}, e(CampoMini,{valor:f.cat, aoMudar:function(v){ set({cat:v}); }, rotulo:"Categoria", ops:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")})),
-        e("div",{role:"button", tabIndex:0, title:"Lançar uma conta da família", onClick:function(){ setModal({tipo:"conta"}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setModal({tipo:"conta"}); } }, className:"ml-auto flex min-w-[130px] flex-1 cursor-pointer items-center justify-center bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar conta")),   // padrao-ok: botão do canto da barra compacta, igual ao da Contas a receber
+        e(CelulaBarra,{rotulo:"Categoria"}, e(CampoMini,{valor:f.cat, aoMudar:function(v){ set({cat:v}); }, rotulo:"Categoria", ops:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}))),
       e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffcontas", fina:true, cols:cols, aoClicar:function(l){ setModal({tipo:"pagar", x:l.x}); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodape, vazio:"Nada para pagar neste filtro."}))),
     e(BlocoPainel,{titulo:"Transferências entre contas", compacto:true}, e("div",{className:"flex flex-col gap-3 p-4"},
       e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"De"}, e(Sel,{value:tr.origem, label:"Origem", className:"w-56", onChange:function(v){ setTr(Object.assign({}, tr, {origem:v})); }}, e("option",{value:""}, "Escolha…"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
@@ -333,7 +333,7 @@ function AbaFfPagas(){
   var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="nome" ? ls.length+(ls.length===1 ? " conta" : " contas") : col.k==="pago" ? BK(r2(ls.reduce(function(t, l){ return t+(Number(l.pago) || 0); }, 0))) : ""; }); };
   var op = function(l, todos){ return [["", todos]].concat(l); };
   return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
-    e(BlocoPainel,{titulo:"Contas pagas da família", compacto:true},
+    e(BlocoPainel,{titulo:"Contas pagas - Família", compacto:true},
       e(BarraTabela,null,
         e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas pagas"})),
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),

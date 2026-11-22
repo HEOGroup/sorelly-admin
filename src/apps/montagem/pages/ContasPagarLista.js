@@ -7,12 +7,12 @@ import { Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { PAGINA_CHEIA, CLS_FINA_ESPACO, BarraTabela, CelulaBarra, CampoMini, BuscaMini, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
+import { Botao, CAMPO, MenuMulti } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chamar } from "@/apps/montagem/lib/api";
 import { abrirAnexo } from "@/apps/montagem/lib/anexo";
 import { FILIAIS, anosCarregados, definirHistorico, ehFam, filtrar, historicoItens, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
-import { hojeIso, hojeYm, itensDividasPrestadores, nomeMes, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
+import { FAMILIA4, hojeIso, hojeYm, itensDividasPrestadores, membrosFamilia, nomeMes, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
 import { BKC } from "@/apps/montagem/lib/format";
@@ -26,15 +26,32 @@ var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 
 // Data errada no DevMaster (18/11/2026, Marcus: "que ordem é essa"): vencimento com ano 0226 ou 2006 (erro de digitação) ia para o topo escrito como 21/11/26. Agora o ano sai inteiro e a Situação diz "Data errada".
 var anoErrado = function(iso){ var a = parseInt(String(iso || "").slice(0, 4), 10); return !!iso && (a<2020 || a>2100); };
 var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+(anoErrado(iso) ? iso.slice(0,4) : iso.slice(2,4)) : "—"; };
+// MUDAR A PESSOA de uma conta da família direto na lista, pago ou a pagar, sem estornar nem baixar de novo (Anamaria, 22/11/2026). Vale para a conta inteira, todos os meses.
+function MudarPessoa(p){
+  var it = p.item, ff = p.s.ff || {}, ps = useState(it.ffPessoa), novo = ps[0];
+  return createPortal(e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/50", onClick:p.fechar}, e("div",{className:"w-[30rem] max-w-[94vw] rounded-md border border-border bg-background p-3 shadow-lg", onClick:function(ev){ ev.stopPropagation(); }},
+    e("p",{className:"pb-1 text-center text-[13px] font-semibold"}, "Mudar a pessoa"),
+    e("p",{className:"pb-2 text-center text-[13px]"}, it.nome+" · "+(it.status==="pago" ? "já pago" : "a pagar")+" · hoje: "+it.rateioTxt),
+    e("p",{className:"pb-1 text-center text-[13px]"}, "Pessoa da conta (vale para todos os meses)"),
+    e("select",{value:novo, "aria-label":"Pessoa da conta", className:CAMPO, onChange:function(ev){ ps[1](ev.target.value); }}, e("option",{value:FAMILIA4}, "Família (divide igual entre os "+membrosFamilia(ff).length+")"), (ff.personas || []).map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); })),
+    e("p",{className:"pt-2 text-center text-[13px]"}, "O pagamento não muda: nada é estornado nem baixado de novo."),
+    e("div",{className:"flex flex-wrap justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:function(){ if(novo!==it.ffPessoa) p.mudar(novo); else p.fechar(); }}, "Mudar"), e(Botao,{onClick:p.abrirFamilia}, "Abrir na Família"), e(Botao,{onClick:p.fechar}, "Cancelar")))), document.body);
+}
 // CONTAS DA FAMÍLIA lançadas no Admin (módulo ff) como linhas da lista (Marcus, 16/11/2026: uma tela só, duas origens). SÓ LEITURA: o módulo da Família não é mexido; clicar leva para o Financeiro familiar.
+// NATUREZA mais curta na tela (Marcus, 22/11/2026): só o nome mostrado muda; o plano de contas da DevMaster fica como está
+var NAT_CURTA = {"Comissão de Venda Consignado":"Comissão consignado"};
+var natVista = function(t){ return NAT_CURTA[t] || t; };
 function itensFamiliaAdmin(s){
   var ff = s.ff; if(!ff || !ff.contas) return [];
   var pers = {}; (ff.personas || []).forEach(function(p){ pers[p.id] = p.nome; });
+  // NATUREZA em letra normal (Marcus, 22/11/2026): a conta guarda o CÓDIGO da categoria (PRO_LABORE); na tela vale o NOME dela (Pró-labore)
+  var catNome = {}; (ff.categorias || []).forEach(function(k){ catNome[k.chave] = k.nome; });
+  var natTxt = function(ch){ if(!ch) return ""; if(catNome[ch]) return catNome[ch]; var t = String(ch).replace(/_/g, " ").toLowerCase(); return t.charAt(0).toUpperCase()+t.slice(1); };
   var hj = hojeIso();
   return parcelasDe(ff, {}, hj).map(function(p){
     var c = p.conta, pg = p.pagamentos || [], ult = pg.length ? String(pg[pg.length-1].em || pg[pg.length-1].data || "") : "", pago = p.status==="PAGO", cb = (ff.contasBanc || []).find(function(b){ return b.id===c.contaBancId; });
     var atraso = p.atrasada ? Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(p.venc+"T00:00:00")) / 86400000)) : 0, dono = (c.rateio && c.rateio.length ? c.rateio : [c.personaId]).map(function(id){ return pers[id] || id; }).join(", ");
-    return {id:"ff|"+p.chave, chave:"ff|"+p.chave, ff:true, nome:c.descricao+(c.beneficiario ? " · "+c.beneficiario : ""), nat:"", natNome:c.categoria || "", filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família", venc:p.venc, emissao:"", valor:pago ? p.valor : p.restante, valorTitulo:p.valor, status:pago ? "pago" : "apagar", baixa:pago ? (ult || p.venc) : "", mes:(pago ? (ult || p.venc) : p.ym).slice(0, 7), atraso:atraso, rateioTxt:dono, saidaTxt:cb ? cb.nome : "—", formaTxt:c.forma || "—"}; });
+    return {id:"ff|"+p.chave, chave:"ff|"+p.chave, ff:true, ffContaId:c.id, ffPessoa:(c.rateio && c.rateio.length ? FAMILIA4 : c.personaId), nome:c.descricao+(c.beneficiario ? " · "+c.beneficiario : ""), nat:"", natNome:natTxt(c.categoria), filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família", venc:p.venc, emissao:"", valor:pago ? p.valor : p.restante, valorTitulo:p.valor, status:pago ? "pago" : "apagar", baixa:pago ? (ult || p.venc) : "", mes:(pago ? (ult || p.venc) : p.ym).slice(0, 7), atraso:atraso, rateioTxt:dono, saidaTxt:cb ? cb.nome : "—", formaTxt:c.forma || "—"}; });
 }
 // CONTA NOS DOIS LUGARES = UMA LINHA SÓ (Marcus, 16/11/2026): a conta da Família lançada no Admin e a mesma conta que veio da DevMaster viram uma linha (a do Admin vale; o valor entra uma vez só). A DevMaster fica marcada "Falta dar baixa" até o financeiro dar a baixa lá.
 // Regra do par: mesma situação, mesmo valor e mesmo mês de vencimento, e SÓ UMA candidata de cada lado (se houver mais de uma, não junta: não adivinha).
@@ -151,8 +168,8 @@ var fimDoMes = function(){ var d = new Date(), f = new Date(d.getFullYear(), d.g
 function TelaContas(props){
   var cx = use(), s = cx.state;
   setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
-  var chaveEst = "sorelly_cpa_estado_v1_"+props.modo+"_"+(s.usuario || "x"), est0 = useRef(null); if(est0.current===null) est0.current = estadoSalvo(chaveEst);
-  var sca = useState({}), carr = sca[0], setCarr = sca[1], stk = useState(0), setTick = stk[1], se = useState(ESC_OK.indexOf(est0.current.escopo)>=0 ? est0.current.escopo : props.modo==="pagas" ? "pagas" : "apagar"), escopo = se[0], setEscopo = se[1], sv = useState(est0.current.vista==="dia" ? "dia" : "lista"), vista = sv[0], setVista = sv[1], sq = useState(["familia", "junto"].indexOf(est0.current.quem)>=0 ? est0.current.quem : "empresa"), quemSel = sq[0], setQuem = sq[1], sp = useState({modo:"dias", filtra:true, atras:props.modo!=="pagas", dDe:hojeYm()+"-01", dAte:fimDoMes(), mDe:hojeYm(), mAte:hojeYm(), aDe:new Date().getFullYear(), aAte:new Date().getFullYear()}), per = sp[0], setPerRaw = sp[1], sa = useState(null), aberta = sa[0], setAberta = sa[1], gx = useState({}), grAb = gx[0], setGrAb = gx[1];
+  var chaveEst = "sorelly_cpa_estado_v1_"+props.modo+(props.quem ? "_"+props.quem : "")+"_"+(s.usuario || "x"), est0 = useRef(null); if(est0.current===null) est0.current = estadoSalvo(chaveEst);
+  var sca = useState({}), carr = sca[0], setCarr = sca[1], stk = useState(0), setTick = stk[1], se = useState(ESC_OK.indexOf(est0.current.escopo)>=0 ? est0.current.escopo : props.modo==="pagas" ? "pagas" : "apagar"), escopo = se[0], setEscopo = se[1], sv = useState(est0.current.vista==="dia" ? "dia" : "lista"), vista = sv[0], setVista = sv[1], sq = useState(["familia", "junto"].indexOf(est0.current.quem)>=0 ? est0.current.quem : (props.quem || "empresa")), quemSel = sq[0], setQuem = sq[1], sp = useState({modo:"dias", filtra:true, atras:props.modo!=="pagas", dDe:hojeYm()+"-01", dAte:fimDoMes(), mDe:hojeYm(), mAte:hojeYm(), aDe:new Date().getFullYear(), aAte:new Date().getFullYear()}), per = sp[0], setPerRaw = sp[1], sa = useState(null), aberta = sa[0], setAberta = sa[1], spd = useState(null), pessoaDe = spd[0], setPessoaDe = spd[1], gx = useState({}), grAb = gx[0], setGrAb = gx[1];
   // HISTÓRICO (Marcus, 12/11/2026): lê UM ano da DevMaster quando o botão do ano é clicado (2022 até o ano passado; só contas pagas; só leitura). Depois marca os 12 meses do ano e vai para Pagas.
   var chavePref = "sorelly_cpa_colunas_v1_"+(s.usuario || "x");
   var scp = useState(function(){ try{ var g = JSON.parse(localStorage.getItem(chavePref) || "null"); if(g && typeof g==="object") return g; }catch(x){} return {}; }), prefCols = scp[0], setPrefCols = scp[1];
@@ -200,7 +217,7 @@ function TelaContas(props){
   ls = ls.sort(function(x, y){ var p = dataBase(x), q = dataBase(y); return DESC ? q.localeCompare(p) || x.nome.localeCompare(y.nome) : (p||"9999").localeCompare(q||"9999") || x.nome.localeCompare(y.nome); });   // ordena DEPOIS de filtrar (antes ordenava as 15 mil contas a cada letra da busca)
   var colAcao = podePagar && PAGO;
   // REPRESENTANTES: comissão e combustível do mesmo representante, CNPJ e situação viram uma linha somada; abre ao clicar
-  var linha = function(i, filho){ return {id:i.id, it:i, fil:i.filial, nome:(filho ? "↳ " : "")+i.nome, venc:dm(i.venc), pago:dm(i.baixa), cnpj:cnpj5(cnpjTxt(i.filial)), num:i.tambemDm ? "DevMaster "+numDe(i.tambemDm) : numDe(i), parc:i.tambemDm ? parcelaTxt(i.tambemDm, maximo) : parcelaTxt(i, maximo), nat:i.natNome, nota:i.nota==="sem" ? "Sem nota" : "Com nota", valor:i.valor, orig:i.valorTitulo==null ? i.valor : i.valorTitulo, emis:dm(i.emissao), atr:i.atraso>0 ? i.atraso : 0, setor:i.grupo || "—", cod:i.nat || "—", sit:sitDe(i), abrir:"Abrir", dono:(i.ff || ehFam(i)) ? (pessoaTxt(i) && pessoaTxt(i).indexOf(",")<0 && PES_RX.some(function(r){ return r[0]===pessoaTxt(i); }) ? pessoaTxt(i) : "Família") : "Sorelly", origem:i.tambemDm || i.faltaBaixaDm ? "Admin + DevMaster" : i.ff ? "Admin · Família" : i.manual ? "Só no Admin" : "DevMaster", dm:i.faltaBaixaDm ? "Falta baixa na DevMaster" : i.pagoNaDm ? "Paga em "+dm(i.baixa)+" · falta baixa no Admin" : i.tambemDm ? (i.status==="pago" ? "—" : "Falta dar baixa") : i.ff || i.manual ? "Não precisa" : i.bx ? "Falta dar baixa" : "—", rateio:pessoaTxt(i) || "—", acao:i.bx ? "Desfazer" : "", forma:i.bx ? (FORMAS[i.bx.forma] || i.bx.forma || "—") : (i.formaTxt || "—"), saida:i.bx ? (i.bx.contaNome || "—") : (i.saidaTxt || "—"), compro:i.ff ? ((i.comps || []).length ? "Ver" : (i.pagoPorPix ? "Falta anexar" : "—")) : i.status!=="pago" ? "—" : !i.bx ? "—" : i.bx.comprovante ? "Ver" : "Falta anexar", por:i.bx ? nomeDe(i.bx.por) : "—", filho:!!filho}; };
+  var linha = function(i, filho){ return {id:i.id, it:i, fil:i.filial, nome:(filho ? "↳ " : "")+i.nome, venc:dm(i.venc), pago:dm(i.baixa), cnpj:cnpj5(cnpjTxt(i.filial)), num:i.tambemDm ? "DevMaster "+numDe(i.tambemDm) : numDe(i), parc:i.tambemDm ? parcelaTxt(i.tambemDm, maximo) : parcelaTxt(i, maximo), nat:natVista(i.natNome), nota:i.nota==="sem" ? "Sem nota" : "Com nota", valor:i.valor, orig:i.valorTitulo==null ? i.valor : i.valorTitulo, emis:dm(i.emissao), atr:i.atraso>0 ? i.atraso : 0, setor:i.grupo || "—", cod:i.nat || "—", sit:sitDe(i), abrir:"Abrir", dono:(i.ff || ehFam(i)) ? (pessoaTxt(i) && pessoaTxt(i).indexOf(",")<0 && PES_RX.some(function(r){ return r[0]===pessoaTxt(i); }) ? pessoaTxt(i) : "Família") : "Sorelly", origem:i.tambemDm || i.faltaBaixaDm ? "Admin + DevMaster" : i.ff ? "Admin · Família" : i.manual ? "Só no Admin" : "DevMaster", dm:i.faltaBaixaDm ? "Falta baixa na DevMaster" : i.pagoNaDm ? "Paga em "+dm(i.baixa)+" · falta baixa no Admin" : i.tambemDm ? (i.status==="pago" ? "—" : "Falta dar baixa") : i.ff || i.manual ? "Não precisa" : i.bx ? "Falta dar baixa" : "—", rateio:pessoaTxt(i) || "—", acao:i.bx ? "Desfazer" : "", forma:i.bx ? (FORMAS[i.bx.forma] || i.bx.forma || "—") : (i.formaTxt || "—"), saida:i.bx ? (i.bx.contaNome || "—") : (i.saidaTxt || "—"), compro:i.ff ? ((i.comps || []).length ? "Ver" : (i.pagoPorPix ? "Falta anexar" : "—")) : i.status!=="pago" ? "—" : !i.bx ? "—" : i.bx.comprovante ? "Ver" : "Falta anexar", por:i.bx ? nomeDe(i.bx.por) : "—", filho:!!filho}; };
   var grupos = {};
   ls.forEach(function(i){ if(i.grupo!=="Representantes") return; var k = chaveGrupo(i, i.status==="pago"); if(!grupos[k]) grupos[k] = []; grupos[k].push(i); });
   var linhas = [], feitos = {};
@@ -211,7 +228,7 @@ function TelaContas(props){
     if(feitos[k]) return;
     feitos[k] = 1;
     var ap = i.status==="apagar", op = !!grAb[k], nats = [], venc = its.map(function(x){ return x.venc || ""; }).filter(Boolean).sort()[0] || "", atr = Math.max.apply(null, its.map(function(x){ return anoErrado(x.venc) ? 0 : (x.atraso || 0); })), errada = its.some(function(x){ return anoErrado(x.venc); });
-    its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
+    its.forEach(function(x){ if(nats.indexOf(natVista(x.natNome))<0) nats.push(natVista(x.natNome)); });
     linhas.push({id:"g|"+k, grupo:true, k:k, its:its, fil:i.filial, nome:(op ? "▾ " : "▸ ")+i.nome, venc:dm(venc), pago:dm(i.baixa), cnpj:cnpj5(cnpjTxt(i.filial)), num:its.length+" títulos", parc:"—", nat:nats.join(" · "), nota:its.every(function(x){ return x.nota==="sem"; }) ? "Sem nota" : "Com nota", valor:soma(its), orig:r2(its.reduce(function(t0, x){ return t0+(x.valorTitulo==null ? x.valor : x.valorTitulo); }, 0)), emis:dm(its.map(function(x){ return x.emissao || ""; }).sort()[0]), setor:"Representantes", cod:its[0].nat || "—", sit:ap ? (errada ? "Data errada" : atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago", abrir:op ? "Fechar" : "Abrir", acao:"", ap:ap, atr:atr});
     if(op) its.forEach(function(x){ linhas.push(linha(x, true)); });
   });
@@ -262,14 +279,15 @@ function TelaContas(props){
   var corDia = function(l){ return l.sit.indexOf("Atrasadas")===0 ? "text-warning" : l.sit==="Pago" ? "text-success" : ""; };
   var colsDia = [{k:"dia", t:per.modo==="anos" ? "Ano" : per.modo==="meses" ? "Mês" : escopo==="pagas" ? "Pago em" : escopo==="apagar" ? "Vence" : "Data", cor:corDia}, {k:"sit", t:"Situação", cor:corDia}, {k:"qtd", t:escopo==="pagas" ? "Pagamentos" : "Contas"}].concat(FILIAIS.map(function(f){ return {k:"c"+f[0], t:f[0]==="fora" ? "Por fora" : f[1], fmt:BKC}; }), [{k:"total", t:"Total", fmt:BKC}]);   // os CNPJs vêm ANTES do Total (Marcus, 12/11/2026); a coluna Acumulado saiu a pedido dele em 20/11/2026
   if(quem!=="empresa") colsDia.splice(colsDia.length-1, 0, {k:"cfam", t:"Família", fmt:BKC});   // coluna Família no Total por dia (antes do Total, que é a última)
-  var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } if(l.it && l.it.ff){ cx.dispatch({type:"ABA", aba:l.it.ffAba || "ffcontas"}); return; } setAberta(l.it); };
+  var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } if(l.it && l.it.ff){ if(l.it.ffContaId && !l.it.ffAba && temAutorizacao("financeiro_familia", s.usuario)){ setPessoaDe(l.it); return; } cx.dispatch({type:"ABA", aba:l.it.ffAba || "ffcontas"}); return; } setAberta(l.it); };
   // LINHA DE TOTAL NO FIM (Marcus, 20/11/2026: "falta a linha final da tabela"): soma só o que está na tela, já com os filtros das colunas; conta de representante aberta não soma duas vezes
   var somaCampo = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(Number(l[k]) || 0); }, 0)); };
   var rodapeDia = function(ls){ return colsDia.map(function(c){ return c.k==="dia" ? "Total" : c.k==="qtd" ? somaCampo(ls, "qtd") : c.k==="acum" ? BKC(somaCampo(ls, "total")) : c.fmt ? BKC(somaCampo(ls, c.k)) : ""; }); };
   var rodapeLista = function(ls){ var base = ls.filter(function(l){ return !l.filho; }); return cols.map(function(c, j){ return j===0 ? "Total" : c.k==="nome" ? base.length+(base.length===1 ? " conta" : " contas") : c.k==="valor" ? BKC(somaCampo(base, "valor")) : c.k==="orig" ? BKC(somaCampo(base, "orig")) : ""; }); };
   return e(Pagina,{className:PAGINA_CHEIA},
+    pessoaDe && e(MudarPessoa,{key:pessoaDe.id, s:s, item:pessoaDe, fechar:function(){ setPessoaDe(null); }, mudar:function(pid){ cx.dispatch({type:"FF", op:"conta_set", por:nomeDe(s.usuario), id:pessoaDe.ffContaId, patch:{personaId:pid}}); setPessoaDe(null); }, abrirFamilia:function(){ cx.dispatch({type:"ABA", aba:"ffcontas"}); setPessoaDe(null); }}),
     aberta && e(PagamentoConta,{key:aberta.id, s:s, item:aberta, lista:ls, podePagar:podePagar, fechar:function(){ setAberta(null); }, ir:function(x){ if(x) setAberta(x); }, salvar:function(b){ cx.dispatch({type:"CPE_BAIXA", baixas:[b]}); setAberta(null); }, desfazer:function(id){ cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:id, por:s.usuario}); setAberta(null); }, excluir:function(id){ cx.dispatch({type:"CPE_LANC_DEL", id:id, por:s.usuario}); setAberta(null); }, trocarFilial:function(it, f){ cx.dispatch({type:"CPE_FILIAL", chave:it.chave, filial:f, por:s.usuario, desc:it.nome, valor:it.valor}); setAberta(null); }}),
-    e(BlocoPainel,{titulo:escopo==="apagar" ? "Contas a pagar" : escopo==="pagas" ? "Contas pagas" : "Contas a pagar e pagas", compacto:true},
+    e(BlocoPainel,{titulo:"Contas pagas / A pagar - "+(quem==="familia" ? "Família" : quem==="junto" ? "Sorelly e Família" : "Sorelly"), compacto:true},
       // BARRA E TABELA NO MESMO VISUAL DA CONTAS A RECEBER (Marcus, 20/11/2026): peças de components/planilha-cheia.js; busca primeiro, controles de 18 px, tabela fina colada nas bordas, sem páginas e sem mãozinha
       // BARRA EM FORMA DE TABELA (Marcus, 20/11/2026): cada controle numa célula com o título em cima; Buscar à esquerda; ordem de leitura = Situação, Período, Visão, Contas, Pessoa, Colunas
       e(BarraTabela,null,
@@ -283,8 +301,9 @@ function TelaContas(props){
       e("div",{ref:refCheia({"Comp.":"Comprovante"}), className:CLS_FINA_ESPACO}, vista!=="lista" ? e(TabelaPlanilha,{key:escopo+vista, fina:true, cols:colsDia, alturaMax:"calc(100vh - 6.6rem)", linhas:linhasDia, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodapeDia, vazio:"Nenhuma conta."}) : e(TabelaPlanilha,{key:escopo, fina:true, cols:cols, aoClicar:aoClicar, aoMoverColuna:moverCol, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodapeLista, linhaCls:function(l){ return l.filho || (l.grupo && grAb[l.k]) ? "bg-white/[0.16]" : ""; }, vazio:"Nenhuma conta neste filtro."}))));
 }
 
-function AbaCtaLista(){ return e(TelaContas,{modo:"pagar"}); }
-function AbaCtaPagas(){ return e(TelaContas,{modo:"pagas"}); }
-function AbaCtaFamilia(){ return e(TelaContas,{modo:"pagar", quem:"familia"}); }
-function AbaCtaFamiliaPagas(){ return e(TelaContas,{modo:"pagas", quem:"familia"}); }   // Financeiro › Família › Contas › A pagar / Pagas: a mesma lista, já em Contas = Família (Marcus, 22/11/2026)
+// key = cada tela tem a sua (Marcus, 22/11/2026: a Contas a pagar da Sorelly aparecia dentro da aba da Família): sem key o React reaproveita a tela anterior e ela mantém o "Contas" da outra
+function AbaCtaLista(){ return e(TelaContas,{key:"empresa-pagar", modo:"pagar"}); }
+function AbaCtaPagas(){ return e(TelaContas,{key:"empresa-pagas", modo:"pagas"}); }
+function AbaCtaFamilia(){ return e(TelaContas,{key:"familia-pagar", modo:"pagar", quem:"familia"}); }
+function AbaCtaFamiliaPagas(){ return e(TelaContas,{key:"familia-pagas", modo:"pagas", quem:"familia"}); }   // Financeiro › Família › Contas › A pagar / Pagas: a mesma lista, já em Contas = Família (Marcus, 22/11/2026)
 export { AbaCtaLista, AbaCtaPagas, AbaCtaFamilia, AbaCtaFamiliaPagas, SeletorPeriodo, faixaDe, menuSusp, CNPJ_LETRA };   // a Contas a receber (ContasReceberLista.js) usa as mesmas peças: mesmo seletor de período e mesmo menu suspenso
