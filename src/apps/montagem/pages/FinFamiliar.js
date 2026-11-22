@@ -63,40 +63,71 @@ function totaisAno(ff, pid, ano){
     pro:{total:s(function(x){ return x.pro.total; }), recebido:s(function(x){ return x.pro.recebido; }), restante:s(function(x){ return x.pro.restante; })},
     pix:{meta:s(function(x){ return x.pix.meta; }), recebido:s(function(x){ return x.pix.recebido; }), restante:s(function(x){ return x.pix.restante; })}};
 }
-// HOME = EXTRATO COMPLETO (Marcus, 22/11/2026, modelo A): linhas dizem O QUE É (entrou, saiu, falta pagar, categorias) e colunas dizem QUEM (uma por pessoa + total da família).
-// Clicar numa linha abre embaixo a lista que explica o número (prestadores, Pix, contas atrasadas...). Substitui Resumo do grupo, Sócios (consolidado) e Relatório. Cor só para estado: verde = entrou/pago, vermelho = atrasado.
+// HOME = RESUMO QUE ABRE (Marcus, 23/11/2026): linhas dizem O QUE É e colunas dizem QUEM, em 3 grupos (Pessoas, Compartilhado, Casas). Só o essencial fica à vista (Pró-labore, Pix, Pago, Falta pagar, A pagar no mês);
+// o resto abre ao clicar (para onde foi o Pix, prestadores, transferências, categorias). Atrasado e vence-em-7-dias NÃO ficam aqui: é da tela Contas a pagar. O Lucas fica numa linha no fim, FORA do total da família.
 var diaBr = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(2,4) : "—"; };
 var LIM_DET = 80;   // linhas de cada lista aberta (a lista completa fica na tela de lançar)
+var FORA_DO_TOTAL = ["lucas"];   // quem não entra no total da família: aparece numa linha no fim
 function DetTab(p){
   var l = p.linhas || [], corte = l.length>LIM_DET;
   return e("div",{className:"flex flex-col gap-1.5 p-1.5", onClick:function(ev){ ev.stopPropagation(); }},
     l.length===0 ? e("p",{className:"py-2 text-center text-[11px]"}, p.vazio || "Nada neste período.") :
-      e(TabelaPlanilha,{cols:p.cols, linhas:corte ? l.slice(0, LIM_DET) : l, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nada."}),
+      e(TabelaPlanilha,{fina:true, cols:p.cols, linhas:corte ? l.slice(0, LIM_DET) : l, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nada."}),
     corte && e("p",{className:"text-center text-[11px]"}, "Mostrando as "+LIM_DET+" primeiras de "+l.length+". A lista completa fica em "+(p.onde || "outra tela")+"."),
     p.ir && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ p.ir(p.ir2); }}, p.rotuloIr)));
 }
+// ESCALA DE COR DOS BLOCOS QUE ABREM (Marcus, 23/11/2026): a linha que abre fica no azul escuro normal; o que aparece dentro dela é só 20% mais claro; e o que abre dentro disso, mais 20%, e assim por diante. As bordas e as linhas NÃO mudam de cor: ficam na cor da linha da tabela.
+var AZUL_BASE = [31, 51, 88], PASSO_ABERTO = 1.2, PASSO_DENTRO = 1.32;   // azul escuro da tabela; 1º nível = 20% mais claro; do 2º em diante, mais 32% a cada nível
+var ESCALA_ABERTO = [1, 2, 3, 4].map(function(n){ var k = PASSO_ABERTO*Math.pow(PASSO_DENTRO, n-1); return "rgb("+AZUL_BASE.map(function(v){ return Math.min(255, Math.round(v*k)); }).join(",")+")"; });   // nível 1 → nível 4
+var CSS_ABERTO = ESCALA_ABERTO.map(function(cor, i){ return "table tbody tr.ffa-n"+(i+1)+">td{background:"+cor+" !important}"; }).concat([
+  "table tbody tr.ffa-aberta>td{font-weight:700 !important}",
+  "section.compacto table tbody td{border-color:rgba(255,255,255,.45) !important}",
+  "section.compacto table thead th{border-color:rgba(255,255,255,.45) !important}",
+  "section.compacto table td,section.compacto table td *{color:#fff !important}",   // Marcus, 23/11/2026: todas as letras brancas, sem verde nem vermelho
+  ".ff-par{display:grid;gap:0;margin-top:-10px;overflow:hidden;border-radius:0;border:2px solid #2d5190 !important;border-top:5px solid rgba(255,255,255,.9) !important}",
+  ".ff-par>section{height:100%;border:0 !important;border-radius:0 !important}",
+  "@media (min-width:1024px){.ff-par2{grid-template-columns:1fr 1fr}.ff-par2>section+section{border-left:5px solid rgba(255,255,255,.9) !important}}"
+]).join(" ");
+CSS_ABERTO = "@layer utilities{ "+CSS_ABERTO+" }";   // dentro da camada utilities: sem isso o Tailwind (importante em camada) vence o estilo solto
 function AbaFfHome(){
   var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ANO = /^ANO:/.test(ym) ? ym.slice(4) : "";
+  var gs = useState({}), ab = gs[0], setAb = gs[1], alterna = function(g){ var o = Object.assign({}, ab); o[g] = !ab[g]; setAb(o); };   // grupos de linhas abertos (tudo nasce fechado)
+  var qs = useState("todos"), quem = qs[0], setQuem = qs[1];   // "Quem": todos (uma coluna por pessoa) ou uma pessoa (colunas Total · Já pago · Falta)
+  // BLOCO ABERTO COM LINHA QUE FECHA (Marcus, 23/11/2026): as linhas de dentro ficam num tom um pouco mais claro, com uma barra azul fina à esquerda, e a última de cada bloco ganha uma linha mais forte embaixo
+  var marcaFim = function(arr){ arr.forEach(function(l, i){ var nx = arr[i+1], nv = l.nivel||0; if(nv>0 && (!nx || (nx.nivel||0)<nv)) l.fim = (!nx || (nx.nivel||0)===0) ? 1 : 2; }); return arr; };
+  // Quando um bloco abre (Marcus, 23/11/2026: "melhora um bloco quando vai abrindo"): a linha que abriu fica mais clara e em negrito; o que está dentro fica MAIS ESCURO, com uma barra azul grossa à esquerda (mais clara a cada nível); a última linha do bloco fecha com uma linha branca mais forte
+  var tinta = function(l){ var nv = Math.min(l.nivel||0, ESCALA_ABERTO.length), cl = "";
+    if(nv>0) cl += "ffa-n"+nv;
+    if(l.tg && ab[l.tg]) cl += " ffa-aberta";
+    return cl; };
   var mesesOp = janela().filter(function(k){ return k<=hojeYm(); }), anosOp = mesesOp.map(function(k){ return k.slice(0,4); }).filter(function(a, i, l){ return l.indexOf(a)===i; });
   var ir = function(aba){ c.d({type:"ABA", aba:aba}); };
-  var yms = ANO ? mesesOp.filter(function(k){ return k.slice(0,4)===ANO; }) : [ym], hoje = hojeIso();
-  var emSete = (function(){ var d = new Date(hoje+"T12:00:00"); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); })();
+  var yms = ANO ? mesesOp.filter(function(k){ return k.slice(0,4)===ANO; }) : [ym];
   var todasParc = parcelasDe(ff, {yms:yms});
   var contaPessoa = {}; (ff.contasBanc||[]).forEach(function(b){ contaPessoa[b.id] = b.personaId; });
   // 1) dados de cada pessoa (as colunas)
-  var D = ff.personas.filter(function(p){ return p.ativo && (p.mostrarContas || p.mostrarPix || p.mostrarProlabore); }).map(function(p){
+  var dados = ff.personas.filter(function(p){ return p.ativo && (p.mostrarContas || p.mostrarPix || p.mostrarProlabore); }).map(function(p){
     var t = ANO ? totaisAno(ff, p.id, ANO) : totaisPersona(ff, p.id, ym);
-    var itens = todasParc.filter(function(x){ return daPessoa(x.conta, p.id); }).map(function(x){ var q = x.conta.rateio && x.conta.rateio.length ? 1/x.conta.rateio.length : 1;
-      return {id:x.chave+"|"+p.id, pessoa:p.nome, pid:p.id, desc:x.conta.descricao, cat:catNome(ff, x.conta.categoria), venc:x.venc, valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, status:x.status, pagamentos:(x.pagamentos||[]).map(function(g){ return Object.assign({}, g, {valor:r2(g.valor*q)}); })}; });
-    var soma = function(l, k){ return r2(l.reduce(function(a, x){ return a+x[k]; }, 0)); };
+    var itens = todasParc.filter(function(x){ return daPessoa(x.conta, p.id); }).map(function(x){ var q = parteDe(x.conta);
+      return {id:x.chave+"|"+p.id, pessoa:p.nome, pid:p.id, catChave:x.conta.categoria, pro:x.conta.categoria==="PRO_LABORE", desc:x.conta.descricao, cat:catNome(ff, x.conta.categoria), venc:x.venc, valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, status:x.status, pagamentos:(x.pagamentos||[]).map(function(g){ return Object.assign({}, g, {valor:r2(g.valor*q)}); })}; });
+    // PIX REVENDEDORA NA FAMÍLIA É META, NÃO CONTA A PAGAR (Marcus, 23/11/2026): a conta de categoria Pix revendedora sai das Contas a pagar da Home (a meta já aparece no bloco Pix revendedoras); na Contas a pagar da empresa ela continua valendo
+    var pxr = itens.filter(function(x){ return x.catChave==="PIX_REVENDEDORA"; });
+    if(pxr.length>0){ itens = itens.filter(function(x){ return x.catChave!=="PIX_REVENDEDORA"; });
+      var sm = function(k, fil){ return r2(pxr.filter(fil || function(){ return true; }).reduce(function(a, x){ return a+x[k]; }, 0)); };
+      t = Object.assign({}, t, {contas:Object.assign({}, t.contas, {total:r2(t.contas.total-sm("valor")), pago:r2(t.contas.pago-sm("pago")), restante:r2(t.contas.restante-sm("restante")), pendentes:Math.max(0, t.contas.pendentes-pxr.filter(function(x){ return x.status!=="PAGO"; }).length), atrasado:r2(t.contas.atrasado-sm("restante", function(x){ return x.atrasada; }))})}); }
     var prestMes = r2(yms.reduce(function(a, k){ return a+pixDivisao(ff, p.id, k).prestadores; }, 0));
     var trEnv = 0, trRec = 0; (ff.transf||[]).forEach(function(x){ if(yms.indexOf(String(x.data).slice(0,7))<0) return; if(contaPessoa[x.origem]===p.id) trEnv += x.valor; if(contaPessoa[x.destino]===p.id) trRec += x.valor; });
     var cats = {}; itens.forEach(function(x){ cats[x.cat] = r2((cats[x.cat]||0)+x.valor); });
     var saldoPrest = r2(ff.prest.filter(function(x){ return x.ativo && x.responsavelId===p.id; }).reduce(function(a, x){ return a+saldoPrestador(ff, x.id); }, 0));
-    return {p:p, t:t, itens:itens, cats:cats, trEnv:r2(trEnv), trRec:r2(trRec), prestMes:prestMes, saldoPrest:saldoPrest,
-      atras:soma(itens.filter(function(x){ return x.atrasada; }), "restante"), prox:soma(itens.filter(function(x){ return !x.atrasada && x.restante>0.005 && x.venc>=hoje && x.venc<=emSete; }), "restante"),
-      pix:t.pix.recebido, meta:t.pix.meta, direto:r2(Math.max(0, t.pix.recebido-prestMes))};
-  }).filter(function(d){ return d.p.tipo==="SOCIO" || d.t.pro.total>0 || d.t.contas.total>0 || d.pix>0 || d.meta>0; });
+    return {p:p, t:t, itens:itens, cats:cats, trEnv:r2(trEnv), trRec:r2(trRec), prestMes:prestMes, saldoPrest:saldoPrest, pix:t.pix.recebido, meta:t.pix.meta, direto:r2(Math.max(0, t.pix.recebido-prestMes))};
+  });
+  var grupoDe = function(p){ return p.tipo==="SOCIO" ? "Pessoas" : (p.id==="familia" || p.id==="marco_ana") ? "Compartilhado" : "Casas"; };
+  var ORDEM = ["Pessoas", "Compartilhado", "Casas"];
+  var foraTodos = dados.filter(function(d){ return FORA_DO_TOTAL.indexOf(d.p.id)>=0; });
+  var Dtodos = dados.filter(function(d){ return FORA_DO_TOTAL.indexOf(d.p.id)<0 && (d.p.tipo==="SOCIO" || d.t.pro.total>0 || d.t.contas.total>0 || d.pix>0 || d.meta>0); })
+    .sort(function(a, b){ return ORDEM.indexOf(grupoDe(a.p))-ORDEM.indexOf(grupoDe(b.p)); });
+  var D = Dtodos;
+  var fora = foraTodos;
   var todosItens = [].concat.apply([], D.map(function(d){ return d.itens; }));
   // 2) listas que abrem ao clicar
   var C = function(k, t, extra){ return Object.assign({k:k, t:t}, extra||{}); };
@@ -106,66 +137,143 @@ function AbaFfHome(){
   var viraConta = function(x){ return Object.assign({}, x, {vencBr:diaBr(x.venc), sit:sit(x)}); };
   var porVenc = function(a, b){ return a.venc.localeCompare(b.venc); };
   var abertas = todosItens.filter(function(x){ return x.restante>0.005; }).sort(porVenc).map(viraConta);
-  var listaAtras = abertas.filter(function(x){ return x.atrasada; }).sort(function(a, b){ return b.restante-a.restante; }), listaProx = abertas.filter(function(x){ return !x.atrasada && x.venc>=hoje && x.venc<=emSete; });
   var listaPagas = [].concat.apply([], todosItens.map(function(x){ return x.pagamentos.map(function(g, j){ return {id:x.id+"#"+j, em:g.em, emBr:diaBr(g.em), pessoa:x.pessoa, desc:x.desc, cat:x.cat, forma:g.forma||"—", conta:g.conta||"—", valor:g.valor}; }); })).sort(function(a, b){ return String(b.em).localeCompare(String(a.em)); });
   var pixLista = ff.pix.filter(function(x){ return yms.indexOf(x.data.slice(0,7))>=0 && !pixCasa(ff, x) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && D.some(function(d){ return d.p.id===x.personaId; }); })
     .sort(function(a, b){ return b.data.localeCompare(a.data); }).map(function(x){ return {id:x.id, dataBr:diaBr(x.data), pessoa:pessoaNome(ff, x.personaId), origem:x.origem||"—", valor:x.valor, conta:contaLabel(ff, x.contaId)||"—", aud:x.auditoria==="CONFIRMADO" ? "Confirmado" : "Pendente"}; });
   var repMes = ff.repasses.filter(function(r){ return yms.indexOf(String(r.data).slice(0,7))>=0; });
   var prestLista = ff.prest.filter(function(x){ return x.ativo || repMes.some(function(r){ return r.prestId===x.id; }); }).map(function(x){ var dv = ff.dividas.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0), rp = ff.repasses.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0);
-    return {id:x.id, prest:nomePropio(x.nome), serv:x.servico||"—", dono:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", noPeriodo:r2(repMes.filter(function(r){ return r.prestId===x.id; }).reduce(function(a, r){ return a+r.valor; }, 0)), dividas:r2(dv), pagoTotal:r2(rp), saldo:saldoPrestador(ff, x.id)}; }).sort(function(a, b){ return b.saldo-a.saldo; });
+    return {id:x.id, respId:x.responsavelId, prest:nomePropio(x.nome), serv:x.servico||"—", dono:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", noPeriodo:r2(repMes.filter(function(r){ return r.prestId===x.id; }).reduce(function(a, r){ return a+r.valor; }, 0)), dividas:r2(dv), pagoTotal:r2(rp), saldo:saldoPrestador(ff, x.id)}; }).sort(function(a, b){ return b.saldo-a.saldo; });
   var ultimoYm = yms[yms.length-1] || ym;
   var proLista = D.filter(function(d){ return d.p.mostrarProlabore; }).map(function(d){ var v = vigenciaEm(ff, d.p.id, ultimoYm); return {id:d.p.id, pessoa:d.p.nome, bruto:v ? v.bruto : 0, inss:v ? v.inss : 0, irrf:v ? v.irrf : 0, liquido:v ? v.liquido : 0, datas:v && v.valor1 ? "dia "+v.dia1+": "+BK(v.valor1)+" · dia "+v.dia2+": "+BK(v.valor2) : "—"}; }).filter(function(x){ return x.bruto>0; });
   var detCat = function(cat){ return e(DetTab,{cols:colsConta, linhas:todosItens.filter(function(x){ return x.cat===cat; }).sort(porVenc).map(viraConta), onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); };
   var fmtSaldo = function(v){ return v<-0.005 ? "Pago a mais "+BK(-v) : BK(v); }, corSaldo = function(l){ return l.saldo<-0.005 ? "text-warning" : l.saldo>0.005 ? "text-destructive" : "text-success"; };
-  var detPrest = function(cols, linhas){ return function(){ return e(DetTab,{cols:cols, linhas:linhas, vazio:"Nenhum prestador.", onde:"Cadastro de prestadores", ir:ir, ir2:"ffprest", rotuloIr:"Abrir cadastro de prestadores"}); }; };
   var colsPrest = [C("prest","Prestador"), C("serv","Serviço"), C("dono","Dono"), C("noPeriodo","Repassado no período",{fmt:BK}), C("dividas","Dívidas",{fmt:BK}), C("pagoTotal","Pago (todos os tempos)",{fmt:BK, cor:function(){ return "text-success"; }}), C("saldo","Saldo",{fmt:fmtSaldo, cor:corSaldo})];
-  var detConta = function(lista, vazio){ return function(){ return e(DetTab,{cols:colsConta, linhas:lista, vazio:vazio, onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); }; };
-  // 3) as linhas do extrato
+  var detPrest = function(linhas){ return function(){ return e(DetTab,{cols:colsPrest, linhas:linhas, vazio:"Nenhum prestador.", onde:"Cadastro de prestadores", ir:ir, ir2:"ffprest", rotuloIr:"Abrir cadastro de prestadores"}); }; };
+  // 3) as linhas do resumo
   var num = function(ok, v){ return ok ? v : null; };
-  var linhas = [], L = function(id, rot, f, o){ linhas.push(Object.assign({id:id, rot:rot, f:f}, o||{})); }, SEC = function(t){ linhas.push({id:"s-"+t, rot:t, tipo:"secao"}); };
-  SEC("ENTROU");
-  L("proLiq", "Pró-labore líquido recebido", function(d){ return num(d.p.mostrarProlabore, d.t.pro.recebido); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("pessoa","Pessoa"), C("bruto","Bruto",{fmt:BK}), C("inss","INSS",{fmt:BK}), C("irrf","IRRF",{fmt:BK}), C("liquido","Líquido",{fmt:BK}), C("datas","Datas")], linhas:proLista, vazio:"Nenhum pró-labore cadastrado.", onde:"Pró-labores", ir:ir, ir2:"ffprolab", rotuloIr:"Abrir pró-labores"}); }});
-  L("pix", "Pix de revendedora recebido", function(d){ return num(d.p.mostrarPix, d.pix); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("dataBr","Data"), C("pessoa","Pessoa"), C("origem","Revendedora"), C("valor","Valor",{fmt:BK}), C("conta","Conta"), C("aud","Conferência",{cor:function(l){ return l.aud==="Pendente" ? "text-warning" : "text-success"; }})], linhas:pixLista, vazio:"Nenhum Pix neste período.", onde:"PIX revendedoras", ir:ir, ir2:"ffpix", rotuloIr:"Abrir Pix revendedoras"}); }});
-  L("direto", "dos quais: ficou na conta da pessoa", function(d){ return num(d.p.mostrarPix, d.direto); }, {sub:1});
-  L("prestPix", "dos quais: foi para prestadores", function(d){ return num(d.p.mostrarPix, d.prestMes); }, {sub:1, det:detPrest(colsPrest, prestLista)});
-  L("meta", "meta do Pix", function(d){ return num(d.p.mostrarPix, d.meta); }, {sub:1, vz:1});
-  L("pcMeta", "% da meta", function(d){ return d.p.mostrarPix && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {sub:1, pc:1});
-  L("trRec", "Transferências entre sócios recebidas", function(d){ return d.trRec; }, {vz:1});
-  SEC("SAIU");
-  L("pagas", "Contas pagas", function(d){ return num(d.p.mostrarContas, d.t.contas.pago); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("emBr","Pago em"), C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("forma","Forma"), C("conta","Conta utilizada"), C("valor","Valor",{fmt:BK, cor:function(){ return "text-success"; }})], linhas:listaPagas, vazio:"Nenhum pagamento neste período.", onde:"Contas pagas da família", ir:ir, ir2:"ffpagas", rotuloIr:"Abrir contas pagas"}); }});
-  L("prestSaiu", "Prestadores de serviço (Pix repassado)", function(d){ return d.prestMes; }, {vz:1, det:detPrest(colsPrest, prestLista.filter(function(x){ return x.noPeriodo>0.005; }))});
-  L("trEnv", "Transferências entre sócios enviadas", function(d){ return d.trEnv; }, {vz:1});
-  SEC("FALTA PAGAR");
-  L("aPagar", "Contas a pagar", function(d){ return num(d.p.mostrarContas, d.t.contas.restante); }, {det:detConta(abertas, "Nenhuma conta em aberto.")});
-  L("proRest", "Pró-labore restante", function(d){ return num(d.p.mostrarProlabore, d.t.pro.restante); });
-  L("atras", "atrasado (contas e pró-labore)", function(d){ return d.atras; }, {sub:1, cor:"ruim", det:detConta(listaAtras, "Nada atrasado.")});
-  L("prox", "vence nos próximos 7 dias", function(d){ return d.prox; }, {sub:1, vz:1, det:detConta(listaProx, "Nada vence nos próximos 7 dias.")});
-  L("saldoPrest", "Saldo devido a prestadores (todos os tempos)", function(d){ return d.saldoPrest; }, {vz:1, det:detPrest(colsPrest, prestLista)});
+  var linhas = [], L = function(id, rot, fn, o){ linhas.push(Object.assign({id:id, rot:rot, f:fn}, o||{})); };
+  var GRUPO = function(g, rot){ linhas.push({id:"g-"+g, rot:rot, tipo:"grupo", g:g}); };
+  L("proLiq", "Pró-labore · Pago", function(d){ return num(d.p.mostrarProlabore, d.t.pro.recebido); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("pessoa","Pessoa"), C("bruto","Bruto",{fmt:BK}), C("inss","INSS",{fmt:BK}), C("irrf","IRRF",{fmt:BK}), C("liquido","Líquido",{fmt:BK}), C("datas","Datas")], linhas:proLista, vazio:"Nenhum pró-labore cadastrado.", onde:"Pró-labores", ir:ir, ir2:"ffprolab", rotuloIr:"Abrir pró-labores"}); }});
+  L("meta", "Pix revendedoras · Meta", function(d){ return num(d.p.mostrarPix, d.meta); });   // a meta de cada pessoa fica sempre à vista, mesmo com Recebido zerado
+  L("pix", "Pix revendedoras · Recebido", function(d){ return num(d.p.mostrarPix, d.pix); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("dataBr","Data"), C("pessoa","Pessoa"), C("origem","Revendedora"), C("valor","Valor",{fmt:BK}), C("conta","Conta"), C("aud","Conferência",{cor:function(l){ return l.aud==="Pendente" ? "text-warning" : "text-success"; }})], linhas:pixLista, vazio:"Nenhum Pix neste período.", onde:"PIX revendedoras", ir:ir, ir2:"ffpix", rotuloIr:"Abrir Pix revendedoras"}); }});
+  L("pagas", "Contas a pagar · Pago", function(d){ return num(d.p.mostrarContas, d.t.contas.pago); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("emBr","Pago em"), C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("forma","Forma"), C("conta","Conta utilizada"), C("valor","Valor",{fmt:BK, cor:function(){ return "text-success"; }})], linhas:listaPagas, vazio:"Nenhum pagamento neste período.", onde:"Contas pagas da família", ir:ir, ir2:"ffpagas", rotuloIr:"Abrir contas pagas"}); }});
+  L("falta", "Falta (contas + pró-labore)", function(d){ return r2((d.p.mostrarContas ? d.t.contas.restante : 0)+(d.p.mostrarProlabore ? d.t.pro.restante : 0)); }, {det:function(){ return e(DetTab,{cols:colsConta, linhas:abertas, vazio:"Nada em aberto.", onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); }});
   L("total", ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)", function(d){ return r2((d.p.mostrarContas ? d.t.contas.total : 0)+(d.p.mostrarProlabore ? d.t.pro.total : 0)); }, {tipo:"total"});
+  GRUPO("pix", "Pix revendedoras");
+  L("direto", "Conta pessoal", function(d){ return num(d.p.mostrarPix, d.direto); }, {g:"pix", sub:1});
+  L("prestPix", "Prestadores de Serviços", function(d){ return num(d.p.mostrarPix, d.prestMes); }, {g:"pix", sub:1, det:detPrest(prestLista)});
+  L("pcMeta", "% da meta", function(d){ return d.p.mostrarPix && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {g:"pix", sub:1, pc:1});
+  GRUPO("prest", "Prestadores de Serviços");
+  L("prestSaiu", "Pago no período", function(d){ return d.prestMes; }, {g:"prest", sub:1, vz:1, det:detPrest(prestLista.filter(function(x){ return x.noPeriodo>0.005; }))});
+  L("saldoPrest", "Saldo devido", function(d){ return d.saldoPrest; }, {g:"prest", sub:1, vz:1, det:detPrest(prestLista)});
+  GRUPO("transf", "Transferências entre sócios");
+  L("trRec", "Recebidas", function(d){ return d.trRec; }, {g:"transf", sub:1, vz:1});
+  L("trEnv", "Enviadas", function(d){ return d.trEnv; }, {g:"transf", sub:1, vz:1});
+  GRUPO("cat", "Contas a pagar · por categoria");
   var totCat = function(k){ return D.reduce(function(a, d){ return a+(d.cats[k]||0); }, 0); };
-  var catNomes = Object.keys(D.reduce(function(o, d){ Object.keys(d.cats).forEach(function(k){ o[k] = 1; }); return o; }, {})).sort(function(a, b){ return totCat(b)-totCat(a); });
-  SEC("COMPROMISSOS "+(ANO ? "DO ANO" : "DO MÊS")+" POR CATEGORIA (valor total de cada categoria)");
-  catNomes.forEach(function(k){ if(totCat(k)<0.005) return; L("cat-"+k, k, function(d){ return d.cats[k] || 0; }, {sub:1, vz:1, det:function(){ return detCat(k); }}); });
-  // 4) vira linhas da tabela (uma coluna por pessoa + total)
-  var corpo = linhas.map(function(l){ if(l.tipo==="secao") return l; var o = {id:l.id, rot:l.rot, sub:l.sub, cor:l.cor, vz:l.vz, pc:l.pc, tipo:l.tipo, det:l.det}, tot = 0, algum = false;
+  Object.keys(D.reduce(function(o, d){ Object.keys(d.cats).forEach(function(k){ o[k] = 1; }); return o; }, {})).sort(function(a, b){ return totCat(b)-totCat(a); })
+    .forEach(function(k){ if(totCat(k)<0.005) return; L("cat-"+k, k, function(d){ return d.cats[k] || 0; }, {g:"cat", sub:1, vz:1, det:function(){ return detCat(k); }}); });
+  // 4) linhas da tabela: uma coluna por pessoa + total (quem está fora do total vai numa linha no fim)
+  var corpo = [];
+  linhas.forEach(function(l){
+    if(l.tipo==="grupo"){ corpo.push(l); return; }
+    if(l.g && !ab[l.g]) return;
+    var o = {id:l.id, rot:l.rot, sub:l.sub, cor:l.cor, vz:l.vz, pc:l.pc, tipo:l.tipo, det:l.det, nivel:(l.g ? 1 : 0)}, tot = 0, algum = false;
     D.forEach(function(d){ var v = l.f(d); o["p_"+d.p.id] = v; if(typeof v==="number"){ tot += v; algum = true; } });
-    o.total = l.pc ? (function(){ var px = D.reduce(function(a, d){ return a+d.pix; }, 0), mt = D.reduce(function(a, d){ return a+d.meta; }, 0); return mt>0 ? Math.round(px/mt*100) : null; })() : (algum ? r2(tot) : null); return o; });
-  var celula = function(v, l){ if(l.tipo==="secao") return ""; if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); var txt = l.pc ? v+"%" : (l.vz && v===0 ? "—" : BK(v)), cl = l.cor && v>0.005 ? (l.cor==="ruim" ? "text-destructive" : "text-success") : ""; return e("span",{className:cl+(l.tipo==="total" ? " font-bold" : "")}, txt); };
-  var cols = [{k:"rot", t:(ANO ? "Total "+ANO : nomeMes(ym)), render:function(v, l, aberta){ return e("span",{className:"block text-left "+(l.tipo==="secao" || l.tipo==="total" ? "font-bold" : "")+(l.sub ? " pl-4" : "")}, (l.det ? (aberta ? "▾ " : "▸ ") : "")+v); }}]
-    .concat(D.map(function(d){ return {k:"p_"+d.p.id, t:d.p.nome, render:celula}; }), [{k:"total", t:"Total da família", render:function(v, l){ return l.tipo==="secao" ? "" : e("b",null, celula(v, l)); }}]);
-  var fech = ff.fechamentos[ym];
-  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";
-  var COMPACTA = FUNDO+" [&_td]:!h-[22px] [&_td]:!px-2 [&_td]:!py-0 [&_td]:!leading-[14px] [&_td]:!text-[11px] [&_th]:!h-6 [&_td[colspan]]:!p-0";   // padrao-ok: linhas de 22 px e letra de 11 px, igual ao Prestadores
-  var seletor = e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:mesesOp.map(function(k){ return [k, nomeMes(k)]; }).concat(anosOp.map(function(a){ return ["ANO:"+a, "Total "+a]; }))});
-  return e(Guarda,{c:c}, e("div",{className:PADRAO_BLOCOS+" -mb-2 -ml-3 -mr-2 -mt-5 flex flex-col gap-1.5 pl-0 md:-mb-3 md:-ml-5 md:-mr-3 md:pl-0"},
-    !ANO && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#5b74ad] bg-[#1b2a4a] px-2 py-1 text-[11px]"},
-      e("span",null, fech ? "Mês fechado em "+new Date(fech.em).toLocaleDateString("pt-BR")+" por "+fech.por+". Os números ficaram guardados." : "Mês aberto. Fechar guarda uma foto destes números para consultar depois."),
-      fech ? e(Botao,{onClick:function(){ if(window.confirm("Reabrir "+nomeMes(ym)+"? A foto guardada será apagada.")) acao(c, "reabrir", {ym:ym}); }}, "Reabrir") : e(Botao,{onClick:function(){ if(window.confirm("Fechar "+nomeMes(ym)+" e guardar os números?")) acao(c, "fechar", {ym:ym}); }}, "Fechar o mês")),
-    D.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
-      e(BlocoPainel,{titulo:"Financeiro familiar", acao:seletor, compacto:false, cls:COMPACTA},
-        e(TabelaPlanilha,{cols:cols, linhas:corpo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada neste período.",
-          detalhe:function(l){ return l.det ? l.det() : null; },
-          linhaCls:function(l){ return l.tipo==="secao" ? "!bg-[#2d5190] !cursor-default" : l.tipo==="total" ? "!bg-[#1a2540] !cursor-default" : l.det ? "" : "!cursor-default"; }}))));
+    o.total = l.pc ? (function(){ var px = D.reduce(function(a, d){ return a+d.pix; }, 0), mt = D.reduce(function(a, d){ return a+d.meta; }, 0); return mt>0 ? Math.round(px/mt*100) : null; })() : (algum ? r2(tot) : null);
+    corpo.push(o); });
+  marcaFim(corpo);
+  if(fora.length>0){ corpo.push({id:"s-fora", rot:"Fora do total da família", tipo:"secao"});
+    fora.forEach(function(d){ corpo.push({id:"fora-"+d.p.id, rot:d.p.nome+" · Pix revendedoras", tipo:"solo", total:d.pix, cor:"ok"}); }); }
+  var celula = function(v, l){ if(l.tipo==="secao" || l.tipo==="grupo" || l.tipo==="solo") return ""; if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); var txt = l.pc ? v+"%" : (l.vz && v===0 ? "—" : BK(v)), cl = l.cor && v>0.005 ? "text-success" : ""; return e("span",{className:cl+(l.tipo==="total" ? " font-bold" : "")}, txt); };
+  var cols = [{k:"rot", t:"Todas · "+(ANO ? "Total "+ANO : nomeMes(ym)), render:function(v, l, aberta){
+      if(l.tipo==="grupo") return e("span",{role:"button", tabIndex:0, className:"block cursor-pointer text-left font-bold", onClick:function(ev){ ev.stopPropagation(); alterna(l.g); }, onKeyDown:function(ev){ if(ev.key==="Enter") alterna(l.g); }}, (ab[l.g] ? "▾ " : "▸ ")+v);
+      return e("span",{className:"block text-left "+(l.tipo==="secao" || l.tipo==="total" ? "font-bold" : "")+(l.sub ? " pl-4" : "")}, (l.det ? (aberta ? "▾ " : "▸ ") : "")+v); }}]
+    .concat(D.map(function(d){ return {k:"p_"+d.p.id, t:d.p.nome, render:celula}; }), [{k:"total", t:"Total da família", render:function(v, l){ if(l.tipo==="secao" || l.tipo==="grupo") return ""; if(l.tipo==="solo") return e("span",{className:"text-success"}, BK(v)); return e("b",null, celula(v, l)); }}]);
+  var cabAcima = [[{t:"", span:1}].concat(ORDEM.map(function(g){ return {t:g, span:D.filter(function(d){ return grupoDe(d.p)===g; }).length}; }).filter(function(x){ return x.span>0; }), [{t:"", span:1}])];
+  // VISÃO DE UMA PESSOA (Marcus, 23/11/2026): colunas Total · Pago · Falta. Tudo que abre (pró-labore, contas por categoria, prestadores) abre NA MESMA TABELA, com as mesmas 3 colunas e só nome, total, pago e falta.
+  // O Pix fica num bloco à parte (é dinheiro que entra, não conta a pagar). Esta tela é só um resumo: o detalhe fica nas telas de lançar.
+  var corpoPix = null, colsPix = null, corpoPago = null, colsPago = null, detPixC = null, detPixP = null;
+  if(quem!=="todos"){
+    var dq = dados.filter(function(d){ return d.p.id===quem; })[0];
+    if(dq){
+      var pp = dq.p, itsP = dq.itens, tP = dq.t;
+      var R3 = function(id, rot, total, feito, falta, o){ return Object.assign({id:id, rot:rot, total:total, feito:feito, falta:falta}, o||{}); };
+      var porVencP = function(a, b){ return a.venc.localeCompare(b.venc); };
+      var folhaP = function(x, nivel){ return R3("i-"+x.id, x.desc, x.valor, x.pago, x.restante, {nivel:nivel}); };
+      var linP = [];
+      if(pp.mostrarProlabore && tP.pro.total>0){ linP.push(R3("p-pro", "Pró-labore", tP.pro.total, tP.pro.recebido, tP.pro.restante, {tg:"pro"})); if(ab.pro) itsP.filter(function(x){ return x.pro; }).sort(porVencP).forEach(function(x){ linP.push(folhaP(x, 1)); }); }
+      if(pp.mostrarContas && tP.contas.total>0){
+        linP.push(R3("p-ct", "Contas a pagar", tP.contas.total, tP.contas.pago, tP.contas.restante, {tg:"ct"}));
+        if(ab.ct){
+          var porCatP = {}; itsP.filter(function(x){ return !x.pro; }).forEach(function(x){ var o = porCatP[x.cat] = porCatP[x.cat] || {valor:0, pago:0, restante:0, itens:[]}; o.valor = r2(o.valor+x.valor); o.pago = r2(o.pago+x.pago); o.restante = r2(o.restante+x.restante); o.itens.push(x); });
+          Object.keys(porCatP).sort(function(a, b){ return porCatP[b].valor-porCatP[a].valor; }).forEach(function(k){ linP.push(R3("p-cat-"+k, k, porCatP[k].valor, porCatP[k].pago, porCatP[k].restante, {tg:"cat:"+k, nivel:1})); if(ab["cat:"+k]) porCatP[k].itens.sort(porVencP).forEach(function(x){ linP.push(folhaP(x, 2)); }); });
+        }
+      }
+      var prestP = prestLista.filter(function(x){ return x.respId===pp.id && x.noPeriodo>0.005; });
+      if(prestP.length>0){ var totDevP = r2(prestP.reduce(function(a, x){ return a+(x.dividas>0.005 ? x.dividas : 0); }, 0)); linP.push(R3("p-prest", "Prestadores de Serviços", totDevP>0.005 ? totDevP : null, r2(prestP.reduce(function(a, x){ return a+x.noPeriodo; }, 0)), null, {tg:"prest"})); if(ab.prest) prestP.forEach(function(x){ linP.push(R3("p-pr-"+x.id, x.prest+(x.serv && x.serv!=="—" ? " · "+x.serv : ""), x.dividas>0.005 ? x.dividas : null, x.noPeriodo, null, {nivel:1})); }); }
+      if(dq.trRec>0 || dq.trEnv>0){ linP.push(R3("p-trrec", "Transferências recebidas", null, dq.trRec, null)); linP.push(R3("p-trenv", "Transferências enviadas", null, dq.trEnv, null)); }
+      linP.push(R3("p-total", ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)", r2((pp.mostrarContas ? tP.contas.total : 0)+(pp.mostrarProlabore ? tP.pro.total : 0)), r2((pp.mostrarContas ? tP.contas.pago : 0)+(pp.mostrarProlabore ? tP.pro.recebido : 0)), r2((pp.mostrarContas ? tP.contas.restante : 0)+(pp.mostrarProlabore ? tP.pro.restante : 0)), {tipo:"total"}));
+      corpo = marcaFim(linP);
+      var rotP = function(v, l){ var pad = (l.nivel||0)*16;
+        if(l.tg) return e("span",{role:"button", tabIndex:0, className:"block cursor-pointer text-left "+(l.nivel ? "" : "font-bold"), style:{paddingLeft:pad}, onClick:function(ev){ ev.stopPropagation(); alterna(l.tg); }, onKeyDown:function(ev){ if(ev.key==="Enter") alterna(l.tg); }}, (ab[l.tg] ? "▾ " : "▸ ")+v);
+        return e("span",{className:"block text-left "+(l.tipo==="total" ? "font-bold" : ""), style:{paddingLeft:pad}}, v); };
+      var celP = function(v, l){ if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); return e("span",{className:(l.tipo==="total" ? "font-bold" : "")}, BK(v)); };
+      var celFeito = function(v, l){ if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); return e("span",{className:(v>0.005 ? "text-success " : "")+(l.tipo==="total" ? "font-bold" : "")}, BK(v)); };
+      cols = [{k:"rot", t:pp.nome+" · "+(ANO ? "Total "+ANO : nomeMes(ym)), render:rotP}, {k:"total", t:"Total", render:celP}, {k:"feito", t:"Pago", render:celFeito}, {k:"falta", t:"Falta", render:celP}];
+      cabAcima = null;
+      if(pp.mostrarPix && (dq.pix>0 || dq.meta>0)){
+        // PIX REVENDEDORAS (Marcus, 23/11/2026): as duas linhas sempre à vista e o TOTAL embaixo, grudado no fim do bloco, na mesma altura do total de "Como foi pago"
+        // CADA PIX QUE ENTROU (Marcus, 23/11/2026): clicar em Conta pessoal ou em Prestadores de Serviços abre uma TABELA embaixo do bloco (revendedora, data, conta e valor), da data mais nova para a mais antiga
+        var pxPeriodo = ff.pix.filter(function(x){ return x.personaId===pp.id && yms.indexOf(String(x.data).slice(0,7))>=0 && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); });
+        var contaDoPix = function(id){ return (ff.contasBanc||[]).filter(function(c){ return c.id===id; })[0]; };
+        var nomeDoPrest = function(id){ var q = ff.prest.filter(function(k){ return k.id===id; })[0]; return q ? nomePropio(q.nome) : "—"; };
+        var maisNovo = function(x, y){ return String(y.data).localeCompare(String(x.data)); };
+        var nomeConta = function(c){ return c ? String(c.nome).replace(/^Conta\s+/i, "") : "Sem conta informada"; };
+        detPixC = pxPeriodo.filter(function(x){ var c = contaDoPix(x.contaId); return !(c && c.prestadorId); }).map(function(x, i){ return {id:"dc"+i, data:x.data, rev:x.origem||"—", conta:nomeConta(contaDoPix(x.contaId)), valor:x.valor}; }).sort(maisNovo);
+        detPixP = pxPeriodo.filter(function(x){ var c = contaDoPix(x.contaId); return c && c.prestadorId; }).map(function(x, i){ var c = contaDoPix(x.contaId); return {id:"dp"+i, data:x.data, rev:x.origem||"—", prest:nomeDoPrest(c.prestadorId), conta:nomeConta(c), valor:x.valor}; })
+          .concat(ff.repasses.filter(function(x){ return x.origemPixPersonaId===pp.id && !x.origemPixLancId && yms.indexOf(String(x.data).slice(0,7))>=0; }).map(function(x, i){ return {id:"dr"+i, data:x.data, rev:"—", prest:nomeDoPrest(x.prestId), conta:x.origem||"—", valor:x.valor}; })).sort(maisNovo);
+        corpoPix = [R3("x-direto", "Conta pessoal", null, dq.direto, null, {tg:"pixc"}), R3("x-prest", "Prestadores de Serviços", null, dq.prestMes, null, {tg:"pixp"}),
+          R3("x-total", "Total", dq.meta>0 ? dq.meta : null, dq.pix, dq.meta>0 ? r2(Math.max(0, dq.meta-dq.pix)) : null, {tipo:"total"})];
+        var vaz = function(fn){ return function(v, l){ return l.vazia ? "" : fn(v, l); }; };
+        colsPix = [{k:"rot", t:pp.nome+" · Pix", render:vaz(rotP)}, {k:"total", t:"Meta", render:vaz(celP)}, {k:"feito", t:"Recebido", render:vaz(celFeito)}, {k:"falta", t:"Falta", render:vaz(celP)}];
+      }
+      // COMO FOI PAGO (Marcus, 23/11/2026): as contas pagas da pessoa (o mesmo "Pago" de Contas a pagar), uma linha por conta pagadora
+      if(pp.mostrarContas){
+        var porContaP = {}, totContaP = 0;
+        itsP.filter(function(x){ return !x.pro; }).forEach(function(x){ (x.pagamentos||[]).forEach(function(g){ var k = String(g.conta||"").replace(/^Conta\s+/i, "").trim(); if(!k || k==="—") k = "Sem conta informada"; porContaP[k] = r2((porContaP[k]||0)+g.valor); totContaP = r2(totContaP+g.valor); }); });
+        var chavesP = Object.keys(porContaP).sort(function(a, b){ if(a==="Sem conta informada") return 1; if(b==="Sem conta informada") return -1; return porContaP[b]-porContaP[a]; });
+        if(chavesP.length>0){
+          corpoPago = chavesP.map(function(k){ return R3("c-"+k, k, null, porContaP[k], null, {pct:totContaP>0 ? Math.round(porContaP[k]/totContaP*100)+"%" : "—"}); });
+          corpoPago.push(R3("c-total", "Total pago em contas", null, totContaP, null, {tipo:"total", pct:"100%"}));
+          colsPago = [{k:"rot", t:pp.nome+" · Como foi pago", render:rotP}, {k:"feito", t:"Pago", render:celFeito}, {k:"pct", t:"% do pago", render:function(v){ return e("span",null, v); }}];
+        }
+      }
+      if(corpoPix && corpoPago && corpoPago.length>corpoPix.length){ var tt = corpoPix.pop(); for(var iv = corpoPix.length; iv<corpoPago.length-1; iv++) corpoPix.push(R3("x-v"+iv, "", null, null, null, {vazia:true})); corpoPix.push(tt); }
+    }
+  }
+  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540] [&_td[colspan]]:!p-0";   // fundo azul-marinho do Prestadores
+  // LINHA AZUL EMBAIXO DO TÍTULO (Marcus, 23/11/2026): só dois filtros, Mês e Pessoa
+  var barra = e(BarraTabela,null,
+    e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:mesesOp.map(function(k){ return [k, nomeMes(k)]; }).concat(anosOp.map(function(a){ return ["ANO:"+a, "Total "+a]; }))})),
+    e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:quem, aoMudar:setQuem, rotulo:"Pessoa", ops:[["todos", "Todas"]].concat(Dtodos.map(function(d){ return [d.p.id, d.p.nome]; }), foraTodos.map(function(d){ return [d.p.id, d.p.nome+" (fora do total)"]; }))})));
+  // VISUAL FINO IGUAL À CONTAS A PAGAR: página colada nas bordas, letra de 10 px e linhas de 18 px
+  return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA}, e("style",null, CSS_ABERTO),
+    D.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") : (quem!=="todos" && corpo.length===0) ? null :
+      e(BlocoPainel,{titulo:"Resumo familiar", compacto:true, cls:FUNDO}, barra,
+        e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},   // padrao-ok: letra de 11 px e linhas de 20 px (um pouco maior que o fino de 10 px, pedido do Marcus em 23/11/2026)
+          e(TabelaPlanilha,{fina:true, cols:cols, linhas:corpo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, alturaMax:quem==="todos" ? "calc(100vh - 6.6rem)" : undefined, vazio:"Nada neste período.", cabAcima:cabAcima,
+            detalhe:quem==="todos" ? function(l){ return l.det ? l.det() : null; } : undefined,
+            linhaCls:function(l){ return tinta(l)+" "+(l.tg ? "!cursor-pointer" : l.tipo==="secao" ? "!bg-[#2d5190] !cursor-default" : l.tipo==="grupo" ? "!bg-[#1f3358] !cursor-pointer" : l.tipo==="total" ? "!bg-[#1a2540] !cursor-default" : l.tipo==="solo" ? "!cursor-default" : l.det ? "" : "!cursor-default"); }}))),
+    (corpoPix || corpoPago) && e("div",{className:"ff-par"+(corpoPix && corpoPago ? " ff-par2" : "")},
+    corpoPix && e(BlocoPainel,{titulo:"Pix revendedoras", compacto:true, cls:FUNDO}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:colsPix, linhas:corpoPix, linhaCls:tinta, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada."}))),
+    corpoPago && e(BlocoPainel,{titulo:"Como foi pago", compacto:true, cls:FUNDO}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:colsPago, linhas:corpoPago, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada."})))),
+    detPixC && ab.pixc && e(BlocoPainel,{titulo:"Conta pessoal · Pix recebidos", compacto:true, cls:FUNDO, dir:BK(r2(detPixC.reduce(function(a, x){ return a+x.valor; }, 0)))}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:[{k:"data", t:"Data", render:function(v){ return diaBr(v); }}, {k:"rev", t:"Revendedora"}, {k:"conta", t:"Conta"}, {k:"valor", t:"Valor", render:function(v){ return BK(v); }}], linhas:detPixC, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, vazio:"Nenhum Pix neste período.", alturaMax:"26rem"}))),
+    detPixP && ab.pixp && e(BlocoPainel,{titulo:"Prestadores de Serviços · Pix repassados", compacto:true, cls:FUNDO, dir:BK(r2(detPixP.reduce(function(a, x){ return a+x.valor; }, 0)))}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:[{k:"data", t:"Data", render:function(v){ return diaBr(v); }}, {k:"rev", t:"Revendedora"}, {k:"prest", t:"Prestador"}, {k:"conta", t:"Conta"}, {k:"valor", t:"Valor", render:function(v){ return BK(v); }}], linhas:detPixP, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, vazio:"Nenhum Pix neste período.", alturaMax:"26rem"})))));
 }
 
 // ───────────────── Alertas ─────────────────
