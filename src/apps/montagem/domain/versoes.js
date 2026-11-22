@@ -3,14 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
-<<<<<<< HEAD
- {v:"0.21.85", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
+ {v:"0.21.86", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
   {tipo:"novo", area:"Menu lateral (todos os setores)", txt:"Clicar num setor do menu lateral agora abre a Entrada do setor: botões grandes só com os nomes das telas, sem dados, já filtrados pelo acesso da pessoa. Clicar no nome abre a tela. Setor com uma tela só abre a tela direto. O menu de cima continua igual."}
-=======
+ ]},
  {v:"0.21.85", data:"2026-11-22", titulo:"Nomes alinhados: CNPJ 46 = Mayz, CNPJ 67 = Axis e Dávila; R$ 150,00 do Lucas Castilho nos fornecedores", itens:[
   {tipo:"correção", area:"Financeiro → Pagamentos a fornecedores", txt:"CNPJ 46 passa a se chamar Mayz Comércio de Moda (era Sorelly Comércio) e CNPJ 67 passa a Axis (era Axis Joias), igual à lista oficial de CNPJs; a lista da janela de Negociações acompanha. 41 e 10 registros ajustados."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores / Direcionar", txt:"Dávila fica com um nome só (Dávila, serviço Produção externa) nas duas telas. O Pix de R$ 150,00 do Lucas Castilho (bônus Sorelly, Karine) também consta em Pagamentos a fornecedores, na data de 23/11, com o comprovante."}
->>>>>>> origin/master
  ]},
  {v:"0.21.84", data:"2026-11-22", titulo:"Lançamento de pagamentos passa a se chamar Conferência de pagamentos", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"No card de detalhe, parcela sem número de pedido agora mostra Sem número (antes aparecia um traço). A Xangai tem romaneio e fatura: cada parcela mostra o que o dado diz (Romaneio nº ou Fatura nº)."},
