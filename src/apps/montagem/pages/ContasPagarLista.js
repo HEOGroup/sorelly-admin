@@ -297,5 +297,6 @@ function TelaContas(props){
 
 function AbaCtaLista(){ return e(TelaContas,{modo:"pagar"}); }
 function AbaCtaPagas(){ return e(TelaContas,{modo:"pagas"}); }
-function AbaCtaFamilia(){ return e(TelaContas,{modo:"pagar", quem:"familia"}); }   // Financeiro › Família › Contas › A pagar / Pagas: a mesma lista, já em Contas = Família (Marcus, 22/11/2026)
-export { AbaCtaLista, AbaCtaPagas, AbaCtaFamilia, SeletorPeriodo, faixaDe, menuSusp, CNPJ_LETRA };   // a Contas a receber (ContasReceberLista.js) usa as mesmas peças: mesmo seletor de período e mesmo menu suspenso
+function AbaCtaFamilia(){ return e(TelaContas,{modo:"pagar", quem:"familia"}); }
+function AbaCtaFamiliaPagas(){ return e(TelaContas,{modo:"pagas", quem:"familia"}); }   // Financeiro › Família › Contas › A pagar / Pagas: a mesma lista, já em Contas = Família (Marcus, 22/11/2026)
+export { AbaCtaLista, AbaCtaPagas, AbaCtaFamilia, AbaCtaFamiliaPagas, SeletorPeriodo, faixaDe, menuSusp, CNPJ_LETRA };   // a Contas a receber (ContasReceberLista.js) usa as mesmas peças: mesmo seletor de período e mesmo menu suspenso

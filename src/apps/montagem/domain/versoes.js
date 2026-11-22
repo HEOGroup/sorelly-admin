@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.98", data:"2026-11-22", titulo:"Menu Família: Contas com Pagas e A pagar como duas telas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"O item Contas do menu Família agora abre duas entradas, Pagas e A pagar, cada uma uma tela. As duas são a lista de Contas já em Contas = Família: Pagas abre na situação Pagas e A pagar abre na situação A pagar. Antes havia uma entrada só, A pagar / Pagas."}]},
  {v:"0.21.97", data:"2026-11-22", titulo:"Menu Família: Contas com A pagar / Pagas", itens:[
   {tipo:"melhoria", area:"Financeiro → Família", txt:"O menu Família ficou: Home da família, Contas (A pagar / Pagas), PIX revendedoras, Sócios, Cadastro de prestadores, Pró-labores, Relatório, Histórico e Configurações. As duas entradas Contas a pagar da família e Contas pagas da família saíram do menu e viraram uma só, que abre a mesma lista de Contas já em Contas = Família. As telas antigas continuam existindo e abrem pelo botão Abrir na Família. Só quem tem acesso ao Financeiro familiar vê."}]},
  {v:"0.21.96", data:"2026-11-22", titulo:"Abas abertas: tela que mudou de nome some sozinha", itens:[

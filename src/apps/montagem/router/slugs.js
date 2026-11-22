@@ -67,6 +67,7 @@ export const SLUG_DA_ABA = {
   ffcontas: "ff-contas-a-pagar",
   ffpagas: "ff-contas-pagas",
   ctafam: "contas-da-familia",
+  ctafamp: "contas-pagas-da-familia",
   ffpix: "ff-pix-revendedoras",
   ffgrupo: "ff-resumo-do-grupo",
   ffprest: "ff-prestadores",
