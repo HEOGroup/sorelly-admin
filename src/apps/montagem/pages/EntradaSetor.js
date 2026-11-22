@@ -14,7 +14,7 @@ function BotaoTela(p){
 }
 
 // Financeiro: tela inteira em azul escuro (nada preto). Cada grupo do menu é UMA COLUNA (título em cima, botões embaixo, um por linha),
-// todas lado a lado na mesma ordem do menu de cima. Nome comprido quebra em 2 linhas (todos os botões têm a mesma altura).
+// todas lado a lado na mesma ordem do menu de cima, SEMPRE na mesma linha: as colunas encolhem para caber (nunca descem). Nome comprido quebra sozinho em 2 linhas (todos os botões têm a mesma altura); só abaixo de ~960 px a tela rola para o lado.
 // Títulos grandes (tela 20 px, grupos 16 px) e texto dos botões em 13 px: exceção pedida pelo Marcus em 23/11/2026 (padrao-ok).
 function duasLinhas(nome){
   if(nome.length <= 22 || nome.indexOf(" ") < 0) return nome;
@@ -27,14 +27,14 @@ function EntradaCompacta(p){
   var mix = function(pct){ return "color-mix(in srgb, "+cor+" "+pct+"%, #0b1730)"; };
   return e("div",{className:"-m-4 min-h-screen p-3 md:-m-6 md:p-4", style:{background:mix(22)}},
     e("div",{className:"mb-3 text-center text-[20px] font-semibold leading-tight text-white"}, en.nome),   // padrao-ok: título grande do Financeiro, pedido do Marcus (23/11/2026)
-    e("div",{className:"flex flex-wrap items-start justify-center gap-2"},
+    e("div",{className:"flex flex-nowrap items-start gap-1.5 overflow-x-auto"},
       en.grupos.map(function(g, i){
-        return e("section",{key:i, className:"flex min-w-44 flex-col overflow-hidden rounded-lg", style:{background:mix(38), boxShadow:"inset 0 0 0 1px "+mix(65)}},
-          e("div",{className:"flex h-8 items-center justify-center whitespace-nowrap px-3 text-[16px] font-semibold text-white", style:{background:mix(65)}}, g.titulo || en.nome),   // padrao-ok: título do grupo maior que os botões, pedido do Marcus (23/11/2026)
-          e("div",{className:"flex flex-col gap-1 p-1.5"},
+        return e("section",{key:i, className:"flex min-w-[7.5rem] flex-1 basis-0 flex-col overflow-hidden rounded-lg", style:{background:mix(38), boxShadow:"inset 0 0 0 1px "+mix(65)}},
+          e("div",{className:"flex h-8 items-center justify-center whitespace-nowrap px-1 text-[16px] font-semibold text-white", style:{background:mix(65)}}, g.titulo || en.nome),   // padrao-ok: título do grupo maior que os botões, pedido do Marcus (23/11/2026)
+          e("div",{className:"flex flex-col gap-1 p-1"},
             g.itens.map(function(no, k){ return e("button",{key:no.nome+k, type:"button", onClick:function(){ en.abrir(no); }, title:no.nome,
               style:{background:mix(55), boxShadow:"inset 0 0 0 1px rgba(255,255,255,.2)", height:"2.5rem"},   // padrao-ok: botão de 2 linhas, mesma altura para todos (23/11/2026)
-              className:"flex items-center justify-center whitespace-pre rounded-md px-3 text-center text-[13px] font-medium leading-tight text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, duasLinhas(no.nome)); })));
+              className:"flex items-center justify-center rounded-md px-1.5 text-center [text-wrap:balance] text-[13px] font-medium leading-tight text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, no.nome); })));
       })));
 }
 
