@@ -4,7 +4,8 @@
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
  {v:"0.21.95", data:"2026-11-23", titulo:"Entrada do Financeiro: tela azul com as colunas lado a lado", itens:[
-  {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"A Entrada do Financeiro ficou toda em azul escuro (sem fundo preto): cada grupo do menu é uma coluna, todas na mesma linha e na ordem do menu, que encolhem para caber (nunca descem). Título da tela e dos grupos maiores, botões de 13 px com a mesma altura e nomes longos em 2 linhas. Os outros setores seguem com a entrada em blocos."}
+  {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"A Entrada do Financeiro ficou toda em azul escuro (sem fundo preto): cada grupo do menu é uma coluna, todas na mesma linha e na ordem do menu, que encolhem para caber (nunca descem). Título da tela e dos grupos maiores, botões de 13 px com a mesma altura e nomes longos em 2 linhas. Vale para TODOS os setores do menu lateral, cada um na cor dele (setor com uma tela só abre a tela direto)."},
+  {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"O título grande da Entrada do Financeiro fica em caixa alta (FINANCEIRO), exceção liberada pelo Marcus à regra de 20/11."}
  ]},
  {v:"0.21.94", data:"2026-11-22", titulo:"Menu Contas: Pagas e A pagar como duas telas", itens:[
   {tipo:"melhoria", area:"Financeiro → Contas", txt:"O menu Contas agora mostra Pagas e A pagar como duas entradas, no lugar de A pagar / Pagas. As duas abrem a mesma lista, que já tem o filtro de Situação (A pagar, Pagas, Todas) e de Contas (Empresa, Família, Junto); Pagas abre já na situação Pagas e A pagar abre já na situação A pagar. Cada uma guarda a sua última escolha."}]},
