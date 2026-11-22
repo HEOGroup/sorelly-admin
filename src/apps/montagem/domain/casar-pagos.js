@@ -58,4 +58,4 @@ function casarPagos(l, parcelas){
   return mudou ? out : l;
 }
 
-export { casarPagos, cobertoAte, tipoDaParcela, r2 };
+export { casarPagos, cobertoAte, tipoDaParcela, tipoDoTitulo, r2 };

@@ -167,7 +167,7 @@ function resolverDestino(d, ff, rotulo, contaId){
   if(d.tipo==="FAMILIA" && persona) return {destino:"socio", personaId:persona, contaId:"", contaTxt:"", nome:nome};
   if(d.tipo==="PRESTADOR"){
     var pf = d.prestFamId && (F.prest || []).find(function(p){ return p.id===d.prestFamId; });
-    if(!pf && d.personaId){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // só destino MARCADO como da família (tem personaId) procura o prestador da Família pelo nome; destino da Sorelly (sem personaId) NUNCA cai no Familiar por nome igual (Marcus, 21/11/2026: o R$ 150,00 do Lucas Castilho era bônus da Sorelly e foi para o Familiar)
+    if(!pf){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // Direcionar sem vínculo: procura o prestador da Família com o mesmo nome
     if(pf){
       var cs = (F.contasBanc || []).filter(function(c){ return c.prestadorId===pf.id && c.ativo!==false; });
       var cb = cs.find(function(c){ return persona && c.personaId===persona; }) || cs[0];
