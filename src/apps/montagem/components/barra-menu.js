@@ -100,6 +100,18 @@ function AbasAbertas(p){
   useEffect(function(){ setAbas(lerAbas(p.visao)); setFavs(lerFavoritas(visao)); }, [p.visao, window.__sorellyAtuando]);   // trocou de modo ou de pessoa ("atuar como"): cada um tem as suas abas e favoritas
   useEffect(function(){ var f = function(){ setFavs(lerFavoritas(visao)); }; window.addEventListener("sorelly-favoritas", f); return function(){ window.removeEventListener("sorelly-favoritas", f); }; }, [visao]);
   var kAtual = atual ? chaveDeNo(atual, p.setor) : "";
+  // Aba de tela que MUDOU DE NOME no menu (ex.: "A pagar / Pagas" virou "Pagas" e "A pagar", 22/11/2026): a chave guarda o nome, então a aba velha ficava parada na faixa. Aqui some sozinha: é do mesmo setor, a tela (aba+modo) ainda existe no menu, mas com outro nome. Tela que saiu do menu de vez não é mexida.
+  var chavesAtuais = {}; todas.forEach(function(n){ var kk = (n.aba||"")+"|"+(n.modo||""); (chavesAtuais[kk] = chavesAtuais[kk] || []).push(chaveDeNo(n, p.setor)); });
+  var assinaturaMenu = Object.keys(chavesAtuais).sort().map(function(kk){ return kk+"="+chavesAtuais[kk].join(","); }).join(";");
+  useEffect(function(){
+    if(!assinaturaMenu) return;
+    setAbas(function(ant){
+      var nova = ant.filter(function(a){ var ks = a.setor===p.setor ? chavesAtuais[(a.aba||"")+"|"+(a.modo||"")] : null; return !ks || ks.indexOf(a.k)>=0; });
+      if(nova.length===ant.length) return ant;
+      try{ sessionStorage.setItem(CHAVE+(p.visao||"admin")+"_"+(window.__sorellyAtuando||""), JSON.stringify(nova)); }catch(x){}
+      return nova;
+    });
+  }, [assinaturaMenu, p.setor]);   // eslint-disable-line react-hooks/exhaustive-deps
   var eFav = function(k){ return favs.some(function(f){ return f.k===k; }); };
   var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin")+"_"+(window.__sorellyAtuando||""), JSON.stringify(l)); }catch(x){} };
   useEffect(function(){
