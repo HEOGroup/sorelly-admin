@@ -7,7 +7,7 @@ import { Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { PAGINA_CHEIA, CLS_FINA_ESPACO, BarraTabela, CelulaBarra, CampoMini, BuscaMini, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { Botao, CAMPO, MenuMulti, Rotulo } from "@/apps/montagem/components/padrao-fin";
+import { Botao, CAMPO, MenuMulti } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chamar } from "@/apps/montagem/lib/api";
 import { abrirAnexo } from "@/apps/montagem/lib/anexo";
@@ -29,13 +29,13 @@ var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+(ano
 // MUDAR A PESSOA de uma conta da família direto na lista, pago ou a pagar, sem estornar nem baixar de novo (Anamaria, 22/11/2026). Vale para a conta inteira, todos os meses.
 function MudarPessoa(p){
   var it = p.item, ff = p.s.ff || {}, ps = useState(it.ffPessoa), novo = ps[0];
-  return createPortal(e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/50", onClick:p.fechar}, e("div",{className:"w-80 rounded-md border border-border bg-background p-3 shadow-lg", onClick:function(ev){ ev.stopPropagation(); }},
+  return createPortal(e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/50", onClick:p.fechar}, e("div",{className:"w-[30rem] max-w-[94vw] rounded-md border border-border bg-background p-3 shadow-lg", onClick:function(ev){ ev.stopPropagation(); }},
     e("p",{className:"pb-1 text-center text-[13px] font-semibold"}, "Mudar a pessoa"),
     e("p",{className:"pb-2 text-center text-[13px]"}, it.nome+" · "+(it.status==="pago" ? "já pago" : "a pagar")+" · hoje: "+it.rateioTxt),
-    e(Rotulo,{t:"Pessoa da conta (vale para todos os meses)"}),
+    e("p",{className:"pb-1 text-center text-[13px]"}, "Pessoa da conta (vale para todos os meses)"),
     e("select",{value:novo, "aria-label":"Pessoa da conta", className:CAMPO, onChange:function(ev){ ps[1](ev.target.value); }}, e("option",{value:FAMILIA4}, "Família (divide igual entre os "+membrosFamilia(ff).length+")"), (ff.personas || []).map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); })),
     e("p",{className:"pt-2 text-center text-[13px]"}, "O pagamento não muda: nada é estornado nem baixado de novo."),
-    e("div",{className:"flex justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:function(){ if(novo!==it.ffPessoa) p.mudar(novo); else p.fechar(); }}, "Mudar a pessoa"), e(Botao,{onClick:p.abrirFamilia}, "Abrir na Família"), e(Botao,{onClick:p.fechar}, "Cancelar")))), document.body);
+    e("div",{className:"flex flex-wrap justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:function(){ if(novo!==it.ffPessoa) p.mudar(novo); else p.fechar(); }}, "Mudar"), e(Botao,{onClick:p.abrirFamilia}, "Abrir na Família"), e(Botao,{onClick:p.fechar}, "Cancelar")))), document.body);
 }
 // CONTAS DA FAMÍLIA lançadas no Admin (módulo ff) como linhas da lista (Marcus, 16/11/2026: uma tela só, duas origens). SÓ LEITURA: o módulo da Família não é mexido; clicar leva para o Financeiro familiar.
 function itensFamiliaAdmin(s){
