@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Junção geral das conversas)
+- **Pedido do Marcus:** "sobe tudo": juntar na master tudo o que as conversas salvaram na pasta principal (ramo alteracoes-27-10) e arquivar as conversas. Regra para evitar o problema de várias cópias: cada conversa sobe em pedaços pequenos com `npm run conferir`; a pasta principal só puxa a master e ninguém edita nela.
+- **Ficou de fora (escolha C do Marcus):** `pages/BonusMontagem.js` (12/11/2026, reprova o padrão: usa TabelaCampos; sem dono). Fica no ramo `uniao-23-11`. A rota `comissoes-montagem` segue apontando para `ComissoesTodos`.
+
 ## 22/11/2026 (Entrada do setor)
 - **Desenho final para TODOS os setores (Marcus, 23/11/2026):** a Entrada do setor usa o desenho do Financeiro em todo setor com mais de uma tela: fundo escuro na cor do setor, uma coluna por grupo do menu (na ordem do menu, sempre na mesma linha, sem descer), botões de 13 px com a mesma altura, títulos dos grupos 16 px, título grande do setor 20 px em caixa alta. Setor com uma tela só abre a tela direto.
 - **Exceção à regra de 20/11 (sem letra maiúscula), liberada pelo Marcus em 23/11/2026:** o TÍTULO GRANDE da Entrada do Financeiro (nome do setor no topo) fica em caixa alta (FINANCEIRO). Títulos dos grupos e botões seguem com só a primeira letra maiúscula. Também por pedido dele: fonte dos botões 13 px, títulos dos grupos 16 px e da tela 20 px (comentário `padrao-ok`).

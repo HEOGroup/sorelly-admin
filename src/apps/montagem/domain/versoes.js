@@ -3,7 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.21.100", data:"2026-11-22", titulo:"Financeiro familiar: janela Pagar maior e organizada", itens:[
+ {v:"0.21.103", data:"2026-11-23", titulo:"Junção geral: tudo que estava na pasta principal foi para a master", itens:[
+  {tipo:"melhoria", area:"Sistema → Organização", txt:"Os commits salvos pelas conversas na pasta principal (menu Família, Gasto por casa, Negociações, Produção, pendências por conversa e outros) foram juntados com a master numa subida só. O Bônus da montagem antigo (de 12/11, fora do padrão visual e sem dono) ficou de fora e continua guardado no ramo uniao-23-11; a tela Comissões › Montagem de kits segue a da master."}
+ ]},
+ {v:"0.21.102", data:"2026-11-22", titulo:"Financeiro familiar: janela Pagar maior e organizada", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar → Pagar", txt:"A janela Pagar ficou maior (de 768 para 896 px) e virou uma ficha em grade com linha entre todos os campos. Conta pagadora e Observação ocupam a linha inteira, então o nome longo da conta (ex.: Caixa financeiro Sorelly — Caixa financeiro Sorelly) cabe inteiro. Valor, Data, Forma e Para quem entra ficam em duas colunas. O modo Dividir entre formas segue a mesma grade."},
   {tipo:"correção", area:"Financeiro → Família → Contas", txt:"Contas a pagar da família e Contas pagas da família abrem já em Contas = Família e SEPARADAS: cada uma mostra só a sua situação, sem o seletor Situação (A pagar / Pagas). O menu do Financeiro tinha sumido nessas duas telas porque elas não estavam na lista de telas do setor; agora aparece, com Família marcada. A lista geral voltou à versão da master: clicar numa conta da família abre a janela Mudar a pessoa."},
   {tipo:"correção", area:"Financeiro → Família", txt:"O trabalho do dia (Para quem entra, janela Pagar azul, Conta pagadora nas colunas, Contas pagas em planilha, Pró-labores só cadastro) tinha sido apagado por uma junção com a master e foi restaurado. A janela Editar pagamento ganhou o bloco Pessoa da conta (Mudar só a pessoa), e o menu da Família voltou a ficar sem Gasto por casa, Relatório, Histórico e Configurações."}
@@ -11,6 +14,10 @@ var VERSOES = [
  {v:"0.21.84", data:"2026-11-22", titulo:"Negociações: Pontual, Point e detalhe do pedido no padrão azul", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"Pontual (Maquininha, O que pagar × o que foi pago, Pedidos por mês, Meses e dezenas, Cronograma), Point (Conta corrente, Pedidos lançados, Acerto mensal) e o detalhe do pedido refeitos em blocos azuis com TabelaPlanilha, letra de 11 px e a linha branca de 3 px entre os blocos. Sem fundo preto, sem botões em pílula e sem textos explicativos."},
  ]},
+ {v:"0.21.101", data:"2026-11-22", titulo:"Natureza das contas da família em letra normal", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A coluna Natureza mostrava o código da categoria (PRO_LABORE, SERVICO, CONDOMINIO). Agora mostra o nome (Pró-labore, Serviço, Condomínio)."}]},
+ {v:"0.21.100", data:"2026-11-22", titulo:"Menu Família › Contas: nomes A pagar e Pagas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"As duas telas do item Contas passam a se chamar A pagar e Pagas."}]},
  {v:"0.21.99", data:"2026-11-22", titulo:"Menu Família: Contas com duas telas", itens:[
   {tipo:"correção", area:"Financeiro → Família → Contas", txt:"O item Contas do menu Família abre duas telas: Contas a pagar da família e Contas pagas da família. Cada uma abre a lista de Contas já em Contas = Família, na situação certa."}]},
  {v:"0.21.98", data:"2026-11-23", titulo:"Entrada do setor igual em todos os setores", itens:[
