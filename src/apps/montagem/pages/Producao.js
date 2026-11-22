@@ -8,12 +8,14 @@ import { AbaProdGrade } from "@/apps/montagem/pages/producao/ProdGrade";
 import { AbaProdControleCasa } from "@/apps/montagem/pages/producao/ProdControleCasa";
 import { AbaProdPagamentos } from "@/apps/montagem/pages/producao/ProdPagamentos";
 import { AbaProdExterna as AbaProdExternaTela } from "@/apps/montagem/pages/producao/ProdExterna";
+import { AbaProdPagamentoProducao } from "@/apps/montagem/pages/producao/ProdPagamentoProducao";
 import { AbaProdPremiacao } from "@/apps/montagem/pages/producao/ProdPremiacao";
 import { Raiz } from "@/apps/montagem/pages/producao/visualProd";
 import { e } from "@/shared/react";
 
 function AbaProducao(){ return e(AbaProdGrade,null); }
 function AbaPremiacao(){ return e(AbaProdPremiacao,null); }
+function AbaPagamentoProducao(){ return e(AbaProdPagamentoProducao,null); }
 function AbaProdPagamentosTela(){ return e(AbaProdPagamentos,null); }
 function AbaProdControleCasaTela(){ return e(AbaProdControleCasa,null); }
 // PRODUÇÃO EXTERNA = controle diário + pagamentos da quarta numa tela só; CADASTRO = funcionárias e códigos lado a lado (Marcus, 16/11/2026: "muitas abas e muito espaço sobrando")
@@ -21,4 +23,4 @@ function AbaProdExterna(){ return e(AbaProdExternaTela,null); }
 function AbaProdCadastro(){ return e(Raiz,null, e(AbaProdConfig,{key:"f", visao:"func", semRaiz:true}), e(AbaProdConfig,{key:"c", visao:"cod", colunas:2, semRaiz:true})); }
 function AbaProdFuncionarias(){ return e(AbaProdConfig,{visao:"func"}); }
 function AbaProdCodigos(){ return e(AbaProdConfig,{visao:"cod"}); }
-export { AbaProducao, AbaPremiacao, AbaProdPagamentosTela as AbaProdPagamentos, AbaProdControleCasaTela as AbaProdControleCasa, AbaProdFuncionarias, AbaProdCodigos, AbaProdExterna, AbaProdCadastro };
+export { AbaPagamentoProducao, AbaProducao, AbaPremiacao, AbaProdPagamentosTela as AbaProdPagamentos, AbaProdControleCasaTela as AbaProdControleCasa, AbaProdFuncionarias, AbaProdCodigos, AbaProdExterna, AbaProdCadastro };

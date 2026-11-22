@@ -1,46 +1,43 @@
 // Sorelly Admin · montagem — pages/pf/Lancamentos.js
-// Lançamento de pagamentos (Pagamentos a Fornecedores): Pix (sem NF) do mês, um bloco por fornecedor e um card por data de pagamento (janela).
-// Cada card tem a lista dos Pix lançados (com busca, conferência e estorno), a janela "Lançar pagamento" e a janela "Enviar acerto ao fornecedor".
-// Contas e regras ficam em domain/pf.js; aqui só o desenho.
+// Lançamento de pagamentos (Pagamentos a Fornecedores): Pix (sem NF) do mês, uma linha por fornecedor e data de pagamento.
+// Refeita no padrão do Cadastro de prestadores (20/11/2026, pedido do Marcus: "faça igual, mesma fonte, bordas, tudo parecido, sem perder nenhum dado"): bloco azul com a tabela de planilha (filtro e ordem no nome de cada coluna),
+// faixa de controles em cima (só o mês) e, embaixo, o bloco da data escolhida com os Pix lançados (comprovante, conferência, estorno), os avisos de saldo e os pedidos.
+// As janelas "Lançar pagamento", "Editar pagamento" e "Enviar acerto ao fornecedor" continuam as mesmas. Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
-import { apagarArquivo, baixarArquivo, obterArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { cartoesLancamento, conferidoDe, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { comprovantesDosRecebidos } from "@/apps/montagem/domain/comprovantes-receber";
+import { baixarArquivo, obterArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, msgWhatsApp, nomeArquivoExtrato, useLinkConferencia, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
-import { Dinheiro, Faixa, Indicador, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
-import { COR, Campo, Chip, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
-import { PageHead } from "@/apps/montagem/ui/page";
-import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { Dinheiro } from "@/apps/montagem/components/padrao";
+import { COR, Campo, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
+import { INPUT } from "@/apps/montagem/ui/input";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { BarraTabela, CampoMini, CelulaBarra } from "@/apps/montagem/components/planilha-cheia";
 import { e, useEffect, useState } from "@/shared/react";
 import { lerAlocs, porPedidoAtivo } from "@/apps/montagem/domain/pf";
+import { nomeJanela } from "@/apps/montagem/domain/pf-mes";
 import { BlocoPedidos, EscopoRelatorio, IdentPedidos, MarcaPedidos, ModalIdent, paraAcao } from "@/apps/montagem/pages/pf/PorPedido";   // controle por pedido (19/11/2026), só fornecedor com a opção ligada
 
-// botão pequeno com texto (tipos: normal, forte, ok, conf, perigo)
+// botão da janela (tipos: normal, forte, ok, conf, perigo): 32 px e letra de 13 px, como os botões do padrão
 var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#3B82F6] text-black hover:bg-[#FBBF24]", ok:"bg-[#22C55E]/25 text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35", conf:"bg-[#3B82F6]/25 text-[#93C5FD] ring-1 ring-[#3B82F6]/50 hover:bg-[#3B82F6]/35", perigo:"bg-destructive/20 text-destructive hover:bg-destructive/30"};
-function Bt(p){ return e("button",{type:"button", onClick:p.onClick, disabled:p.disabled, title:p.titulo, className:"inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[12.5px] font-bold transition "+BT[p.tipo||"normal"]+(p.disabled ? " opacity-40" : "")+" "+(p.className||"")}, p.ic && e(Ph,{n:p.ic, s:14}), p.children); }
-function Barra(p){ return e("div",{className:"h-2 w-full overflow-hidden rounded-full bg-black/30"}, e("i",{className:"block h-full rounded-full", style:{width:Math.min(p.pct,100)+"%", background:p.pct>=99.5 ? COR.green : COR.orange}})); }
-// número pequeno com rótulo (A pagar / Pago / Falta)
-function Num(p){ return e("div",{className:"flex flex-col items-center"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-[.1em] text-muted-foreground"}, p.t), p.children); }
-var ANEL = {late:"ring-2 ring-destructive/70", soon:"ring-2 ring-[#3B82F6]/70", "":"ring-1 ring-white/10"};
+function Bt(p){ return e("button",{type:"button", onClick:p.onClick, disabled:p.disabled, title:p.titulo, className:"inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-semibold transition "+BT[p.tipo||"normal"]+(p.disabled ? " opacity-40" : "")+" "+(p.className||"")}, p.ic && e(Ph,{n:p.ic, s:14}), p.children); }
+// botãozinho de dentro da tabela (22 px, letra de 11 px), igual aos da tabela de prestadores
+var BTL = "inline-flex h-[14px] items-center gap-1 whitespace-nowrap border-0 border-b bg-transparent px-0.5 text-[10px] font-medium leading-none disabled:opacity-40 ";   // padrao-ok: o que se clica é só texto com uma linha embaixo (pedido do Marcus, 20/11/2026)
+var BTL_T = {normal:"border-white/50 text-white hover:text-white/80", forte:"border-primary text-primary hover:brightness-125", ok:"border-[#4ADE80]/60 text-[#4ADE80] hover:brightness-125", conf:"border-[#93C5FD]/60 text-[#93C5FD] hover:brightness-125", perigo:"border-destructive/60 text-destructive hover:brightness-125"};
+function BtL(p){ return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); if(p.onClick) p.onClick(ev); }, disabled:p.disabled, title:p.titulo, "aria-label":p.titulo || (typeof p.children==="string" ? p.children : undefined), className:BTL+BTL_T[p.tipo||"normal"]}, p.ic && e(Ph,{n:p.ic, s:10}), p.children); }
+// fundo azul-marinho e linhas de 26 px / letra de 11 px: o mesmo da tabela de prestadores
+var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";
+var FINA = "[&_table_td]:!text-[10px] [&_table_th]:!text-[10px] [&_table_td]:!h-[18px] [&_table_td]:!px-1 [&_table_th]:!px-1 [&_table_td]:!py-0 [&_table_td]:!leading-none [&_table_th]:!h-[16px] [&_table_th]:!py-0 [&_table_th_button]:!h-[14px] [&_table_th_button]:!px-0 [&_table_th_button]:!gap-0.5 [&_table_th_button]:!py-0 [&_table_th_button]:!leading-none [&_table_th_button]:!tracking-normal [&_table_th_button]:!text-[10px] [&_table_th_span]:!text-[10px] [&_table_th_span]:!leading-none [&_table_th_span]:!tracking-normal [&_table_tr]:!h-[18px] [&_table_td_button]:!text-[10px] [&_table_td_a]:!text-[10px] [&_table_td_input]:!h-[14px]";   // padrao-ok: mesma fonte (10 px), linhas de 18 px e cabeçalho de 16 px da Contas a receber, pedido do Marcus (20/11/2026)
+var TITULO_FINO = "";   // títulos dos blocos no tamanho padrão (13 px, negrito, barra de 28 px), igual à tela Negociações; todas as barras ficam da mesma altura (Marcus, 21/11/2026)
+var COMPACTA = FUNDO+" "+FINA+" "+TITULO_FINO;
+var DETALHE = FUNDO+" "+FINA+" "+TITULO_FINO;
+var BTN_NAV = "grid h-[18px] w-[18px] place-items-center rounded border border-white/25 bg-white/10 text-[10px] hover:bg-white/20";   // padrao-ok: igual à faixa da Contas a receber
+var BTN_MINI = "inline-flex h-[18px] items-center whitespace-nowrap rounded border px-2 text-[10px] font-medium leading-none disabled:opacity-40 ";   // padrao-ok: botão da faixa azul, 18 px e 10 px
+function BotaoMini(p){ return e("button",{type:"button", onClick:p.onClick, disabled:p.desabilitado, title:p.title || (typeof p.children==="string" ? p.children : undefined), className:BTN_MINI+(p.principal ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-white/25 bg-white/10 text-white hover:bg-white/20")}, p.children); }
 
-// ───────────── lista de pagamentos lançados de um card (com filtro) ─────────────
-function FiltroLanc(p){
-  var f = p.f, set = function(k, v){ var n = Object.assign({}, f); n[k] = v; p.set(n); };
-  var datas = p.lancs.map(function(l){ return l.data; }).sort(), campo = CAMPOS_BUSCA.find(function(x){ return x[0]===(f.campo||""); }) || CAMPOS_BUSCA[0];
-  var ativo = f.q || f.d1 || f.d2 || f.st;
-  return e("div",{className:"flex flex-col gap-2 rounded-lg bg-black/25 p-2.5"},
-    e("div",{className:"flex gap-2"},
-      e("input",{type:"search", value:f.q||"", placeholder:"🔍 "+campo[2], "aria-label":"Buscar pagamentos", className:INPUT+" h-9! min-w-0 flex-1 text-[13px]!", onChange:function(ev){ set("q", ev.target.value); }}),
-      e("select",{value:f.campo||"", title:"Onde buscar", className:INPUT+" h-9! cursor-pointer text-[13px]!", onChange:function(ev){ set("campo", ev.target.value); }}, CAMPOS_BUSCA.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); }))),
-    e("div",{className:"flex flex-wrap items-center gap-2 text-[12px] font-semibold"},
-      e("label",{className:"flex items-center gap-1"}, "De", e("input",{type:"date", value:f.d1||"", min:datas[0], max:datas[datas.length-1], className:INPUT+" h-9! w-36 text-[13px]!", onChange:function(ev){ set("d1", ev.target.value); }})),
-      e("label",{className:"flex items-center gap-1"}, "Até", e("input",{type:"date", value:f.d2||"", min:datas[0], max:datas[datas.length-1], className:INPUT+" h-9! w-36 text-[13px]!", onChange:function(ev){ set("d2", ev.target.value); }})),
-      e("select",{value:f.st||"", className:INPUT+" h-9! cursor-pointer text-[13px]!", onChange:function(ev){ set("st", ev.target.value); }}, [["","Todos"],["0","Aguardando"],["1","Conferidos"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      e(Bt,{onClick:function(){ p.set({}); }, ic:"x"}, "Limpar")),
-    ativo && e("div",{className:"text-[12.5px]"}, ((f.d1||f.d2) ? (f.d1 ? dbr(f.d1) : "início")+" a "+(f.d2 ? dbr(f.d2) : "fim")+" · " : "")+p.res.n+" de "+p.res.total+" pagamento(s) · total ", e("b",null, brl(p.res.soma))));
-}
 
 // ───────────── janela: Editar pagamento (só enquanto não estiver conferido) ─────────────
 function ModalEditar(p){
@@ -72,120 +69,124 @@ function ModalEditar(p){
     e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Salvar alteração")));
 }
 
-function ItemLanc(p){
-  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1], si = useState(false), porPed = porPedidoAtivo(c.pf, l.fornId) || (l.alocs || []).length>0;
+
+// ───────────── comprovante de um Pix (abrir, baixar ou anexar) ─────────────
+var BTN_COMP = "inline-flex !h-[14px] !min-h-0 items-center gap-1 !border-0 !border-b !border-[#38BDF8]/70 !bg-transparent !px-0.5 !py-0 !text-[10px] font-medium leading-none !text-[#7DD3FC] hover:!text-white";   // padrao-ok: link com linha embaixo, menor
+function comprovanteEl(c, l){
   var comp = l.arqKey
-    ? e("button",{type:"button", title:l.arqNome, onClick:function(){ abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-bold hover:underline"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
+    ? e("a",{href:"#", role:"button", title:l.arqNome, onClick:function(ev){ ev.preventDefault(); ev.stopPropagation(); abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:BTN_COMP}, e(Ph,{n:"paperclip", s:10}), "Comprovante")
     : l.arqId
-    ? e("button",{type:"button", title:l.arqNome, onClick:function(){ baixarArquivo(l.arqId, l.arqNome||"comprovante").catch(function(){ aviso(c, "Não achei o arquivo neste computador.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE] hover:bg-[#06B6D4]/30"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
+    ? e("a",{href:"#", role:"button", title:l.arqNome, onClick:function(ev){ ev.preventDefault(); ev.stopPropagation(); baixarArquivo(l.arqId, l.arqNome||"comprovante").catch(function(){ aviso(c, "Não achei o arquivo neste computador.", "alerta"); }); }, className:BTN_COMP}, e(Ph,{n:"paperclip", s:10}), "Comprovante")
     : String(l.arqData||"").indexOf("data:")===0
-      ? e("a",{href:l.arqData, target:"_blank", rel:"noreferrer", download:l.arqNome, title:l.arqNome, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE]"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
-      : l.arqNome ? e("span",{className:"inline-flex items-center gap-1 text-[11.5px]", title:l.arqNome}, e(Ph,{n:"paperclip", s:13}), "comprovante anexado")
-      : e("span",{className:"text-[11.5px] text-muted-foreground"}, "sem comprovante");
+      ? e("a",{href:l.arqData, target:"_blank", rel:"noreferrer", download:l.arqNome, title:l.arqNome, onClick:function(ev){ ev.stopPropagation(); }, className:BTN_COMP}, e(Ph,{n:"paperclip", s:10}), "Comprovante")
+      : l.arqNome ? e("span",{className:"inline-flex items-center gap-1", title:l.arqNome}, e(Ph,{n:"paperclip", s:10}), "Comprovante anexado")
+      : e("span",null, "---");
   // Pix vindo do Direcionar (17/11/2026): só conta como pago depois de anexar o comprovante
-  if(l.aguardaComp) comp = e("label",{title:"Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago.", className:"inline-flex cursor-pointer items-center gap-1 rounded-md bg-[#3B82F6]/25 px-2.5 py-0.5 text-[11px] font-bold text-[#93C5FD] hover:bg-[#3B82F6]/35"}, e(Ph,{n:"paperclip", s:13}), "Anexar comprovante",
+  if(l.aguardaComp) comp = e("label",{title:"Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago.", className:BTN_COMP+" cursor-pointer !border-warning/70 !text-warning", onClick:function(ev){ ev.stopPropagation(); }}, e(Ph,{n:"paperclip", s:10}), "Anexar",
     e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return;
       lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:l.id, arqNome:arq.name, arqTipo:arq.type, arqKey:sv.key}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); }); }}));
-  var conf = l.aguardaComp ? e(Chip,{cor:"orange"}, "⏳ Falta o comprovante") : l.conferido ? e(Chip,{cor:"green"}, "✓ Conferido "+dbr(l.conferidoEm)) : e(Chip,{cor:"orange"}, "⏳ Aguardando conferência");
-
-  return e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 "+(l.conferido ? "bg-[#22C55E]/10" : "bg-black/25")},
-    e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]"}, e("b",null, dbr(l.data)), e("span",{className:"text-muted-foreground"}, l.revendedora||"—"), e("span",{className:"text-muted-foreground"}, l.conta||"—"), comp, conf),
-    e("div",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[14px]", style:{color:COR.green}}, brl(l.valor)),
-      // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
-      !l.auto && e(Bt,{ic:"pencil-simple", disabled:!c.edita || l.conferido, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Conferido: desfaça a conferência para alterar" : "Alterar este pagamento", onClick:function(){ setEditando(true); }}, "Editar"),
-      editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
-      porPed && !l.auto && e(MarcaPedidos,{c:c, l:l, abrir:function(){ si[1](true); }}),   // para qual pedido foi o dinheiro (não confere o pagamento)
-      si[0] && e(ModalIdent,{c:c, l:l, fechar:function(){ si[1](false); }}),
-      e(Bt,{tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:c.edita ? "" : "Só financeiro e diretoria", onClick:function(){
-        if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return;
-        op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),
-      e(Bt,{tipo:"perigo", disabled:!c.edita, titulo:c.edita ? "" : "Só financeiro e diretoria", onClick:function(){
-        if(!window.confirm("Estornar este pagamento de "+brl(l.valor)+"?")) return;
-        if(l.arqId) apagarArquivo(l.arqId);
-        op(c, "lanc_del", {id:l.id}); }}, "Estornar")));
+  return comp;
 }
 
+// ───────────── ações de um Pix lançado: editar (só antes da conferência), pedido, conferir e estornar ─────────────
+function AcoesLanc(p){
+  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1], si = useState(false), porPed = porPedidoAtivo(c.pf, l.fornId) || (l.alocs || []).length>0;
+  return e("span",{className:"inline-flex items-center gap-1"},
+    // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
+    !l.auto && e(BtL,{ic:"pencil-simple", disabled:!c.edita, titulo:c.edita ? "Alterar este pagamento" : "Só financeiro e diretoria", onClick:function(){ setEditando(true); }}, "Editar"),
+    editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
+    porPed && !l.auto && e(MarcaPedidos,{c:c, l:l, abrir:function(){ si[1](true); }}),   // para qual pedido foi o dinheiro (não confere o pagamento)
+    si[0] && e(ModalIdent,{c:c, l:l, fechar:function(){ si[1](false); }}),
+    null);
+}
+
+// ───────────── os Pix lançados de uma data (tabela de planilha: filtro e ordem no nome de cada coluna) ─────────────
+// Pix que passou do total de uma data e foi cobrir a seguinte (as linhas "Crédito" automáticas): a divisão sai em cima do ÚLTIMO Pix da data de origem (o que atravessou o total).
+// Só de exibição: nada muda no banco. Origem e destino calculam igual, então os dois lados mostram o mesmo Pix cortado em partes (Marcus, 21/11/2026)
+function repartirPix(pf, chave){
+  var r2 = function(x){ return Math.round(x*100)/100; };
+  var todos = pf.lancamentos.filter(function(l){ return l.chave===chave; });
+  var reais = todos.filter(function(l){ return !l.auto && l.valor>0; }).sort(function(a, b){ return String(a.data).localeCompare(String(b.data)) || a.id-b.id; });
+  var resta = {}; reais.forEach(function(l){ resta[l.id] = l.valor; });
+  var saidas = todos.filter(function(l){ return l.auto && l.paraChave && l.valor<0; }).sort(function(a, b){ return String(a.paraChave).localeCompare(String(b.paraChave)); });
+  var partes = [], sobra = {};
+  saidas.forEach(function(s){
+    var rest = r2(-s.valor);
+    for(var i = reais.length-1; i>=0 && rest>0.004; i--){
+      var l = reais[i], t = Math.min(rest, resta[l.id]); if(t<=0.004) continue;
+      resta[l.id] = r2(resta[l.id]-t); rest = r2(rest-t); partes.push({l:l, par:s.par, para:s.paraChave, valor:t});
+    }
+    if(rest>0.004) sobra[s.par] = rest;   // sem Pix para cortar (ex.: veio de desconto): continua como linha de crédito
+  });
+  return {partes:partes, sobra:sobra, resta:resta};
+}
 function ListaPagamentos(p){
-  var cd = p.cd, c = p.c, f = p.f, res = filtrarLancamentos(cd.lancs, f), ativo = f.q || f.d1 || f.d2 || f.st;
-  return e("div",{className:"mt-2 flex flex-col gap-2 rounded-xl bg-black/20 p-2.5"},
-    e("div",{className:"flex flex-wrap items-center justify-between gap-2"}, e("b",{className:"text-[12px] uppercase tracking-[.1em]"}, "Pagamentos lançados"),
-      cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" aguardando conferência")),
-    cd.lancs.length>0 && e(FiltroLanc,{f:f, set:p.setF, lancs:cd.lancs, res:res}),
-    cd.mq>0.005 && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#06B6D4]/10 px-3 py-2"},
-      e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]"}, e("b",null, "desconto"), e("span",{className:"text-muted-foreground"}, "Maquininha Banho · "+cd.mqRef), e("span",{className:"text-[11.5px] text-muted-foreground"}, "abatido direto na conta")),
-      e("div",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[14px]", style:{color:COR.green}}, brl(cd.mq)), e(Bt,{onClick:function(){ c.d({type:"ABA", aba:"pfmaq"}); }}, "Ajustar"))),
-    !cd.lancs.length ? (cd.mq>0.005 ? null : e("p",{className:"py-2 text-center text-[13px] text-muted-foreground"}, "Nenhum pagamento lançado nesta data.")) :
-      res.lista.length ? res.lista.map(function(l){ return e(ItemLanc,{key:l.id, l:l, c:c}); }) :
-      ativo && e("p",{className:"py-2 text-center text-[13px] text-muted-foreground"}, "Nenhum pagamento encontrado com esse filtro."));
+  var cd = p.cd, c = p.c, res = filtrarLancamentos(cd.lancs, {}), pf = c.pf, minha = repartirPix(pf, cd.chave), cacheOrig = {};
+  var base = function(l){ return {l:l, data:dbr(l.data), rev:l.revendedora||"—", conta:l.conta||"—", chave:l.chavePix||"—", por:l.pagoPor||"---",
+    sit:conferidoDe(l) ? "Conferido"+(l.conferidoEm ? " "+dbr(l.conferidoEm) : "") : "Falta o comprovante", comp:l.arqKey || l.arqId || l.arqNome || l.aguardaComp ? "com" : "sem"}; };
+  // "nome · R$ 1.000,00 · 1/2": o Pix inteiro junto do nome e a parte no fim; a coluna Valor traz só o que fecha esta data
+  var nomeParte = function(l, k, n){ return (l.revendedora||"—")+(n>=2 ? " · "+brl(l.valor)+" · "+k+"/"+n : ""); };
+  var linhas = [];
+  res.lista.forEach(function(l){
+    if(l.auto && l.paraChave && l.valor<0){   // saiu daqui para outra data: o Pix cortado já aparece abaixo; só sobra a linha se não havia Pix para cortar
+      var sb = minha.sobra[l.par]; if(sb) linhas.push(Object.assign({id:String(l.id)}, base(l), {valor:-sb})); return; }
+    if(l.auto && l.deChave && l.valor>0){   // veio de outra data: mostra as partes do Pix de lá
+      var orig = cacheOrig[l.deChave] || (cacheOrig[l.deChave] = repartirPix(pf, l.deChave));
+      orig.partes.filter(function(x){ return x.par===l.par; }).forEach(function(x){
+        var n = orig.partes.filter(function(z){ return z.l===x.l; }).length+(orig.resta[x.l.id]>0.004 ? 1 : 0), k = (orig.resta[x.l.id]>0.004 ? 2 : 1)+orig.partes.filter(function(z){ return z.l===x.l; }).indexOf(x);
+        linhas.push(Object.assign({id:"p"+x.l.id+"-"+l.par}, base(x.l), {rev:nomeParte(x.l, k, n), valor:x.valor, parte:true})); });
+      var sv = orig.sobra[l.par]; if(sv) linhas.push(Object.assign({id:String(l.id)}, base(l), {valor:sv}));
+      return; }
+    var mp = minha.partes.filter(function(x){ return x.l===l; }), ficou = minha.resta[l.id]!=null ? minha.resta[l.id] : l.valor;
+    if(mp.length && ficou<=0.004) return;   // o Pix inteiro foi para outra data: aparece lá
+    linhas.push(Object.assign({id:String(l.id)}, base(l), {rev:nomeParte(l, 1, mp.length+1), valor:ficou}));
+  });
+  // desconto da Maquininha Banho: abatido direto na conta, entra como uma linha da lista
+  if(cd.mq>0.005) linhas.push({id:"mq", l:null, data:"Desc.", rev:"Maquininha Banho · "+cd.mqRef, conta:"Abatido direto na conta", chave:"—", por:"---", valor:cd.mq, sit:"—", comp:"—",
+    acao:e(BtL,{ic:"sliders", titulo:"Ajustar na aba Maquininha Banho", onClick:function(){ c.d({type:"ABA", aba:"pfmaq"}); }}, "Ajustar")});
+  // o que passou de uma data para outra, o saldo, o ajuste e o pago a mais viram LINHAS da tabela (não entram no Total dos Pix); o Pix que passou de uma data para outra já tem a sua linha própria (Marcus, 21/11/2026)
+  var info = function(id, rev, valor, acao){ linhas.push({id:"i-"+id, l:null, info:true, data:"—", rev:rev, conta:"—", chave:"—", por:"---", valor:valor, sit:"—", comp:"—", acao:acao || null}); };
+  if(cd.saldoDst) info("falta", "Falta pagar nesta data", cd.aberto, c.edita ? e(BtL,{ic:"arrow-bend-down-right", titulo:"Passar o que falta para a parcela de "+dbr(cd.saldoDst.limite), onClick:function(){
+    if(window.confirm("Passar "+brl(cd.aberto)+" que falta em "+dbr(cd.limite)+" para somar na parcela de "+dbr(cd.saldoDst.limite)+"?")) op(c, "saldo_passar", {chave:cd.chave}); }}, "Passar para "+dbr(cd.saldoDst.limite)) : null);
+  cd.saldoSaiu.forEach(function(x){ info("ss"+x.chave, "Saldo passou para "+dm(x.chave), -x.valor); });
+  cd.saldoVeio.forEach(function(x){ info("sv"+x.chave, "Saldo veio de "+dm(x.chave), x.valor); });
+  if(cd.ajuste>0.005) info("aj", "Diferença enviada a mais · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : ""), cd.ajuste, e(BtL,{ic:"plus-circle", titulo:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }}, "Ver ajuste"));
+  cd.descVeio.forEach(function(x){ info("dv"+x.chave, "Desconto · enviado a mais em "+dm(x.chave), -x.valor); });
+  if(cd.excPix>0.005) info("exc", "Pago a mais", cd.excPix);
+  var cols = [{k:"data", t:"Data"}, {k:"rev", t:"Revendedora"}, {k:"conta", t:"Conta"}, {k:"chave", t:"Chave Pix"}, {k:"por", t:"Pago por"},
+    {k:"comp", t:"Comprovante", render:function(v, l){ return l.l ? comprovanteEl(c, l.l) : "—"; }},
+    {k:"sit", t:"Situação", cor:function(l){ return !l.l ? "" : (conferidoDe(l.l) ? "text-success" : "text-warning"); }},
+    {k:"valor", t:"Valor", fmt:brl, cor:function(l){ return Number(l.valor)<0 ? "text-destructive" : "text-success"; }},
+    {k:"acoes", t:"", render:function(v, l){ return l.parte ? null : l.l ? e(AcoesLanc,{c:c, l:l.l}) : (l.acao || null); }}];   // a parte "2/2" não tem Editar: edita-se o Pix na linha "1/2"
+  var rodape = function(ls){ return ["Total", String(new Set(ls.filter(function(x){ return x.l && !x.l.auto; }).map(function(x){ return x.l.id; })).size)+" Pix", "", "", "", "", cd.aguardando>0 ? cd.aguardando+" a conferir" : "", brl(ls.filter(function(x){ return !x.info; }).reduce(function(t, x){ return t+Number(x.valor||0); }, 0)), ""]; };
+  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhum pagamento lançado nesta data."});
 }
 
-// ───────────── aviso na linha: saldo que passou para outra data, que veio de outra data, ou pago a mais ainda sem destino ─────────────
+// ───────────── avisos da data: saldo que passou para outra data, que veio de outra, pago a mais, desconto da maquininha ─────────────
 function dm(chave){ var l = String(chave||"").split("|")[1]||""; return l.slice(8,10)+"/"+l.slice(5,7); }
-function AvisoSaldo(p){
-  var cd = p.cd, c = p.c, itens = [];
-  // pagou parte: o que falta só passa para a próxima data com o aceite de quem lança (senão continua em aberto)
-  if(cd.saldoDst) itens.push(e("span",{key:"falta", className:"inline-flex items-center gap-2 rounded-md bg-black/30 px-2 py-0.5 ring-1 ring-white/15"},
-    e("span",null, "Falta ", e("b",{style:{color:COR.red}}, brl(cd.aberto))),
-    c.edita && e("button",{type:"button", className:"rounded px-2 font-bold underline hover:brightness-125", onClick:function(){
-      if(window.confirm("Passar "+brl(cd.aberto)+" que falta em "+dbr(cd.limite)+" para somar na parcela de "+dbr(cd.saldoDst.limite)+"?")) op(c, "saldo_passar", {chave:cd.chave}); }}, "Passar para "+dbr(cd.saldoDst.limite))));
-  cd.passou.forEach(function(x){ itens.push(e("span",{key:"s"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
-  cd.saldoSaiu.forEach(function(x){ itens.push(e("span",{key:"ss"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
-  cd.saldoVeio.forEach(function(x){ itens.push(e("span",{key:"sv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
-  cd.veio.forEach(function(x){ itens.push(e("span",{key:"v"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
-  // pago a mais (novembro/2026 em diante): a dívida da data sobe sozinha com o ajuste "Diferença enviada a mais" das Negociações
-  if(cd.ajuste>0.005) itens.push(e("button",{type:"button", key:"aj", title:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50 hover:brightness-125"},
-    e(Ph,{n:"plus-circle", s:13}), "Diferença enviada a mais: ", e("b",null, brl(cd.ajuste)), " · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : "")));
-  cd.descVeio.forEach(function(x){ itens.push(e("span",{key:"dv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"minus-circle", s:13}), "Desconto de ", e("b",null, brl(x.valor)), " · enviado a mais em "+dm(x.chave))); });
-  // antes de novembro/2026 (ou com maquininha): fica só o aviso
-  if(cd.excPix>0.005) itens.push(e("span",{key:"exc", className:"inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 ring-1 ring-destructive/50"},
-    e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix))));
-  return itens.length ? e("div",{className:"flex flex-wrap items-center justify-center gap-2 text-[13px]"}, itens) : null;
-}
-
-// ───────────── uma data de pagamento = uma linha da tabela do fornecedor (a lista de pagamentos abre embaixo dela) ─────────────
-function LinhaData(p){
-  var cd = p.cd, c = p.c, aberto = p.abertos[cd.chave], ir = function(aba){ c.d({type:"ABA", aba:aba}); }, pode = c.edita;
-  var corLinha = cd.situacao==="late" ? "bg-destructive/10" : cd.situacao==="soon" ? "bg-[#3B82F6]/10" : "";
-  var linha = e("tr",{key:cd.chave, className:LINHA+" "+corLinha},
-    p.forn && e(Td,{forte:true, className:"text-left"}, p.forn),
-    e(Td,null, e("b",null, dbr(cd.limite)), e("div",{className:"text-[11px] font-normal leading-tight text-muted-foreground"}, "fecha "+dbr(cd.fim))),
-    e(Td,{className:"whitespace-normal!"}, e("div",{className:"flex flex-wrap items-center justify-center gap-1"}, e(Chip,{s:cd.status}), cd.prazo && e(Chip,{s:cd.prazo}), cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" a conferir"))),
-    e(Td,{dinheiro:true, forte:true}, e("button",{type:"button", title:"Ver o detalhe das parcelas nas Negociações", onClick:function(){ ir("pfneg"); }, className:"hover:underline"}, brl(cd.total))),
-    e(Td,{dinheiro:true, cor:"ok"}, brl(cd.pago)),
-    e(Td,{dinheiro:true, forte:true, cor:cd.aberto>0.005 ? "ruim" : "ok"}, brl(cd.aberto)),
-    e(Td,{className:"hidden w-24 md:table-cell"}, e(Barra,{pct:cd.pct})),
-    e(Td,null, e("div",{className:"flex items-center justify-center gap-1"},
-      e(Bt,{tipo:"forte", ic:"plus", disabled:!pode, titulo:pode ? "Lançar pagamento" : "Só financeiro e diretoria", onClick:function(){ p.lancar(cd.chave); }}, "Lançar"),
-      e(Bt,{tipo:cd.aberto<=0.005 ? "ok" : "normal", ic:"link", titulo:cd.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor", onClick:function(){ p.enviar(cd.chave); }}),
-      e(Bt,{ic:aberto ? "caret-up" : "caret-down", titulo:aberto ? "Ocultar pagamentos" : "Ver pagamentos lançados", onClick:function(){ p.alt(cd.chave); }}, String(cd.lancs.length)))));
-  var extra = [];
-  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.ajuste>0.005 || cd.descVeio.length || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
-  if(cd.mq>0.005 && !aberto) extra.push(e("tr",{key:cd.chave+"mq"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"},
-    e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
-      "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
-  if(aberto) extra.push(e("tr",{key:cd.chave+"ls"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(ListaPagamentos,{cd:cd, c:c, f:p.filtros[cd.chave]||{}, setF:function(n){ p.setFiltro(cd.chave, n); }}))));
-  if(aberto && porPedidoAtivo(c.pf, parseInt(cd.chave.split("|")[0]))) extra.push(e("tr",{key:cd.chave+"pd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-2"}, e(BlocoPedidos,{c:c, chave:cd.chave}))));   // área "Pedidos" (19/11/2026)
-  return [linha].concat(extra);
-}
-
-// ───────────── bloco de um fornecedor: 3 indicadores centralizados + tabela de datas ─────────────
-function BlocoForn(p){
-  var g = p.g, f = g.f, c = p.c, ir = function(aba){ c.d({type:"ABA", aba:aba}); };
-  var linhas = [].concat.apply([], g.cards.map(function(cd){ return LinhaData({cd:cd, c:c, abertos:p.abertos, filtros:p.filtros, setFiltro:p.setFiltro, alt:p.alt, lancar:p.lancar, enviar:p.enviar}); }));
-  return e(BlocoBarra,{t:f.nome, sub:f.cat+" · "+g.cicloTxt, dir:g.aberto>0.005 ? brl(g.aberto)+" falta" : "✓ quitado", cor:"azul", compacto:true},
-    e("div",{className:"flex flex-col gap-2 p-2"},
-      // com uma data só, a própria linha já mostra os valores; os 3 indicadores só entram quando há mais de uma data
-      g.cards.length>1 && e("div",{className:"flex items-stretch gap-2"},
-        e(Faixa,{n:3, className:"flex-1"}, e(Indicador,{t:"A pagar", v:brl(g.total), cor:"total"}), e(Indicador,{t:"Pago", v:brl(g.pago), cor:"ok"}), e(Indicador,{t:"Falta", v:brl(g.aberto), cor:g.aberto>0.005 ? "ruim" : "ok"})),
-        e(Bt,{ic:"gear", titulo:"Configurar o ciclo deste fornecedor", className:"self-center", onClick:function(){ ir("pfforn"); }}, "Ciclo")),
-      e(Tab,{cols:["Pagamento","Situação","A pagar","Pago","Falta",e("span",{key:"b",className:"hidden md:inline"},"Andamento"),""]}, linhas)));
+function avisosDe(cd){
+  var a = [];
+  if(cd.saldoDst) a.push("Falta "+brl(cd.aberto));
+  cd.passou.forEach(function(x){ a.push(brl(x.valor)+" passou para "+dm(x.chave)); });
+  cd.saldoSaiu.forEach(function(x){ a.push("Saldo de "+brl(x.valor)+" passou para "+dm(x.chave)); });
+  cd.saldoVeio.forEach(function(x){ a.push("Saldo de "+brl(x.valor)+" veio de "+dm(x.chave)); });
+  cd.veio.forEach(function(x){ a.push(brl(x.valor)+" veio de "+dm(x.chave)); });
+  if(cd.ajuste>0.005) a.push("Diferença enviada a mais: "+brl(cd.ajuste)+" · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : ""));
+  cd.descVeio.forEach(function(x){ a.push("Desc. de "+brl(x.valor)+" · enviado a mais em "+dm(x.chave)); });
+  if(cd.excPix>0.005) a.push("Pago a mais: "+brl(cd.excPix));
+  if(cd.mq>0.005) a.push("Desc. da maquininha "+brl(cd.mq)+" ("+cd.mqRef+")"+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso) : ""));
+  return a;
 }
 
 // ───────────── janela: Lançar pagamento ─────────────
 function ModalLancar(p){
-  var c = p.c, chave = p.chave, j = janelaPorChave(c.pf, chave), f = c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); });
+  var c = p.c, sCh = useState(p.chave || ""), chave = sCh[0], escolher = !!p.escolher;   // escolher = janela completa (Marcus, 20/11/2026): o financeiro escolhe o fornecedor e em QUAL data o Pix entra
+  var j = chave ? janelaPorChave(c.pf, chave) : null, f = chave ? c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); }) : null;
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
-  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
+  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", pagoPor:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
+  var datasDe = function(fid){ return janelasDoForn(c.pf, fid).slice().sort(function(x, y){ return x.limite.localeCompare(y.limite); }); };
+  var escolheData = function(k){ var jj = k ? janelaPorChave(c.pf, k) : null, ab = jj ? Math.max(0, jj.total-pagoJanela(c.pf, k)) : 0; sCh[1](k); setV(Object.assign({}, v, {valor:ab>0.005 ? ab.toFixed(2) : "", adiar:"manter"})); };
+  var escolheForn = function(fid){ var ds = datasDe(fid), alvo = ds.find(function(x){ return pagoJanela(c.pf, x.chave)<x.total-0.005; }) || ds[ds.length-1]; escolheData(alvo ? alvo.chave : ""); };
   var porPed = !!f && porPedidoAtivo(c.pf, f.id), sAl = useState([]), alocs = sAl[0];   // "Este pagamento se refere a:" (só fornecedor com a opção ligada)
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
   // pago a mais: de novembro/2026 em diante a dívida da data sobe sozinha ("Diferença enviada a mais"); antes disso fica só o aviso
@@ -204,8 +205,9 @@ function ModalLancar(p){
     var valor = parseFloat(v.valor);
     if(!valor || valor<=0) return aviso(c, "Informe o valor pago.", "alerta");
     if(!v.data) return aviso(c, "Informe a data do pagamento.", "alerta");
-    var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora.", "alerta");
-    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
+    if(!chave) return aviso(c, "Escolha o fornecedor e a data em que o Pix entra.", "alerta");
+    var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora (ou de quem pagou).", "alerta");
+    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), pagoPor:v.pagoPor.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
     if(porPed && alocs.length){ var cfA = lerAlocs(c.pf, f.id, valor, paraAcao(alocs), null); if(cfA.erro) return aviso(c, cfA.erro, "alerta"); base.alocs = cfA.alocs; }   // um registro só; a divisão vai junto
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
@@ -218,18 +220,22 @@ function ModalLancar(p){
     lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ base.arqKey = sv.key; gravar(""); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"O pagamento será lançado sem anexo.", "alerta"); arq = null; gravar(""); });
   };
   return e(Modal,{t:"Lançar pagamento", fechar:function(){ p.fechar(null); },
-    sub:e("span",null, (f ? f.nome : "")+" · pagamento de ", e("b",null, dbr(chave.split("|")[1])), " · falta ", e("b",{style:{color:COR.red}}, brl(aberto)), " de "+brl(j ? j.total : 0))},
+    sub:chave ? e("span",null, (f ? f.nome : "")+" · pagamento de ", e("b",null, dbr(chave.split("|")[1])), " · falta ", e("b",{style:{color:COR.red}}, brl(aberto)), " de "+brl(j ? j.total : 0)) : e("span",null, "Escolha o fornecedor e a data em que o Pix entra")},
+    escolher && e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
+      e(Campo,{rot:"Fornecedor"}, e(Sel,{value:f ? String(f.id) : "", label:"Fornecedor", className:"w-full", onChange:function(x){ if(x) escolheForn(parseInt(x)); }}, e("option",{value:""}, "Escolha o fornecedor"), c.pf.fornecedores.map(function(x){ return e("option",{key:x.id, value:String(x.id)}, x.nome); }))),
+      e(Campo,{rot:"Entra no pagamento de"}, e(Sel,{value:chave, label:"Entra no pagamento de", className:"w-full", onChange:escolheData}, e("option",{value:""}, f ? "Escolha a data" : "Escolha o fornecedor antes"), f ? datasDe(f.id).map(function(x){ var fl = Math.max(0, x.total-pagoJanela(c.pf, x.chave)); return e("option",{key:x.chave, value:x.chave}, dbr(x.limite)+" · "+(fl>0.005 ? "falta "+brl(fl) : "quitado")); }) : null))),
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       e(Campo,{rot:"Data"}, e(Txt,{type:"date", value:v.data, label:"Data", onChange:function(x){ set("data", x); }})),
       e(Campo,{rot:"Nome da revendedora"}, e(Txt,{value:v.rev, label:"Nome da revendedora", ph:"Ex.: Ana Paula de Lima", onChange:function(x){ set("rev", x); }})),
       e(Campo,{rot:"Valor (R$)"}, e(Dinheiro,{out:"ponto", value:v.valor, label:"Valor", onChange:function(x){ set("valor", x); }})),
       e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }})),
-      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", ph:"Chave que recebeu o Pix", onChange:function(x){ set("chavePix", x); }}))),
+      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", ph:"Chave que recebeu o Pix", onChange:function(x){ set("chavePix", x); }})),
+      escolher && e(Campo,{rot:"Pago por (de onde saiu)"}, e(Txt,{value:v.pagoPor, label:"Pago por", ph:"Ex.: Marcus PF, Lucas, revendedora", onChange:function(x){ set("pagoPor", x); }}))),
     e(Campo,{rot:"Comprovante de pagamento"},
       e("div",{className:"flex flex-wrap items-center gap-3 rounded-lg bg-black/25 px-3 py-2"},
-        e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[12.5px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), "Selecionar arquivo",
+        e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[13px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), "Selecionar arquivo",
           e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
-        e("span",{className:"text-[12.5px] "+(v.arq ? "" : "text-muted-foreground")}, v.arq ? v.arq.name : "Nenhum arquivo selecionado"))),
+        e("span",{className:"text-[13px] "+(v.arq ? "" : "text-muted-foreground")}, v.arq ? v.arq.name : "Nenhum arquivo selecionado"))),
     porPed && e(IdentPedidos,{c:c, fid:f.id, valor:v.valor, alocs:alocs, setAlocs:sAl[1], lancId:null}),
     avisoValor,
     escolhaSaldo,
@@ -257,7 +263,7 @@ function ModalAcerto(p){
   return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar,
     sub:e("span",null, (f ? f.nome : "")+" · acerto de ", e("b",null, dbr(parte[1])), " — "+ls.length+" Pix, "+comComp+" com comprovante · ", falta>0.005 ? e("b",{style:{color:COR.red}}, brl(falta)+" ainda em aberto") : e("b",{style:{color:COR.green}}, "quitado"))},
     escopo,
-    falta>0.005 && e("div",{className:"flex items-start gap-2 rounded-xl border border-[#3B82F6]/50 bg-[#3B82F6]/10 px-4 py-2.5 text-[13.5px] font-medium"}, e(Ph,{n:"warning", s:18}), "Este acerto ainda não está quitado — o fornecedor verá os Pix já enviados e o saldo em aberto."),
+    falta>0.005 && e("div",{className:"flex items-start gap-2 rounded-xl border border-[#3B82F6]/50 bg-[#3B82F6]/10 px-4 py-2.5 text-[13px] font-medium"}, e(Ph,{n:"warning", s:18}), "Este acerto ainda não está quitado — o fornecedor verá os Pix já enviados e o saldo em aberto."),
     e(Campo,{rot:"Link de conferência (somente leitura)"},
       e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link || (lk.erro ? "Não consegui gerar o link: "+lk.erro : "Gerando o link…"), "aria-label":"Link de conferência", className:INPUT+" h-8! min-w-0 flex-1 text-[13px]!", onFocus:function(ev){ ev.target.select(); }}),
         e(Bt,{ic:"copy", onClick:function(){ copiar(link).then(function(){ aviso(c, "Link copiado"); }); }}, "Copiar"))),
@@ -266,47 +272,34 @@ function ModalAcerto(p){
       e(Bt,{ic:"chat-circle-dots", onClick:function(){ setMsg(msgWhatsApp(pf, chave, link)); }}, "Gerar mensagem"),
       msg && e(Bt,{tipo:"ok", ic:"copy", onClick:function(){ copiar(msg).then(function(){ aviso(c, "Mensagem copiada"); }); }}, "Copiar mensagem")),
     msg && e("textarea",{rows:10, value:msg, "aria-label":"Mensagem de WhatsApp", className:INPUT+" h-auto! py-2 text-[13px]", onChange:function(ev){ setMsg(ev.target.value); }}),
-    e("p",{className:"text-[12px] text-muted-foreground"}, "A página mostra só o fechamento desta data — total do período, cada Pix e os comprovantes. Não dá acesso a nenhuma outra informação do sistema."),
+    e("p",{className:"text-[11px] text-muted-foreground"}, "A página mostra só o fechamento desta data — total do período, cada Pix e os comprovantes. Não dá acesso a nenhuma outra informação do sistema."),
     e("div",{className:"flex justify-end"}, e(Bt,{onClick:p.fechar}, "Fechar")));
 }
 
-// ───────────── lista ÚNICA: uma linha por pagamento (fornecedor + data), um de cada vez, os em aberto primeiro ─────────────
-function ListaGeral(p){
-  var linhas = [];
-  p.cart.grupos.forEach(function(g){ g.cards.forEach(function(cd){ linhas.push({f:g.f, cd:cd}); }); });
-  linhas.sort(function(a, b){ var fa = a.cd.aberto>0.005 ? 0 : 1, fb = b.cd.aberto>0.005 ? 0 : 1; return fa-fb || String(a.cd.limite).localeCompare(String(b.cd.limite)) || String(a.f.nome).localeCompare(String(b.f.nome)); });
-  var abertas = linhas.filter(function(x){ return x.cd.aberto>0.005; }).length;
-  return e(BlocoBarra,{t:"Pagamentos do mês", sub:"Um por vez: lance na linha; ela fecha quando a falta chega a zero", dir:abertas ? abertas+" em aberto" : "✓ todos fechados", cor:"azul", compacto:true},
-    e("div",{className:"p-2"}, e(Tab,{cols:["Fornecedor", "Pagamento", "Situação", "A pagar", "Pago", "Falta", e("span",{key:"b", className:"hidden md:inline"}, "Andamento"), ""]},
-      [].concat.apply([], linhas.map(function(x){ return LinhaData({cd:x.cd, forn:x.f.nome, c:p.c, abertos:p.abertos, filtros:p.filtros, setFiltro:p.setFiltro, alt:p.alt, lancar:p.lancar, enviar:p.enviar}); })))));
-}
 
 // ───────────── consolidado do mês: só sai quando TODOS os pagamentos estão fechados ─────────────
 function Consolidado(p){
   var cart = p.cart, st = useState(false), copiado = st[0], fechado = cart.grupos.length>0 && cart.falta<=0.005;
-  var restantes = cart.grupos.reduce(function(t, g){ return t+g.cards.filter(function(cd){ return cd.aberto>0.005; }).length; }, 0);
-  var linhas = cart.grupos.map(function(g){ return {nome:g.f.nome, total:g.total, pago:g.pago, falta:g.aberto}; });
+  var linhas = cart.grupos.map(function(g){ return {id:String(g.f.id), nome:g.f.nome, total:g.total, pago:g.pago, falta:g.aberto}; });
   var texto = "Consolidado de pagamentos · "+mesLabel(p.mes+"-01")+"\n"+linhas.map(function(l){ return l.nome+": pago "+brl(l.pago)+" de "+brl(l.total); }).join("\n")+"\nTotal pago: "+brl(cart.pago)+" de "+brl(cart.total);
-  var copiar = function(){ try { navigator.clipboard.writeText(texto); } catch(x){} st[1](true); setTimeout(function(){ st[1](false); }, 1800); };
-  return e(BlocoBarra,{t:"Consolidado do mês", sub:fechado ? "Todos os pagamentos de "+mesLabel(p.mes+"-01")+" estão fechados" : "Sai sozinho quando todos os pagamentos estiverem fechados", dir:fechado ? "✓ fechado" : restantes+" em aberto", cor:fechado ? "verde" : "ouro", compacto:true},
-    fechado
-      ? e("div",{className:"flex flex-col gap-2 p-2"},
-          e(Tab,{cols:["Fornecedor", "A pagar", "Pago", "Falta"]}, linhas.map(function(l){ return e("tr",{key:l.nome, className:LINHA}, e(Td,{forte:true, className:"text-left"}, l.nome), e(Td,{dinheiro:true}, brl(l.total)), e(Td,{dinheiro:true, cor:"ok"}, brl(l.pago)), e(Td,{dinheiro:true, cor:"ok"}, brl(l.falta))); }).concat([e("tr",{key:"t", className:LINHA+" font-bold"}, e(Td,{forte:true, className:"text-left"}, "Total do mês"), e(Td,{dinheiro:true, forte:true}, brl(cart.total)), e(Td,{dinheiro:true, forte:true, cor:"ok"}, brl(cart.pago)), e(Td,{dinheiro:true, forte:true, cor:"ok"}, brl(cart.falta)))])),
-          e("div",{className:"flex justify-center"}, e(Bt,{tipo:"forte", ic:"copy", onClick:copiar}, copiado ? "Copiado ✓" : "Copiar consolidado")))
-      : e("p",{className:"p-3 text-center text-[13px] text-muted-foreground"}, "Faltam "+restantes+(restantes===1 ? " pagamento" : " pagamentos")+" para fechar o mês ("+brl(cart.falta)+" ainda em aberto)."));
+  var copiarTxt = function(){ try { navigator.clipboard.writeText(texto); } catch(x){} st[1](true); setTimeout(function(){ st[1](false); }, 1800); };
+  if(!fechado) return null;   // sem aviso enquanto faltar pagamento (Marcus, 20/11/2026): o consolidado só aparece quando tudo estiver fechado
+  var cols = [{k:"nome", t:"Fornecedor"}, {k:"total", t:"A pagar", fmt:brl}, {k:"pago", t:"Pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"falta", t:"Falta", fmt:brl, cor:function(){ return "text-success"; }}];
+  return e(BlocoPainel,{titulo:"Consolidado do mês · "+mesLabel(p.mes+"-01"), compacto:true, cls:COMPACTA, dir:"Fechado", acao:e("button",{type:"button", className:"h-[18px] rounded border border-white/25 bg-white/10 px-2 text-[11px] font-medium hover:bg-white/20", onClick:copiarTxt}, copiado ? "Copiado ✓" : "Copiar consolidado")},
+    e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:function(){ return ["Total do mês", brl(cart.total), brl(cart.pago), brl(cart.falta)]; }, vazio:"Nada a consolidar."}));
 }
 
 // ───────────── a tela ─────────────
 var COMP_TENTADOS = {};   // id do Pix → já tentou subir o comprovante nesta sessão
 function AbaPfLanc(){
   var c = usePf(), pf = c.pf, mm = useMesLanc(), mes = mm[0], setMes = mm[1];
-  var sa = useState({}), abertos = sa[0], setAbertos = sa[1], sf = useState({}), filtros = sf[0], setFiltros = sf[1];
+  var ssel = useState(""), sel = ssel[0], setSel = ssel[1];
   var sl = useState(null), modalLanc = sl[0], setModalLanc = sl[1], ss = useState(null), modalAcerto = ss[0], setModalAcerto = ss[1];
   var cart = cartoesLancamento(pf, mes), meses = mesesComLanc(pf, mes);
-  var alt = function(k){ var n = Object.assign({}, abertos); n[k] = !n[k]; setAbertos(n); };
-  var setFiltro = function(k, f){ var n = Object.assign({}, filtros); n[k] = f; setFiltros(n); };
-  var lancar = function(k){ setModalLanc(k); };
-  var fecharLanc = function(k){ setModalLanc(null); if(k){ var n = Object.assign({}, abertos); n[k] = true; setAbertos(n); } };
+  var sEsc = useState(false), esc = sEsc[0];
+  var lancar = function(k){ sEsc[1](false); setModalLanc(k); };
+  var lancarFaixa = function(k){ sEsc[1](true); setModalLanc(k || "novo"); };   // janela completa: escolhe fornecedor e data
+  var fecharLanc = function(k){ setModalLanc(null); if(k){ setSel(k); var jj = janelaPorChave(pf, k); if(jj && jj.mes!==mes) setMes(jj.mes); } };   // depois de lançar, a data abre embaixo com os Pix
   var enviar = function(k){ setModalAcerto(k); };   // o link é pedido ao servidor dentro da janela (18/11/2026)
   // comprovantes antigos guardados SÓ neste navegador sobem para o servidor (18/11/2026), um por vez, uma vez por sessão: o link do fornecedor passa a mostrá-los
   useEffect(function(){
@@ -322,22 +315,71 @@ function AbaPfLanc(){
     }); });
     p.then(function(){ if(feitos.length) op(c, "lanc_comp_srv", {itens:feitos}); });
   }, [pf.lancamentos.length]);   // eslint-disable-line react-hooks/exhaustive-deps
-  var bloco = function(g){ return e(BlocoForn,{key:g.f.id, g:g, c:c, abertos:abertos, filtros:filtros, setFiltro:setFiltro, alt:alt, lancar:lancar, enviar:enviar}); };
-  return e(Pagina,null,
-    e(PageHead,{t:"Lançamento de Pagamentos", sub:"Pix (sem NF) do mês, por fornecedor e data de acerto"},
-      e(Bt,{ic:"plus", onClick:function(){ c.d({type:"ABA", aba:"pfforn"}); }}, "Novo fornecedor")),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-linear-to-br from-[#3B82F6]/15 via-card to-card px-3 py-2 ring-1 ring-[#3B82F6]/40"},
-      e("div",{className:"flex items-center gap-1.5"},
-        e("button",{type:"button", title:"Mês anterior", "aria-label":"Mês anterior", onClick:function(){ setMes(mesMais(mes, -1)); }, className:"grid size-9 place-items-center rounded-lg bg-muted/50 hover:bg-white/15"}, e(Ph,{n:"caret-left", s:16})),
-        e(Sel,{value:mes, label:"Mês", className:"w-48", onChange:setMes}, meses.map(function(m){ return e("option",{key:m, value:m}, mesLabel(m+"-01")+(m===mesAtual() ? " · mês atual" : "")); })),
-        e("button",{type:"button", title:"Próximo mês", "aria-label":"Próximo mês", onClick:function(){ setMes(mesMais(mes, 1)); }, className:"grid size-9 place-items-center rounded-lg bg-muted/50 hover:bg-white/15"}, e(Ph,{n:"caret-right", s:16})),
-        e(Bt,{onClick:function(){ setMes(mesAtual()); }, className:"h-9"}, "Mês atual")),
-      e(Faixa,{n:3, className:"min-w-[18rem] flex-1"}, e(Indicador,{t:"A pagar no mês", v:brl(cart.total), cor:"total"}), e(Indicador,{t:"Pago", v:brl(cart.pago), cor:"ok"}), e(Indicador,{t:"Falta", v:brl(cart.falta), cor:cart.falta>0.005 ? "ruim" : "ok"}))),
-    !cart.grupos.length ? e("p",{className:"rounded-xl bg-muted/30 px-4 py-4 text-center text-[14px] text-muted-foreground"}, "Nenhum pagamento sem NF (Pix) em "+mesLabel(mes+"-01")+". Use o seletor acima para ver outro mês.") : e("div",{className:"flex flex-col gap-2.5"},
-      e(ListaGeral,{cart:cart, c:c, abertos:abertos, filtros:filtros, setFiltro:setFiltro, alt:alt, lancar:lancar, enviar:enviar}),
-      e(Consolidado,{cart:cart, mes:mes})),
-    modalLanc && e(ModalLancar,{key:modalLanc, c:c, chave:modalLanc, fechar:fecharLanc}),
+  // comprovante que a funcionária anexou no ATENDIMENTO INTERNO (s.lancFin) passa sozinho para o Pix igual daqui (Marcus, 20/11/2026): mesma revendedora, mesmo valor, data até 3 dias; só liga quando o par é único (regra da Contas a receber)
+  useEffect(function(){
+    if(!c.edita) return;
+    var tits = pf.lancamentos.filter(function(l){ return !l.arqKey && !l.arqId && !l.arqNome && !l.auto && !COMP_TENTADOS["a"+l.id]; }).map(function(l){ return {id:l.id, rev:l.revendedora, valor:Number(l.valor), d:l.data, forma:"pix"}; });
+    if(!tits.length || !(c.s.lancFin || []).length) return;
+    var mapa = comprovantesDosRecebidos(tits, c.s.lancFin).mapa, ids = Object.keys(mapa); if(!ids.length) return;
+    var p = Promise.resolve();
+    ids.forEach(function(id){ COMP_TENTADOS["a"+id] = true; p = p.then(function(){
+      var m = mapa[id], tipo = (/^data:([^;]+);/.exec(m.url) || [])[1] || "image/jpeg";
+      return fetch(m.url).then(function(rs){ return rs.blob(); }).then(function(blob){ var arq = new File([blob], m.nome || "comprovante", {type:tipo});
+        return lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:Number(id), arqNome:arq.name, arqTipo:tipo, arqKey:sv.key}); }); }).catch(function(){ return null; });
+    }); });
+  }, [pf.lancamentos.length, (c.s.lancFin || []).length]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // uma linha por data de pagamento de cada fornecedor, as em aberto primeiro
+  var linhas = [];
+  cart.grupos.forEach(function(g){ g.cards.forEach(function(cd){ linhas.push({id:cd.chave, g:g, cd:cd, tipo:g.f.tipoNeg || (g.f.tipo==="prestador" ? "Prestador" : "—"), forn:nomeJanela(g.f.nome, g.js, cd.j), pag:dbr(cd.limite), fecha:dbr(cd.fim),   // fornecedor com o período junto, igual ao Resumo e ao Direcionar (Marcus, 21/11/2026)
+    sit:cd.aberto<=0.005 ? "Quitado" : cd.dias<0 ? "Vencido" : "Aberto", conf:cd.aguardando>0 ? cd.aguardando+" a conferir" : "—", total:cd.total, pago:cd.pago, falta:cd.aberto,
+    and:Math.round(cd.pct)+"%", pix:cd.lancs.length, aviso:avisosDe(cd).join(" · ") || "—"}); }); });
+  // cada fornecedor fica JUNTO (Pontual: 1 a 10, 11 a 20, 21 ao fim, sempre em ordem de data); quem tem saldo em aberto vem primeiro (Marcus, 20/11/2026)
+  var ORDEM_TIPO = ["Banho", "Bruto", "Material gráfico", "Sistema", "Tintas", "Prestador"], rk = function(t){ var i = ORDEM_TIPO.indexOf(t); return i<0 ? 99 : i; };   // por tipo: banho, bruto e os outros em seguida (Marcus, 20/11/2026)
+  linhas.sort(function(a, b){ return rk(a.tipo)-rk(b.tipo) || String(a.forn).localeCompare(String(b.forn)) || String(a.cd.limite).localeCompare(String(b.cd.limite)); });
+  var abertas = linhas.filter(function(x){ return x.cd.aberto>0.005; }).length;
+  var corSit = function(l){ return l.sit==="Vencido" ? "text-destructive" : ""; };   // Aberto e Quitado na mesma cor; só Vencido em vermelho
+  var cols = [{k:"tipo", t:"Tipo"}, {k:"forn", t:"Fornecedor"}, {k:"fecha", t:"Fecha"}, {k:"sit", t:"Situação", cor:corSit},
+    {k:"conf", t:"Conferência", cor:function(l){ return l.cd.aguardando>0 ? "text-warning" : ""; }},
+    {k:"total", t:"A pagar", fmt:brl}, {k:"pago", t:"Pago", fmt:brl, cor:function(l){ return l.pago>0 ? "text-success" : ""; }},
+    {k:"falta", t:"Falta", fmt:brl, cor:function(l){ return l.falta>0.005 ? "text-destructive" : "text-success"; }},
+    {k:"aviso", t:"Avisos", render:function(v){ return e("span",{className:"block min-w-[9rem] max-w-[22rem] whitespace-nowrap"}, v); }}];
+  var soma = function(ls, k){ return ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0); };
+  var rodape = function(ls){ return ["Total", "", String(ls.length)+" datas", "", "", brl(soma(ls, "total")), brl(soma(ls, "pago")), brl(soma(ls, "falta")), ""]; };
+  // bloco de cima = filtro PRÓPRIO (não mexe no "Pagamentos do mês"): abre com o mês atual e os 6 seguintes; a coluna Mês deixa marcar os outros (Marcus, 20/11/2026)
+  var mAtual = mesAtual(), linhasResumo = [], padraoMeses = new Set();
+  for(var mi = 0; mi<24; mi++){ var mk = mesMais("2026-01", mi), ct = mk===mes ? cart : cartoesLancamento(pf, mk), ab = 0, rot = mesLabel(mk+"-01")+(mk===mAtual ? " · mês atual" : "");
+    ct.grupos.forEach(function(g){ g.cards.forEach(function(x){ if(x.aberto>0.005) ab++; }); });
+    var dist = (Number(mk.slice(0,4))-Number(mAtual.slice(0,4)))*12 + Number(mk.slice(5))-Number(mAtual.slice(5));
+    linhasResumo.push({id:mk, ano:mk.slice(0,4), mes:rot, total:ct.total, pago:ct.pago, falta:ct.falta, abertas:ab}); if(dist>=0 && dist<=6) padraoMeses.add(rot); }
+  var filtroTopo = {mes:padraoMeses};
+  var colsResumo = [{k:"mes", t:"Mês"}, {k:"total", t:"A pagar no mês", fmt:brl}, {k:"pago", t:"Pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"falta", t:"Falta", fmt:brl, cor:function(l){ return l.falta>0.005 ? "text-destructive" : "text-success"; }}, {k:"abertas", t:"Datas em aberto"}];
+  var rodapeAno = function(ls){ return ["Total", brl(ls.reduce(function(t, x){ return t+x.total; }, 0)), brl(ls.reduce(function(t, x){ return t+x.pago; }, 0)), brl(ls.reduce(function(t, x){ return t+x.falta; }, 0)), String(ls.reduce(function(t, x){ return t+x.abertas; }, 0))]; };
+  // a data escolhida na tabela
+  var cdSel = null, gSel = null; cart.grupos.forEach(function(g){ g.cards.forEach(function(cd){ if(cd.chave===sel){ cdSel = cd; gSel = g; } }); });
+  var pedidos = cdSel && porPedidoAtivo(pf, parseInt(cdSel.chave.split("|")[0]));
+  var BARRA = "flex flex-wrap items-center justify-between gap-2 border-x-[4px] border-y border-[#5b74ad] bg-[#1b2a4a] px-2 py-0.5";
+  return e("div",{className:PADRAO_BLOCOS+" -mx-4 -mb-4 -mt-4 md:-mx-6 md:-mb-6 md:-mt-6 flex flex-col gap-0 [&_section]:!rounded-none [&_section]:!border-x-[4px] [&_section]:!border-y-0 [&>*_section]:!mt-[3px] [&>*_section]:!shadow-[0_-3px_0_0_#fff] [&>section]:!mt-[3px] [&>section]:!shadow-[0_-3px_0_0_#fff] [&>*:first-child_section]:!mt-0 [&>*:first-child_section]:!shadow-none"},
+    e("div",{title:"Pix (sem NF) do mês, por fornecedor e data de acerto: o que se deve, o que já foi pago e o que falta."},
+      e(BlocoPainel,{titulo:"Pagamentos a fornecedores", compacto:true, cls:COMPACTA},
+        e(TabelaPlanilha,{cols:colsResumo, linhas:linhasResumo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, filtroInicial:filtroTopo, totalRodape:rodapeAno, vazio:"Nada neste filtro."}))),
+    [
+      e(BlocoPainel,{key:"lista", titulo:"Pagamentos do mês", compacto:true, cls:COMPACTA, acao:e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:meses.map(function(m){ return [m, mesLabel(m+"-01")]; })})},   // o mês fica no canto esquerdo da barra do bloco, em cima da coluna Tipo (Marcus, 21/11/2026)
+        !cart.grupos.length ? e("p",{className:"px-3 py-2 text-center text-[11px]"}, "Nenhum pagamento sem NF (Pix) em "+mesLabel(mes+"-01")+".") : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhum pagamento.",
+          aoClicar:function(l){ setSel(l.id); setTimeout(function(){ var el = document.getElementById("pag-detalhe"); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 60); },
+          linhaCls:function(l){ return l.id===sel ? "!bg-[#26385c]" : ""; }})),
+      e("div",{id:"pag-detalhe", key:"detalhe"},
+        cdSel ? e(BlocoPainel,{titulo:gSel.f.nome+" · "+dbr(cdSel.limite)+" · "+gSel.f.cat+" · "+gSel.cicloTxt, compacto:true, cls:DETALHE},
+          e("div",{className:"w-0 min-w-full overflow-x-auto", "data-sem-arrastar":""},
+            e(BarraTabela,null,
+              e(CelulaBarra,{rotulo:"Acerto"}, e(BotaoMini,{onClick:function(){ enviar(cdSel.chave); }}, cdSel.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor")),
+              e(CelulaBarra,{rotulo:"Ciclo"}, e(BotaoMini,{title:"Configurar o ciclo deste fornecedor", onClick:function(){ c.d({type:"ABA", aba:"pfforn"}); }}, "Ciclo do fornecedor"))),
+            e(ListaPagamentos,{cd:cdSel, c:c}),
+            pedidos && e("div",{className:"p-2"}, e(BlocoPedidos,{c:c, chave:cdSel.chave})))) :
+        e("p",{className:"rounded-lg border border-border bg-[#0f1729] px-3 py-1.5 text-center text-[11px]"}, "Escolha uma linha na tabela para ver os Pix lançados dela aqui.")),
+      e(Consolidado,{key:"consolidado", cart:cart, mes:mes})],
+    modalLanc && e(ModalLancar,{key:modalLanc+(esc ? "|e" : ""), c:c, chave:modalLanc==="novo" ? "" : modalLanc, escolher:esc, fechar:fecharLanc}),
     modalAcerto && e(ModalAcerto,{c:c, chave:modalAcerto, fechar:function(){ setModalAcerto(null); }}));
 }
 
-export { AbaPfLanc };
+export { AbaPfLanc, BotaoMini, COMPACTA };

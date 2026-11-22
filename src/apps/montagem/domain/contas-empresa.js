@@ -7,6 +7,7 @@ import { globLocal } from "@/lib/glob-local";
 
 import { parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { funcionarios } from "@/apps/montagem/domain/pessoas";
+import { casarPagos, cobertoAte, tipoDaParcela, tipoDoTitulo } from "@/apps/montagem/domain/casar-pagos";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
 var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
@@ -157,24 +158,40 @@ function setLancamentos(l){
 }
 // Pix revendedora lançado pela equipe em Pagamentos a fornecedores (Point, Pontual, MegaSul...): entra dentro do fornecedor e já conta como PAGO.
 // O que o DevMaster já registrou (até a última baixa de Pix do fornecedor) vale o DevMaster; o Pix da equipe só conta depois disso, sem duplicar. Só fornecedores (prestadores não entram).
-var PF_ITENS = [], PF_OCULTOS = {}, _pfSig = "";
+var PF_TODOS = [], PF_OCULTOS = {}, _pfSig = "";
+// Parcelas JÁ PAGAS de Pagamentos a fornecedores (pf.pedidos[].parcelas com status "Pago"), por fornecedor canônico: base do cruzamento exato com os títulos abertos da DevMaster (domain/casar-pagos.js, 20/11/2026).
+var PF_PARC = [], _pfpSig = "";
+function setPfParcelas(pf){
+  var peds = (pf && pf.pedidos) || [], n = 0, s = 0, hd = new Date(), hoje = hd.getFullYear()+"-"+String(hd.getMonth()+1).padStart(2, "0")+"-"+String(hd.getDate()).padStart(2, "0");
+  peds.forEach(function(p){ (p.parcelas || []).forEach(function(x){ if(x.status==="Pago"){ n++; s += Number(x.valor) || 0; } }); });
+  var sig = peds.length+"|"+n+"|"+s.toFixed(2)+"|"+((pf && pf.fornecedores) || []).length+"|"+hoje; if(sig===_pfpSig) return; _pfpSig = sig; PF_PARC = [];
+  var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
+  peds.forEach(function(ped){
+    var f = fn[ped.fornId]; if(!f || f.tipo==="prestador") return;   // prestador: o nome na DevMaster não bate com o do Admin
+    var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
+    // parcela "Pago" com data de amanhã em diante é erro da planilha (pagamento não acontece no futuro): não baixa conta nenhuma
+    (ped.parcelas || []).forEach(function(x, k){ if(x.status!=="Pago" || !(Number(x.valor)>0) || !x.venc || String(x.venc).slice(0, 10)>hoje) return; PF_PARC.push({id:ped.id+"#"+k, canon:canon, venc:String(x.venc).slice(0,10), valor:r2(Number(x.valor)), tipo:tipoDaParcela(x.forma), ped:ped.numero || ("Pedido "+ped.id)}); });
+  });
+}
 function setPf(pf){
-  var lanc = (pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+lanc.filter(function(l){ return l.aguardaComp; }).length+"|"+((pf && pf.fornecedores) || []).length;
-  if(sig===_pfSig) return; _pfSig = sig; PF_ITENS = []; PF_OCULTOS = {};
+  setPfParcelas(pf);
+  var lanc =(pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+lanc.filter(function(l){ return l.aguardaComp; }).length+"|"+((pf && pf.fornecedores) || []).length;
+  if(sig===_pfSig) return; _pfSig = sig; PF_TODOS = []; PF_OCULTOS = {};
   if(!lanc.length) return;
   var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
-  // o DevMaster junta os Pix de um fornecedor num valor só e dá a baixa depois; por isso NÃO se compara pagamento a pagamento.
-  // Regra: o Pix da equipe só conta DEPOIS da última baixa de Pix daquele fornecedor no DevMaster (o que o DevMaster já registrou, vale o DevMaster).
-  var hojePf = (function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); })();   // baixa com data futura na DevMaster não pode esconder os Pix de fornecedor (18/11/2026)
-  var ultima = {}; baseItens().forEach(function(i){ if(i.status==="pago" && i.nota==="sem" && i.baixa && i.baixa<=hojePf && i.baixa>(ultima[i.fornCanon]||"")) ultima[i.fornCanon] = i.baixa; });
-  // o que vale é o DevMaster (22/10/2026, pedido do Marcus): nada do que veio da planilha/Pagamentos a fornecedores entra até a data da última baixa do DevMaster
-  var ultimaGeral = ""; baseItens().forEach(function(i){ if(i.status==="pago" && i.baixa && i.baixa<=hojePf && i.baixa>ultimaGeral) ultimaGeral = i.baixa; });
+  // 20/11/2026 (Marcus): o que está em Pagamentos a fornecedores com comprovante JÁ ESTÁ PAGO e sobe na hora; a DevMaster só fica pendente de baixa. Quem junta com as contas em aberto da DevMaster é aplicarPf (mais abaixo).
   lanc.forEach(function(l){
     var f = fn[l.fornId]; if(!f || f.tipo==="prestador" || l.aguardaComp || !l.revendedora || l.revendedora==="—" || !(l.valor>0) || !l.data) return;
     var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
-    if(l.data<=(ultima[canon]||"") || l.data<=ultimaGeral) return;
-    PF_ITENS.push(decora({id:"pf"+l.id, status:"pago", filial:"fora", nat:"pf", natNome:"Pix revendedora (Pagamentos a fornecedores)", pref:"PIX", num:"", parc:"", forn:f.nome, nome:"Pix "+f.nome+" · "+l.revendedora, baixa:l.data, venc:l.data, valor:l.valor, valorTitulo:l.valor, grupo:fd ? fd[2] : G.outros, pessoalPadrao:false, mes:String(l.data).slice(0,7), outroMes:false, chave:"pf|"+l.id, origem:"pf"}));
+    PF_TODOS.push(decora({id:"pf"+l.id, status:"pago", filial:"fora", nat:"pf", natNome:"Pix revendedora (Pagamentos a fornecedores)", pref:"PIX", num:"", parc:"", forn:f.nome, nome:"Pix "+f.nome+" · "+l.revendedora, baixa:l.data, venc:l.data, valor:l.valor, valorTitulo:l.valor, grupo:fd ? fd[2] : G.outros, pessoalPadrao:false, mes:String(l.data).slice(0,7), outroMes:false, chave:"pf|"+l.id, origem:"pf"}));
   });
+}
+// Pix de revendedora pago ao fornecedor, lançado no Admin e SEM baixa na DevMaster (18/11/2026, Marcus): conta só o Pix lançado depois da última baixa de Pix daquele fornecedor na DevMaster (a DevMaster junta os Pix e baixa depois). Usado no resumo de Contas bancárias.
+function pixSemBaixa(pf, ym){
+  setPf(pf); if(!PF_TODOS.length) return 0;
+  var base = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens(), r = aplicarPf(base), t = 0;
+  r.forEach(function(i){ if(i.origem==='pf' && String(i.mes)===ym) t += i.valor; });
+  return r2(t);
 }
 // Baixas dadas no sistema (22/10/2026): pagamento de uma conta em aberto, com juros, multa e desconto; vem de s.cpe.baixas.
 // Cada baixa = {id, chave (da conta), data, forma, conta, principal (quanto da conta ela quitou), juros, multa, desc, obs, por, em}.
@@ -195,10 +212,27 @@ function comBaixas(l){
   });
   return out;
 }
+// O Pix pago e lançado em Pagamentos a fornecedores (com comprovante) vale como PAGO na hora e ABATE as contas em aberto do mesmo fornecedor na DevMaster, das mais antigas para as novas (20/11/2026, Marcus).
+// Só entra o que tem conta em aberto para abater: o que passa disso já foi baixado na DevMaster (e conta lá), então não se soma duas vezes. Pix de prestador não abate (o nome na DevMaster não bate).
+function aplicarPf(l){
+  if(!PF_TODOS.length) return l;
+  var por = {}; PF_TODOS.forEach(function(i){ if(PF_OCULTOS[i.id] || !i.fornCanon) return; (por[i.fornCanon] = por[i.fornCanon] || []).push(i); });
+  var out = l.slice(), add = [];
+  Object.keys(por).forEach(function(canon){
+    var abertos = []; l.forEach(function(i, k){ if(i.status==='apagar' && i.nota==='sem' && i.origem!=='pf' && i.fornCanon===canon) abertos.push(k); });
+    if(!abertos.length) return;
+    abertos.sort(function(a, b){ return String(l[a].venc || '9999').localeCompare(String(l[b].venc || '9999')); });
+    var cap = r2(abertos.reduce(function(t, k){ return t+l[k].valor; }, 0)), usado = 0;
+    // o Pix até a data já casada título a título (casar-pagos.js) não abate de novo; e o Pix até a ÚLTIMA baixa de Pix do fornecedor na DevMaster também não (a DevMaster junta os Pix e baixa; vale a DevMaster). Correção de 21/11/2026 (auditoria do Financeiro, caso Xangai): sem isso o Pix já baixado entrava de novo enquanto houvesse qualquer título aberto.
+    var ultDm = ""; l.forEach(function(i){ if(i.status==='pago' && i.origem!=='pf' && !i.faltaBaixaDm && !i.bx && i.fornCanon===canon && tipoDoTitulo(i)==="pix" && String(i.baixa || "")>ultDm) ultDm = String(i.baixa); });
+    por[canon].filter(function(p){ return String(p.baixa)>cobertoAte(canon) && String(p.baixa)>ultDm; }).sort(function(a, b){ return String(a.baixa).localeCompare(String(b.baixa)); }).forEach(function(p){ if(usado>=cap-0.004) return; var v = Math.min(p.valor, r2(cap-usado)); usado = r2(usado+v); add.push(v===p.valor ? p : Object.assign({}, p, {valor:v, valorTitulo:v})); });
+    var rest = usado; abertos.forEach(function(k){ if(rest<=0.004) return; var i = l[k], t = Math.min(i.valor, rest); rest = r2(rest-t); out[k] = t>=i.valor-0.004 ? null : Object.assign({}, i, {valor:r2(i.valor-t), abatidoPf:t}); });
+  });
+  return out.filter(Boolean).concat(add);
+}
 function itensEmpresa(){
   var l = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens();
-  l = PF_ITENS.length ? l.filter(function(i){ return !PF_OCULTOS[i.id]; }).concat(PF_ITENS) : l;
-  return comFilial(comBaixas(l));
+  return comFilial(aplicarPf(casarPagos(comBaixas(l), PF_PARC)));
 }
 // CNPJ trocado à mão (Nayale, 02/11/2026): guardado em CLASSE com a chave "fil|<conta>"; vale também para a conta já paga
 function comFilial(l){
@@ -288,4 +322,4 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
-export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

@@ -3,7 +3,6 @@
 // financeiro_confere marcar) ouve um som forte e uma voz dizendo "Nova venda", e vê um aviso grande no lado direito da tela, em QUALQUER tela em que estiver. O aviso fica até clicar; o som e a voz tocam só 3 vezes (a cada 4 s) e depois o aviso fica calado na tela. Clicar leva ao Direcionar. Lê a fila que já vem do servidor (módulo pag), então chega em todos os computadores. Toca sempre, mesmo com as notificações do admin desligadas (é alerta de trabalho: o Lucas precisa ouvir).
 // Só avisa pedido que chegou depois de a pessoa abrir o sistema (ou até 2 minutos antes), para não gritar com a fila antiga a cada recarga.
 // Teste: o botão "Testar alerta" do Direcionar dispara o mesmo aviso com um pedido de mentira (nada é gravado).
-import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { podeConferirPag } from "@/apps/montagem/domain/equipe";
 import { BK } from "@/apps/montagem/lib/format";
@@ -77,14 +76,14 @@ function NovaVendaAlerta(p){
   if(!recebe || !pendentes.length) return null;
   var ultimo = pendentes[0], mais = pendentes.length-1;
   var fechar = function(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} setPendentes([]); avisarAbas(); };
-  return e("div",{role:"alert", "aria-live":"assertive", className:"fixed bottom-4 right-4 z-[60] w-[min(22rem,calc(100vw-2rem))] rounded-lg shadow-2xl ring-2 ring-[var(--bloco-titulo)]"},
-    e(BlocoPainel,{titulo:ultimo.teste ? "Nova venda · teste" : "Nova venda", compacto:true},
-      e("div",{className:"flex flex-col items-center gap-2 p-3 text-center"},
-        e("span",{className:"text-[13px] font-semibold text-foreground"}, ultimo.nome+(mais>0 ? " e mais "+mais : "")),
-        e("b",{className:MONO+" text-[20px] text-foreground"}, BK(ultimo.valor)),
-        e("div",{className:"flex w-full flex-wrap justify-center gap-2"},
-          e(Botao,{principal:true, onClick:function(){ fechar(); if(!ultimo.teste && p.abrir) p.abrir(); }}, ultimo.teste ? "Entendi" : "Ir para o Direcionar"),
-          !ultimo.teste && e(Botao,{onClick:fechar}, "Entendi")))));
+  // 19/11/2026 (Marcus: "os avisos tampam a tela"): faixa fina no TOPO, no meio, em uma linha só; antes era um cartão grande no canto de baixo, em cima dos valores do Acerto
+  return e("div",{role:"alert", "aria-live":"assertive", className:"fixed left-1/2 top-1.5 z-[60] flex max-w-[min(52rem,calc(100vw-1rem))] -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg bg-popover px-3 py-1.5 shadow-2xl ring-2 ring-[var(--bloco-titulo)]"},
+    e("b",{className:"text-[11px] uppercase tracking-[.05em]"}, ultimo.teste ? "Nova venda · teste" : "Nova venda"),
+    e("span",{className:"min-w-0 text-[13px] font-semibold text-foreground"}, ultimo.nome+(mais>0 ? " e mais "+mais : "")),
+    e("b",{className:MONO+" whitespace-nowrap text-[13px] text-foreground"}, BK(ultimo.valor)),
+    e("span",{className:"flex gap-2"},
+      e(Botao,{principal:true, onClick:function(){ fechar(); if(!ultimo.teste && p.abrir) p.abrir(); }}, ultimo.teste ? "Entendi" : "Ir para o Direcionar"),
+      !ultimo.teste && e(Botao,{onClick:fechar}, "Entendi")));
 }
 
 var testarNovaVenda = function(){ try{ window.dispatchEvent(new Event(EVENTO_TESTE)); }catch(x){} };

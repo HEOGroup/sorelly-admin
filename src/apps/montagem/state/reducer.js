@@ -185,6 +185,8 @@ function reducer(s, a){
     // Saldos das contas bancárias (domain/saldos-contas.js): salvar um dia substitui o dia inteiro; conta sem lançamento vale o último saldo
     case "SALDO_DIA": { var sc1 = JSON.parse(JSON.stringify(s.saldosContas)); sc1.saldos[a.data] = a.valores; return com(s, {saldosContas:sc1}, "Saldos de "+a.data.split("-").reverse().join("/")+" salvos"); }
     case "SALDO_CEL": { var sc0 = JSON.parse(JSON.stringify(s.saldosContas)); (sc0.saldos[a.data] = sc0.saldos[a.data] || {})[a.conta] = a.valor; return com(s, {saldosContas:sc0}); }
+    // excluir os saldos de um dia inteiro (feriado ou dia sem saldos: Marcus, 20/11/2026): o último dia passa a ser o anterior
+    case "SALDO_DIA_LIMPAR": { var sc8 = JSON.parse(JSON.stringify(s.saldosContas)); delete sc8.saldos[a.data]; if(sc8.fechamentos) delete sc8.fechamentos[a.data]; return com(s, {saldosContas:sc8}); }
     case "SALDO_FECHAR": { var sc7 = JSON.parse(JSON.stringify(s.saldosContas)); sc7.fechamentos = sc7.fechamentos || {}; var fm = sc7.fechamentos[a.data] = sc7.fechamentos[a.data] || {};
       a.blocos.forEach(function(b){ fm[b] = !!a.fechado; if(a.fechado) sc7.contas.filter(function(c){ return c.bloco===b; }).forEach(function(c){ (sc7.saldos[a.data] = sc7.saldos[a.data] || {})[c.id] = a.valores[c.id]; }); });
       return com(s, {saldosContas:sc7}); }

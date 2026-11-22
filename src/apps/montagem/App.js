@@ -48,7 +48,7 @@ import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
 import { NovaVendaAlerta } from "@/apps/montagem/components/nova-venda";
 import { AvisoMelhorias } from "@/apps/montagem/components/aviso-melhorias";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
-import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
+import { ContaMenu } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
 import { RelogioProgresso } from "@/apps/montagem/components/relogio-progresso";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
@@ -181,6 +181,9 @@ function App(){
   // grupos do menu lateral (Geral/Setores/Sistema, 28/10/2026): fecha/abre cada um, lembra a escolha; sem chave = aberto
   try{ localStorage.removeItem("sorelly_grupos_menu"); }catch(x){}   // o menu abre sempre inteiro: apaga a escolha antiga de grupos fechados
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
+  // barra lateral (Marcus, 20/11/2026): GERAL começa FECHADO para os setores aparecerem melhor; GERAL e SETORES abrem e fecham clicando no título; a escolha fica neste navegador
+  var sgf = useState(function(){ try{ var v = JSON.parse(localStorage.getItem("sorelly_menu_grupos") || "null"); return v && typeof v==="object" ? v : {geral:true}; }catch(x){ return {geral:true}; } }), gruposFechados = sgf[0];
+  var alternaGrupo = function(id){ var o = Object.assign({}, gruposFechados); o[id] = !o[id]; sgf[1](o); try{ localStorage.setItem("sorelly_menu_grupos", JSON.stringify(o)); }catch(x){} };
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
   // barra do topo aberta 100% (todas as telas do setor à vista) ou recolhida (listas suspensas); lembra a escolha neste navegador
   var ba = useState(function(){ try{ return localStorage.getItem("sorelly_barra_aberta")!=="0"; }catch(x){ return true; } }), barraAberta = ba[0], setBarraAberta = ba[1];
@@ -247,8 +250,9 @@ function App(){
   if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || (srv.repCodDaConta() ? k==="inicio" : ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0); });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
-  var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
+  var abas = ABAS.filter(function(a){ return a[0]==="entradasetor" || !permitidas || permitidas.indexOf(a[0])>=0; });   // a entrada do setor (22/11/2026) é de todos; a lista de telas dentro dela já vem filtrada pelo acesso
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
+  var entradaId = aba==="entradasetor" ? new URLSearchParams(loc.search).get("setor") : null;   // entrada do setor (22/11/2026): qual setor mostrar
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
   useEffect(function(){ if(aba!=="melhorias") window.__ultimaTela = loc.pathname; }, [aba, loc.pathname]);   // guarda a última tela aberta: a solicitação de melhoria já vem com ela preenchida
   var titulo = aba==="breve" ? (breveURL||s.breveNome||"Em breve") : ABAS.find(function(a){return a[0]===aba;})[1];
@@ -273,14 +277,21 @@ function App(){
   var podeMenu = function(n){ return n.perm ? String(n.perm).split(",").some(function(k){ return temAutorizacao(k, s.usuario); }) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
-  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:17}));
-    return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
-    e(Icon,{n:st.ic, s:13, peso: on ? "fill" : "duotone"})); };
+  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-5 shrink-0 place-items-center rounded-md", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:14}));
+    return e("span",{className:"grid size-5 shrink-0 place-items-center rounded-md", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
+    e(Icon,{n:st.ic, s:12, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
   var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
-  var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
-    return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
-      className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
+  // Entrada do setor (22/11/2026, Marcus): clicar no setor abre uma tela só com os nomes das telas; setor com uma tela só abre a tela direto
+  var folhasDoMenu = function(nos){ var r = []; (nos||[]).forEach(function(n){ if(n.itens) r = r.concat(folhasDoMenu(n.itens)); else if(podeMenu(n)) r.push(n); }); return r; };
+  var gruposDaEntrada = function(st){ var nos = st.menu || menuAuto(st), soltos = [], gs = [];
+    nos.forEach(function(n){ if(n.itens){ var f = folhasDoMenu(n.itens); if(f.length) gs.push({titulo:n.nome, itens:f}); } else if(podeMenu(n)) soltos.push(n); });
+    return (soltos.length ? [{titulo:null, itens:soltos}] : []).concat(gs); };
+  var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : (st.areas.some(function(ar){ return ar.telas.some(ativaTela); }) || entradaId===st.id);
+    return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); setAreaTopo(null);
+        if(!st.direto && gruposDaEntrada(st).reduce(function(n, g){ return n+g.itens.length; }, 0)>1){ navigate(caminhoDaAba("entradasetor")+"?setor="+encodeURIComponent(st.id)); setMenu(false); return; }
+        if(t) abrirTela(t); },
+      className:"flex min-h-[26px] w-full items-center gap-2 rounded-md px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},   // padrao-ok: linha de 26 px na barra lateral, mais compacta, a pedido do Marcus (20/11/2026)
       tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
   var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
@@ -289,6 +300,9 @@ function App(){
   var comoSetor = function(st){ return st.direto ? Object.assign({}, st, {menu:[{nome:st.direto.nome, aba:st.direto.aba, breve:st.direto.breve}], areas:[{nome:st.nome, telas:[st.direto]}]}) : st; };
   var setorAtual = (function(){ var ach = []; setoresV.map(comoSetor).forEach(function(st){ var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
+  // entrada do setor: a barra de cima mostra o setor (menu sem tela ativa) e o título é o nome do setor
+  var entradaSt = entradaId ? setoresV.find(function(x){ return x.id===entradaId && !x.direto; }) : null;
+  if(entradaSt){ setorAtual = {st:comoSetor(entradaSt), ar:{nome:entradaSt.nome}}; titulo = entradaSt.nome.replace(/\n/g," "); }
   // tela que não está em nenhum setor (ex.: Configurador, Painel dos acertos): entra na faixa de telas abertas como "Sistema"
   if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba) && (visao==="pontual")===/^pont/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
   setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
@@ -325,19 +339,21 @@ function App(){
       e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"},
         e(IrPara,{larga:true, navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
         (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
-        e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}), e(PilulaSituacao,{esq:true, compacto:true}))),
+        e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}))),   // sem o botão de situação (Disponível) para ninguém: online já é disponível (Marcus, 21/11/2026)
       // 13/11/2026 (Marcus): o seletor Admin / Marcus / Pontual saiu do alto do menu. O Pontual foi tirado e o Marcus virou um setor logo abaixo de Diretoria.
       // 13/11/2026 (Marcus): o nome com o nível de acesso, o Sair e a situação (Disponível) saíram da barra de cima e ficam num bloquinho aqui, entre a logo e o GERAL
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-2 pb-2 pt-1.5"},
         visao==="marcus" && s.usuario===16 && e("button",{key:"voltar-admin", title:"Voltar para o sistema da Sorelly", onClick:function(){ d({type:"VISAO_MENU", v:"admin"}); navigate(caminhoDaAba("visaogeral")); setMenu(false); }, className:"mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-white/10 px-2.5 text-left text-[13px] font-semibold leading-tight hover:bg-white/15"}, "← Sorelly Admin"),
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
-          // menu sempre aberto, sem botão de abrir/fechar (Marcus, 02/11/2026): o título do grupo é só um rótulo
-          return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
-            e("div",{className:"mt-1.5 px-1.5 pb-0 first:mt-0"},
-              e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
-            lst.map(linhaSetor),
-            g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
+          // título do grupo vira botão de abrir e fechar (Marcus, 20/11/2026; antes, 02/11/2026, era só um rótulo). Fechado mostra só a tela aberta, se ela for do grupo.
+          var fechado = !!gruposFechados[g[0]], visiveis = fechado ? lst.filter(function(st){ return st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); }); }) : lst;
+          return e("div",{key:g[0], className:"flex flex-col gap-px"},
+            e("button",{type:"button", onClick:function(){ alternaGrupo(g[0]); }, "aria-expanded":!fechado, title:fechado ? "Abrir "+g[1] : "Fechar "+g[1],
+              className:"mt-1 flex h-[22px] w-full items-center justify-between rounded-md bg-white/5 px-2 text-[11px] font-bold uppercase tracking-wider text-foreground hover:bg-white/10 first:mt-0"},   // padrao-ok: título de grupo de 22 px na barra lateral (20/11/2026)
+              e("span",null, g[1]+(fechado ? " · "+lst.length : "")), e(Icon,{n:fechado ? "chevron" : "chevrondown", s:11})),
+            visiveis.map(linhaSetor),
+            !fechado && g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
         !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && visao!=="pontual" && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
         visao!=="pontual" && urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
@@ -379,7 +395,7 @@ function App(){
               var t = x.t, on = ativaTela(t);
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
-      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
+      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet,{context: aba==="entradasetor" ? {entrada: entradaSt ? {nome:entradaSt.nome.replace(/\n/g," "), cor:entradaSt.cor, grupos:gruposDaEntrada(entradaSt), abrir:abrirMenu} : null} : undefined}))),
     e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     visao!=="pontual" && chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),

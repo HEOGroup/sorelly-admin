@@ -155,13 +155,15 @@ function AbaDirecionar(){
   var sel = dp.pix.filter(function(x){ return x.id===selId && x.status==="fila"; })[0] || fila[0] || null;
   var hojeDir = r2(feitos.filter(function(x){ return (x.confirmadoEm||0) > new Date().setHours(0, 0, 0, 0); }).reduce(function(t, x){ return t+x.valor; }, 0));
   var destinoDe = function(id){ return cp.destinos.filter(function(d){ return d.id===id; })[0] || {nome:"(removido)", tipo:"CNPJ"}; };
-  var optDest = [["", "Escolha para quem enviar"]]; Object.keys(TIPOS_DESTINO).forEach(function(t){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }).forEach(function(d){ optDest.push([d.id, rotuloDestino(d, "")]); }); });
+  var escritaDm = function(d){ return d && d.tipo==="FORNECEDOR" && /^Pontual/i.test(d.nome || "") ? "PIX - BANHO" : ""; };   // como a DevMaster escreve este destino (a forma PIX - BANHO baixa em CAIXA PIX PONTUAL): a funcionária precisa dessa palavra para lançar o acerto lá
+  var comDica = function(txt, d){ var w = escritaDm(d); return w ? txt+" · DevMaster: "+w : txt; };
+  var optDest = [["", "Escolha para quem enviar"]]; Object.keys(TIPOS_DESTINO).forEach(function(t){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }).forEach(function(d){ optDest.push([d.id, comDica(rotuloDestino(d, ""), d)]); }); });
   // fornecedores: o que FALTA para fechar o mês atual e a data limite (planilha, aba RESUMO MÊS; Marcus 24/10/2026). Clicar adiciona o fornecedor como destino.
   var fornAbertos = fornecedoresDoMesPf(s.pf, cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
   // TODO fornecedor com conta em aberto aparece na lista "Fornecedor" da conta (Lucas, 18/11/2026): quem ainda não tem destino (ex.: Madalosso, Ello Print) ganha o destino uma vez, com o nome do cadastro
   // e o PRESTADOR de serviço com conta em aberto no Lançamento de pagamentos também (Lucas, 18/11/2026: a Dávila, R$ 520,00, não aparecia para direcionar)
   var prestAbertos = prestadoresAbertosPf(s.pf, cp);
-  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).split(" · ")[0]]; })
+  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).replace(/ \d{2}\/\d{2} à \d{2}\/\d{2}$/, "")]; })
     .concat(prestAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["PRESTADOR", f.nome]; }))
     .filter(function(x, i, a){ return x[1] && a.findIndex(function(y){ return y[1]===x[1]; })===i && !DEST_CRIADOS[x[1]]; }) : [];
   useEffect(function(){ semDestino.forEach(function(x){ DEST_CRIADOS[x[1]] = true; c.d({type:"CP", op:"destino_add", nome:x[1], tipo:x[0]}); }); }, [semDestino.map(function(x){ return x[1]; }).join("|")]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -198,7 +200,7 @@ function AbaDirecionar(){
   var stt = useState({}), travados = stt[0], setTravados = stt[1];   // pagamentos confirmados (travados) até apertar Editar (Marcus, 12/11/2026)
   var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1], spv = useState({}), pendV = spv[0], setPendV = spv[1], sva = useState(false), verTodas = sva[0], setVerTodas = sva[1], sab = useState({}), abertosC = sab[0], setAbertosC = sab[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
   var optsDe = function(f){ var l = [["", f==="pix" ? "Escolha a conta" : "Escolha o CNPJ", ""]];
-    if(f==="pix") Object.keys(TIPOS_DESTINO).forEach(function(tp){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).forEach(function(d){ l.push([d.id, rotuloDestino(d, ""), tipoNome(tp)]); }); });
+    if(f==="pix") Object.keys(TIPOS_DESTINO).forEach(function(tp){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).forEach(function(d){ l.push([d.id, comDica(rotuloDestino(d, ""), d), tipoNome(tp)]); }); });
     else cp.destinos.filter(function(d){ return d.ativo && d.tipo==="CNPJ"; }).forEach(function(d){ l.push([d.id, rotuloDestino(d, ""), f==="link" ? "Link de pagamento do CNPJ" : "Maquininha do CNPJ"]); });
     return l; };
   var opcoesSel = function(lista, primeiro){ var gs = [], m = {}; lista.slice(1).forEach(function(o){ if(!m[o[2]]){ m[o[2]] = []; gs.push(o[2]); } m[o[2]].push(o); }); return [e("option",{key:"_", value:""}, primeiro)].concat(gs.map(function(g){ return e("optgroup",{key:g, label:g}, m[g].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })); })); };
@@ -326,7 +328,7 @@ function AbaDirecionar(){
     // prestador com conta em aberto no Lançamento de pagamentos (18/11/2026): soma ao que já vem das orientações
     prestAbertos.forEach(function(x){ if(!x.destinoId || !(x.saldo>0)) return; var q = pend[x.destinoId] || (pend[x.destinoId] = {valor:0, prazo:""}); q.valor = r2(q.valor+x.saldo); if(x.ate && (!q.prazo || x.ate<q.prazo)) q.prazo = x.ate; });
     var dm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "—"; };
-    var folhaDev = function(nome, valor, prazo, id, conta){ return {nome:nome, cols:[nome, BKC(valor), dm(prazo)], w:[46, 30, 24], heads:["Nome", "Devido", "Prazo"], id:id, conta:conta||""}; };
+    var folhaDev = function(nome, valor, prazo, id, conta, extra){ return {nome:nome, cols:[nome+(extra ? " · "+extra : ""), BKC(valor), dm(prazo)], w:[46, 30, 24], heads:["Nome", "Devido", "Prazo"], id:id, conta:conta||""}; };
     var ff = s.ff || {};
     // sócio: um divisor "Contas" e um divisor "Prestadores de serviço" (só os que têm valor devido), vindos do Financeiro familiar
     var socio = function(d){
@@ -340,7 +342,7 @@ function AbaDirecionar(){
         return folhaDev(pr.nome, falta, prazo, d.id, cb ? cb.nome : pr.nome); }).filter(Boolean);
       var itens = []; if(contas.length) itens.push({nome:"Contas "+curto, itens:contas}); if(prests.length) itens.push({nome:"Prestadores de serviço", itens:prests});
       return itens.length ? {nome:d.nome, itens:itens} : {nome:d.nome, id:d.id, conta:""}; };
-    var devedores = function(tp){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp && pend[d.id]; }).map(function(d){ return folhaDev(d.nome, pend[d.id].valor, pend[d.id].prazo, d.id); }); };
+    var devedores = function(tp){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp && pend[d.id]; }).map(function(d){ return folhaDev(d.nome, pend[d.id].valor, pend[d.id].prazo, d.id, "", escritaDm(d) ? "DevMaster: "+escritaDm(d) : ""); }); };
     return Object.keys(TIPOS_DESTINO).map(function(tp){ return {nome:tp==="CNPJ" ? "Empresa" : tipoNome(tp), itens:tp==="CNPJ" ? cnpjs : tp==="FAMILIA" ? cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).map(socio) : devedores(tp)}; }).filter(function(g){ return g.itens.length; }); };
   var renderParte = function(p){
     var id = p.id, f = p.forma, ld = divDe(id), rest = restDe(id), pl = planos[id] || [], dest = optsDe(f), sug = !ld.length;
@@ -371,7 +373,7 @@ function AbaDirecionar(){
     if(p.brinde) celPag = e("div",{className:"flex flex-col items-center gap-1"}, celPag,
       c.edita && !trava ? e(SeletorConta,{nos:Object.keys(FORMAS_BRINDE).map(function(k){ return {nome:FORMAS_BRINDE[k], id:k, conta:""}; }), texto:FORMAS_BRINDE[f] || "Pix", rotulo:"Forma de pagamento da diferença do brinde", titulo:"Forma", centro:true, larg:150,
         onEscolher:function(v){ if(v===f) return; c.d({type:"DP", op:"parte_forma", id:sel.id, n:parseInt(String(id).split("#")[1], 10), forma:v, por:c.por}); }}) : e("span",{className:NOME}, FORMAS_BRINDE[f] || "Pix"));
-    var rotuloEscolha = function(d, conta){ var ffx = s.ff || {}; if(d.tipo==="FAMILIA" && conta){ var cbx = (ffx.contasBanc||[]).filter(function(z){ return z.nome===conta && z.prestadorId; })[0], prx = cbx ? (ffx.prest||[]).filter(function(z){ return z.id===cbx.prestadorId; })[0] : (ffx.prest||[]).filter(function(z){ return z.nome===conta && z.responsavelId===d.personaId; })[0]; if(prx) return rotuloPrestadorFamilia(d.nome, prx.nome, cbx ? cbx.nome : ""); } return rotuloDestino(d, conta); };
+    var rotuloEscolha = function(d, conta){ var ffx = s.ff || {}; if(d.tipo==="FAMILIA" && conta){ var cbx = (ffx.contasBanc||[]).filter(function(z){ return z.nome===conta && z.prestadorId; })[0], prx = cbx ? (ffx.prest||[]).filter(function(z){ return z.id===cbx.prestadorId; })[0] : (ffx.prest||[]).filter(function(z){ return z.nome===conta && z.responsavelId===d.personaId; })[0]; if(prx) return rotuloPrestadorFamilia(d.nome, prx.nome, cbx ? cbx.nome : ""); } return comDica(rotuloDestino(d, conta), d); };
     var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? rotuloEscolha(d, contaAtual) : primeiro; return c.edita && !trava ? e(SeletorConta,{nos:arvoreDe(f), semQuebra:true, centro:true, larg:580, texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
     var txtValor = function(v){ return e("div",{className:"flex justify-center"}, e("span",{className:"inline-flex h-8 items-center whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] font-semibold tabular-nums"}, BKC(v))); };
     // Sugestão (Marcus, 12/11/2026: "ruim de ler, organize"): uma caixa com borda por sugestão: o NOME da conta em negrito e o motivo embaixo, em linhas separadas
@@ -440,13 +442,13 @@ function AbaDirecionar(){
         ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Confirmar"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC+(i===5 ? " sticky right-0 z-10" : "")}, t); }),
         partes.map(renderParte)))),
     ));
-  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] [--color-card:#15213a] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
+  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] [--color-card:#15213a] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_*]:!text-[11px] [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
     e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
-    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:50, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
+    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:4, semContagem:true, semLimpar:true, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
-    veFam && e("div",{className:"grid grid-cols-1 items-stretch gap-1.5"}, Painel("Pagamentos da Família", "", "", "#f5c14b", e("div",{className:"flex flex-1 flex-col"}, tabelaFam))),   // bloco da Família (12/11/2026): os botões Falta/Todos do mês/Família saíram do bloco dos fornecedores, então a Família ganhou bloco próprio, só para quem abre o Financeiro familiar
+    // 19/11/2026 (Marcus): o bloco "Pagamentos da Família" saiu do Direcionar da Sorelly (Financeiro familiar e empresa ficam separados; a família fica só no Financeiro familiar)
     // ── feitos
     feitos.length>0 && (function(){
       // DIRECIONADOS no padrão (Marcus, 12/11/2026): só o título, uma linha por destino, revendedora (4 primeiros nomes), conta escrita pela regra única e Reabrir pequeno, só até o pagamento ser conferido

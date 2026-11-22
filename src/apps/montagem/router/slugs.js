@@ -119,6 +119,7 @@ export const SLUG_DA_ABA = {
   indhistorico: "indicacoes-historico",
   msgcad: "mensagens-prontas",
   regrasguias: "regras-guias",
+  entradasetor: "entrada-do-setor",   // 22/11/2026: tela com os nomes das telas do setor (o setor vai em ?setor=)
   repcad: "representantes-do-setor",
   compras: "compras-e-estoque",
   cequadro: "compras-quadro",
@@ -176,6 +177,7 @@ export const SLUG_DA_ABA = {
   prodcod: "producao-codigos",
   prodpag: "producao-pagamentos",
   prodcasa: "producao-casa",
+  prodpagproducao: "producao-pagamento-por-producao",
   cpcompras: "cadastro-de-pecas-compras",
   cadpecas: "cadastro-de-pecas-pedidos",
   cpsol: "cadastro-de-pecas-solicitacoes",
@@ -199,6 +201,8 @@ export const SLUG_DA_ABA = {
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
   fffaturas: "ff-faturas-do-cartao",   // Financeiro › Faturas (19/11/2026)
+  finbancos: "bancos",   // Financeiro › Cadastro › Bancos (20/11/2026)
+  finformas: "formas-de-pagamento",   // Financeiro › Cadastro › Formas de pagamento (20/11/2026)
   findm: "arrumar-na-devmaster",   // Financeiro › Arrumar na DevMaster (19/11/2026)
   finativ: "atividades-do-financeiro",   // Financeiro › Atividades (18/11/2026): só o Marcus
   resultado: "resultado-do-mes",

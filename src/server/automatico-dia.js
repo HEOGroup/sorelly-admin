@@ -30,10 +30,13 @@ async function gravarFaturamento(dias) {
     // o dia anterior ao primeiro da lista vale como base do "dia" (acumulado de ontem do mesmo mês)
     for (const d of dias) {
       const atual = fd[d.dia] || {};
-      if (atual.travado) { ant = { valor: Number(atual.recebido) || d.valor, acertos: Number(atual.acertos) || d.acertos }; continue; }
-      const igual = r2(Number(atual.recebido)) === d.valor && Number(atual.acertos) === d.acertos;
+      if (atual.travado) {   // dia fixado pelo Marcus: recebido e acertos não mudam, mas Contas a receber e Inadimplência (cr e ina) se atualizam
+        if (d.cr !== undefined && (Number(atual.cr) !== d.cr || Number(atual.ina) !== d.ina)) { fd[d.dia] = Object.assign({}, atual, { cr: d.cr, ina: d.ina }); mudou++; }
+        ant = { valor: Number(atual.recebido) || d.valor, acertos: Number(atual.acertos) || d.acertos }; continue;
+      }
+      const igual = r2(Number(atual.recebido)) === d.valor && Number(atual.acertos) === d.acertos && Number(atual.cr) === d.cr && Number(atual.ina) === d.ina;
       if (!igual) {
-        fd[d.dia] = Object.assign({}, atual, { recebido: d.valor, acertos: d.acertos, fixadoEm: Date.now(), parcial: false, automatico: true });
+        fd[d.dia] = Object.assign({}, atual, { recebido: d.valor, acertos: d.acertos, cr: d.cr, ina: d.ina, fixadoEm: Date.now(), parcial: false, automatico: true });
         cp[d.dia] = Object.assign({ cnpjs: {}, contasPorFora: 0 }, cp[d.dia], { faturado: r2(d.valor - ant.valor), acertos: d.acertos - ant.acertos });
         mudou++;
       }

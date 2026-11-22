@@ -49,9 +49,10 @@ function PagamentosAConferir(p){
   // todas as formas de pagamento com todas as contas (a da própria linha vem primeiro)
   // Pix: se a venda tem link ou cartão, o Pix tem de cair no MESMO CNPJ (aparecem só as contas desse CNPJ)
   var cnpjsDaVenda = function(x){ var o = {}; x.linhas.forEach(function(l){ if(l.forma==='link' || l.forma==='credito' || l.forma==='debito') (l.partes||[]).forEach(function(q){ var c = q.descricao ? cnpjDaConta(s.px, q.descricao) : ''; if(c) o[c] = 1; }); }); return Object.keys(o); };
+  var rotuloOpcao = function(c){ return /^PIX - BANHO$|\s-\sP$/.test(String(c).replace(/\s+/g, " ").trim()) ? c+" · Pontual" : c; };   // contas da Pontual: PIX - BANHO e as maquininhas "- P" (Getnet e Cielo); a dica fica só no texto, o valor gravado é o nome da DevMaster
   var opcoesContas = function(forma, x){ var cn = forma==='pix' && x ? cnpjsDaVenda(x) : [], serve = function(c){ return !cn.length || cn.indexOf(cnpjDaConta(s.px, c))>=0; };
     var ordem = formas.filter(function(fm){ return fm.k===forma; }).concat(formas.filter(function(fm){ return fm.k!==forma; }));
-    return ordem.map(function(fm){ return e("optgroup",{key:fm.k, label:fm.label}, (fm.descricoes||[]).filter(serve).map(function(c){ return e("option",{key:fm.k+c, value:c}, c); })); }).filter(function(g){ return g.props.children.length>0; }); };
+    return ordem.map(function(fm){ return e("optgroup",{key:fm.k, label:fm.label}, (fm.descricoes||[]).filter(serve).map(function(c){ return e("option",{key:fm.k+c, value:c}, rotuloOpcao(c)); })); }).filter(function(g){ return g.props.children.length>0; }); };
   // uma linha enviada (ex.: Pix R$ 7.000) pode ser dividida em várias contas; o comprovante quem anexa é a funcionária que bipa
   var linha = function(x, l, i){
     var sk = etapaFin(l), brinde = l.tipo==="brinde", ps = l.partes || [];
