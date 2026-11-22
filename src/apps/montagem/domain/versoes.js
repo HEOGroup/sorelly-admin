@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.88", data:"2026-11-22", titulo:"Faturamento e Resultado do mês: pago e a pagar ao vivo, sem duplicar", itens:[
+  {tipo:"melhoria", area:"Financeiro → Faturamento e Resultado do mês", txt:"O pago e o a pagar do mês passam a vir da mesma lista da tela Contas a pagar: DevMaster, Pix lançado no admin e lançamentos à mão, já cruzados e sem contar duas vezes. Antes o a pagar vinha de um número antigo do admin (27/10). Mês fixado e valor manual do financeiro continuam valendo; mês futuro nunca fica abaixo do previsto. Sem resposta da DevMaster, as telas seguem com os números lançados."}]},
  {v:"0.21.86", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
   {tipo:"novo", area:"Menu lateral (todos os setores)", txt:"Clicar num setor do menu lateral agora abre a Entrada do setor: botões grandes só com os nomes das telas, sem dados, já filtrados pelo acesso da pessoa. Clicar no nome abre a tela. Setor com uma tela só abre a tela direto. O menu de cima continua igual."}
  ]},
