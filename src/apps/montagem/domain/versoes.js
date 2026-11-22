@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.101", data:"2026-11-22", titulo:"Natureza das contas da família em letra normal", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A coluna Natureza mostrava o código da categoria (PRO_LABORE, SERVICO, CONDOMINIO). Agora mostra o nome (Pró-labore, Serviço, Condomínio)."}]},
  {v:"0.21.100", data:"2026-11-22", titulo:"Menu Família › Contas: nomes A pagar e Pagas", itens:[
   {tipo:"correção", area:"Financeiro → Família → Contas", txt:"As duas telas do item Contas passam a se chamar A pagar e Pagas."}]},
  {v:"0.21.99", data:"2026-11-22", titulo:"Menu Família: Contas com duas telas", itens:[
