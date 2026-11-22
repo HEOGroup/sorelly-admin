@@ -47,7 +47,7 @@ function AbaErRegras(){
       e(Cp,{t:"Por semana (representante)"}, e(Num,{v:d.reposicao.repPorSemana, off:off, on:function(x){ mut(function(n){ n.reposicao.repPorSemana = x; }); }})),
       e(Cp,{t:"Minutos na empresa"}, e(Num,{v:d.reposicao.minutosEscolha, off:off, on:function(x){ mut(function(n){ n.reposicao.minutosEscolha = x; }); }})),
       e(Cp,{t:"Alerta de atraso (horas)"}, e(Num,{v:d.prazoHoras, off:off, on:function(x){ mut(function(n){ n.prazoHoras = x; }); }})),
-      e(Cp,{t:"Média mínima do Top 50"}, din(d.top50.mediaMinima, function(x){ mut(function(n){ n.top50.mediaMinima = x; }); }, "Média mínima do Top 50")))),
+      e(Cp,{t:"Média mínima do Top 100"}, din(d.top50.mediaMinima, function(x){ mut(function(n){ n.top50.mediaMinima = x; }); }, "Média mínima do Top 100")))),
     e("div",{className:"grid grid-cols-1 gap-2.5 md:grid-cols-2"},
       e(Bloco,{t:"Pix da taxa"}, e("div",{className:"grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2"},
         e(Cp,{t:"Quem recebe"}, e(Txt,{v:d.pix.recebedor, off:off, on:function(x){ mut(function(n){ n.pix.recebedor = x; }); }})), e(Cp,{t:"Tipo da chave"}, e(Txt,{v:d.pix.tipo, off:off, on:function(x){ mut(function(n){ n.pix.tipo = x; }); }})),
@@ -68,7 +68,7 @@ function AbaErRegras(){
       e(Cp,{t:"Limite da média"}, din(d.qtd.limiteMedia, function(x){ mut(function(n){ n.qtd.limiteMedia = x; }); }, "Limite da média")),
       e(Cp,{t:"Abaixo do limite"}, e(Num,{v:d.qtd.abaixo, off:off, on:function(x){ mut(function(n){ n.qtd.abaixo = x; }); }})),
       e(Cp,{t:"No limite ou acima"}, e(Num,{v:d.qtd.acima, off:off, on:function(x){ mut(function(n){ n.qtd.acima = x; }); }})),
-      e(Cp,{t:"Top 50"}, e(Num,{v:d.qtd.top50, off:off, on:function(x){ mut(function(n){ n.qtd.top50 = x; }); }})))),
+      e(Cp,{t:"Top 100"}, e(Num,{v:d.qtd.top50, off:off, on:function(x){ mut(function(n){ n.qtd.top50 = x; }); }})))),
     e(Bloco,{t:"Valor máximo por média", dir:e("span",{className:"text-[12px] text-foreground/80"}, "abaixo da 1ª faixa: sem direito")},
       e("div",{className:"flex flex-col gap-1.5"}, d.valores.map(function(f, i){
         return e("div",{key:i, className:"grid grid-cols-[1fr_1fr_auto] items-end gap-3"},
@@ -76,7 +76,7 @@ function AbaErRegras(){
           e(Cp,{t:"Valor máximo"}, din(f.max, function(x){ mut(function(n){ n.valores[i].max = x; }); }, "Valor máximo")),
           pode ? e(Botao,{onClick:function(){ mut(function(n){ n.valores.splice(i, 1); }); }}, "Remover") : e("span",null)); }),
         pode && e("div",{className:"flex justify-start pt-1"}, e(Botao,{onClick:function(){ mut(function(n){ var u = n.valores[n.valores.length-1]; n.valores.push({de:(u ? u.de : 0)+500, max:u ? u.max : 2500}); }); }}, "Adicionar faixa")))),
-    e("p",{className:"text-[12px] text-foreground/80"}, "Top 50 sem média usa o maior valor da tabela. Top 50 abaixo da primeira faixa usa o menor valor."));
+    e("p",{className:"text-[13px] text-foreground/80"}, "Top 100 sem média usa o maior valor da tabela. Top 100 abaixo da primeira faixa usa o menor valor."));
   else corpo = e("div",{className:"flex flex-col gap-2.5"},
     barra(sujoM, function(){ E.exec("config_salvar", {config:{mensagens:mg}}); }, function(){ ms[1](clone(cfg.mensagens || {})); }, "Salvar mensagens"),
     MENSAGENS.map(function(m){ return e(Mensagem,{key:m[0], k:m[0], titulo:m[1], E:E, ov:mg[m[0]], set:setMsg}); }));

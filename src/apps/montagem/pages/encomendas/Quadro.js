@@ -34,7 +34,7 @@ function NovoPedido(p){
     er.revendedoras.length>0 && e(Campo,{key:"rc", rot:"Revendedora cadastrada", dica:"Opcional: preenche os dados do cadastro."}, e("select",{value:v.revendedoraId, onChange:function(ev){ if(ev.target.value) escolhe(ev.target.value); else set("revendedoraId", ""); }, className:CAMPO+" cursor-pointer"},
       [e("option",{key:"", value:""}, "Selecione")].concat(er.revendedoras.map(function(r){ return e("option",{key:r.id, value:r.id}, r.nome); })))),
     e(Campo,{key:"rv", rot:"Revendedora *"}, e("input",{type:"text", value:v.revendedora, placeholder:"Nome da revendedora", onChange:function(ev){ st[1](function(o){ return Object.assign({}, o, {revendedora:ev.target.value, revendedoraId:""}); }); }, className:CAMPO})),
-    t==="reposicao" && e(Campo,{key:"cn", rot:"Como a revendedora recebe *"}, ac && ac.tem ? e(Escolha,{v:v.canal, set:function(x){ set("canal", x); }, ops:CANAIS.filter(function(c){ return ac.canais.indexOf(c[0])>=0; })}) : e("p",{className:"text-[12px] text-white/65"}, "Informe a revendedora (Top 50) ou a média de vendas.")),
+    t==="reposicao" && e(Campo,{key:"cn", rot:"Como a revendedora recebe *"}, ac && ac.tem ? e(Escolha,{v:v.canal, set:function(x){ set("canal", x); }, ops:CANAIS.filter(function(c){ return ac.canais.indexOf(c[0])>=0; })}) : e("p",{className:"text-[13px] text-white/65"}, "Informe a revendedora (Top 100) ou a média de vendas.")),
     e(Campo,{key:"rs", rot:"Responsável"}, e("select",{value:v.responsavel || (EQUIPE.indexOf(E.por)>=0 ? E.por : ""), onChange:function(ev){ set("responsavel", ev.target.value); }, className:CAMPO+" cursor-pointer"},
       EQUIPE.map(function(n){ return e("option",{key:n, value:n}, n); }))),
     e(Campo,{key:"rp", rot:"Representante"+(v.canal==="representante" ? " *" : "")}, e("input",{type:"text", value:v.representante, placeholder:"Nome da representante", onChange:function(ev){ set("representante", ev.target.value); }, className:CAMPO}))];
@@ -47,7 +47,7 @@ function NovoPedido(p){
   var c3 = e(Painel,{key:"c3", t:"Direito e ações", ic:"gear"},
     rev && bloqueadaNaData(rev.bloqueadaAte) && e(Selo,{cor:"#EF4444", ic:"lock-key"}, "Bloqueada até "+formatarDia(rev.bloqueadaAte)),
     ac && e("div",{className:"grid grid-cols-2 gap-1.5"},
-      e(Ind,{t:"Top 50", v:ac.top50 ? "Sim" : "Não", cor:ac.top50 ? "info" : "neutro"}), e(Ind,{t:"Valor máximo", v:mxv>0 ? formatarReais(mxv) : "—", cor:mxv>0 ? "total" : "neutro"}),
+      e(Ind,{t:"Top 100", v:ac.top50 ? "Sim" : "Não", cor:ac.top50 ? "info" : "neutro"}), e(Ind,{t:"Valor máximo", v:mxv>0 ? formatarReais(mxv) : "—", cor:mxv>0 ? "total" : "neutro"}),
       e(Ind,{t:"Taxa da revendedora", v:formatarReais(taxaRev), cor:taxaRev ? "alerta" : "neutro"}), e(Ind,{t:"Pago à representante", v:formatarReais(taxaRp), cor:taxaRp ? "info" : "neutro"})),
     ac && ac.tem && e("p",{className:"text-[12px] text-white/70"}, usadas+" de "+lim+(lim===1 ? " reposição" : " reposições")+" no mês"),
     taxaRev>0 && e("p",{className:"rounded-lg bg-[#FBBF24]/15 px-2 py-1.5 text-[12.5px] font-bold text-[#FBBF24]"}, "Taxa de "+formatarReais(taxaRev)+" paga antes por Pix, com comprovante: sem ele a reposição não é liberada."),
@@ -160,7 +160,7 @@ function Revendedoras(p){
   var set = function(k, y){ st[1](function(o){ var n = Object.assign({}, o); n[k] = y; return n; }); };
   var novo = function(){ st[1]({id:"", nome:"", representante:"", telefone:"", top50:false, media3m:0, maiorVenda:0}); };
   var lista = e(Painel,{key:"l", t:"Revendedoras cadastradas", ic:"user-circle", estado:"feito"}, er.revendedoras.length ? e(Tab,{cols:["Revendedora", "Telefone", "Grupo", "Média", "Situação", ""]}, er.revendedoras.slice().sort(function(a, b){ return (b.top50?1:0)-(a.top50?1:0) || a.nome.localeCompare(b.nome); }).map(function(r){ var bl = bloqueadaNaData(r.bloqueadaAte);
-      return e("tr",{key:r.id, className:LINHA}, e(Td,{forte:true}, r.nome), e(Td,null, r.telefone || "—"), e(Td,null, r.top50 ? e(Selo,{cor:TURQ, ic:"star"}, "Top 50") : "—"), e(Td,{dinheiro:true}, formatarReais(r.media3m)),
+      return e("tr",{key:r.id, className:LINHA}, e(Td,{forte:true}, r.nome), e(Td,null, r.telefone || "—"), e(Td,null, r.top50 ? e(Selo,{cor:TURQ, ic:"star"}, "Top 100") : "—"), e(Td,{dinheiro:true}, formatarReais(r.media3m)),
         e(Td,{cor:bl ? "ruim" : "ok"}, bl ? "Bloqueada até "+formatarDia(r.bloqueadaAte) : "Liberada"),
         e(Td,null, e("span",{className:"inline-flex gap-1"}, e(BtMini,{ic:"note-pencil", onClick:function(){ st[1]({id:r.id, nome:r.nome, representante:r.representante, telefone:r.telefone||"", top50:!!r.top50, media3m:r.media3m, maiorVenda:r.maiorVenda}); }}, "Editar"),
           bl && e(BtMini,{ic:"lock-simple", disabled:!E.pode, titulo:E.pode ? "Liberar a revendedora" : "Só a diretoria libera", onClick:function(){ E.exec("bloqueio_remover", {id:r.id}); }}, "Liberar")))); }))
@@ -169,12 +169,12 @@ function Revendedoras(p){
     e(Campo,{rot:"Nome *"}, e("input",{type:"text", value:v.nome, onChange:function(ev){ set("nome", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Telefone"}, e("input",{type:"text", value:v.telefone, onChange:function(ev){ set("telefone", ev.target.value); }, className:CAMPO})),
     e(Campo,{rot:"Representante"}, e("input",{type:"text", value:v.representante, onChange:function(ev){ set("representante", ev.target.value); }, className:CAMPO})),
-    e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-[13px] font-bold"}, e("input",{type:"checkbox", checked:!!v.top50, onChange:function(ev){ set("top50", ev.target.checked); }}), "Top 50 (reposição por entrega)"),
+    e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-[13px] font-bold"}, e("input",{type:"checkbox", checked:!!v.top50, onChange:function(ev){ set("top50", ev.target.checked); }}), "Top 100 (reposição por entrega)"),
     e(Campo,{rot:"Média de vendas dos 3 meses"}, e(Dinheiro,{value:v.media3m, label:"Média", onChange:function(y){ set("media3m", y); }})),
     e(Campo,{rot:"Maior venda"}, e(Dinheiro,{value:v.maiorVenda, label:"Maior venda", onChange:function(y){ set("maiorVenda", y); }})),
     e(Bt,{tipo:"forte", ic:"floppy-disk", onClick:function(){ if(E.exec("rev_salvar", v)) novo(); }}, "Salvar"),
     v.id && e(Bt,{tipo:"perigo", ic:"trash", onClick:function(){ if(E.exec("rev_excluir", {id:v.id})) novo(); }}, "Excluir"),
     v.id && e(Bt,{ic:"plus", onClick:novo}, "Nova"));
-  return e(Janela,{t:"Revendedoras", sub:"Top 50 e média de vendas: quem pode pedir reposição, e o bloqueio de 3 meses.", fechar:p.fechar, colunas:[lista, form]});
+  return e(Janela,{t:"Revendedoras", sub:"Top 100 e média de vendas: quem pode pedir reposição, e o bloqueio de 3 meses.", fechar:p.fechar, colunas:[lista, form]});
 }
 export { NovoPedido, Motivo, Agendar, Atender, Detalhe, Revendedoras, avancarPedido };

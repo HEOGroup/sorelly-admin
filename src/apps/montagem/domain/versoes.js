@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.104", data:"2026-11-23", titulo:"Encomendas: tela Ranking e textos do Top 100", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Ranking", txt:"Tela nova com a classificação das revendedoras pelo total de vendas dos últimos 3 meses (posição, total, média, acertos, último acerto, posição de 1 mês atrás, se está na lista e a situação: Ativa, Entrar, Protegida, Sem acesso ou Em saída). Só leitura; botão Atualizar ranking. Mostra o Top 150 e quem ainda está na lista depois dele."},
+  {tipo:"correção", area:"Encomendas e reposições", txt:"Os textos que ainda diziam Top 50 (janelas de pedir entrada e retirar, Quadro, Regras e Funil) agora dizem Top 100."},
+ ]},
  {v:"0.21.103", data:"2026-11-23", titulo:"Junção geral: tudo que estava na pasta principal foi para a master", itens:[
   {tipo:"melhoria", area:"Sistema → Organização", txt:"Os commits salvos pelas conversas na pasta principal (menu Família, Gasto por casa, Negociações, Produção, pendências por conversa e outros) foram juntados com a master numa subida só. O Bônus da montagem antigo (de 12/11, fora do padrão visual e sem dono) ficou de fora e continua guardado no ramo uniao-23-11; a tela Comissões › Montagem de kits segue a da master."}
  ]},
