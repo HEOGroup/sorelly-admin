@@ -30,11 +30,14 @@ var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+(ano
 function itensFamiliaAdmin(s){
   var ff = s.ff; if(!ff || !ff.contas) return [];
   var pers = {}; (ff.personas || []).forEach(function(p){ pers[p.id] = p.nome; });
+  // NATUREZA em letra normal (Marcus, 22/11/2026): a conta guarda o CÓDIGO da categoria (PRO_LABORE); na tela vale o NOME dela (Pró-labore)
+  var catNome = {}; (ff.categorias || []).forEach(function(k){ catNome[k.chave] = k.nome; });
+  var natTxt = function(ch){ if(!ch) return ""; if(catNome[ch]) return catNome[ch]; var t = String(ch).replace(/_/g, " ").toLowerCase(); return t.charAt(0).toUpperCase()+t.slice(1); };
   var hj = hojeIso();
   return parcelasDe(ff, {}, hj).map(function(p){
     var c = p.conta, pg = p.pagamentos || [], ult = pg.length ? String(pg[pg.length-1].em || pg[pg.length-1].data || "") : "", pago = p.status==="PAGO", cb = (ff.contasBanc || []).find(function(b){ return b.id===c.contaBancId; });
     var atraso = p.atrasada ? Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(p.venc+"T00:00:00")) / 86400000)) : 0, dono = (c.rateio && c.rateio.length ? c.rateio : [c.personaId]).map(function(id){ return pers[id] || id; }).join(", ");
-    return {id:"ff|"+p.chave, chave:"ff|"+p.chave, ff:true, nome:c.descricao+(c.beneficiario ? " · "+c.beneficiario : ""), nat:"", natNome:c.categoria || "", filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família", venc:p.venc, emissao:"", valor:pago ? p.valor : p.restante, valorTitulo:p.valor, status:pago ? "pago" : "apagar", baixa:pago ? (ult || p.venc) : "", mes:(pago ? (ult || p.venc) : p.ym).slice(0, 7), atraso:atraso, rateioTxt:dono, saidaTxt:cb ? cb.nome : "—", formaTxt:c.forma || "—"}; });
+    return {id:"ff|"+p.chave, chave:"ff|"+p.chave, ff:true, ffContaId:c.id, ffPessoa:(c.rateio && c.rateio.length ? FAMILIA4 : c.personaId), nome:c.descricao+(c.beneficiario ? " · "+c.beneficiario : ""), nat:"", natNome:natTxt(c.categoria), filial:"fam", pref:"FAM", num:"", parc:"", nota:"sem", grupo:"Família", venc:p.venc, emissao:"", valor:pago ? p.valor : p.restante, valorTitulo:p.valor, status:pago ? "pago" : "apagar", baixa:pago ? (ult || p.venc) : "", mes:(pago ? (ult || p.venc) : p.ym).slice(0, 7), atraso:atraso, rateioTxt:dono, saidaTxt:cb ? cb.nome : "—", formaTxt:c.forma || "—"}; });
 }
 // CONTA NOS DOIS LUGARES = UMA LINHA SÓ (Marcus, 16/11/2026): a conta da Família lançada no Admin e a mesma conta que veio da DevMaster viram uma linha (a do Admin vale; o valor entra uma vez só). A DevMaster fica marcada "Falta dar baixa" até o financeiro dar a baixa lá.
 // Regra do par: mesma situação, mesmo valor e mesmo mês de vencimento, e SÓ UMA candidata de cada lado (se houver mais de uma, não junta: não adivinha).
