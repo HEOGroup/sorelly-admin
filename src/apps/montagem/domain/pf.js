@@ -350,6 +350,8 @@ function janelasDoForn(pf, fid){
   if(!c.jan[fid]) c.jan[fid] = calcJanelasDoForn(pf, fid);
   return c.jan[fid];
 }
+// CONFERIDO = TEM COMPROVANTE (Marcus, 20/11/2026: "se está com comprovante, já está conferido"). Não existe mais o passo de conferir à mão; o Pix do Direcionar só passa a valer depois de anexar o comprovante.
+function conferidoDe(l){ return !!l.conferido || (!l.aguardaComp && !!(l.arqKey || l.arqId || l.arqNome || String(l.arqData || "").indexOf("data:")===0)); }
 function lancDaJanela(pf, chave){ return pf.lancamentos.filter(function(l){ return l.chave===chave; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
 // Pix do Direcionar (17/11/2026): só conta como pago com o comprovante anexado (aguardaComp). Os lançamentos antigos não têm essa marca e contam como sempre.
 function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
@@ -487,7 +489,7 @@ function cartoesLancamento(pf, mes){   // renderCards: grupos por fornecedor, co
       var lancs = lancDaJanela(pf, j.chave), mq = mqAplicado(pf, j.chave);
       return {j:j, chave:j.chave, limite:j.limite, fim:j.fim, mes:j.mes, total:j.total, pagoBruto:pagoBruto, pago:pago, aberto:aberto, excesso:pagoBruto-pago, dias:n,
         pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo: aberto<=0.005 ? "" : prazoTxt(j.limite),
-        lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : "",
+        lancs:lancs, aguardando:lancs.filter(function(l){ return !conferidoDe(l); }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : "",
         passou:transfSaiu(pf, j.chave), veio:transfVeio(pf, j.chave), excPix: mq>0.005 ? 0 : r2(pagoBruto-pago), excAntigo: j.limite<PASSA_DESDE,
         saldoSaiu:saldoSaiu(pf, j), saldoVeio:saldoVeio(pf, j), ajuste:ajusteValor(ajusteDaChave(pf, j.chave)), descSaiu:descontoSaiu(pf, j), descVeio:descontoVeio(pf, j),
         saldoDst: pago>0.005 && aberto>0.005 && n<0 ? destinoSaldo(pf, j.chave) : null};   // só depois de vencida (Lucas, 18/11/2026)   // pagou parte: a tela oferece passar o que falta (só com aceite)
@@ -514,7 +516,7 @@ function filtrarLancamentos(lancs, f){   // f = {q, campo:''|n|c|v, d1, d2, st:'
   f = f||{}; var termos = normBusca(f.q).split(" ").filter(Boolean);
   var lista = lancs.filter(function(l){
     var alvo = f.campo==="n" ? normBusca(l.revendedora) : f.campo==="c" ? normBusca(l.conta) : f.campo==="v" ? buscaValor(l) : buscaTxt(l);
-    return (!f.d1 || l.data>=f.d1) && (!f.d2 || l.data<=f.d2) && (!f.st || (l.conferido?"1":"0")===f.st) && termos.every(function(t){ return alvo.indexOf(t)>=0; });
+    return (!f.d1 || l.data>=f.d1) && (!f.d2 || l.data<=f.d2) && (!f.st || (conferidoDe(l)?"1":"0")===f.st) && termos.every(function(t){ return alvo.indexOf(t)>=0; });
   });
   return {lista:lista, n:lista.length, total:lancs.length, soma:soma(lista, function(l){ return +l.valor||0; })};
 }
@@ -1134,7 +1136,7 @@ function pfReduz(s, a){
       var jL = janelaPorChave(pf, a.chave), abL = jL ? r2(Math.max(0, jL.total-pagoJanela(pf, a.chave))) : 0, excL = r2(v-abL);
       var alL = null; if(a.alocs && a.alocs.length){ if(!porPedidoAtivo(pf, fid)) return recusa("Este fornecedor não usa a identificação por pedido."); alL = lerAlocs(pf, fid, v, a.alocs, null); if(alL.erro) return recusa(alL.erro); }   // por pedido (19/11/2026)
       pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jL ? jL.mes : a.data.slice(0,7), limite:a.chave.split("|")[1], data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
-        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:""});
+        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), pagoPor:String(a.pagoPor||"").trim(), conferido:false, conferidoEm:""});
       if(alL && alL.alocs.length){ var lN = pf.lancamentos[pf.lancamentos.length-1]; lN.alocs = alL.alocs; lN.pedHist = [{em:hojeIso(), por:a.por||"", antes:"sem identificação", depois:textoAlocs(pf, alL.alocs)}]; }
       var txtExc = excL>0.005 ? (ajustaExcesso(pf, a.chave) ? " · "+brl(excL)+" a mais: a dívida da data subiu ("+AJUSTE_NOME+")" : " · passou do total em "+brl(excL)) : "";
       // pagou menos que o que falta: escolha "passar a diferença para o mês seguinte"
@@ -1177,7 +1179,6 @@ function pfReduz(s, a){
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
     // editar o pagamento depois de lançado (Lucas, 18/11/2026): só enquanto NÃO estiver conferido
     case "lanc_set": { var lE = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!lE) return recusa("Pagamento não encontrado.");
-      if(lE.conferido) return recusa("Pagamento conferido não pode ser alterado. Desfaça a conferência antes.");
       if(lE.auto) return recusa("Este lançamento é automático e não pode ser alterado.");
       var pE = a.patch||{}, vE = pE.valor!==undefined ? num(pE.valor) : lE.valor;
       if(!(vE>0)) return recusa("Informe o valor pago.");
@@ -1300,8 +1301,8 @@ function pfReduz(s, a){
       if(c>0.005 && Math.abs(c-aCom)>0.005) avisos.push("Com NF: alocado "+brl(aCom)+" de "+brl(c));
       if(s2>0.005 && Math.abs(s2-aSem)>0.005) avisos.push("Sem NF: alocado "+brl(aSem)+" de "+brl(s2));
       if(avisos.length && !a.forcar) return recusa("As parcelas não fecham com a divisão do pedido: "+avisos.join(" · ")+". Salvar mesmo assim?", true);
-      var num1 = a.numero||"s/nº", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
-      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
+      var num1 = a.numero||"---", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
+      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, ref:String(a.ref||"").trim(), nfArq:a.nfArq || null, cpcId:String(a.cpcId||""), data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
       if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
@@ -1350,7 +1351,7 @@ function pfReduz(s, a){
       var antesP = JSON.stringify(pe.parcelas.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; })), depoisP = JSON.stringify(todasParc.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; }));
       if(antesP!==depoisP) mud.push("parcelas: "+pe.parcelas.length+" → "+todasParc.length);
       if(!mud.length) return ok("Nada mudou no pedido.");
-      pe.fornId = fidE; pe.numero = a.numero||"s/nº"; pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
+      pe.fornId = fidE; pe.numero = a.numero||"---"; if(a.ref!==undefined) pe.ref = String(a.ref||"").trim(); if(a.nfArq!==undefined) pe.nfArq = a.nfArq || null; if(a.cpcId!==undefined) pe.cpcId = String(a.cpcId||""); pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
       if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)
@@ -1626,7 +1627,7 @@ function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
 }
 
 export {
-  TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
+  conferidoDe, TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,

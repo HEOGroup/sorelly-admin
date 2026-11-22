@@ -6,7 +6,7 @@ import { gravarModulo } from "./estado-modulo.js";
 import { garantirTabelaAnexo, chaveAnexoValida } from "./anexos.js";
 import { podeModulo } from "./permissoes.js";
 import { rotuloDestino, rotuloPrestadorFamilia, nomePropio, contaRecebePix } from "../apps/montagem/lib/nome-conta.js";
-import { vazio, garantir, validarLancamento, linhasAntecipados, espelharNaFamilia, comprovanteNaFamilia, contasParaLista, resolverDestino, rotuloLeaf } from "../apps/montagem/domain/recebimentos-antecipados.js";
+import { vazio, garantir, validarLancamento, linhasAntecipados, espelharNaFamilia, comprovanteNaFamilia, contasParaLista, contasProprias, resolverDestino, rotuloLeaf } from "../apps/montagem/domain/recebimentos-antecipados.js";
 
 const lerModulo = async (m) => { const r = await consulta("select conteudo from sorelly.estado_modulo where modulo = $1", [m]); return r.rowCount ? r.rows[0].conteudo : null; };
 const nomeDe = (eu) => String((eu && (eu.nome || eu.id)) || "");
@@ -37,7 +37,8 @@ export async function listar(eu) {
   const destinos = verFf && ff ? {
     pessoas: (ff.personas || []).filter((p) => p.ativo !== false && p.tipo !== "FAMILIAR" && p.id !== "familia").map((p) => ({ id: p.id, nome: p.nome })),
     contas: contasParaLista((ff.contasBanc || []).filter((c) => c.ativo)),
-  } : { pessoas: [], contas: [] };
+    proprias: contasProprias(ff),   // contas PF de cada sócio (Nubank, Caixa...): o Pix grava a conta e cai na caixa dela na Família
+  } : { pessoas: [], contas: [], proprias: [] };
   return { itens, destinos, verFf };
 }
 
@@ -60,7 +61,7 @@ export async function lancar(eu, b, deps) {
     if (!(sd.contas || []).some((c) => c.bloco === dCp.cnpjId && !c.bloqueada && contaRecebePix(c.nome) && c.nome === String(b.contaNome))) return { erro: "Essa conta não é deste CNPJ. Escolha de novo." };
     contaNome = String(b.contaNome);
   }
-  const rd = resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome));
+  const rd = resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome), String(b.contaId || ""));
   if (rd.erro) return { erro: rd.erro };
   const v = validarLancamento(Object.assign({}, b, { rev: rv.nome, destino: rd.destino, personaId: rd.personaId, contaId: rd.contaId, contaTxt: rd.contaTxt, destinoId: dCp.id, destinoNome: rd.nome }), hojeIso(), ((await lerModulo("contasreceber")) || {}).antecipados);
   if (v.erro) return { erro: v.erro };

@@ -3,7 +3,16 @@
 // Dados reais ficam em domain/pf-mes.local.js (fora do GitHub). Usado pela faixa "Fornecedores em aberto" do Direcionar Pix (24/10/2026).
 // Regras do Marcus (REGRAS-DE-PIX.md, 11 a 13): Pix do dia quita a parcela aberta mais antiga da Pontual; o que passa no cartão quita o 1 a 10 do mês seguinte, com desconto estimado pela média dos últimos meses.
 import { globLocal } from "@/lib/glob-local";
-import { ehPrestador, hojeIso, janelasDoForn, mesAtual, mesMais, pagoJanela } from "@/apps/montagem/domain/pf";
+import { addDias, ehPrestador, hojeIso, janelasDoForn, mesAtual, mesMais, pagoJanela } from "@/apps/montagem/domain/pf";
+
+// nome do fornecedor com o período junto, igual em Resumo, Direcionar e Lançamento de pagamentos (Marcus, 21/11/2026): "Pontual 11/11 à 20/11"; fornecedor com uma data só no mês fica só com o nome
+// js = janelas do fornecedor NO MÊS, em ordem de data; j = a janela do nome
+function nomeJanela(base, js, j){
+  var ordem = js.slice().sort(function(a, b){ return String(a.fim).localeCompare(String(b.fim)); }), k = ordem.indexOf(j);
+  if(ordem.length<2 || k<0) return base;
+  var dm = function(iso){ return iso.slice(8, 10)+"/"+iso.slice(5, 7); };
+  return base+" "+dm(k===0 ? j.mes+"-01" : addDias(ordem[k-1].fim, 1))+" à "+dm(j.fim);
+}
 
 var SERV = null;   // resumo vindo do servidor (módulo pfmes): vale no lugar do arquivo local, que só existe no computador do Marcus
 function definirPfMes(d){ SERV = d && d.itens ? d : null; }
@@ -40,8 +49,8 @@ function fornecedoresDoMesPf(pf, cp, todos){
     js.forEach(function(j){
       var pago = Math.min(pagoJanela(pf, j.chave), j.total), falta = Math.max(0, j.total-pago), doMes = j.mes===atual;
       if(!(falta>0.005) && !(todos && doMes)) return;
-      var doMesJs = js.filter(function(x){ return x.mes===j.mes; }), k = doMesJs.indexOf(j), ini = k===0 ? "01" : String(parseInt(doMesJs[k-1].fim.slice(8, 10), 10)+1).padStart(2, "0");
-      out.push({id:"fp"+f.id+"-"+j.limite, nome:doMesJs.length>1 ? base+" · "+ini+" a "+j.fim.slice(8, 10) : base, aPagar:j.total, pago:pago, saldo:falta, ate:j.limite, obs:"", destinoId:dest ? dest.id : "", pontual:/pontual/i.test(f.nome)});
+      var doMesJs = js.filter(function(x){ return x.mes===j.mes; });
+      out.push({id:"fp"+f.id+"-"+j.limite, nome:nomeJanela(base, doMesJs, j), aPagar:j.total, pago:pago, saldo:falta, ate:j.limite, obs:"", destinoId:dest ? dest.id : "", pontual:/pontual/i.test(f.nome)});
     });
   });
   return out.sort(function(a, b){ return (a.ate||"9999").localeCompare(b.ate||"9999") || b.saldo-a.saldo; });
@@ -80,4 +89,4 @@ var mesDosDados = function(){ trazer(); return LOCAL ? LOCAL.mes : ""; };
 var geradoEm = function(){ trazer(); return LOCAL ? LOCAL.geradoEm : ""; };
 // desconto estimado do cartão da Pontual (média dos 3 últimos meses da aba de negociações)
 var descontoCartao = function(){ trazer(); return LOCAL && LOCAL.cartao ? LOCAL.cartao.mediaUltimos3 : 10; };
-export { definirPfMes, devedoresDoMes, fornecedoresDoMes, fornecedoresDoMesPf, prestadoresAbertosPf, descontoCartao, mesDosDados, geradoEm };
+export { nomeJanela, definirPfMes, devedoresDoMes, fornecedoresDoMes, fornecedoresDoMesPf, prestadoresAbertosPf, descontoCartao, mesDosDados, geradoEm };

@@ -137,16 +137,37 @@ function contasParaLista(contas){
     .map(function(c){ return {id:c.id, nome:c.nome, personaId:c.personaId, banco:c.banco}; });
 }
 
+// CONTAS PF PRÓPRIAS de cada sócio (Marcus, 21/11/2026: "quando abre o Marcus tem que aparecer as minhas contas PF: Nubank, Caixa, e embaixo os outros"): são as contas da Família que
+// (1) são do sócio, (2) têm o NOME dele (Conta Marcus — Nubank), (3) não são de prestador e (4) não são cartão. O Pix grava a conta e a caixa dela soma em Financeiro › Família › PIX revendedoras.
+// Ordem: Nubank, Caixa e depois as outras por nome. persona = id do sócio (vazio = de todos). Devolve [{id, personaId, banco, nome}].
+function contasProprias(ff, persona){
+  var F = ff || {}, nomes = {}; (F.personas || []).forEach(function(p){ nomes[p.id] = semAc2(p.nome); });
+  var pos = function(c){ var t = semAc2(c.banco+" "+c.nome); return /nubank/.test(t) ? 0 : /caixa/.test(t) ? 1 : 2; };
+  return (F.contasBanc || []).filter(function(c){
+    if(!c || c.ativo===false || c.prestadorId || c.tipo!=="PF" || !c.personaId || (persona && c.personaId!==persona)) return false;
+    var n = nomes[c.personaId]; if(!n || (" "+semAc2(c.nome)+" ").indexOf(" "+n+" ")<0) return false;
+    return !/cart[aã]o/i.test(c.nome || "") && !OCULTAR_CONTA.some(function(re){ return re.test(limpa(c.nome)); });
+  }).map(function(c){ return {id:c.id, personaId:c.personaId, banco:limpa(c.banco), nome:limpa(c.nome), _p:pos(c)}; })
+    .sort(function(a, b){ return a._p-b._p || a.nome.localeCompare(b.nome, "pt-BR"); })
+    .map(function(c){ return {id:c.id, personaId:c.personaId, banco:c.banco, nome:c.nome}; });
+}
+
 // Do destino escolhido no menu do Direcionar (cp.destinos[]) para onde o Pix vai: {destino:"empresa"|"socio", personaId, contaId, contaTxt, nome}.
 // rotulo = rotuloDestino de lib/nome-conta.js (o mesmo texto do Direcionar). ff = módulo da Família (pode faltar).
 var semAc2 = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); };
-function resolverDestino(d, ff, rotulo){
+// contaId (opcional) = a conta PF do sócio que recebeu (Nubank, Caixa...): o Pix grava essa conta e cai na caixa dela no Financeiro familiar (Marcus, 21/11/2026).
+function resolverDestino(d, ff, rotulo, contaId){
   if(!d) return {erro:"Escolha a conta que recebeu na lista."};
   var nome = rotulo(d, ""), F = ff || {}, persona = d.personaId && (F.personas || []).some(function(p){ return p.id===d.personaId; }) ? d.personaId : "";
+  if(d.tipo==="FAMILIA" && persona && contaId){
+    var propria = contasProprias(F, persona).find(function(c){ return c.id===contaId; });
+    if(!propria) return {erro:"Essa conta não é deste sócio. Escolha de novo."};
+    return {destino:"socio", personaId:persona, contaId:propria.id, contaTxt:"", nome:rotulo(d, propria.banco || propria.nome)};   // "PF · Marcus · Nubank"
+  }
   if(d.tipo==="FAMILIA" && persona) return {destino:"socio", personaId:persona, contaId:"", contaTxt:"", nome:nome};
   if(d.tipo==="PRESTADOR"){
     var pf = d.prestFamId && (F.prest || []).find(function(p){ return p.id===d.prestFamId; });
-    if(!pf){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // Direcionar sem vínculo: procura o prestador da Família com o mesmo nome
+    if(!pf && d.personaId){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // só destino MARCADO como da família (tem personaId) procura o prestador da Família pelo nome; destino da Sorelly (sem personaId) NUNCA cai no Familiar por nome igual (Marcus, 21/11/2026: o R$ 150,00 do Lucas Castilho era bônus da Sorelly e foi para o Familiar)
     if(pf){
       var cs = (F.contasBanc || []).filter(function(c){ return c.prestadorId===pf.id && c.ativo!==false; });
       var cb = cs.find(function(c){ return persona && c.personaId===persona; }) || cs[0];
@@ -185,4 +206,4 @@ function rotuloLeaf(d, todos, lib, contaNome){
   return String(r).replace(/\s[-–—]\s/g, " · ");
 }
 
-export { nomeCurtoLeaf, rotuloLeaf, vazio, garantir, validarLancamento, resolverDestino, antecipadosDe, sincronizarUsoRcb, linhasAntecipados, espelharNaFamilia, comprovanteNaFamilia, rotuloConta, contasParaLista };
+export { nomeCurtoLeaf, rotuloLeaf, vazio, garantir, validarLancamento, resolverDestino, antecipadosDe, sincronizarUsoRcb, linhasAntecipados, espelharNaFamilia, comprovanteNaFamilia, rotuloConta, contasParaLista, contasProprias };

@@ -163,7 +163,7 @@ function AbaDirecionar(){
   // TODO fornecedor com conta em aberto aparece na lista "Fornecedor" da conta (Lucas, 18/11/2026): quem ainda não tem destino (ex.: Madalosso, Ello Print) ganha o destino uma vez, com o nome do cadastro
   // e o PRESTADOR de serviço com conta em aberto no Lançamento de pagamentos também (Lucas, 18/11/2026: a Dávila, R$ 520,00, não aparecia para direcionar)
   var prestAbertos = prestadoresAbertosPf(s.pf, cp);
-  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).split(" · ")[0]]; })
+  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).replace(/ \d{2}\/\d{2} à \d{2}\/\d{2}$/, "")]; })
     .concat(prestAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["PRESTADOR", f.nome]; }))
     .filter(function(x, i, a){ return x[1] && a.findIndex(function(y){ return y[1]===x[1]; })===i && !DEST_CRIADOS[x[1]]; }) : [];
   useEffect(function(){ semDestino.forEach(function(x){ DEST_CRIADOS[x[1]] = true; c.d({type:"CP", op:"destino_add", nome:x[1], tipo:x[0]}); }); }, [semDestino.map(function(x){ return x[1]; }).join("|")]);   // eslint-disable-line react-hooks/exhaustive-deps

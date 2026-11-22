@@ -129,7 +129,7 @@ function bordasFixas(c, topo){ var o = [], t0 = topo ? 0 : -1, b = function(k, s
 
 function TabelaPlanilha(p){
   var escura = !p.dourada;   // layout D por padrão (11/11/2026)
-  var sf = useState({}), filtros = sf[0], setFiltros = sf[1];
+  var sf = useState(p.filtroInicial || {}), filtros = sf[0], setFiltros = sf[1];
   var so = useState(null), ordem = so[0], setOrdem = so[1];   // {k, dir}
   var spg = useState(1), pag = spg[0], setPag = spg[1];
   var sdr = useState(null), levando = sdr[0], setLevando = sdr[1], sal = useState(null), alvoDrop = sal[0], setAlvoDrop = sal[1];   // mover coluna: qual está sendo levada e sobre qual está passando
