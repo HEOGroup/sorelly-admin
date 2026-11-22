@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.100", data:"2026-11-22", titulo:"Menu Família › Contas: nomes A pagar e Pagas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"As duas telas do item Contas passam a se chamar A pagar e Pagas."}]},
  {v:"0.21.99", data:"2026-11-22", titulo:"Menu Família: Contas com duas telas", itens:[
   {tipo:"correção", area:"Financeiro → Família → Contas", txt:"O item Contas do menu Família abre duas telas: Contas a pagar da família e Contas pagas da família. Cada uma abre a lista de Contas já em Contas = Família, na situação certa."}]},
  {v:"0.21.98", data:"2026-11-23", titulo:"Entrada do setor igual em todos os setores", itens:[
