@@ -87,6 +87,13 @@ t("grava no histórico da Família", esp.ff.hist.length===1 && esp.ff.hist[0].ar
 t("a entrada não é alterada", ff0.pix.length===0 && ff0.repasses.length===0);
 const esp2 = ra.espelharNaFamilia(ff0, Object.assign({por:"Teste"}, args, {contaId:"cb2"}));
 t("conta sem prestador: entra o Pix e NÃO gera repasse", esp2.ff.pix.length===1 && esp2.ff.repasses.length===0);
+// dívida junto (Higor, 21/11/2026): Pix + repasse + dívida do mesmo valor, o repasse apontando para a dívida
+const espD = ra.espelharNaFamilia(ff0, Object.assign({por:"Teste", divida:"Vip sexta e sábado 19 e 20/11"}, args, {valor:485}));
+t("com dívida junto: nasce 1 dívida do mesmo valor no prestador", !espD.erro && espD.ff.dividas.length===1 && espD.ff.dividas[0].valor===485 && espD.ff.dividas[0].prestId==="pr1" && espD.ff.dividas[0].descricao==="Vip sexta e sábado 19 e 20/11", JSON.stringify(espD.ff && espD.ff.dividas));
+t("o repasse (pagamento) aponta para a dívida (divId)", espD.ff.repasses[0].divId===espD.ff.dividas[0].id && espD.dividaId===espD.ff.dividas[0].id);
+t("sem o texto da dívida, nada de dívida", esp.ff.dividas.length===0 && !esp.dividaId && esp.ff.repasses[0].divId===undefined);
+t("conta sem prestador não cria dívida (não há a quem dever)", ra.espelharNaFamilia(ff0, Object.assign({por:"T", divida:"x"}, args, {contaId:"cb2"})).ff.dividas.length===0);
+t("a entrada não ganha dívida", ff0.dividas.length===0);
 t("conta que não existe é recusada", !!ra.espelharNaFamilia(ff0, Object.assign({por:"T"}, args, {contaId:"nao"})).erro);
 t("pessoa que não existe é recusada", !!ra.espelharNaFamilia(ff0, Object.assign({por:"T"}, args, {personaId:"nao"})).erro);
 t("Família vazia é recusada", !!ra.espelharNaFamilia({}, Object.assign({por:"T"}, args)).erro);

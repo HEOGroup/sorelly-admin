@@ -95,11 +95,20 @@ function espelharNaFamilia(ff0, a){
   if(a.semAcerto) l.semAcerto = true;   // outro recebimento: o acerto nunca usa este Pix
   if(a.compKey){ l.compKey = a.compKey; l.compNome = String(a.compNome || "").slice(0, 120); l.compTipo = String(a.compTipo || "").slice(0, 60); }
   ff.pix.push(l);
-  if(cb && cb.prestadorId) ff.repasses.push({id:"rp"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36), prestId:cb.prestadorId, valor:l.valor, data:l.data, origem:"PIX revendedora", forma:"PIX", conta:cb.nome, chavePixDestino:cb.chavePix || "", origemPixPersonaId:l.personaId, origemPixLancId:l.id});
+  var repasse = null, divida = null;
+  if(cb && cb.prestadorId){
+    repasse = {id:"rp"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36), prestId:cb.prestadorId, valor:l.valor, data:l.data, origem:"PIX revendedora", forma:"PIX", conta:cb.nome, chavePixDestino:cb.chavePix || "", origemPixPersonaId:l.personaId, origemPixLancId:l.id};
+    if(limpa(a.divida)){   // a dívida do mesmo valor nasce junto e o pagamento já aponta para ela (Enviado → Dívida)
+      if(!Array.isArray(ff.dividas)) ff.dividas = [];
+      divida = {id:"dv"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36), prestId:cb.prestadorId, valor:l.valor, data:l.data, prazo:"", descricao:limpa(a.divida).slice(0, 120), obs:""};
+      ff.dividas.push(divida); repasse.divId = divida.id;
+    }
+    ff.repasses.push(repasse);
+  }
   ff.hist = Array.isArray(ff.hist) ? ff.hist : [];
   ff.hist.unshift({id:"h"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36), em:Date.now(), por:a.por || "—", area:"PIX revendedoras", acao:"Lançou PIX (Contas a receber)", alvo:(l.origem || "sem nome")+" · "+(((ff.personas.find(function(p){ return p.id===a.personaId; })) || {}).nome || "—"), detalhe:Number(v).toLocaleString("pt-BR", {style:"currency", currency:"BRL"})});
   if(ff.hist.length>2000) ff.hist.length = 2000;
-  return {ff:ff, pixId:id};
+  return {ff:ff, pixId:id, dividaId:divida ? divida.id : ""};
 }
 // Põe (ou tira, com key vazia) o comprovante de um Pix da Família: o mesmo que a ação pix_comp. Devolve {ff} ou {erro}.
 function comprovanteNaFamilia(ff0, a){
