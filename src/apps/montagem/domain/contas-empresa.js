@@ -8,6 +8,7 @@ import { globLocal } from "@/lib/glob-local";
 import { parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { funcionarios } from "@/apps/montagem/domain/pessoas";
 import { casarPagos, tipoDaParcela } from "@/apps/montagem/domain/casar-pagos";
+import { definirContasAoVivo } from "@/apps/montagem/domain/financeiro";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
 var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
@@ -304,4 +305,8 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
+// Faturamento e Resultado do mês (22/11/2026): pago e a pagar do mês vêm desta MESMA lista (DevMaster + Pix lançado no admin + lançamentos à mão, já cruzados e sem duplicar), a empresa e a família juntas.
+// Só vale quando a DevMaster já respondeu (servidorEm); sem ela, as telas seguem com os números lançados.
+// Antes de somar, liga a esta lista o que está no estado (classes, lançamentos à mão, baixas e Pix do admin): sem isso, a tela de Faturamento aberta sozinha somaria menos que a tela Contas a pagar (achado em 22/11/2026: R$ 2.000 de diferença do bônus do Nickolas).
+definirContasAoVivo(function(ym, s){ if(!SERV) return null; if(s){ setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf); } var t = totais(filtrar(ym, "", "", "", "", "")); return {pago:t.pago, apagar:t.apagar}; });
 export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
