@@ -307,5 +307,6 @@ function conciliar(ff, mes){
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
 // Faturamento e Resultado do mês (22/11/2026): pago e a pagar do mês vêm desta MESMA lista (DevMaster + Pix lançado no admin + lançamentos à mão, já cruzados e sem duplicar), a empresa e a família juntas.
 // Só vale quando a DevMaster já respondeu (servidorEm); sem ela, as telas seguem com os números lançados.
-definirContasAoVivo(function(ym){ if(!SERV) return null; var t = totais(filtrar(ym, "", "", "", "", "")); return {pago:t.pago, apagar:t.apagar}; });
+// Antes de somar, liga a esta lista o que está no estado (classes, lançamentos à mão, baixas e Pix do admin): sem isso, a tela de Faturamento aberta sozinha somaria menos que a tela Contas a pagar (achado em 22/11/2026: R$ 2.000 de diferença do bônus do Nickolas).
+definirContasAoVivo(function(ym, s){ if(!SERV) return null; if(s){ setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf); } var t = totais(filtrar(ym, "", "", "", "", "")); return {pago:t.pago, apagar:t.apagar}; });
 export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

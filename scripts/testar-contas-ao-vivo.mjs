@@ -37,21 +37,22 @@ const ft = fin.contasDoMes(sBase({ contasPagar:{ [anoF]:{ [mesF]:{pago:0, apagar
 t("mês futuro usa o previsto quando ele é maior que o lançado", ft.pago===0 && ft.apagar===50000 && ft.aoVivo===true, JSON.stringify(ft));
 const ft2 = fin.contasDoMes(sBase({ contasPagar:{ [anoF]:{ [mesF]:{pago:0, apagar:300} } } }), anoF, mesF);
 t("mês futuro usa o lançado quando ele é maior que o previsto", ft2.apagar===1000, JSON.stringify(ft2));
-// 5) lançamento à mão entra uma vez
+// 5) lançamento à mão entra uma vez, vindo SÓ do estado (tela de Faturamento aberta sozinha, sem passar antes por Contas a pagar)
 ce.definirContasServidor({ apagar:[apagarRow(hojeIso, 1000)], pagas:[pagaRow(ontem, 500)], geradoEm:"teste" });
-ce.setLancamentos([{ id:"x1", nat:"3.01.01.12", natNome:"Bônus", nome:"Bônus de teste", pref:"BON", venc:hojeIso, valor:250, filial:"fora", status:"apagar" }]);
-const lm = fin.contasDoMes(sBase(), ano, mes);
-t("lançamento à mão soma no a pagar", Math.abs(lm.apagar-1250)<0.01, lm.apagar);
-ce.setLancamentos([]);
-// 6) Pix lançado no admin: só conta depois da última baixa da DevMaster, uma vez só
+const lancX = [{ id:"x1", nat:"3.01.01.12", natNome:"Bônus", nome:"Bônus de teste", pref:"BON", venc:hojeIso, valor:250, filial:"fora", status:"apagar" }];
+const lm = fin.contasDoMes(sBase({ cpe:{ lanc:lancX } }), ano, mes);
+t("lançamento à mão do estado soma no a pagar", Math.abs(lm.apagar-1250)<0.01, lm.apagar);
+const lm2 = fin.contasDoMes(sBase({ cpe:{ lanc:lancX } }), ano, mes);
+t("ler de novo o lançamento não duplica", Math.abs(lm2.apagar-1250)<0.01, lm2.apagar);
+const sem = fin.contasDoMes(sBase({ cpe:{ lanc:[] } }), ano, mes);
+t("tirar o lançamento do estado tira da soma", Math.abs(sem.apagar-1000)<0.01, sem.apagar);
+// 6) Pix lançado no admin: só conta depois da última baixa da DevMaster, uma vez só (também vindo só do estado)
 const pf = { fornecedores:[{id:1, nome:"Point", tipo:"fornecedor"}], pedidos:[], lancamentos:[
-  { id:1, fornId:1, valor:400, data:anteontem, revendedora:"Ana" },   // antes da última baixa da DevMaster: já está lá, não conta
+  { id:1, fornId:1, valor:400, data:anteontem, revendedora:"Ana" },
   { id:2, fornId:1, valor:300, data:hojeIso, revendedora:"Bia" } ] };
-ce.setPf(pf);
-const px = fin.contasDoMes(sBase(), ano, mes);
+const px = fin.contasDoMes(sBase({ pf }), ano, mes);
 t("Pix do admin depois da última baixa soma uma vez", Math.abs(px.pago-800)<0.01, px.pago);
-ce.setPf(pf);
-const px2 = fin.contasDoMes(sBase(), ano, mes);
+const px2 = fin.contasDoMes(sBase({ pf }), ano, mes);
 t("ler de novo não duplica", Math.abs(px2.pago-800)<0.01, px2.pago);
 console.log("\n"+ok+" ok, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

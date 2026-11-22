@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.89", data:"2026-11-22", titulo:"Faturamento: a soma ao vivo também conta bônus à mão, baixas e Pix do admin", itens:[
+  {tipo:"correção", area:"Financeiro → Faturamento", txt:"Com o Faturamento aberto sozinho, o a pagar do mês somava R$ 2.000 a menos que o Resultado do mês (bônus do Nickolas lançado à mão): os lançamentos à mão, as baixas dadas no sistema, as classes e o Pix do admin só entravam depois de abrir a tela Contas a pagar. Agora a soma lê tudo isso do próprio estado, e as duas telas mostram o mesmo número."}]},
  {v:"0.21.88", data:"2026-11-22", titulo:"Faturamento e Resultado do mês: pago e a pagar ao vivo, sem duplicar", itens:[
   {tipo:"melhoria", area:"Financeiro → Faturamento e Resultado do mês", txt:"O pago e o a pagar do mês passam a vir da mesma lista da tela Contas a pagar: DevMaster, Pix lançado no admin e lançamentos à mão, já cruzados e sem contar duas vezes. Antes o a pagar vinha de um número antigo do admin (27/10). Mês fixado e valor manual do financeiro continuam valendo; mês futuro nunca fica abaixo do previsto. Sem resposta da DevMaster, as telas seguem com os números lançados."}]},
  {v:"0.21.86", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
