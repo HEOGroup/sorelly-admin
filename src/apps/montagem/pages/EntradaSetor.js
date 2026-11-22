@@ -20,8 +20,7 @@ function duasLinhas(nome){
   if(nome.length <= 14 || nome.indexOf(" ") < 0) return nome;
   var meio = nome.length / 2, melhor = -1;
   for(var i = 0; i < nome.length; i++) if(nome[i] === " " && (melhor < 0 || Math.abs(i - meio) < Math.abs(melhor - meio))) melhor = i;
-  return nome.slice(0, melhor) + "
-" + nome.slice(melhor + 1);
+  return nome.slice(0, melhor) + String.fromCharCode(10) + nome.slice(melhor + 1);
 }
 function EntradaCompacta(p){
   var en = p.en, cor = en.cor || "#3B82F6";
