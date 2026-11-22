@@ -134,7 +134,7 @@ function pfMigrar(pf){
   if(!pf.elloSemeado){
     var ello = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()==="ello print"; })[0];
     if(!ello){ ello = {id:pf.seq.F++, nome:"Ello Print", tipo:"fornecedor", cat:"Outros", cnpj:"", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(ello); }
-    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Sorelly Comércio", nfNum:"",
+    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Mayz Comércio de Moda", nfNum:"",
       descricao:"Refil de tinta Epson T544122 Preto (3 un, R$ 207,00); bolsas de tinta C5390/C5810/C5890: Preta 10K (3 un, R$ 1.197,00), Ciano 5K (2 un, R$ 732,00), Yellow 5K (2 un, R$ 732,00) e Magenta 5K (2 un, R$ 732,00). Faturado na Mayz (CNPJ 46): 30% com nota (R$ 1.080,00) no cartão de crédito à vista em 20/10; 70% sem nota (R$ 2.520,00) em pix de revendedora para a conta PF informada, quitando até 01/11/2026.",
       parcelas:[{forma:"cartao", venc:"2026-10-20", valor:1080, conta:"Cartão de crédito à vista · CNPJ 46 Mayz", status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-01", valor:2520, conta:"", status:"Pendente"}]});
     invalidar(pf); pf.elloSemeado = true;
@@ -929,7 +929,7 @@ function expandirParcelas(linhas){   // lerLinhas: cartão vira N parcelas mensa
   (linhas||[]).forEach(function(r){
     var v = num(r.valor); if(v<=0) return;
     var forma = r.forma||"pix_revendedora", qtd = forma==="cartao" ? (parseInt(r.qtd)||1) : 1;
-    for(var i=0; i<qtd; i++){ var np = {forma:forma, venc:addMeses(r.venc, i), valor:v, conta:(r.conta||"—")+(qtd>1 ? " · "+(i+1)+"/"+qtd : ""), status:r.status||"Pendente"}; if(r.arq && i===0) np.arq = r.arq; out.push(np); }
+    for(var i=0; i<qtd; i++) out.push({forma:forma, venc:addMeses(r.venc, i), valor:v, conta:(r.conta||"—")+(qtd>1 ? " · "+(i+1)+"/"+qtd : ""), status:r.status||"Pendente"});
   });
   return out;
 }
@@ -1302,7 +1302,7 @@ function pfReduz(s, a){
       if(s2>0.005 && Math.abs(s2-aSem)>0.005) avisos.push("Sem NF: alocado "+brl(aSem)+" de "+brl(s2));
       if(avisos.length && !a.forcar) return recusa("As parcelas não fecham com a divisão do pedido: "+avisos.join(" · ")+". Salvar mesmo assim?", true);
       var num1 = a.numero||"---", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
-      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, ref:String(a.ref||"").trim(), fornBruto:String(a.fornBruto||"").trim(), notaForn:String(a.notaForn||"").trim(), nfArq:a.nfArq || null, cpcId:String(a.cpcId||""), data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
+      var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, ref:String(a.ref||"").trim(), nfArq:a.nfArq || null, cpcId:String(a.cpcId||""), data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
       if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
@@ -1351,7 +1351,7 @@ function pfReduz(s, a){
       var antesP = JSON.stringify(pe.parcelas.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; })), depoisP = JSON.stringify(todasParc.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; }));
       if(antesP!==depoisP) mud.push("parcelas: "+pe.parcelas.length+" → "+todasParc.length);
       if(!mud.length) return ok("Nada mudou no pedido.");
-      pe.fornId = fidE; pe.numero = a.numero||"---"; if(a.ref!==undefined) pe.ref = String(a.ref||"").trim(); if(a.fornBruto!==undefined) pe.fornBruto = String(a.fornBruto||"").trim(); if(a.notaForn!==undefined) pe.notaForn = String(a.notaForn||"").trim(); if(a.nfArq!==undefined) pe.nfArq = a.nfArq || null; if(a.cpcId!==undefined) pe.cpcId = String(a.cpcId||""); pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
+      pe.fornId = fidE; pe.numero = a.numero||"---"; if(a.ref!==undefined) pe.ref = String(a.ref||"").trim(); if(a.nfArq!==undefined) pe.nfArq = a.nfArq || null; if(a.cpcId!==undefined) pe.cpcId = String(a.cpcId||""); pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
       if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)
@@ -1400,7 +1400,6 @@ function pfReduz(s, a){
       if(pt.venc!==undefined && !DATA_OK.test(pt.venc)) return recusa("Informe o vencimento.");
       ["forma","venc","conta"].forEach(function(k){ if(pt[k]!==undefined) pc[k] = pt[k]; });
       if(pt.valor!==undefined) pc.valor = num(pt.valor);
-      if(pt.arq!==undefined) pc.arq = pt.arq || null;   // boleto anexado à parcela (21/11/2026)
       return ok("Parcela atualizada");
     }
     case "parcela_del": {

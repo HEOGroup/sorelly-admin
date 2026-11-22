@@ -26,6 +26,7 @@ import { atrasoUteisDe, avaliarKit, condsDaDevmaster } from "@/apps/montagem/dom
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { nomeParecido as nomeParecidoPx } from "@/apps/montagem/domain/pix-adiantados";
 import { abrirAnexo } from "@/apps/montagem/lib/anexo";
+import { useIndAoVivo } from "@/apps/montagem/lib/indicacoes-servidor";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -193,6 +194,7 @@ function AtendimentoInterno(){
   useEffect(function(){ if(sel && (s.lancFin||[]).some(function(x){ return x.internoId===sel.id && !x.conferido; })) d({type:"FIN_FILA", internoId:sel.id}); }, [sel && sel.id, s.lancFin]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ if(!(sel && sel.escolhaIni && !sel.escolhaFim)) return; var i = setInterval(function(){ tick(function(n){ return n+1; }); }, 1000); return function(){ clearInterval(i); }; },
     [sel ? sel.id : null, sel ? sel.escolhaIni : null, sel ? sel.escolhaFim : null]);
+  useIndAoVivo(!!(sel && sel.tipo==="indicacao"));   // Brinde de indicação (19/11/2026): o pedido aprovado vem do app ao vivo e a retirada é confirmada lá
   useEffect(function(){
     setForm(FORM_ACERTO_VAZIO); setBrindeIn(BRINDE_VAZIO); setLancForm(LANC_VAZIO); setNegociarAberto(false); setRegForm({isenta:false, motivo:""});
     setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({}); setAssCiente(null); setCienteAberta(false); setSaiu(false);

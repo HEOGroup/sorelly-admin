@@ -93,9 +93,22 @@ var VERSAO_CPD = 4;   // sobe quando os dias de demonstração acima mudam (stor
 function totalDiaCP(dia){ var c = (dia && dia.cnpjs) || {}; return CNPJS_CONTAS_PAGAS.reduce(function(t,k){ return t+(c[k]||0); },0) + ((dia && dia.contasPorFora)||0); }
 // Contas do mês para o resto do sistema: se o mês tem dias lançados (e não está fixado), o PAGO é a soma dos dias e o A PAGAR é o
 // que sobra do total previsto do mês (pago+a pagar lançados à mão); senão vale a grade mensal de Contas a pagar.
+// AO VIVO (Marcus, 22/11/2026): "o contas a pagar da tela de Faturamento tem que atualizar sozinho, DevMaster e o que só tem no admin, sem duplicar".
+// Quem conhece a lista completa (domain/contas-empresa.js: DevMaster + Pix lançado no admin + lançamentos à mão, já cruzados e sem duplicar) registra aqui uma função (mês, estado) → {pago, apagar}.
+// Mês FIXADO ou valor MANUAL continuam valendo; mês passado e mês atual usam o ao vivo; mês futuro usa o MAIOR entre o ao vivo e o previsto (o que está lançado ainda é só uma parte).
+var AO_VIVO = null;
+function definirContasAoVivo(fn){ AO_VIVO = typeof fn==="function" ? fn : null; }
 function contasDoMes(s, anoStr, mes){
   var m = Object.assign({pago:0, apagar:0}, ((s.contasPagar||{})[anoStr]||{})[mes]);
   if(m.fixado || m.manual) return m;   // manual = valor passado pelo financeiro vale sobre a soma dos dias
+  if(AO_VIVO){
+    var ym = anoStr+"-"+String(mes+1).padStart(2,"0"), v = AO_VIVO(ym, s), agora = new Date(), ymHoje = agora.getFullYear()+"-"+String(agora.getMonth()+1).padStart(2,"0");
+    if(v && (v.pago>0 || v.apagar>0)){
+      var total = v.pago+v.apagar;
+      if(ym>ymHoje) total = Math.max(total, m.pago+m.apagar);   // mês futuro: o previsto não pode cair só porque falta lançar
+      return Object.assign({}, m, {pago:v.pago, apagar:Math.max(0, Math.round((total-v.pago)*100)/100), aoVivo:true});
+    }
+  }
   var pref = anoStr+"-"+String(mes+1).padStart(2,"0")+"-", dias = Object.keys(s.contasPagasDiario||{}).filter(function(k){ return k.indexOf(pref)===0; });
   if(!dias.length) return m;
   var pago = dias.reduce(function(t,k){ return t+totalDiaCP(s.contasPagasDiario[k]); },0), total = Math.max(m.pago+m.apagar, pago);
@@ -312,4 +325,4 @@ function pontosRevendedoras(s, opts){
   return pts;
 }
 
-export { metaDoMes, completarDias, isoLocal, altaDe, ALTA_MEDIA, faturadoPorDia, VERSAO_CPD, totalDiaCP, contasDoMes, fatEfetivo, MESES_LONGO, CONTAS_PAGAR_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO, CNPJS_CONTAS_PAGAS, CONTAS_PAGAS_DIARIO_DEMO, isoOntem, CRESCIMENTO_REVENDEDORAS, mesesFechados, FATOR_SAZONAL, projetarAno, projetarVariosAnos, JANELAS_GRAFICO_REV, QUEDA_JANEIRO, pontosRevendedoras, resumoMensalRevendedoras, taxaCrescimento, crescimentoPorDia };
+export { definirContasAoVivo, metaDoMes, completarDias, isoLocal, altaDe, ALTA_MEDIA, faturadoPorDia, VERSAO_CPD, totalDiaCP, contasDoMes, fatEfetivo, MESES_LONGO, CONTAS_PAGAR_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO, CNPJS_CONTAS_PAGAS, CONTAS_PAGAS_DIARIO_DEMO, isoOntem, CRESCIMENTO_REVENDEDORAS, mesesFechados, FATOR_SAZONAL, projetarAno, projetarVariosAnos, JANELAS_GRAFICO_REV, QUEDA_JANEIRO, pontosRevendedoras, resumoMensalRevendedoras, taxaCrescimento, crescimentoPorDia };

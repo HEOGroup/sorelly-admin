@@ -178,8 +178,9 @@ t("sócio entra na Família sem conta definida", fam.destino==="socio" && fam.pe
 t("sócio com pessoa que não existe na Família fica só aqui", rd({tipo:"FAMILIA", nome:"Fantasma", personaId:"zz"}).destino==="empresa");
 const pf1 = rd({tipo:"PRESTADOR", nome:"Higor", personaId:"p1", prestFamId:"pr1"});
 t("prestador da família: usa a conta dele e o sócio do vínculo", pf1.destino==="socio" && pf1.contaId==="cb1" && pf1.personaId==="p1");
-const pf2 = rd({tipo:"PRESTADOR", nome:"HIGOR"});
-t("sem vínculo no Direcionar: acha o prestador da Família pelo nome (sem acento e maiúscula)", pf2.destino==="socio" && !!pf2.contaId);
+const pf2 = rd({tipo:"PRESTADOR", nome:"HIGOR", personaId:"p1"});
+t("destino marcado como da família, sem vínculo: acha o prestador da Família pelo nome (sem acento e maiúscula)", pf2.destino==="socio" && !!pf2.contaId);
+t("destino da Sorelly (sem sócio) nunca cai na Família por nome (regra de 21/11/2026)", rd({tipo:"PRESTADOR", nome:"HIGOR"}).destino==="empresa");
 t("prestador sem conta na Família fica só em Contas a receber", rd({tipo:"PRESTADOR", nome:"Sem Conta", prestFamId:"pr2", personaId:"p1"}).destino==="empresa");
 t("Família ausente: tudo fica só em Contas a receber", rd({tipo:"PRESTADOR", nome:"Higor", personaId:"p1", prestFamId:"pr1"}, null).destino==="empresa" && rd({tipo:"FAMILIA", nome:"Marcus", personaId:"p1"}, null).destino==="empresa");
 t("sem destino escolhido dá erro", !!ra.resolverDestino(null, FFX, rot).erro);

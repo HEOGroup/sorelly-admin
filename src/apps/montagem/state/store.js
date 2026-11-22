@@ -615,6 +615,7 @@ function registroListagem(l, kits, agora){
 // O navegador guarda pouco (cerca de 8 MB para tudo). As anotações que vêm da DevMaster (revendedoras internas) podem ser buscadas de novo a qualquer hora,
 // por isso o que vai para o disco leva só a mais nova de cada revendedora; os registros feitos aqui (origem sistema) vão inteiros. Abrir o card busca o histórico completo de novo.
 function paraSalvar(st){
+  if(st && st.ind && st.ind.aoVivo){ st = Object.assign({}, st); delete st.ind; }   // Indicações ao vivo (19/11/2026): vêm do servidor a cada abertura; não ocupam o navegador
   if(!st || !st.revInternas) return st;
   return Object.assign({}, st, {revInternas:st.revInternas.map(function(r){
     if(!r.registro || !r.registro.length) return r;

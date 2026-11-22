@@ -5,20 +5,19 @@
 // última atualização das preferências; se ela atualizar de novo, volta a pendente). Clicar abre a área de montar (pages/fila-montagem/Montar.js).
 // Embaixo: os últimos registros de montagem. Filtro e ordem no nome de cada coluna (TabelaPlanilha). Dinheiro só para a supervisão e a diretoria.
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Aviso, Botao, brl } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { use } from "@/apps/montagem/state/context";
+import { PageHead } from "@/apps/montagem/ui/page";
 import { AnaliseGeral } from "@/apps/montagem/pages/fila-montagem/Analise";
 import { MontarKit } from "@/apps/montagem/pages/fila-montagem/Montar";
 import { SemServidor, dataBR, dataHoraBR, diaSP, duracao, horaSP, pct, useServidor, veDinheiro } from "@/apps/montagem/pages/fila-montagem/comum";
 import { CampoDin } from "@/apps/montagem/pages/trafego/comum";
 import { e, useEffect, useMemo, useState } from "@/shared/react";
 
-// botão pequeno de contorno branco para a barra azul, igual ao da tela Listagens
-var BTN_BARRA = "inline-flex h-7 items-center justify-center whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-semibold normal-case text-white hover:bg-white/15";   // padrao-ok: controle de 28 px na barra azul, como a Listagens e o Contas a pagar (Marcus aprovou 28 px em 16/11/2026)
 var VERDE = "text-emerald-400", AMARELO = "text-amber-300";
 var SIT = {pendente:"Pendente", montado:"Já montado", sem:"Sem preferências"};
 var COR_SIT = {pendente:AMARELO+" font-semibold", montado:VERDE+" font-semibold", sem:""};
@@ -76,21 +75,19 @@ function AbaFilaMontagem(){
   var linhasReg = ((regs.dados && regs.dados.data) || []).map(function(r){ return {id:r.id, reg:r, rev:nomeBonito(r.resellerNome), quem:nomeBonito(r.staffNome), valor:r.valorKit, prefs:r.usouPreferencias ? "Sim" : "Não",
     dur:duracao(Date.parse(r.concluidoEm)-Date.parse(r.iniciadoEm)), dia:diaSP(r.concluidoEm), hora:horaSP(r.concluidoEm)}; });
 
-  // 100% igual à tela Listagens (Marcus, 19/11/2026): sem título grande no topo, blocos com barra azul, botões dentro da barra, tabelas finas
-  var botoes = apiAtiva() ? e("div",{className:"flex items-center gap-1.5"},
-    e("button",{type:"button", className:BTN_BARRA, disabled:fila.carregando, onClick:atualizar}, fila.carregando ? "Lendo o app…" : "Atualizar do app"),
-    e("button",{type:"button", className:BTN_BARRA, onClick:function(){ san[1](true); }}, "Análise geral")) : null;
-  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+  return e(Pagina,null,
+    e(PageHead,{t:"Fila de montagem", sub:sub},
+      apiAtiva() && e(Botao,{onClick:atualizar, desabilitado:fila.carregando}, fila.carregando ? "Lendo o app…" : "Atualizar do app"),
+      apiAtiva() && e(Botao,{principal:true, onClick:function(){ san[1](true); }}, "Análise geral")),
     !apiAtiva() && e(SemServidor,null),
-    sub && e("p",{className:"px-3 py-1 text-center text-[13px]"}, sub),
-    apiAtiva() && e(BlocoPainel,{titulo:"Fila de montagem", compacto:true, alta:true, dir:botoes},
-      e(TabelaPlanilha,{fina:true, grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semMao:true, limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
+    apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Revendedoras"},
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, semMao:true, limite:100, paginas:true, aoClicar:function(l){ ssel[1](l.id); }, vazio:dados ? "Nenhuma revendedora no app." : "Lendo…",
         cols:[{k:"sit", t:"Situação", cor:function(l){ return COR_SIT[l.sitK]; }}, {k:"nome", t:"Revendedora"}, {k:"cidade", t:"Cidade"}, {k:"estado", t:"UF"}, {k:"telefone", t:"Telefone"},
           {k:"dia", t:"Atualização", data:true, fmt:dataBR}, {k:"hora", t:"Hora"}, {k:"categorias", t:"Categorias"}, {k:"ouro", t:"Ouro", fmt:pct}, {k:"prata", t:"Prata", fmt:pct},
           {k:"montagem", t:"Última montagem", data:true, fmt:dataBR}],
         linhas:revs})),
-    apiAtiva() && e(BlocoPainel,{titulo:"Últimos registros de montagem", compacto:true, alta:true},
-      e(TabelaPlanilha,{fina:true, grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semMao:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
+    apiAtiva() && e(BlocoBarra,{cor:"azul", compacto:true, t:"Últimos registros de montagem"},
+      e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, semMao:true, cols:colsReg, linhas:linhasReg, vazio:regs.carregando ? "Lendo…" : "Nenhuma montagem registrada ainda."})),
     san[0] && e(AnaliseGeral,{fechar:function(){ san[1](false); }}),
     sv[0] && e(JanelaValor,{reg:sv[0], fechar:function(){ sv[1](null); }, salvo:function(){ sv[1](null); regs.recarregar(); }}));
 }

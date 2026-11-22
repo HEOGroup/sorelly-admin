@@ -12,7 +12,7 @@ import { FILTRO_PADRAO, FORMAS, FORN_CATS, addDias, addMeses, F_PER, F_SIT, F_TI
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
-import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
+import { enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { e, useState } from "@/shared/react";
 import { BotaoMini, COMPACTA } from "./Lancamentos";
@@ -22,11 +22,11 @@ import { CARD, COR, Campo, Chip, Modal, TD, Tile, Txt, aviso, brl, dbr, opc, th,
 
 // ---------- pequenas peças de desenho ----------
 // mesmo visual da tela Lançamento de pagamentos (Marcus, 20/11/2026): blocos colados na largura toda, letra e linha finas, faixa de escolha dentro do bloco
-var BlocoBarra = function(p){ return e(BlocoPainel,{titulo:p.t, dir:p.dir, acao:p.acao, semBarra:p.semBarra, compacto:true, cls:COMPACTA+(p.semBarra ? "" : " [&>div:first-child]:!py-1")+(p.extra || "")}, p.children); };
+var BlocoBarra = function(p){ return e(BlocoPainel,{titulo:p.t, dir:p.dir, acao:p.acao, semBarra:p.semBarra, compacto:true, cls:COMPACTA+(p.semBarra ? "" : " [&>div:first-child]:!py-1.5")+(p.extra || "")}, p.children); };
 var MIUDO = " [&_*]:!text-[10px] [&_*]:!leading-tight [&_button]:!h-[18px] [&_button]:!min-h-0 [&_button]:!py-0 [&_button]:!px-1.5 [&_select]:!h-[18px] [&_select]:!py-0 [&_input]:!h-[18px] [&_input]:!py-0 [&_td]:!text-center [&_th]:!text-center [&_td]:!whitespace-nowrap [&_th]:!whitespace-nowrap [&_tbody_tr]:!border-b [&_tbody_tr]:!border-white/45 [&_tbody_td]:!border-b [&_tbody_td]:!border-white/45 [&_td_span.rounded-full]:!px-1.5 [&_td_span.rounded-full]:!py-0 [&_td_span.rounded-full]:!leading-[14px]";   // padrao-ok: tela inteira com a letra fina da tela de Lançamento (pedido do Marcus, 20/11/2026)
-var GRANDE = "[&_table_tbody_td]:!h-[46px] [&_table_tbody_tr]:!h-[46px] [&_table_tbody_td]:!text-[17px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: fornecedor escolhido, linha e letra 3 vezes maiores (pedido do Marcus, 21/11/2026)
-var BARRA_TOPO = "flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b-2 border-white/30 bg-[var(--bloco-titulo)] px-2 py-0.5 [&_button]:!h-[18px] [&_button]:!py-0 [&_button]:!leading-none [&_button]:!px-1 [&_button]:!text-[10px] [&_button]:!border-white/25 [&_button]:!bg-white/10";   // padrao-ok: barra única de filtros e abas (Marcus, 21/11/2026)
-var GRANDE_TOTAL = "[&_table_tbody_td]:!h-[29px] [&_table_tbody_tr]:!h-[29px] [&_table_tbody_td]:!text-[14px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: total do pedido com letra maior (Marcus, 21/11/2026)
+var GRANDE = "[&_table_tbody_td]:!h-[54px] [&_table_tbody_tr]:!h-[54px] [&_table_tbody_td]:!text-[20px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: fornecedor escolhido, linha e letra 3 vezes maiores (pedido do Marcus, 21/11/2026)
+var BARRA_TOPO = "flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-white/30 bg-[var(--bloco-titulo)] px-2 py-1 [&_button]:!h-[18px] [&_button]:!py-0 [&_button]:!leading-none [&_button]:!px-1 [&_button]:!text-[10px] [&_button]:!border-white/25 [&_button]:!bg-white/10";   // padrao-ok: barra única de filtros e abas (Marcus, 21/11/2026)
+var GRANDE_TOTAL = "[&_table_tbody_td]:!h-[34px] [&_table_tbody_tr]:!h-[34px] [&_table_tbody_td]:!text-[16px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: total do pedido com letra maior (Marcus, 21/11/2026)
 var MEIO = "[&_.overflow-x-auto]:!h-full [&_table]:!h-full";   // as linhas do mini bloco esticam (a letra não muda), para o Total ficar embaixo, na mesma altura da direita
 var FONTE_ESQ = "[&_table_tbody_td]:!text-[12px] [&_table_tfoot_td]:!text-[12px] [&_table_th]:!text-[11px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: coluna da esquerda com uma fonte só (Marcus, 21/11/2026)
 var sepBloco = function(k){ return e("div",{key:k, className:"h-[3px] bg-white"}); };   // faixa que separa um bloco do outro (Marcus, 20/11/2026)
@@ -69,7 +69,7 @@ var DataCal = function(p){
     e("span",null, v), e("span",{className:"absolute right-2 text-[11px]", "aria-hidden":true}, "▾"),
     e("input",{type:"date", value:p.value || "", "aria-label":p.label, className:"absolute inset-0 h-full w-full cursor-pointer opacity-0", onClick:function(ev){ try{ ev.target.showPicker(); }catch(x){} }, onChange:function(ev){ p.onChange(ev.target.value); }}));
 };
-var CNPJS = ["CNPJ 34 · Sorelly Atacadista","CNPJ 46 · Sorelly Comércio","CNPJ 59 · Serenity","CNPJ 67 · Axis Joias"];
+var CNPJS = ["CNPJ 34 · Sorelly Atacadista","CNPJ 46 · Mayz Comércio de Moda","CNPJ 59 · Serenity","CNPJ 67 · Axis"];
 var NF_SEG = [["com","Todo com NF"],["sem","Todo sem NF"],["misto","Parte com / parte sem"]];
 
 // grava via domínio; devolve true se salvou (para fechar a janela). Pergunta confirmação quando o domínio pede; recusa vira aviso na tela.
@@ -81,21 +81,11 @@ function grava(c, nome, extra){
 }
 var linhaNova = function(parte, venc, valor){ return {forma:parte==="com" ? "boleto" : "pix_revendedora", venc:venc, valor:valor===undefined ? "" : valor, qtd:"1", conta:"", status:"Pendente"}; };
 // Regra de negociação de cada fornecedor (Marcus, 21/11/2026): uma linha para o que tem nota (boleto) e outra para o Pix. Os números padrão vêm dos pedidos já lançados; "Salvar como padrão" grava no fornecedor (regraNeg).
-var REGRA_FORN = {"pontual":[30,6,6,30,30,"boleto"], "ellos galvânica":[30,5,5,0,0,"boleto"], "mega sul":[30,6,6,0,0,"cheque"], "art ello":[30,3,3,0,0,"boleto"], "office graf":[20,5,5,30,30,"boleto"], "point":[0,0,1,30,30,"boleto"], "devmaster":[0,0,1,30,30,"boleto"]};   // regra padrão por fornecedor, dos pedidos já lançados (Marcus, 21/11/2026: a mesma janela para todos)
+var REGRA_FORN = {"pontual":[30,6,6,30,30,"boleto"]};   // só a Pontual usa regra e propostas (Marcus, 21/11/2026)
 var ehPontual = function(pf, fornId){ var f = forn(pf, fornId); return !!f && String(f.nome).toLowerCase()==="pontual"; };
-// Banho = operação triangular (Sorelly manda o bruto de um fornecedor para a galvânica): Pontual e Ellos. O Cadastro de peças (Rayssa) já liga cada fatura ao fornecedor do bruto e aos pedidos de bruto (com a nota do fornecedor).
-var ehBanho = function(pf, id){ return id===pf.mqFornId || /ellos/i.test((forn(pf, id) || {}).nome || ""); };
-var normForn = function(n){ var t = String(n || "").trim(); if(!/saldo/i.test(t)) return t; var b = t.replace(/saldo/ig, "").replace(/[-–]/g, " ").replace(/\s+/g, " ").trim(); return (b || "Saldo")+" (Saldo)"; };   // "Mega Sul - Saldo", "Saldo Mega Sul", "Adereço Saldo" => "Mega Sul (Saldo)"
-var ligarCadastro = function(cpc, fatTxt){
-  var fats = ((cpc && cpc.fatP) || []).concat((cpc && cpc.fatE) || []), peds = (cpc && cpc.pedidos) || [], forns = [], notas = [], ids = [];
-  String(fatTxt || "").split(/[^0-9]+/).filter(function(x){ return x.length>=4; }).forEach(function(n){ fats.filter(function(f){ return String(f.fatura)===n; }).forEach(function(f){
-    var nf = normForn(f.forn); if(nf && forns.indexOf(nf)<0) forns.push(nf);
-    (f.pedidos || []).forEach(function(id){ var o = peds.find(function(x){ return x.id===id; }); if(!o) return; if(ids.indexOf(id)<0) ids.push(id); var nt = String(o.nota || "").trim(); if(nt && notas.indexOf(nt)<0) notas.push(nt); }); }); });
-  return {forn:forns.join(" - "), nota:notas.join(" - "), ids:ids};
-};
 var regraPadrao = function(pf, fornId){
   var f = forn(pf, fornId); if(f && f.regraNeg) return JSON.parse(JSON.stringify(f.regraNeg));
-  var a = (f && REGRA_FORN[String(f.nome).toLowerCase()]) || [0,0,1,30,30,"boleto"];
+  var a = (f && REGRA_FORN[String(f.nome).toLowerCase()]) || [30,6,6,30,30,"boleto"];
   return {pct:a[0], arq:null, com:{n:a[1], forma:a[5], primeiro:a[3], intervalo:30}, sem:{n:a[2], forma:"pix_revendedora", primeiro:a[4], intervalo:30}};
 };
 var linhasRegra = function(ped, L, valor, forma){
@@ -116,13 +106,13 @@ var propostasDe = function(ped, regra, X){
 };
 // pedido já lançado → o mesmo formulário do "Lançar pedido", preenchido (chamado do Lucas, 09/11/2026). Parcela paga entra com status Pago e fica travada no domínio.
 var pedidoParaEdicao = function(pd){
-  var lin = function(p){ return {forma:p.forma, venc:p.venc, valor:(+p.valor||0).toFixed(2), qtd:"1", conta:p.conta==="—" ? "" : (p.conta||""), status:p.status||"Pendente", arq:p.arq || null}; };
+  var lin = function(p){ return {forma:p.forma, venc:p.venc, valor:(+p.valor||0).toFixed(2), qtd:"1", conta:p.conta==="—" ? "" : (p.conta||""), status:p.status||"Pendente"}; };
   var comNF = (+pd.comNF||0)>0.005, semNF = (+pd.semNF||0)>0.005, nf = comNF && semNF ? "misto" : comNF ? "com" : "sem";
-  return {prop:0, parcManual:true, msgManual:null, verParc:true, editId:pd.id, fornId:pd.fornId, numero:pd.numero==="s/nº" || pd.numero==="---" ? "" : (pd.numero||""), ref:pd.ref||"", nfArq:pd.nfArq || null, fornBruto:pd.fornBruto || "", notaForn:pd.notaForn || "", cpcId:pd.cpcId || "", pct:"", data:pd.data, total:String(pd.total), nf:nf, editado:"", com:String(pd.comNF||0), sem:String(pd.semNF||0), cnpj:pd.cnpj && pd.cnpj!=="Sem NF" ? pd.cnpj : CNPJS[0], nfNum:pd.nfNum||"",
+  return {prop:0, parcManual:true, msgManual:null, verParc:true, editId:pd.id, fornId:pd.fornId, numero:pd.numero==="s/nº" || pd.numero==="---" ? "" : (pd.numero||""), ref:pd.ref||"", nfArq:pd.nfArq || null, cpcId:pd.cpcId || "", pct:"", data:pd.data, total:String(pd.total), nf:nf, editado:"", com:String(pd.comNF||0), sem:String(pd.semNF||0), cnpj:pd.cnpj && pd.cnpj!=="Sem NF" ? pd.cnpj : CNPJS[0], nfNum:pd.nfNum||"",
     lcom:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="com"; }).map(lin), lsem:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="sem"; }).map(lin),
     qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:pd.descricao||"", limite:pd.limite||"", pixMin:pd.pixMin ? String(pd.pixMin) : ""};
 };
-var pedidoNovo = function(pf, fornId){ var id = fornId || (pf.fornecedores.length ? pf.fornecedores[0].id : 0); return {prop:0, parcManual:false, msgManual:null, verParc:false, fornId:id, numero:"", ref:"", nfArq:null, fornBruto:"", notaForn:"", cpcId:"", pct:id ? String(regraPadrao(pf, id).pct) : "", data:hojeIso(), total:"", nf:"misto", editado:"", com:"", sem:"", cnpj:CNPJS[0], nfNum:"", lcom:[], lsem:[], qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:"", limite:"", pixMin:""}; };
+var pedidoNovo = function(pf, fornId){ var id = fornId || (pf.fornecedores.length ? pf.fornecedores[0].id : 0), pont = ehPontual(pf, id); return {prop:0, parcManual:!pont, msgManual:null, verParc:!pont, fornId:id, numero:"", ref:"", nfArq:null, cpcId:"", pct:pont ? String(regraPadrao(pf, id).pct) : "", data:hojeIso(), total:"", nf:"misto", editado:"", com:"", sem:"", cnpj:CNPJS[0], nfNum:"", lcom:[], lsem:[], qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:"", limite:"", pixMin:""}; };
 
 function AbaPfNeg(props){
   var visao = (props && props.visao) || "neg";
@@ -188,21 +178,18 @@ function AbaPfNeg(props){
   var venc = function(pd){ var v = (pd.parcelas || []).map(function(x){ return x.venc; }).sort(); return v.length ? (mmaa(v[0])===mmaa(v[v.length-1]) ? mmaa(v[0]) : mmaa(v[0])+" a "+mmaa(v[v.length-1])) : "---"; };
   var COLS_L = [{k:"id", t:"Nº", fmt:function(v){ return "#"+v; }}, {k:"data", t:"Data", fmt:dbr}];
   if(!fId) COLS_L.push({k:"forn", t:"Fornecedor"});
-  var pontual = ehBanho(pf, fId);   // Pontual e Ellos: operação triangular (a Sorelly manda o bruto do fornecedor para a Pontual banhar): NF da Pontual, Fatura, Fornecedor do bruto e a nota dele
-  COLS_L = COLS_L.concat(pontual ? [{k:"mes", t:"Mês"}, {k:"nf", t:"NF do banho"}, {k:"fat", t:"Fatura"}, {k:"fb", t:"Fornecedor"}, {k:"nfb", t:"Nota do fornecedor"}] : [{k:"numero", t:"Pedido"}, {k:"ref", t:"Referência"}], [{k:"total", t:"Total", fmt:brl}, {k:"comNF", t:"Com NF", fmt:brlOu}].concat(pontual ? [] : [{k:"fNF", t:"Pagamento NF"}], [{k:"semNF", t:"Sem NF", fmt:brlOu}], pontual ? [] : [{k:"fPix", t:"Pagamento sem NF"}], [{k:"venc", t:"Vencimentos"},
+  COLS_L = COLS_L.concat([{k:"numero", t:"Pedido"}, {k:"ref", t:"Referência"}, {k:"total", t:"Total", fmt:brl}, {k:"comNF", t:"Com NF", fmt:brlOu}, {k:"fNF", t:"Pagamento NF"}, {k:"semNF", t:"Sem NF", fmt:brlOu}, {k:"fPix", t:"Pagamento sem NF"}, {k:"venc", t:"Vencimentos"},
     {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Sem parcela" ? "text-warning" : l.sit==="Quitado" ? "text-success" : ""; }},
-    {k:"ac", t:"", render:function(v, l){ return l.semParcela ? (ed ? LK("Lançar parcela", function(){ abrirParcela(l.id, false); }) : "---") : LK("Abrir", function(){ setDetId(l.id); }); }}]));
+    {k:"ac", t:"", render:function(v, l){ return l.semParcela ? (ed ? LK("Lançar parcela", function(){ abrirParcela(l.id, false); }) : "---") : LK("Abrir", function(){ setDetId(l.id); }); }}]);
   var linhasL = listaL.map(function(pd){
     var f = forn(pf, pd.fornId), np = pd.parcelas.length, pg = pd.parcelas.reduce(function(t, x){ return t+(x.status==="Pago" || (FORMAS[x.forma].nf==="com" && x.venc.slice(0,7)<mesHoje) ? x.valor : 0); }, 0);
-    var mNF = /NF\s*([\d./-]+)/i.exec(String(pd.numero || "")), mFat = /Fatura[s]?\s*([\d][\d\s·,/–-]*)/i.exec(String(pd.numero || "")), soNum = /^[\d][\d\s·,/–-]*$/.test(String(pd.numero || "").trim()) ? String(pd.numero).trim() : "";
-    var fatTxt = (mFat ? mFat[1].trim() : soNum), cad = pontual ? ligarCadastro((c.s && c.s.cpc) || {}, fatTxt) : {forn:"", nota:""};
-    return {id:pd.id, data:pd.data, forn:f ? f.nome : "—", numero:pd.numero || "---", ref:pd.ref || "---", mes:mesLabel(String(pd.data).slice(0, 7)+"-01"), nf:pd.nfNum || (mNF ? mNF[1] : "—"), fat:(mFat ? mFat[1].trim() : soNum) || "—", fb:normForn(pd.fornBruto) || cad.forn || "—", nfb:pd.notaForn || cad.nota || "—", total:pd.total, comNF:pd.comNF, fNF:forma(pd, "com"), semNF:pd.semNF, fPix:forma(pd, "sem"), venc:venc(pd), semParcela:!np, sit:!np ? "Sem parcela" : (pd.total-pg>0.005 ? "Em aberto" : "Quitado"), ac:""};
+    return {id:pd.id, data:pd.data, forn:f ? f.nome : "—", numero:pd.numero || "---", ref:pd.ref || "---", total:pd.total, comNF:pd.comNF, fNF:forma(pd, "com"), semNF:pd.semNF, fPix:forma(pd, "sem"), venc:venc(pd), semParcela:!np, sit:!np ? "Sem parcela" : (pd.total-pg>0.005 ? "Em aberto" : "Quitado"), ac:""};
   });
   var lancados = (!listaL.length && !fId) ? null : e(BlocoBarra,{t:"Pedidos"+(fo ? " · "+fo.nome : ""), dir:String(listaL.length), acao:fId ? e(BotaoMini,{principal:true, desabilitado:!ed, onClick:function(){ setPed(pedidoNovo(pf, fId)); }}, "Lançar pedido") : null},
-    tab({cols:COLS_L, linhas:linhasL, chave:"id", limite:30, aoClicar:function(l){ if(ehPoint || fId===pf.mqFornId) setDetId(l.id); else setSelPed(selPed===l.id ? null : l.id); }, linhaCls:function(l){ return l.id===selPed ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum pedido lançado.",   // Pontual e Point não têm o bloco do pedido embaixo: clicar na linha abre o detalhe do pedido
-      totalRodape:function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; var a = [ "Total", "" ]; if(!fId) a.push(""); return a.concat(pontual ? ["", "", "", "", ""] : ["", ""], [sm("total"), sm("comNF")], pontual ? [] : [""], [sm("semNF")], pontual ? [] : [""], ["", "", ""]); }}));
+    tab({cols:COLS_L, linhas:linhasL, chave:"id", limite:30, aoClicar:function(l){ setSelPed(selPed===l.id ? null : l.id); }, linhaCls:function(l){ return l.id===selPed ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum pedido lançado.",
+      totalRodape:function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; var a = [ "Total", "" ]; if(!fId) a.push(""); return a.concat(["", "", sm("total"), sm("comNF"), "", sm("semNF"), "", "", "", ""]); }}));
 
-  var especial = visao==="mes" ? null : ehPoint ? e("div",{key:"pt", className:"flex flex-col gap-0"}, lancados, lancados && sepBloco("spt"), e(PointPainel,{c:c})) : fId===pf.mqFornId ? e("div",{key:"pq", className:"flex flex-col gap-0"}, lancados, lancados && sepBloco("spq"), e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt})) : null;
+  var especial = visao==="mes" ? null : ehPoint ? e(PointPainel,{key:"pt", c:c}) : fId===pf.mqFornId ? e("div",{key:"pq", className:"flex flex-col gap-0"}, lancados, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt})) : null;
 
   // ---------- dados da tela ----------
   var ags = agregar(pf, coletar(pf, filtro, fId)), tot = painelTotais(ags);
@@ -252,12 +239,9 @@ function AbaPfNeg(props){
       var ff = forn(pf, x.fornId), tipo = (ff && ff.tipoNeg) || (ff && ehPrestador(ff) ? "Prestador" : "—");
       var aberto = x.divida>0.005, semP = x.semParcela>0.005, parado = diasDesde(ultAtiv[x.fornId]);
       var sit = aberto ? "Em aberto" : semP ? "Sem parcela" : parado>30 ? "Encerrado" : "Quitado";
-      var abCom = 0, abSem = 0, nAb = 0, em7 = 0, prox = "", hj = hojeIso(), lim7 = addDias(hj, 7);
-      pf.pedidos.filter(function(pd){ return pd.fornId===x.fornId; }).forEach(function(pd){ var tem = false, alocCom = 0, alocSem = 0;
-        (pd.parcelas || []).forEach(function(pc){ var com = FORMAS[pc.forma].nf==="com"; if(com) alocCom += pc.valor; else alocSem += pc.valor; var pago = pc.status==="Pago" || (com && pc.venc.slice(0,7)<mesHoje); if(pago) return; tem = true; if(com) abCom += pc.valor; else abSem += pc.valor; if(pc.venc>=hj){ if(!prox || pc.venc<prox) prox = pc.venc; if(pc.venc<=lim7) em7 += pc.valor; } });   // o sistema não sabe quando cada Pix ou boleto foi pago (Pix paga no acerto, boleto some no fim do mês): por isso não há coluna Vencido, só o que vem pela frente
-        var rest = pd.total-alocCom-alocSem;   // o que ainda não tem parcela entra no a pagar (a coluna Sem parcela saiu): sem nota se o pedido tem parte sem nota, senão com nota
-        if(pd.semNF>0.005) abSem += rest; else abCom += rest; if(tem || rest>0.005) nAb++; });
-      return Object.assign({}, x, {tipo:tipo, sit:sit, ultimo:ultPed[x.fornId] || "", abCom:abCom, abSem:abSem, nAb:nAb, em7:em7, prox:prox});
+      var abCom = 0, abSem = 0, nAb = 0;
+      pf.pedidos.filter(function(pd){ return pd.fornId===x.fornId; }).forEach(function(pd){ var tem = false; (pd.parcelas || []).forEach(function(pc){ var pago = pc.status==="Pago" || (FORMAS[pc.forma].nf==="com" && pc.venc.slice(0,7)<mesHoje); if(pago) return; tem = true; if(FORMAS[pc.forma].nf==="com") abCom += pc.valor; else abSem += pc.valor; }); var aloc = (pd.parcelas || []).reduce(function(t, pc){ return t+pc.valor; }, 0); if(tem || pd.total-aloc>0.005) nAb++; });
+      return Object.assign({}, x, {tipo:tipo, sit:sit, ultimo:ultPed[x.fornId] || "", abCom:abCom, abSem:abSem, nAb:nAb});
     }).filter(function(x){
       if(fTipo!=="todos" && x.tipo!==fTipo) return false;
       if(fSit==="ativos" ? x.sit==="Encerrado" : fSit==="todos" ? false : x.sit!==({aberto:"Em aberto", semparcela:"Sem parcela", quitado:"Quitado", encerrado:"Encerrado"})[fSit]) return false;
@@ -268,9 +252,10 @@ function AbaPfNeg(props){
     var ocultos = RN.linhas.length - linhasR.length;
     var colsFull = [{k:"tipo", t:"Tipo"}, {k:"nome", t:"Fornecedor"}, {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Em aberto" ? "text-warning" : l.sit==="Sem parcela" ? "text-destructive" : l.sit==="Quitado" ? "text-success" : ""; }},
       {k:"nPedidos", t:"Pedidos"}, {k:"total", t:"Total negociado", fmt:brl}, {k:"comNF", t:"Com NF", fmt:brl}, {k:"semNF", t:"Sem NF", fmt:brl},
-      {k:"pago", t:"Pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"divida", t:"Falta", fmt:brlOu, cor:function(l){ return l.divida>0.005 ? "text-destructive" : ""; }}];
-    var colsAb = [{k:"tipo", t:"Tipo"}, {k:"nome", t:"Fornecedor"}, {k:"nAb", t:"Pedidos em aberto"}, {k:"prox", t:"Próximo vencimento", fmt:function(v){ return v ? dbr(v) : "—"; }},
-      {k:"em7", t:"Vence em 7 dias", fmt:brlOu}, {k:"abCom", t:"Com NF a pagar", fmt:brlOu}, {k:"abSem", t:"Sem NF a pagar", fmt:brlOu}, {k:"divida", t:"Em aberto", fmt:brl}];
+      {k:"pago", t:"Pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"divida", t:"Falta", fmt:brlOu, cor:function(l){ return l.divida>0.005 ? "text-destructive" : ""; }},
+      {k:"semParcela", t:"Sem parcela", fmt:brlOu, cor:function(l){ return l.semParcela>0.005 ? "text-warning" : ""; }}];
+    var colsAb = [{k:"tipo", t:"Tipo"}, {k:"nome", t:"Fornecedor"}, {k:"nAb", t:"Pedidos em aberto"}, {k:"abCom", t:"Com NF a pagar", fmt:brlOu}, {k:"abSem", t:"Sem NF a pagar", fmt:brlOu},
+      {k:"semParcela", t:"Sem parcela", fmt:brlOu, cor:function(l){ return l.semParcela>0.005 ? "text-warning" : ""; }}, {k:"divida", t:"Em aberto", fmt:brl}];
     var emAberto = fSit==="aberto", colsR = emAberto ? colsAb : colsFull;
     var campo = function(rot, ctl){ return e("label",{className:"flex items-center gap-1", title:rot}, ctl); };   // padrao-ok: letra de 10 px igual à faixa do Lançamento de pagamentos (Marcus, 21/11/2026)
     var filtrosR = e("div",{className:BARRA_TOPO},   // padrao-ok: filtros à esquerda e abas à direita, na mesma linha
@@ -281,8 +266,8 @@ function AbaPfNeg(props){
     resumo = e(BlocoBarra,{t:"Fornecedores", semBarra:true},
       filtrosR,
       e("div",{className:fornF ? GRANDE : ""},
-      tab({cols:colsR, linhas:linhasR, chave:"fornId", semFiltro:true, aoClicar:function(l){ verForn(l.fornId); }, linhaCls:function(l){ return String(l.fornId)===fornF ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum fornecedor neste filtro.",
-        key:emAberto ? "ab" : "todos", totalRodape:fornF ? undefined : function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; if(emAberto) return ["Total", "", String(ls.reduce(function(t, x){ return t+Number(x.nAb||0); }, 0)), "", sm("em7"), sm("abCom"), sm("abSem"), sm("divida")]; return ["Total", "", "", String(ls.reduce(function(t, x){ return t+Number(x.nPedidos||0); }, 0)), sm("total"), sm("comNF"), sm("semNF"), sm("pago"), sm("divida")]; }})));
+      tab({cols:colsR, linhas:linhasR, chave:"fornId", aoClicar:function(l){ verForn(l.fornId); }, linhaCls:function(l){ return String(l.fornId)===fornF ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum fornecedor neste filtro.",
+        key:emAberto ? "ab" : "todos", totalRodape:fornF ? undefined : function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; if(emAberto) return ["Total", "", String(ls.reduce(function(t, x){ return t+Number(x.nAb||0); }, 0)), sm("abCom"), sm("abSem"), sm("semParcela"), sm("divida")]; return ["Total", "", "", String(ls.reduce(function(t, x){ return t+Number(x.nPedidos||0); }, 0)), sm("total"), sm("comNF"), sm("semNF"), sm("pago"), sm("divida"), sm("semParcela")]; }})));
   }
 
   // ---------- PEDIDO ABERTO (versão 2 aprovada pelo Marcus, 21/11/2026): à esquerda o mini bloco do pedido (CNPJ nosso, número, fornecedor, data) e o Resumo por forma; à direita o calendário por mês, com uma coluna para cada forma de pagamento ----------
@@ -309,7 +294,7 @@ function AbaPfNeg(props){
       var cC = [{k:"mes", t:"Mês"}, {k:"venc", t:"Vencimento", fmt:dbr}].concat(ordemF.map(function(k){ return {k:"f_"+k, t:FORMAS[k].label, fmt:function(v){ return v ? brl(v) : "—"; }}; }),
         [{k:"total", t:"Total do mês", fmt:brl}, {k:"pago", t:"Pago", fmt:brlOu, cor:verde}, {k:"falta", t:"Falta", fmt:brlOu}]);
       var sC = function(k){ return linhasC.reduce(function(t, x){ return t+(x[k] || 0); }, 0); };
-      parcelasBloco = e("div",{className:"flex flex-col gap-0 border-b-[3px] border-white [&_tfoot_td]:!h-[26px] [&_tfoot_td]:!text-[11px] [&_tfoot_td]:!font-bold [&_td]:!px-1 [&_th]:!px-1 [&_td]:!whitespace-nowrap [&_th]:!whitespace-nowrap"},   // padrao-ok: rodapé dos dois lados com a mesma altura; letras como antes (Marcus, 22/11/2026)
+      parcelasBloco = e("div",{className:"flex flex-col gap-0"},
         e(BlocoBarra,{t:"Pedido "+(pdSel.numero || "---")+" · "+(fSel ? fSel.nome : ""), acao:e(BotaoMini,{onClick:function(){ setSelPed(null); }}, "Fechar pedido")}),
         e("div",{className:"grid grid-cols-1 items-stretch gap-0 lg:grid-cols-[minmax(300px,34%)_1fr]"},
           e("div",{className:"flex flex-col border-r border-white/35 "+FONTE_ESQ},
@@ -318,7 +303,7 @@ function AbaPfNeg(props){
                 e("div",{className:"flex-1 [&>div]:!h-full [&>div>div]:!h-full [&_table]:!table-fixed [&_th]:!w-1/2"}, tab({cols:[{k:"cnpj", t:"CNPJ"}, {k:"num", t:"Nº do pedido"}], linhas:[{id:"i1", cnpj:cnpjNum, num:pdSel.numero || "---"}], semFiltro:true, vazio:""})),
                 e("div",{className:"flex-1 [&>div]:!h-full [&>div>div]:!h-full [&_table]:!table-fixed [&_th]:!w-1/2"}, tab({cols:[{k:"forn", t:"Fornecedor"}, {k:"data", t:"Data", fmt:dbr}], linhas:[{id:"i2", forn:fSel ? fSel.nome : "---", data:pdSel.data}], semFiltro:true, vazio:""})))),
             e("div",{className:"flex flex-1 flex-col [&>section]:flex-1 "+MEIO},
-              e(BlocoBarra,{t:"Resumo por forma"}, e("div",{className:"flex-1 [&>div]:!h-full [&>div>div]:!h-full [&_table_tbody_tr_td]:!text-[10px] [&_table_tfoot_tr_td]:!text-[10px] [&_table_thead_tr_th]:!text-[10px] [&_td]:!px-1 [&_th]:!px-1"}, tab({cols:cF, linhas:linhasF, chave:"id", semFiltro:true, vazio:"", totalRodape:function(){ return ["Total", pdSel.total>0 ? "100%" : "---", brl(sF("total")), brl(sF("pago")), brl(sF("falta"))]; }}))))),   // padrao-ok: letra de 10 px para caber a coluna Falta (Marcus, 22/11/2026)
+              e(BlocoBarra,{t:"Resumo por forma"}, e("div",{className:"flex-1 [&>div]:!h-full [&>div>div]:!h-full"}, tab({cols:cF, linhas:linhasF, chave:"id", semFiltro:true, vazio:"", totalRodape:function(){ return ["Total", pdSel.total>0 ? "100%" : "---", brl(sF("total")), brl(sF("pago")), brl(sF("falta"))]; }}))))),
           e(BlocoBarra,{t:"Calendário"}, tab({cols:cC, linhas:linhasC, chave:"id", semFiltro:true, vazio:"Sem parcelas.", totalRodape:function(){ return ["Total", ""].concat(ordemF.map(function(k){ return brl(sC("f_"+k)); }), [brl(sC("total")), brl(sC("pago")), brl(sC("falta"))]); }}))));
     }
   }
@@ -357,15 +342,15 @@ function msgProposta(pf, ped, X){
 }
 
 // ───────────────── Janela: Lançar pedido ─────────────────
-// Só abre a partir da tela do fornecedor (o fornecedor já vem escolhido). Tudo em tabelas. Todo fornecedor tem regra e 5 propostas (Marcus, 21/11/2026); a edição de pedido já lançado usa só a tabela de parcelas.
+// Só abre a partir da tela do fornecedor (o fornecedor já vem escolhido). Tudo em tabelas. Só a Pontual tem regra e 5 propostas (Marcus, 21/11/2026); os outros fornecedores e a edição usam a tabela de parcelas.
 var TJ = {escura:true, grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true};
 var TJ_CLS = "[&_td]:!h-[26px] [&_td]:!py-0 [&_td]:!px-1 [&_td]:!text-[11px] [&_th]:!px-1 [&_th]:!text-[11px] [&_td]:!whitespace-nowrap [&_th]:!whitespace-nowrap [&_td_input]:!w-full [&_td_select]:!w-full";   // padrao-ok: tabelas da janela com letra de 11 px e linha de 26 px (Marcus, 21/11/2026)
 function JanelaPedido(p){
   var c = p.c, pf = p.pf, ped = p.ped;
   var split = function(n){ return dividirNF(n.nf, n.total, n.editado, n.com, n.sem); };
-  var novoPed = !ped.editId, comProp = novoPed, fo = forn(pf, ped.fornId);   // pedido novo: regra e propostas para todo fornecedor; editar um pedido já lançado mostra só a tabela de parcelas
+  var pont = ehPontual(pf, ped.fornId), novoPed = !ped.editId, comProp = novoPed && pont, fo = forn(pf, ped.fornId);
   var regra = ped.regra || regraPadrao(pf, ped.fornId);
-  // sem ajuste manual das parcelas, as parcelas vêm da proposta escolhida; a mensagem volta ao texto do sistema quando algo muda
+  // com proposta (Pontual) e sem ajuste manual, as parcelas vêm da proposta escolhida; a mensagem volta ao texto do sistema quando algo muda
   var upd = function(patch){ var n = Object.assign({}, ped, {msgManual:null}, patch), x = split(n); if(n.nf!=="misto"){ n.com = x.com.toFixed(2); n.sem = x.sem.toFixed(2); } if(x.com<=0.005) n.lcom = []; if(x.sem<=0.005) n.lsem = [];
     if(comProp && !n.parcManual){ var pr = propostasDe(n, n.regra || regraPadrao(pf, n.fornId), x)[n.prop || 0]; n.lcom = pr.com; n.lsem = pr.sem; }
     p.setPed(n); };
@@ -388,7 +373,7 @@ function JanelaPedido(p){
     var linhas = (X.com>0.005 ? ped.lcom : []).concat(X.sem>0.005 ? ped.lsem : []);
     var ruim = linhas.find(function(l){ return !dataValida(l.venc); });
     if(ruim){ aviso(c, "Vencimento inválido ou vazio"+(ruim.venc ? ": "+ruim.venc : "")+". Confira as datas das parcelas (o mês pode não ter esse dia).", "alerta"); return; }
-    var ok = grava(c, ped.editId ? "pedido_editar" : "pedido_add", {id:ped.editId, fornId:ped.fornId, numero:ped.numero, ref:ped.ref, fornBruto:ped.fornBruto || cadAuto.forn, notaForn:ped.notaForn || cadAuto.nota, nfArq:ped.nfArq, cpcId:lig ? lig.id : ped.cpcId, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
+    var ok = grava(c, ped.editId ? "pedido_editar" : "pedido_add", {id:ped.editId, fornId:ped.fornId, numero:ped.numero, ref:ped.ref, nfArq:ped.nfArq, cpcId:lig ? lig.id : ped.cpcId, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
     if(!ok) return;
     if(enviar){ copiaTxt(msg); try{ window.open("https://wa.me/?text="+encodeURIComponent(msg), "_blank"); }catch(x){} aviso(c, "Pedido lançado. A proposta foi copiada e o WhatsApp foi aberto para você escolher o fornecedor.", "ok"); }
     fechar();
@@ -403,18 +388,9 @@ function JanelaPedido(p){
   var Cel = function(k, rot, node, rot2, node2){ return {id:k, a:rot, av:node, b:rot2, bv:node2}; };
   var din = function(valor, rot, aoMudar){ return e(Dinheiro,{out:"ponto", value:valor, label:rot, className:"w-full min-w-0 px-1! text-[11px]!", onChange:aoMudar}); };   // o valor sobe em reais enquanto se digita
   var Cel = function(k, rot, node){ return {id:k, a:rot, av:node}; };
-  var cadAuto = ehBanho(pf, ped.fornId) ? ligarCadastro((c.s && c.s.cpc) || {}, ped.numero) : {forn:"", nota:"", ids:[]};
-  var cpcJ = (c.s && c.s.cpc) || {}, fornAtual = ped.fornBruto || cadAuto.forn, notaAtual = ped.notaForn || cadAuto.nota;
-  var opFornBruto = []; ((cpcJ.fatP || []).concat(cpcJ.fatE || [], cpcJ.pedidos || [])).forEach(function(x){ var n = normForn(x.forn); if(n && opFornBruto.indexOf(n)<0) opFornBruto.push(n); });
-  opFornBruto.sort(function(a2, b2){ return a2.localeCompare(b2); }); if(fornAtual && opFornBruto.indexOf(fornAtual)<0) opFornBruto.unshift(fornAtual);
-  var partesForn = String(fornAtual || "").split(" - ").map(function(x){ return x.trim(); }).filter(Boolean);
-  var opNotas = (cpcJ.pedidos || []).filter(function(o){ return String(o.nota || "").trim() && o.nota!=="000" && (!partesForn.length || partesForn.indexOf(normForn(o.forn))>=0); })
-    .sort(function(a2, b2){ return String(b2.data || "").localeCompare(String(a2.data || "")); }).slice(0, 80)
-    .map(function(o){ return {v:String(o.nota).trim(), t:String(o.nota).trim()+" · "+normForn(o.forn)+(o.romaneio ? " · romaneio "+o.romaneio : "")+" · "+brl(o.valor || 0)+(o.status ? " · "+o.status : ""), forn:normForn(o.forn)}; });
-  if(notaAtual && !opNotas.some(function(o){ return o.v===notaAtual; })) opNotas.unshift({v:notaAtual, t:notaAtual, forn:""});
   var linhasPed = [
     Cel("r1", "Fornecedor", e("b",null, fo ? fo.nome : "---")),
-    Cel("r2", ehBanho(pf, ped.fornId) ? "Fatura" : "Nº do pedido", e(Txt,{value:ped.numero, ph:ehBanho(pf, ped.fornId) ? "Ex.: 13782" : "Ex.: 1416", label:"Nº do pedido", onChange:function(v){ upd({numero:v}); }})),
+    Cel("r2", "Nº do pedido", e(Txt,{value:ped.numero, ph:"Ex.: 1416", label:"Nº do pedido", onChange:function(v){ upd({numero:v}); }})),
     Cel("r3", "Data do pedido", e(DataCal,{value:ped.data, label:"Data do pedido", onChange:function(v){ upd({data:v}); }})),
     Cel("r4", "CNPJ (quem paga)", e(Sl,{value:ped.cnpj, label:"CNPJ", onChange:function(v){ upd({cnpj:v}); }}, CNPJS.map(function(k){ var cc = cnpjDoPedido(k); return e("option",{key:k, value:k}, cc ? cc.cnpj : k); }))),
     Cel("r5", "Valor total", din(ped.total, "Valor total", function(v){ var q = ped.pct!=="" && ped.pct!==undefined ? aplicaPct(v, ped.pct) : {}; upd(Object.assign({total:v}, q)); })),
@@ -422,14 +398,11 @@ function JanelaPedido(p){
     Cel("r7", "Valor com nota", din(vCom, "Valor com nota", function(v){ var y = dividirNF("misto", ped.total, "com", v, ped.sem); upd({nf:"misto", editado:"com", com:v, sem:y.sem.toFixed(2), pct:""}); })),
     Cel("r8", "Valor sem nota", din(vSem, "Valor sem nota", function(v){ var y = dividirNF("misto", ped.total, "sem", ped.com, v); upd({nf:"misto", editado:"sem", sem:v, com:y.com.toFixed(2), pct:""}); })),
     Cel("r9", "Nº da nota fiscal", e(Txt,{value:X.com>0.005 ? ped.nfNum : "", disabled:X.com<=0.005, ph:"Ex.: 11881", label:"Nº da nota fiscal", onChange:function(v){ upd({nfNum:v}); }})),
-    Cel("r10", "Nota fiscal (arquivo)", nfCel)].concat(ehBanho(pf, ped.fornId) ? [
-    Cel("r11", "Fornecedor do bruto", e(Sl,{value:fornAtual || "", label:"Fornecedor do bruto", onChange:function(v){ upd({fornBruto:v, notaForn:""}); }}, e("option",{value:""}, "Escolha no Cadastro de peças"), opFornBruto.map(function(n){ return e("option",{key:n, value:n}, n); }))),
-    Cel("r12", "Nota do fornecedor", e(Sl,{value:notaAtual || "", label:"Nota do fornecedor", onChange:function(v){ var o = opNotas.find(function(x){ return x.v===v; }); upd({notaForn:v, fornBruto:ped.fornBruto || (o && o.forn) || ped.fornBruto}); }}, e("option",{value:""}, "Escolha o pedido de bruto"), opNotas.map(function(o){ return e("option",{key:o.v+o.t, value:o.v}, o.t); })))] : []);
-  var _fimPedido = [
+    Cel("r10", "Nota fiscal (arquivo)", nfCel)
   ];
   var tabPedido = tabJ({chave:"id", linhas:linhasPed, cols:[{k:"a", t:"Campos", w:"50%", cor:function(){ return "font-bold"; }}, {k:"av", t:"Dados", w:"50%", render:function(v, r){ return r.av; }}]});
 
-  // ----- regra e propostas -----
+  // ----- regra e propostas (só Pontual) -----
   var props = comProp ? propostasDe(ped, regra, X) : [], escolhida = ped.prop || 0;
   var datasDe = function(q){ return q.com.concat(q.sem).map(function(x){ return x.venc; }).sort(); };
   var linhasProp = props.map(function(q){ var v = datasDe(q); return {id:q.i, nome:q.nome, primeiro:v.length ? dbr(v[0]) : "—", nx:q.nx+"x", bol:q.com.length ? brl(parseFloat(q.com[0].valor)) : "—", pix:q.sem.length ? brl(parseFloat(q.sem[0].valor)) : "—", ultimo:v.length ? dbr(v[v.length-1]) : "—"}; });
@@ -464,7 +437,6 @@ function JanelaPedido(p){
     {k:"venc", t:"Vencimento", w:"8.5rem", render:function(v, r){ return e(In,{type:"date", value:r.l.venc, label:"Vencimento", onChange:function(x){ setL(r.pt, r.i, "venc", x); }}); }},
     {k:"valor", t:"Valor", w:"8rem", render:function(v, r){ return e(Dinheiro,{out:"ponto", value:r.l.valor, label:"Valor", className:"w-full min-w-0 px-1.5! text-[11px]!", onChange:function(x){ setL(r.pt, r.i, "valor", x); }}); }},
     {k:"qtd", t:"Nº parcelas", w:"5.5rem", render:function(v, r){ return r.pt==="com" ? e(In,{type:"number", min:"1", value:r.l.qtd, disabled:r.l.forma!=="cartao", label:"Nº de parcelas", onChange:function(x){ setL("com", r.i, "qtd", x); }}) : "1"; }},
-    {k:"boleto", t:"Boleto", w:"9rem", render:function(v, r){ if(r.pt!=="com" || r.l.forma!=="boleto") return "—"; var nome = r.l.arq && r.l.arq.nome; return e("span",{className:"flex items-center justify-center gap-1"}, nome && e("span",{title:nome}, "Anexado"), e("label",{className:"cursor-pointer underline text-[#7DD3FC]"}, nome ? "Trocar" : "Anexar", e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ anexa(ev, function(a){ setL("com", r.i, "arq", a); }, "Não consegui anexar o boleto."); }}))); }},
     {k:"conta", t:"Conta ou bandeira", render:function(v, r){ return e(In,{value:r.l.conta, ph:"Conta / origem", label:"Conta", onChange:function(x){ setL(r.pt, r.i, "conta", x); }}); }},
     {k:"status", t:"Situação", w:"6.5rem", render:function(v, r){ return e(Sl,{value:r.l.status, label:"Status", onChange:function(x){ setL(r.pt, r.i, "status", x); }}, e("option",null, "Pendente"), e("option",null, "Pago")); }},
     {k:"x", t:"Tirar", w:"3.5rem", render:function(v, r){ return e("a",{href:"#", role:"button", className:"underline text-destructive", onClick:function(ev){ ev.preventDefault(); delL(r.pt, r.i); }}, "Tirar"); }}]});
@@ -477,24 +449,24 @@ function JanelaPedido(p){
     {k:"m", t:"Parcela nova", w:"7rem", render:function(v, r){ return e("a",{href:"#", role:"button", className:"underline text-[#7DD3FC]", onClick:function(ev){ ev.preventDefault(); addL(r.pt); }}, "+ Parcela"); }}]});
   var mostraParc = !comProp || ped.verParc;
 
-  var caixa = function(titulo, filhos, k, extra){ return e.apply(null, [BlocoPainel,{key:k, titulo:titulo, cls:"!bg-[#17284e]"+(extra || "")}].concat(filhos)); };
-  var esq = [caixa("Pedido", [tabPedido, cadAuto.ids.length>0 && e("p",{key:"lcf", className:"border-t border-white/30 px-3 py-1 text-center text-[11px]"}, "Fatura ligada ao Cadastro de peças: pedidos de bruto "+cadAuto.ids.join(", ")+(cadAuto.forn ? " · "+cadAuto.forn : "")+(cadAuto.nota ? " · nota "+cadAuto.nota : "")), lig && e("p",{className:"border-t border-white/30 px-3 py-1 text-center text-[11px]"}, "Ligado ao pedido de bruto do Cadastro de peças: ", e("b",null, lig.forn || ""), " · nota ", e("b",null, lig.nota), " · a pagar ", e("b",null, brl(lig.pagar || 0)))], "pedido")];
+  var caixa = function(titulo, filhos, k){ return e.apply(null, [BlocoPainel,{key:k, titulo:titulo, cls:"!bg-[#17284e]"}].concat(filhos)); };
+  var esq = [caixa("Pedido", [tabPedido, lig && e("p",{className:"border-t border-white/30 px-3 py-1 text-center text-[11px]"}, "Ligado ao pedido de bruto do Cadastro de peças: ", e("b",null, lig.forn || ""), " · nota ", e("b",null, lig.nota), " · a pagar ", e("b",null, brl(lig.pagar || 0)))], "pedido")];
   if(comProp) esq.push(caixa("Regra de "+(fo ? fo.nome : "fornecedor")+" · prazos em dias", [tabRegra], "regra"));
   var dir = [];
   if(comProp) dir.push(caixa("5 propostas · toque numa linha", [tabProp, ped.parcManual && e("p",{className:"border-t border-white/30 py-1 text-center text-[11px]"}, "Parcelas ajustadas à mão. ", e("a",{href:"#", role:"button", className:"underline text-[#7DD3FC]", onClick:function(ev){ ev.preventDefault(); upd({parcManual:false}); }}, "Voltar à proposta escolhida"))], "props"));
   dir.push(caixa("Mensagem da proposta · você pode mudar o texto", [
-    e("textarea",{value:msg, "aria-label":"Mensagem de proposta", style:{minHeight:250}, className:INPUT+" w-full flex-1 rounded-none! border-0! font-mono leading-snug", onChange:function(ev){ p.setPed(Object.assign({}, ped, {msgManual:ev.target.value})); }}),
-    ped.msgManual!=null && e("p",{className:"border-t border-white/30 py-1 text-center text-[11px]"}, "Texto mudado à mão. ", e("a",{href:"#", role:"button", className:"underline text-[#7DD3FC]", onClick:function(ev){ ev.preventDefault(); p.setPed(Object.assign({}, ped, {msgManual:null})); }}, "Refazer pelas parcelas"))], "msg", " flex-1"));
+    e("textarea",{value:msg, "aria-label":"Mensagem de proposta", style:{height:comProp ? 250 : 300}, className:INPUT+" w-full rounded-none! border-0! font-mono leading-snug", onChange:function(ev){ p.setPed(Object.assign({}, ped, {msgManual:ev.target.value})); }}),
+    ped.msgManual!=null && e("p",{className:"border-t border-white/30 py-1 text-center text-[11px]"}, "Texto mudado à mão. ", e("a",{href:"#", role:"button", className:"underline text-[#7DD3FC]", onClick:function(ev){ ev.preventDefault(); p.setPed(Object.assign({}, ped, {msgManual:null})); }}, "Refazer pelas parcelas"))], "msg"));
   var linhaBotoes = e("div",{className:"flex flex-wrap justify-center gap-2"},
     e(BtJ,{neutro:true, onClick:fechar}, "Cancelar"),
-    comProp && e(BtJ,{neutro:true, onClick:function(){ p.setPed(Object.assign({}, ped, {verParc:!ped.verParc})); }}, ped.verParc ? "Esconder parcelas" : "Ajustar parcelas"),
+    comProp && e(BtJ,{neutro:true, onClick:function(){ p.setPed(Object.assign({}, ped, {verParc:!ped.verParc})); }}, ped.verParc ? "Esconder as parcelas" : "Ajustar as parcelas"),
     e(BtJ,{neutro:true, onClick:function(){ copiaTxt(msg); aviso(c, "Proposta copiada.", "ok"); }}, "Copiar proposta"),
-    e(BtJ,{neutro:true, onClick:function(){ salvar(false); }}, ped.editId ? "Salvar alterações" : "Só lançar pedido"),
-    !ped.editId && e(BtJ,{onClick:function(){ salvar(true); }}, "Enviar e lançar pedido"));
+    e(BtJ,{neutro:true, onClick:function(){ salvar(false); }}, ped.editId ? "Salvar alterações" : "Só lançar o pedido"),
+    !ped.editId && e(BtJ,{onClick:function(){ salvar(true); }}, "Enviar proposta e lançar pedido"));
   esq.push(linhaBotoes);
-  return e(ModalAzul,{larga:true, t:ped.editId ? "Editar pedido" : "Lançar pedido"+(fo ? " · "+fo.nome : "")+(comProp ? " e enviar proposta" : ""), sub:ped.editId ? "Parcela já paga fica travada: para mudar, estorne a baixa antes. Cada alteração fica no histórico do pedido." : comProp ? "Preencha o pedido: o sistema monta 5 propostas pela regra do fornecedor. Escolha uma, mude o que quiser e envie." : "Preencha o pedido e as parcelas; no fim sai a mensagem de proposta para o fornecedor.", fechar:fechar},
+  return e(ModalAzul,{larga:true, t:ped.editId ? "Editar pedido" : "Lançar pedido"+(fo ? " · "+fo.nome : "")+(comProp ? " e enviar proposta" : ""), sub:ped.editId ? "Parcela já paga fica travada: para mudar, estorne a baixa antes. Cada alteração fica no histórico do pedido." : comProp ? "Preencha o pedido: o sistema monta 5 propostas pela regra da Pontual. Escolha uma, mude o que quiser e envie." : "Preencha o pedido e as parcelas; no fim sai a mensagem de proposta para o fornecedor.", fechar:fechar},
     e("div",{className:"flex flex-col gap-3 "+MODAL_PED+" "+PADRAO_BLOCOS},
-      e("div",{className:"grid grid-cols-1 items-stretch gap-3 lg:grid-cols-2"}, e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(esq)), e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(dir))),
+      e("div",{className:"grid grid-cols-1 items-start gap-3 lg:grid-cols-2"}, e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(esq)), e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(dir))),
       comProp && ped.verProp && caixa("Proposta escolhida · datas e valores", [detTab("Com nota · "+(regra.com.forma==="boleto" ? "Boleto" : regra.com.forma==="cheque" ? "Cheque" : regra.com.forma==="cartao" ? "Cartão" : "Pix empresa"), lcom), detTab("Sem nota · Pix revendedora", lsem)], "det"),
       mostraParc && caixa("Parcelas do pedido", [tabParc, tabConf], "parc")));
 }
@@ -538,42 +510,34 @@ function JanelaDetalhe(p){
     if(!window.confirm("Excluir este pedido e todas as suas parcelas? A conta do fornecedor será recalculada.")) return;
     p.fechar(); opc(c, "pedido_del", {id:pd.id});
   };
-  // mesma estrutura da janela Lançar pedido: fundo azul, blocos, tabelas, letra de 11 px, botões azuis (Marcus, 22/11/2026)
-  var tabJ = function(extra){ return e("div",{className:TJ_CLS}, e(TabelaPlanilha, Object.assign({}, TJ, extra))); };
-  var caixa = function(titulo, filhos, k){ return e.apply(null, [BlocoPainel,{key:k, titulo:titulo, cls:"!bg-[#17284e]"}].concat(filhos)); };
-  var LKJ = function(txt, fn, cls){ return e("a",{href:"#", role:"button", className:"underline "+(cls || "text-[#7DD3FC]"), onClick:function(ev){ ev.preventDefault(); ev.stopPropagation(); fn(); }}, txt); };
-  var tipoNF = pd.nfTipo==="com" ? "Todo com NF" : pd.nfTipo==="sem" ? "Todo sem NF" : "Parte com e parte sem NF";
-  var linhaResumo = [{id:"r", tipo:tipoNF, total:pd.total, com:pd.comNF, sem:pd.semNF, pago:D.pago, aberto:D.aberto}];
-  var tabResumo = tabJ({chave:"id", linhas:linhaResumo, cols:[{k:"tipo", t:"Tipo"}, {k:"total", t:"Valor do pedido", fmt:brl}, {k:"com", t:"Com NF", fmt:brl}, {k:"sem", t:"Sem NF", fmt:brl}, {k:"pago", t:"Já pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"aberto", t:"Em aberto", fmt:brl, cor:function(r){ return r.aberto>0.005 ? "text-destructive" : ""; }}]});
-  var linhaAloc = function(id, parte, a2, de, rest){ var ok2 = Math.abs(rest)<0.005; return {id:id, parte:parte, alocado:a2, de:de, sit:ok2 ? "fecha certo ✓" : "faltam "+brl(rest), ok:ok2}; };
-  var tabAloc = tabJ({chave:"id", linhas:[linhaAloc("a", "Com NF · boleto, Pix empresa, cartão ou cheque", D.comAloc, pd.comNF, D.restCom), linhaAloc("b", "Sem NF · Pix revendedora", D.semAloc, pd.semNF, D.restSem)],
-    cols:[{k:"parte", t:"Parcelas alocadas"}, {k:"alocado", t:"Nas parcelas", fmt:brl}, {k:"de", t:"Do pedido", fmt:brl}, {k:"sit", t:"Situação", cor:function(r){ return r.ok ? "text-success" : "text-warning"; }}]});
-  var anexaB = function(ev, idx){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return; lerAnexo(arq).then(function(a2){ return enviarAnexo("pf", a2); }).then(function(sv){ grava(c, "parcela_set", {pedId:pd.id, idx:idx, patch:{arq:{key:sv.key, nome:arq.name}}}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui anexar o boleto.", "alerta"); }); };
-  // parcelas divididas em Com NF e Sem NF, cada parte em ordem de vencimento
-  var blocosParc = D.parcelas.length ? [{t:"Parcelas com NF", com:true}, {t:"Parcelas sem NF", com:false}].map(function(g){
-    var ls = D.parcelas.filter(function(x){ return !!x.registro===g.com; }).sort(function(a2, b2){ return a2.p.venc.localeCompare(b2.p.venc) || a2.i-b2.i; })
-      .map(function(x){ return {id:x.i, venc:x.p.venc, forma:x.forma.label, conta:x.p.conta || "—", valor:x.p.valor, sit:x.registro ? "Registro" : x.p.status, x:x}; });
-    if(!ls.length) return null;
-    return caixa(g.t+" · "+ls.length+" · "+brl(ls.reduce(function(t, r){ return t+r.valor; }, 0)), [tabJ({chave:"id", linhas:ls, cols:[
-      {k:"venc", t:"Vencimento", w:"7.5rem", fmt:function(v){ return dbr(v); }}, {k:"forma", t:"Forma"}, {k:"conta", t:"Conta ou bandeira"}, {k:"valor", t:"Valor", fmt:brl},
-      {k:"bol", t:"Boleto", w:"8rem", render:function(v, r){ if(r.x.p.forma!=="boleto") return "—"; var ar = r.x.p.arq;
-        return e("span",{className:"flex items-center justify-center gap-2", onClick:function(ev){ ev.stopPropagation(); }}, ar && LKJ("Ver", function(){ abrirAnexo(ar.key); }), c.edita && e("label",{className:"cursor-pointer underline text-[#7DD3FC]"}, ar ? "Trocar" : "Anexar", e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ anexaB(ev, r.x.i); }}))); }},
-      {k:"sit", t:"Situação", w:"7rem", cor:function(r){ return "font-semibold "+(r.sit==="Pago" ? "text-success" : (r.sit==="Registro" ? "text-white" : "text-warning")); }},
-      {k:"n", t:"Ação", w:"7rem", render:function(v, r){ return r.x.registro ? "sem baixa" : (c.edita ? LKJ(r.sit==="Pago" ? "Estornar" : "Dar baixa", function(){ p.baixa(pd.id, r.x.i); }, r.sit==="Pago" ? "text-destructive" : "text-[#7DD3FC]") : "—"); }}]})], g.t);
-  }) : [caixa("Parcelas", [e("p",{key:"v", className:"py-3 text-center text-[11px]"}, "Nenhuma parcela lançada neste pedido.")], "vazio")];
-  var extras = [];
-  if(pd.avisoLimite) extras.push(caixa("Aviso do teto mensal", [e("p",{key:"av", className:"px-3 py-2 text-center text-[11px] font-bold text-warning"}, pd.avisoLimite)], "aviso"));
-  if((pd.historico || []).length>0) extras.push(caixa("Histórico de alterações", [e("div",{key:"h", className:"flex flex-col gap-0.5 px-3 py-2 text-center text-[11px]"}, pd.historico.slice().reverse().map(function(h, i){ return e("div",{key:i}, e("b",null, h.em+" · "+(h.por || "—")+": "), h.mudou); }))], "hist"));
-  return e(ModalAzul,{larga:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+pd.cnpj+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
-    e("div",{className:"flex flex-col gap-3 "+PADRAO_BLOCOS},
-      caixa("Resumo do pedido", [tabResumo, tabAloc], "resumo"),
-      e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(blocosParc)),
-      e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(extras)),
-      e("div",{className:"flex flex-wrap justify-center gap-2"},
-        e(BtJ,{neutro:true, disabled:!c.edita, onClick:excluir}, "Excluir pedido"),
-        e(BtJ,{neutro:true, disabled:!c.edita, onClick:function(){ p.editar(pd); }}, "Editar"),
-        e(BtJ,{disabled:!c.edita, onClick:function(){ p.lancar(pd.id); }}, "Lançar parcela"),
-        e(BtJ,{neutro:true, onClick:p.fechar}, "Fechar"))));
+  var nfChip = pd.nfTipo==="com" ? e(Chip,{cor:"blue"}, "Todo com NF") : pd.nfTipo==="sem" ? e(Chip,{cor:"orange"}, "Todo sem NF") : e(Chip,{cor:"yellow"}, "Parte com / parte sem NF");
+  var lin = function(rot, a, de, rest, k){ var fecha = Math.abs(rest)<0.005; return e("div",{key:k, className:"flex flex-wrap items-center justify-between gap-2 text-[13.5px]"}, e("span",{className:"text-white/90"}, rot), e("b",{className:MONO, style:tom(fecha ? "green" : "orange")}, brl(a)+" de "+brl(de)+(fecha ? " ✓" : " · faltam "+brl(rest)))); };
+  return e(Modal,{largo:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+pd.cnpj+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
+    e("div",{className:"flex"}, nfChip),
+    // Bloco azul "O que estamos pagando / Pagar até / Valor mínimo de cada pix" REMOVIDO do detalhe do pedido (chamado do Lucas, 09/11/2026, opção A): era informação repetida e a data "Pagar até" podia não bater com as parcelas. O prazo vale pelo vencimento das próprias parcelas.
+    e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-5"},
+      e(Tile,{t:"Valor do pedido", v:brl(pd.total), cor:"#fff"}), e(Tile,{t:"Com NF", v:brl(pd.comNF), cor:COR.blue}), e(Tile,{t:"Sem NF", v:brl(pd.semNF), cor:COR.orange}),
+      e(Tile,{t:"Já pago", v:brl(D.pago), cor:COR.green}), e(Tile,{t:"Em aberto", v:brl(D.aberto), cor:D.aberto>0.005 ? COR.red : "#fff"})),
+    e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 px-4 py-3"},
+      lin("Parcelas alocadas na parte com NF — boleto · pix empresa · cartão · cheque", D.comAloc, pd.comNF, D.restCom, "a"), lin("Parcelas alocadas na parte sem NF — pix revendedora", D.semAloc, pd.semNF, D.restSem, "b")),
+    // Parcelas divididas em Com NF e Sem NF, cada parte em ordem de vencimento (17/11/2026, pedido do Lucas)
+    D.parcelas.length ? [{t:"Parcelas com NF", com:true}, {t:"Parcelas sem NF", com:false}].map(function(g){
+      var ls = D.parcelas.filter(function(x){ return !!x.registro===g.com; }).sort(function(a, b){ return a.p.venc.localeCompare(b.p.venc) || a.i-b.i; })
+        .map(function(x){ return {id:x.i, n:x.i+1, venc:x.p.venc, forma:x.forma.label, conta:x.p.conta || "—", valor:x.p.valor, sit:x.registro ? "Registro" : x.p.status, x:x}; });
+      if(!ls.length) return null;
+      return e("div",{key:g.t, className:"flex flex-col gap-1"}, Rot(g.t+" · "+ls.length+" · "+brl(ls.reduce(function(a, r){ return a+r.valor; }, 0))),
+        e(TabelaPlanilha,{chave:"id", centro:true, semContagem:true, linhas:ls,
+          cols:[{k:"venc", t:"Vencimento", fmt:function(v){ return dbr(v); }}, {k:"forma", t:"Forma"}, {k:"conta", t:"Conta / bandeira"}, {k:"valor", t:"Valor", fmt:brl, cor:function(){ return "font-mono"; }},
+            {k:"sit", t:"Situação", cor:function(r){ return "font-semibold "+(r.sit==="Pago" ? "text-[#22C55E]" : (r.sit==="Registro" ? "text-white" : "text-[#F59E0B]")); }},
+            {k:"n", t:"Ação", render:function(v, r){ return r.x.registro ? "sem baixa" : e(Btn,{perigo:r.sit==="Pago", disabled:!c.edita, onClick:function(ev){ ev.stopPropagation(); p.baixa(pd.id, r.x.i); }}, r.sit==="Pago" ? "Estornar" : "Dar baixa"); }}]})); })
+      : e("p",{className:"py-4 text-center text-[13px]"}, "Nenhuma parcela lançada neste pedido."),
+    pd.avisoLimite && e("p",{className:"text-[13px] font-bold", style:tom("yellow")}, "Aviso do teto mensal: "+pd.avisoLimite),
+    (pd.historico||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-black/20 px-4 py-3"}, Rot("Histórico de alterações"),
+      pd.historico.slice().reverse().map(function(h, i){ return e("div",{key:i, className:"text-[13px] text-white"}, e("b",null, h.em+" · "+(h.por||"—")+": "), h.mudou); })),
+    e("div",{className:"flex flex-wrap items-center gap-2 pt-1"},
+      e(Btn,{g:true, perigo:true, ic:"trash", disabled:!c.edita, onClick:excluir, className:"mr-auto"}, "Excluir pedido"),
+      e(Btn,{g:true, ic:"pencil", disabled:!c.edita, onClick:function(){ p.editar(pd); }}, "Editar"),
+      e(Btn,{g:true, ic:"plus", disabled:!c.edita, onClick:function(){ p.lancar(pd.id); }}, "Lançar parcela"), e(Btn,{g:true, neutro:true, onClick:p.fechar}, "Fechar")));
 }
 
 // ───────────────── Janela: Datas limite de pagamento ─────────────────
