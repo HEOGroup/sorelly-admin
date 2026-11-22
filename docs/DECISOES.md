@@ -3035,3 +3035,9 @@ O Marcus disse que ninguém usa o Histórico da Família. A aba saiu dos dois me
 
 ## 22/11/2026 (Financeiro familiar: aba Relatório sai do menu)
 O Marcus decidiu que o Relatório não precisa de aba: os números por pessoa já estão na Home da Família (pró-labore, contas e PIX de cada pessoa, no mês ou no ano), que funciona como o extrato. A aba saiu dos dois menus (`navigation/setores.js`). O código (`AbaFfRelatorio`) e a rota continuam. Fica sem tela: o botão "Fechar o mês" (foto dos números) e a coluna "Saldo de prestadores". Para voltar, recolocar `M("Relatório","ffrelatorio")`.
+
+## 22/11/2026 (Financeiro familiar: Pró-labores vira só o cadastro)
+O Marcus decidiu que a tela Pró-labores é só o cadastro: sem seletor de mês e sem o botão "Gerar contas do mês" (a ação `prolab_gerar` continua no código, mas nenhuma tela chama). A tela mostra só Marcus, Anamaria, Marco Antonio e Lucas; Ana Beatriz e Sorelly saíram da tela (os dados delas continuam guardados). CNPJs completados a partir de `docs/DECISOES.md` de 11/2026 (RH): Anamaria 34.753.252/0001-03 (Sorelly Atacadista), Marco Antonio 59.146.403/0001-96 (Serenity), Lucas 67.702.461/0001-87 (Axis Joias). Marcus ficou como estava (46.873.285/0001-76).
+
+## 22/11/2026 (Financeiro familiar: Pró-labores com nome completo da empresa e datas em colunas)
+Na tela Pró-labores a coluna Empresa mostra o nome completo (razão social, como está em `domain/cnpjs.js`, sem acento e sem caixa alta): Mayz Comercio de Moda Praia, Lingeries e Acessorios Ltda (46), Sorelly Comercio Atacadista de Semijoias Ltda (34), Serenity Porta Joias e Acessorios Ltda (59), Axis Comércio de Joias e Acessórios Ltda (67, do Lucas). As datas viraram 4 colunas: 1º dia, 1º valor, 2º dia, 2º valor (adiantamento e saldo; sem divisão, só o 1º, no dia 5). Lucas ainda sem vigência: a contabilidade vai passar os dados.

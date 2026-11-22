@@ -632,7 +632,7 @@ function EditarProlab(p){
   var antigas = pr.vigencias.slice().sort(function(a, b){ return b.desde.localeCompare(a.desde); });
   return e(JanelaJ,{t:"Pró-labore · "+pe.nome, larga:true, fechar:p.fechar},
     e(BlocoJ,{t:"1 · Empresa"},
-      e("div",{className:"grid w-full grid-cols-[1fr_1fr_auto] items-end gap-1"},
+      e("div",{className:"grid w-full grid-cols-[2.4fr_1fr_auto] items-end gap-1"},
         e(CampoJ,{rot:"Empresa", cls:"w-full"}, e(TxtJ,{value:emp.empresa, label:"Empresa", onChange:function(x){ setEmp(Object.assign({}, emp, {empresa:x})); }})),
         e(CampoJ,{rot:"CNPJ", cls:"w-full"}, e(TxtJ,{value:emp.cnpj, label:"CNPJ", onChange:function(x){ setEmp(Object.assign({}, emp, {cnpj:x})); }})),
         e("button",{type:"button", disabled:!emp.empresa.trim(), style:ALTO_J, className:BTN_J, onClick:function(){ acao(c, "prolab_set", {personaId:pe.id, empresa:emp.empresa, cnpj:emp.cnpj}); }}, "Salvar empresa"))),
@@ -657,22 +657,20 @@ function EditarProlab(p){
     e("div",{className:"flex justify-end px-2 pt-1.5"}, e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Fechar")));
 }
 function AbaFfProlab(){
-  var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], md = useState(null), editando = md[0], setEditando = md[1];
-  var socios = ff.personas.filter(function(p){ return p.ativo && p.tipo==="SOCIO"; });
+  var c = useFF(), ff = c.ff, ym = hojeYm(), md = useState(null), editando = md[0], setEditando = md[1];
+  // 22/11/2026 (Marcus): pró-labore só tem Marcus, Anamaria, Marco Antonio e Lucas; Ana Beatriz e Sorelly saem da tela (os dados delas continuam guardados)
+  var socios = ["marcus", "anamaria", "marco", "lucas"].map(function(id){ return ff.personas.filter(function(p){ return p.id===id && p.ativo; })[0]; }).filter(Boolean);
   var linhas = socios.map(function(p){ var pr = ff.prolabore[p.id] || {empresa:"", cnpj:"", vigencias:[]}, vig = vigenciaEm(ff, p.id, ym);
-    return {id:p.id, p:p, socio:p.nome, empresa:pr.empresa || "—", cnpj:pr.cnpj || "—", desde:vig ? nomeMes(vig.desde) : "Sem vigência", bruto:vig ? vig.bruto : null, inss:vig ? vig.inss : null, irrf:vig ? vig.irrf : null, liquido:vig ? vig.liquido : null, datas:vig ? (vig.valor1 ? "dia "+vig.dia1+": "+BK(vig.valor1)+" · dia "+vig.dia2+": "+BK(vig.valor2) : "dia 5") : "—"}; });
+    return {id:p.id, p:p, socio:p.nome, empresa:pr.empresa || "—", cnpj:pr.cnpj || "—", desde:vig ? nomeMes(vig.desde) : "Sem vigência", bruto:vig ? vig.bruto : null, inss:vig ? vig.inss : null, irrf:vig ? vig.irrf : null, liquido:vig ? vig.liquido : null, d1:vig ? (vig.valor1 ? "Dia "+vig.dia1 : "Dia 5") : "—", v1:vig ? (vig.valor1 ? vig.valor1 : vig.liquido) : null, d2:vig && vig.valor1 ? "Dia "+vig.dia2 : "—", v2:vig && vig.valor1 ? vig.valor2 : null}; });
   var D = function(v){ return typeof v==="number" ? BK(v) : "—"; };
   var link = function(l){ return e("button",{type:"button", title:"Editar o pró-labore", onClick:function(ev){ ev.stopPropagation(); setEditando(l.p); }, className:"cursor-pointer underline hover:text-primary"}, "Editar"); };
-  var cols = [{k:"socio", t:"Sócio"}, {k:"empresa", t:"Empresa"}, {k:"cnpj", t:"CNPJ"}, {k:"desde", t:"Vigência desde"}, {k:"bruto", t:"Bruto", fmt:D}, {k:"inss", t:"INSS", fmt:D}, {k:"irrf", t:"IRRF", fmt:D}, {k:"liquido", t:"Líquido", fmt:D, cor:function(l){ return typeof l.liquido==="number" ? "text-success" : ""; }}, {k:"datas", t:"Datas"}, {k:"acoes", t:"Ações", render:function(v, l){ return link(l); }}];
+  var cols = [{k:"socio", t:"Sócio"}, {k:"empresa", t:"Empresa"}, {k:"cnpj", t:"CNPJ"}, {k:"desde", t:"Vigência desde"}, {k:"bruto", t:"Bruto", fmt:D}, {k:"inss", t:"INSS", fmt:D}, {k:"irrf", t:"IRRF", fmt:D}, {k:"liquido", t:"Líquido", fmt:D, cor:function(l){ return typeof l.liquido==="number" ? "text-success" : ""; }}, {k:"d1", t:"1º dia"}, {k:"v1", t:"1º valor", fmt:D}, {k:"d2", t:"2º dia"}, {k:"v2", t:"2º valor", fmt:D}, {k:"acoes", t:"Ações", render:function(v, l){ return link(l); }}];
   var soma = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(typeof l[k]==="number" ? l[k] : 0); }, 0)); };
-  var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="empresa" ? ls.length+(ls.length===1 ? " sócio" : " sócios") : col.k==="bruto" || col.k==="inss" || col.k==="irrf" || col.k==="liquido" ? BK(soma(ls, col.k)) : ""; }); };
+  var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="empresa" ? ls.length+(ls.length===1 ? " sócio" : " sócios") : col.k==="bruto" || col.k==="inss" || col.k==="irrf" || col.k==="liquido" || col.k==="v1" || col.k==="v2" ? BK(soma(ls, col.k)) : ""; }); };
   return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
     editando && e(EditarProlab,{key:editando.id, c:c, pe:editando, ym:ym, fechar:function(){ setEditando(null); }}),
     e(BlocoPainel,{titulo:"Pró-labores", compacto:true},
-      e(BarraTabela,null,
-        e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:janela().map(function(k){ return [k, nomeMes(k)]; })})),
-        e("div",{role:"button", tabIndex:0, title:"Transforma o pró-labore do mês em conta a pagar (uma ou duas parcelas). Gerar de novo não repete nem apaga o que já foi pago.", onClick:function(){ acao(c, "prolab_gerar", {ym:ym}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); acao(c, "prolab_gerar", {ym:ym}); } }, className:"ml-auto flex min-w-[170px] flex-1 cursor-pointer items-center justify-center bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "Gerar contas de "+nomeMes(ym))),   // padrao-ok: botão do canto da barra compacta, igual ao da Contas a pagar
-      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffprolab"+ym, fina:true, cols:cols, aoClicar:function(l){ setEditando(l.p); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:200, totalRodape:rodape, vazio:"Nenhum sócio cadastrado."})))));
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffprolab", fina:true, cols:cols, aoClicar:function(l){ setEditando(l.p); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:200, totalRodape:rodape, vazio:"Nenhum sócio cadastrado."})))));
 }
 
 // ───────────────── Relatório ─────────────────
