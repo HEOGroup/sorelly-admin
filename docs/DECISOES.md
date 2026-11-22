@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 22/11/2026 (Entrada do setor)
+- **Pedido do Marcus:** clicar num setor do menu lateral não abre mais a primeira aba. Abre a **Entrada do setor**: botões grandes só com os nomes das telas (sem dados). Ele escolheu "tela com nomes das abas grandes", não tela preta.
+- **Regras:** vale para todo setor com mais de uma tela visível para a pessoa; setor com uma tela só abre a tela direto. A lista respeita o acesso da pessoa. Telas em grupos do menu (ex.: Contas) aparecem sob o nome do grupo. Código: `pages/EntradaSetor.js`, aba `entradasetor` (endereço `/entrada-do-setor?setor=<id>`), lista montada em `App.js` (`gruposDaEntrada`).
+
 ## 21/11/2026 (Nome da tela Lançamento de pagamentos)
 - **Pedido do Marcus:** a tela Lançamento de pagamentos passa a se chamar **Conferência de pagamentos**, porque hoje ela serve para conferir e corrigir (o Pix nasce no Direcionar).
 - **Resumo geral (22/11/2026):** parcela sem número de pedido mostra "Sem número"; a Xangai tem romaneio E fatura (confirmado pelo Marcus em 22/11/2026): cada parcela mostra "Romaneio nº" ou "Fatura nº" conforme o dado. Linha "Desconto da maquininha" no card da Pontual: mantida.

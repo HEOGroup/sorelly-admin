@@ -264,6 +264,7 @@ const montagem = {
     pagina("contas-a-receber-resumo", () => import("@/apps/montagem/pages/ContasReceber"), "AbaContasReceber"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),
+    pagina("entrada-do-setor", () => import("@/apps/montagem/pages/EntradaSetor")),   // entrada do setor (22/11/2026)
     pagina("inicio", () => import("@/apps/montagem/pages/Inicio"), "AbaInicio"),   // página inicial de todos (27/10/2026)
     pagina("visao-geral", () => import("@/apps/montagem/pages/VisaoGeral"), "AbaVisaoGeral"),
     pagina("funcionarios-e-representantes", () => import("@/apps/montagem/pages/Pessoas"), "AbaPessoas"),

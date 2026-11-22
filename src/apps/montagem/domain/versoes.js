@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.85", data:"2026-11-22", titulo:"Entrada do setor: clicar no setor mostra os nomes das telas", itens:[
+  {tipo:"novo", area:"Menu lateral (todos os setores)", txt:"Clicar num setor do menu lateral agora abre a Entrada do setor: botões grandes só com os nomes das telas, sem dados, já filtrados pelo acesso da pessoa. Clicar no nome abre a tela. Setor com uma tela só abre a tela direto. O menu de cima continua igual."}
+ ]},
  {v:"0.21.84", data:"2026-11-22", titulo:"Lançamento de pagamentos passa a se chamar Conferência de pagamentos", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"No card de detalhe, parcela sem número de pedido agora mostra Sem número (antes aparecia um traço). A Xangai tem romaneio e fatura: cada parcela mostra o que o dado diz (Romaneio nº ou Fatura nº)."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"A tela Lançamento de pagamentos agora se chama Conferência de pagamentos (menu, aba de cima e mensagens de estorno), porque o Pix nasce no Direcionar e a tela serve para conferir, corrigir, estornar e enviar o extrato. Endereço (pf-lancamento) e código interno não mudam. O título dentro da tela muda junto com a nova versão dela, que está em outra conversa."}
