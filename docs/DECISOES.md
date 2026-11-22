@@ -4,6 +4,8 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 ## 22/11/2026 (Entrada do setor)
+- **Desenho final para TODOS os setores (Marcus, 23/11/2026):** a Entrada do setor usa o desenho do Financeiro em todo setor com mais de uma tela: fundo escuro na cor do setor, uma coluna por grupo do menu (na ordem do menu, sempre na mesma linha, sem descer), botões de 13 px com a mesma altura, títulos dos grupos 16 px, título grande do setor 20 px em caixa alta. Setor com uma tela só abre a tela direto.
+- **Exceção à regra de 20/11 (sem letra maiúscula), liberada pelo Marcus em 23/11/2026:** o TÍTULO GRANDE da Entrada do Financeiro (nome do setor no topo) fica em caixa alta (FINANCEIRO). Títulos dos grupos e botões seguem com só a primeira letra maiúscula. Também por pedido dele: fonte dos botões 13 px, títulos dos grupos 16 px e da tela 20 px (comentário `padrao-ok`).
 - **Pedido do Marcus:** clicar num setor do menu lateral não abre mais a primeira aba. Abre a **Entrada do setor**: botões grandes só com os nomes das telas (sem dados). Ele escolheu "tela com nomes das abas grandes", não tela preta.
 - **Regras:** vale para todo setor com mais de uma tela visível para a pessoa; setor com uma tela só abre a tela direto. A lista respeita o acesso da pessoa. Telas em grupos do menu (ex.: Contas) aparecem sob o nome do grupo. Código: `pages/EntradaSetor.js`, aba `entradasetor` (endereço `/entrada-do-setor?setor=<id>`), lista montada em `App.js` (`gruposDaEntrada`).
 
