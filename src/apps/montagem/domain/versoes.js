@@ -6,6 +6,8 @@ var VERSOES = [
  {v:"0.21.84", data:"2026-11-22", titulo:"Negociações: Pontual, Point e detalhe do pedido no padrão azul", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"Pontual (Maquininha, O que pagar × o que foi pago, Pedidos por mês, Meses e dezenas, Cronograma), Point (Conta corrente, Pedidos lançados, Acerto mensal) e o detalhe do pedido refeitos em blocos azuis com TabelaPlanilha, letra de 11 px e a linha branca de 3 px entre os blocos. Sem fundo preto, sem botões em pílula e sem textos explicativos."},
  ]},
+ {v:"0.21.99", data:"2026-11-22", titulo:"Menu Família: Contas com duas telas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"O item Contas do menu Família abre duas telas: Contas a pagar da família e Contas pagas da família. Cada uma abre a lista de Contas já em Contas = Família, na situação certa."}]},
  {v:"0.21.98", data:"2026-11-23", titulo:"Entrada do setor igual em todos os setores", itens:[
   {tipo:"melhoria", area:"Menu lateral (todos os setores)", txt:"A Entrada do setor usa o desenho do Financeiro em todo setor com mais de uma tela: fundo escuro na cor do setor, uma coluna por grupo do menu, telas sempre uma embaixo da outra, colunas centralizadas quando são poucas. Título do setor em caixa alta (exceção liberada pelo Marcus). Setor com uma tela só abre a tela direto."}
  ]},
