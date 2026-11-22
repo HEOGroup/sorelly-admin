@@ -69,7 +69,7 @@ var DataCal = function(p){
     e("span",null, v), e("span",{className:"absolute right-2 text-[11px]", "aria-hidden":true}, "▾"),
     e("input",{type:"date", value:p.value || "", "aria-label":p.label, className:"absolute inset-0 h-full w-full cursor-pointer opacity-0", onClick:function(ev){ try{ ev.target.showPicker(); }catch(x){} }, onChange:function(ev){ p.onChange(ev.target.value); }}));
 };
-var CNPJS = ["CNPJ 34 · Sorelly Atacadista","CNPJ 46 · Sorelly Comércio","CNPJ 59 · Serenity","CNPJ 67 · Axis Joias"];
+var CNPJS = ["CNPJ 34 · Sorelly Atacadista","CNPJ 46 · Mayz Comércio de Moda","CNPJ 59 · Serenity","CNPJ 67 · Axis"];
 var NF_SEG = [["com","Todo com NF"],["sem","Todo sem NF"],["misto","Parte com / parte sem"]];
 
 // grava via domínio; devolve true se salvou (para fechar a janela). Pergunta confirmação quando o domínio pede; recusa vira aviso na tela.

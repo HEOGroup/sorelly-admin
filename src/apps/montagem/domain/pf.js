@@ -134,7 +134,7 @@ function pfMigrar(pf){
   if(!pf.elloSemeado){
     var ello = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()==="ello print"; })[0];
     if(!ello){ ello = {id:pf.seq.F++, nome:"Ello Print", tipo:"fornecedor", cat:"Outros", cnpj:"", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(ello); }
-    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Sorelly Comércio", nfNum:"",
+    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Mayz Comércio de Moda", nfNum:"",
       descricao:"Refil de tinta Epson T544122 Preto (3 un, R$ 207,00); bolsas de tinta C5390/C5810/C5890: Preta 10K (3 un, R$ 1.197,00), Ciano 5K (2 un, R$ 732,00), Yellow 5K (2 un, R$ 732,00) e Magenta 5K (2 un, R$ 732,00). Faturado na Mayz (CNPJ 46): 30% com nota (R$ 1.080,00) no cartão de crédito à vista em 20/10; 70% sem nota (R$ 2.520,00) em pix de revendedora para a conta PF informada, quitando até 01/11/2026.",
       parcelas:[{forma:"cartao", venc:"2026-10-20", valor:1080, conta:"Cartão de crédito à vista · CNPJ 46 Mayz", status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-01", valor:2520, conta:"", status:"Pendente"}]});
     invalidar(pf); pf.elloSemeado = true;
