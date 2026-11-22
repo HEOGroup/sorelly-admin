@@ -13,24 +13,27 @@ function BotaoTela(p){
     className:"flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-[13px] font-medium text-foreground hover:brightness-150"+(p.no.breve ? " opacity-55" : "")}, p.no.nome);
 }
 
-// Financeiro: fundo azul, grupos em colunas (cada grupo inteiro numa coluna), um botão por linha
+// Financeiro: tela inteira azul (nada preto), grupos em colunas (cada grupo inteiro numa coluna), um botão por linha
 function EntradaCompacta(p){
   var en = p.en, cor = en.cor || "#3B82F6";
-  return e("div",{className:"rounded-xl p-2.5", style:{background:cor+"26", boxShadow:"inset 0 0 0 1px "+cor+"44"}},
-    e("div",{className:"mb-2 text-center text-[13px] font-semibold text-foreground"}, en.nome),
-    e("div",{className:"columns-1 gap-2.5 sm:columns-2 xl:columns-4"},
+  var mix = function(pct){ return "color-mix(in srgb, "+cor+" "+pct+"%, #0f1f3d)"; };
+  return e("div",{className:"-m-4 min-h-screen p-3 md:-m-6 md:p-4", style:{background:mix(62)}},
+    e("div",{className:"mb-3 text-center text-[13px] font-semibold text-white"}, en.nome),
+    e("div",{className:"columns-1 gap-3 sm:columns-2 xl:columns-4"},
       en.grupos.map(function(g, i){
-        return e("section",{key:i, className:"mb-2.5 flex break-inside-avoid flex-col overflow-hidden rounded-lg", style:{background:cor+"1a", boxShadow:"inset 0 0 0 1px "+cor+"44"}},
-          e("div",{className:"flex h-8 items-center justify-center text-[11px] font-medium text-foreground", style:{background:cor+"4d"}}, g.titulo || en.nome),
-          e("div",{className:"flex flex-col gap-1 p-1.5"},
-            g.itens.map(function(no, k){ return e(BotaoTela,{key:no.nome+k, no:no, cor:cor, abrir:en.abrir}); })));
+        return e("section",{key:i, className:"mb-3 flex break-inside-avoid flex-col overflow-hidden rounded-lg", style:{background:mix(78), boxShadow:"inset 0 0 0 1px "+mix(100)}},
+          e("div",{className:"flex h-8 items-center justify-center text-[11px] font-semibold text-white", style:{background:mix(100)}}, g.titulo || en.nome),
+          e("div",{className:"flex flex-col gap-1.5 p-2"},
+            g.itens.map(function(no, k){ return e("button",{key:no.nome+k, type:"button", onClick:function(){ en.abrir(no); }, title:no.nome,
+              style:{background:mix(100), boxShadow:"inset 0 0 0 1px rgba(255,255,255,.28)"},
+              className:"flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-[13px] font-medium text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, no.nome); })));
       })));
 }
 
 export default function EntradaSetor(p){
   var en = p.entrada;
   if(!en) return e(Pagina, null, e(PageHead,{t:"Setor", sub:"Escolha o setor no menu."}));
-  if(en.id==="financeiro") return e(Pagina, null, e(EntradaCompacta,{en:en}));
+  if(en.id==="financeiro" || en.nome==="Financeiro") return e(Pagina, null, e(EntradaCompacta,{en:en}));
   var cor = en.cor || "#3B82F6";
   return e(Pagina, null,
     e(PageHead,{t:en.nome, sub:"Escolha a tela."}),
