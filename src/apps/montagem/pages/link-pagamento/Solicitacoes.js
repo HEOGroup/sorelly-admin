@@ -93,7 +93,8 @@ function AbaLpSolicitacoes(p){
   var L = useLp(), s = L.s, lp = L.lp, st = useState({busca:"", canal:"", meioId:""}), f = st[0], md = useState(null), modal = md[0], mo = useState("planilha"), modo = mo[0], tk = useState(0), tick = tk[1];
   var set = function(k, v){ st[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
   // expira os links vencidos e atualiza os selos de tempo a cada minuto
-  useEffect(function(){ var f1 = function(){ if(expirados(L.lp).length) L.exec("expirar"); tick(function(n){ return n+1; }); }; f1(); var t = setInterval(f1, 60000); return function(){ clearInterval(t); }; }, [lp.solicitacoes.length]);
+  // 22/11/2026: o ajuste único (validade 48 h e parcelas pela regra) roda ANTES de expirar e grava no servidor; a migração sozinha não grava (ver "ajustar" em domain/link-pagamento.js)
+  useEffect(function(){ var f1 = function(){ if(L.lp.ajusteV!==1) L.exec("ajustar"); if(expirados(L.lp).length) L.exec("expirar"); tick(function(n){ return n+1; }); }; f1(); var t = setInterval(f1, 60000); return function(){ clearInterval(t); }; }, [lp.solicitacoes.length]);
   var agora = agoraSP(), desde = somaDias(hojeSP(), -DIAS_NO_QUADRO);
   var lista = useMemo(function(){ return listaSolicitacoes({lp:{solicitacoes:lp.solicitacoes.filter(function(x){ return noQuadro(x, desde); })}}, f); }, [lp.solicitacoes, f, desde]);
   var mover = function(x, de, para){
@@ -175,14 +176,14 @@ function NovaSolicitacao(p){
     onSalvar:function(v){ return L.exec("sol_criar", v); },
     lateral:function(v){
       var m = v.meioId ? meioDe(s, v.meioId) : meioSugerido(s, v.revendedora, v.representante), t = m && Number(v.valor)>0 ? calcularTaxa(m, v.valor, v.parcelas, m.antecipacao.ativa, hoje) : null;
-      var regra = function(ic, tx){ return e("li",{key:ic+tx, className:"flex items-center justify-center gap-1.5 text-[12px] text-white/80"}, e(Ph,{n:ic, s:14, className:"text-[#60A5FA]"}), tx); };
+      var regra = function(ic, tx){ return e("li",{key:ic+tx, className:"flex items-center justify-center gap-1.5 text-[13px] text-white/80"}, e(Ph,{n:ic, s:14, className:"text-[#60A5FA]"}), tx); };
       return e("div",{className:"flex flex-col gap-2"},
         e("ul",{className:"flex flex-col gap-1 rounded-lg bg-black/25 p-2"},
           regra("coins", "Mínimo de "+formatarReais(cfg.minimo)+" por link"), regra("stack", "Parcela mínima de "+formatarReais(cfg.parcelaMinima)),
           textoFaixas(cfg).map(function(f){ return regra("list-numbers", f[0]+": "+f[1]+" sem juros"); }),
           regra("timer", "Validade de "+cfg.validadeHoras+" h (a revendedora é avisada de "+(cfg.avisoHoras || 12)+" h)"), regra("repeat", "Até "+cfg.tentativasDia+" tentativas por dia"), regra("calendar-check", "Vale para o acerto o link emitido e pago até o dia anterior")),
-        e("p",{className:"rounded-lg bg-black/25 px-2 py-1.5 text-[12px] text-white/85"}, e("b",null, "Link: "), m ? nomeMeio(m) : "Sem link vinculado"),
-        t && e("p",{className:"rounded-lg bg-[#3B82F6]/15 px-2 py-1.5 text-[12px] text-white/85"}, "Taxa estimada "+formatarReais(t.taxaValor+t.antecipacaoValor)+" · líquido "+formatarReais(t.liquido)));
+        e("p",{className:"rounded-lg bg-black/25 px-2 py-1.5 text-[13px] text-white/85"}, e("b",null, "Link: "), m ? nomeMeio(m) : "Sem link vinculado"),
+        t && e("p",{className:"rounded-lg bg-[#3B82F6]/15 px-2 py-1.5 text-[13px] text-white/85"}, "Taxa estimada "+formatarReais(t.taxaValor+t.antecipacaoValor)+" · líquido "+formatarReais(t.liquido)));
     }});
 }
 

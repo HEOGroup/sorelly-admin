@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.82", data:"2026-11-22", titulo:"Link de pagamento: validade de 48 h e parcelas pela regra agora gravam no servidor", itens:[
+  {tipo:"correção", area:"Link de pagamento", txt:"A validade de 48 h não tinha gravado no servidor (a migração não grava; ficou em 12 h). Agora um ajuste único roda ao abrir Solicitações: validade 48 h, parcelas pela regra por valor (até R$ 400 = 4x, até R$ 1.500 = 6x, acima = 10x), links já gerados com 48 h, os expirados por 12 h dentro das 48 h voltam a Link gerado e nomes do e-SiTef com erro são corrigidos. Depois dele a Hellen pode mudar em Meios e acessos → Regras."}
+ ]},
  {v:"0.21.81", data:"2026-11-21", titulo:"Lançar recebimento: destino da Sorelly nunca cai no Familiar por nome igual", itens:[
   {tipo:"correção", area:"Financeiro → Contas a receber → Lançar recebimento", txt:"Prestador do Direcionar SEM dono marcado (lado Sorelly) que tinha o mesmo nome de um prestador do Familiar (caso Lucas Castilho) era levado para o Familiar como saída do Marcus. Agora só o destino marcado como da família (com dono) procura o prestador do Familiar pelo nome; o da Sorelly fica só do lado Sorelly. Teste: scripts/testar-recebimento-antecipado-servidor.mjs (77 conferências)."}
  {v:"0.21.80", data:"2026-11-21", titulo:"Negociações: Lançar pedido só dentro do fornecedor, em tabelas, com regra e 5 propostas na Pontual", itens:[
