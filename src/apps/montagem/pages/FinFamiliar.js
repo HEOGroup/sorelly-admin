@@ -84,6 +84,8 @@ var CSS_ABERTO = [
   "table tbody tr.ffa-n2>td:first-child{border-left:4px solid #9bbcf0 !important}",
   "table tbody tr.ffa-fim1>td{border-bottom-color:rgba(255,255,255,.8) !important}",
   "table tbody tr.ffa-fim2>td{border-bottom-color:rgba(255,255,255,.5) !important}",
+  "section.compacto table tbody td{border-color:rgba(255,255,255,.45) !important}",
+  "section.compacto table thead th{border-color:rgba(255,255,255,.45) !important}",
   ".ff-par{display:grid;gap:0;overflow:hidden;border-radius:8px;border:2px solid #2d5190 !important}",
   ".ff-par>section{height:100%;border:0 !important;border-radius:0 !important}",
   "@media (min-width:1024px){.ff-par2{grid-template-columns:1fr 1fr}.ff-par2>section+section{border-left:2px solid rgba(255,255,255,.85) !important}}"
