@@ -3014,3 +3014,24 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 ## 19/11/2026 — Prestadores: nome curto, uma linha só
 - Pedido do Marcus: em Quem pagou (tabela Pago) aparecem só 1 ou 2 nomes e nunca duas linhas; o nome inteiro aparece ao passar o mouse. Descrição da dívida: até 3 palavras numa linha, texto inteiro ao passar o mouse.
 - **Contas de prestadores (Marcus, 19/11/2026: "isso edita no prestador, pode excluir"):** o bloco saiu da tela. O banco e a conta que recebe o Pix se editam no cartão Editar do prestador (cria a conta se não existir). Os dados das contas continuam no sistema; o Pix que cai numa conta ligada ao prestador continua virando pagamento sozinho.
+
+## 22/11/2026 · Financeiro familiar: casas e Contas a pagar da família (Marcus)
+- **Pró-labore = todo o dinheiro da família** (Marcus, Ana Beatriz, Marco, Anamaria, Lucas e Casa/Família). O previsto é só uma previsão; passou do previsto fica **negativo** e mantém o excesso. Não filtra por conferido. Tudo da Casa/Família sobe 25% para cada sócio (Marcus, Anamaria, Marco, Ana Beatriz), menos o Lucas (primo). Além do Pix de revendedora há outros itens (parcela do M2, casa) com conta e destino. A regra completa do Contas a pagar (pró-labore) ainda NÃO foi aplicada: depende da conversa SALDOS.
+- **Casas (proposta, ainda não construída):** Casa Praia e Casa Jardine = Anamaria e Marco Antonio (50% cada); Casa Alphaville fica DENTRO da Família (÷4); Viagem EUA = Família ÷4. Dois campos por conta: "Quem paga" (divisão) e "Centro de gasto" (casa ou viagem). Juros / IOF Itaú Black sai da Família e vai para o Contas a pagar da empresa. Casa/Família sai da lista depois de mover os lançamentos; Sorelly sai da lista; Marco / Anamaria só se houver gasto do casal que não é de casa.
+- **Caixa Habitação (Fontana di Trevi):** as 3 contas NÃO são repetidas. A de agosto foi paga em duas partes (R$ 549,70 pelo Nubank do Marcus e R$ 2.500,00 pelo Itaú Black em 03/08, total R$ 3.049,70) e a conta principal começa em setembro (R$ 3.054,85 por mês). Não apagar.
+- **Tela:** Contas a pagar da família refeita no desenho da Contas a pagar da Sorelly (`pages/FinFamiliar.js`, `AbaFfContas`).
+
+## 22/11/2026 · Divisão por casa e Gasto por casa (Marcus)
+- **Regra construída:** Casa Praia e Casa Jardine dividem entre Anamaria e Marco Antonio (50% cada); Casa Alphaville entre os 4 sócios (25% cada); Marco / Anamaria entre os dois; Lucas (primo) fora das divisões; Viagem EUA = Família ÷4 (centro por categoria). A casa é o centro de gasto da conta. `CASAS_DONOS`, `donosDe`, `paraQuemDe` em `domain/financeiro-familiar.js`.
+- **Dado antigo:** o banco já tinha contas em Casa Alphaville (34), Casa Jardine (4), Casa Praia (2) e Marco / Anamaria (14), sem divisão guardada. Elas passam a dividir pelos donos da casa sem alterar o que está guardado.
+- **Tela:** Família › Gasto por casa (`pages/FfGastoPorCasa.js`, aba `ffcasas`): contas, total, pago, falta e a parte de cada pessoa. Só leitura.
+- **Ainda não feito:** mover as contas que estão em Casa/Família para as casas (precisa da marcação do Marcus, conta por conta); tirar Casa/Família, Marco / Anamaria e Sorelly da lista; mover o Juros / IOF Itaú Black para o Contas a pagar da empresa; refazer a janela Pagar no desenho azul.
+
+## 22/11/2026 (Financeiro familiar: aba Configurações sai do menu)
+O Marcus disse que ninguém usa a tela Configurações da Família ("fazemos tudo por código"). Ela saiu dos dois menus da Família (`navigation/setores.js`). O código da tela (`AbaFfConfig`) e a rota continuam, só não aparecem no menu; para voltar, basta recolocar `M("Configurações","ffconfig")`. A liberação de mês passado (lançamento retroativo) agora só se faz por código. Pessoas, categorias e contas bancárias da família também só por código.
+
+## 22/11/2026 (Financeiro familiar: aba Histórico sai do menu)
+O Marcus disse que ninguém usa o Histórico da Família. A aba saiu dos dois menus (`navigation/setores.js`). O código da tela (`AbaFfHist`) e a rota continuam; o registro de quem fez o quê continua sendo gravado em `ff.hist`, só não aparece em tela. Para voltar, recolocar `M("Histórico","ffhist")`.
+
+## 22/11/2026 (Financeiro familiar: aba Relatório sai do menu)
+O Marcus decidiu que o Relatório não precisa de aba: os números por pessoa já estão na Home da Família (pró-labore, contas e PIX de cada pessoa, no mês ou no ano), que funciona como o extrato. A aba saiu dos dois menus (`navigation/setores.js`). O código (`AbaFfRelatorio`) e a rota continuam. Fica sem tela: o botão "Fechar o mês" (foto dos números) e a coluna "Saldo de prestadores". Para voltar, recolocar `M("Relatório","ffrelatorio")`.

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagar conta: 8 opções</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --suave:#223f74; --borda:rgba(255,255,255,.4); --linha:rgba(255,255,255,.16); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:18px; align-items:start; }
+  .nome{ font-weight:700; margin-bottom:4px; } .nota{ font-size:11px; margin-top:4px; }
+  .j{ background:var(--fundo); border:2px solid var(--az); border-radius:10px; overflow:hidden; font-size:11px; }
+  .t{ background:var(--az); text-align:center; font-weight:700; padding:5px 8px; position:relative; font-size:12px; }
+  .t u{ position:absolute; right:10px; font-weight:600; font-size:11px; }
+  .c{ padding:10px; }
+  .rot{ font-weight:600; text-align:center; margin-bottom:3px; }
+  .in{ height:24px; background:var(--suave); border-bottom:2px solid var(--claro); border-radius:3px 3px 0 0; display:flex; align-items:center; justify-content:center; white-space:nowrap; }   /* campo sem caixa: fundo suave e uma linha embaixo */
+  .in.cx{ border:1px solid var(--borda); border-radius:4px; background:var(--az); }
+  .f{ display:grid; gap:8px; } .f > div{ min-width:0; }
+  .g{ font-size:20px; font-weight:700; text-align:center; }
+  .peq{ text-align:center; font-size:11px; }
+  .rod{ display:flex; gap:6px; padding:8px 10px 10px; align-items:center; } .rod .e{ margin-right:auto; }
+  .bn{ height:24px; padding:0 12px; border-radius:4px; background:var(--az); border:1px solid var(--borda); font-weight:600; display:inline-flex; align-items:center; }
+  .bn.p{ background:var(--claro); }
+  .ck{ display:inline-flex; gap:5px; align-items:center; } .ck i{ width:10px; height:10px; border:1px solid #fff; border-radius:2px; display:inline-block; }
+  .sep{ border-top:1px solid var(--linha); margin:8px 0; }
+  .lat{ display:grid; grid-template-columns:34% 66%; }
+  .lat > .a{ background:var(--suave); padding:10px; border-right:1px solid var(--linha); }
+  .rec .j{ border-color:#E8B84B; }
+</style>
+</head>
+<body>
+<h1>Pagar conta: 8 desenhos bem diferentes</h1>
+<p class="sub">Todos com Conta pagadora, Para quem entra, Dividir entre formas e Editar conta. Mês, vencimento e falta sempre dentro do desenho. Campos sem caixa pesada (fundo suave e uma linha embaixo).</p>
+<div class="grade">
+
+<div class="rec"><div class="nome">1 · Origem → destino</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="c">
+  <div class="peq">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="f" style="grid-template-columns:1fr 28px 1fr;align-items:end;margin-top:8px">
+   <div><div class="rot">Sai de (conta pagadora)</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div><div class="g" style="padding-bottom:0">→</div><div><div class="rot">Entra para</div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1.3fr 1fr .8fr;margin-top:10px"><div><div class="rot">Valor (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1fr auto;margin-top:10px;align-items:end"><div><div class="rot">Observação</div><div class="in"></div></div><span class="ck"><i></i> Dividir entre formas</span></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Mostra o caminho do dinheiro: de qual conta sai e para quem entra. Já deixa clara a regra do recebido.</div></div>
+
+<div><div class="nome">2 · Valor grande no centro</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="c">
+  <div class="peq">Falta pagar · vence 05/11/2026 · Novembro/2026</div>
+  <div class="g" style="margin:2px 0 8px"><span style="font-size:11px;font-weight:600">R$</span> 2.263,63</div>
+  <div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div style="margin-top:8px"><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div>
+  <div style="margin-top:8px"><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div>
+  <div class="peq" style="margin-top:8px"><span class="ck"><i></i> Dividir entre formas</span> &nbsp;·&nbsp; <u>Adicionar observação</u></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">O valor é o herói (como num app de banco). O resto é uma coluna só. A observação fica escondida num link.</div></div>
+
+<div><div class="nome">3 · Coluna da conta + formulário</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="lat"><div class="a"><div class="rot">Mês</div><div class="peq" style="font-weight:700">Novembro/2026</div><div class="sep"></div><div class="rot">Vence</div><div class="peq" style="font-weight:700">05/11/2026</div><div class="sep"></div><div class="rot">Falta</div><div class="g" style="font-size:16px">R$ 2.263,63</div></div>
+   <div class="c"><div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div></div>
+    <div class="f" style="grid-template-columns:.6fr 1.4fr;margin-top:8px"><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div><div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div>
+    <div style="margin-top:8px"><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div>
+    <div class="f" style="grid-template-columns:1fr auto;margin-top:8px;align-items:end"><div><div class="rot">Observação</div><div class="in"></div></div><span class="ck"><i></i> Dividir</span></div></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Uma faixa à esquerda com os dados da conta (só leitura) e o formulário à direita. Uma linha vertical separa; sem outras bordas.</div></div>
+
+<div><div class="nome">4 · Em 3 passos na mesma janela</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="c">
+  <div class="f" style="grid-template-columns:1fr 1fr 1fr;text-align:center;font-weight:700"><div style="background:var(--claro);padding:3px;border-radius:4px">1 · Valor</div><div style="padding:3px;border-bottom:2px solid var(--linha)">2 · De onde sai</div><div style="padding:3px;border-bottom:2px solid var(--linha)">3 · Para quem</div></div>
+  <div class="peq" style="margin:8px 0">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="f" style="grid-template-columns:1.2fr 1fr .8fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div class="peq" style="margin-top:8px"><span class="ck"><i></i> Dividir entre formas</span></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Próximo ›</span></div></div>
+ <div class="nota">Uma coisa por vez, janela baixa. A conta pagadora está no passo 2 e o destino no 3; o último passo tem "Registrar pagamento". Mais cliques.</div></div>
+
+<div><div class="nome">5 · Tabela de duas colunas (rótulo | campo)</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú — Novembro/2026<u>Fechar</u></div><div class="c" style="padding:4px 10px">
+  <div class="f" style="grid-template-columns:30% 70%;align-items:center;row-gap:0">
+   <div style="padding:6px 0;border-bottom:1px solid var(--linha);font-weight:600">Vence · falta</div><div style="padding:6px 0;border-bottom:1px solid var(--linha);text-align:center;font-weight:700">05/11/2026 · R$ 2.263,63</div>
+   <div style="padding:3px 0;border-bottom:1px solid var(--linha);font-weight:600">Valor pago</div><div style="padding:3px 0;border-bottom:1px solid var(--linha)"><div class="in">R$ 2.263,63</div></div>
+   <div style="padding:3px 0;border-bottom:1px solid var(--linha);font-weight:600">Data · forma</div><div style="padding:3px 0;border-bottom:1px solid var(--linha)"><div class="f" style="grid-template-columns:1fr 1fr"><div class="in">22/11/2026</div><div class="in">PIX ▾</div></div></div>
+   <div style="padding:3px 0;border-bottom:1px solid var(--linha);font-weight:600">Conta pagadora</div><div style="padding:3px 0;border-bottom:1px solid var(--linha)"><div class="in">Itaú black — Conta Itaú Black ▾</div></div>
+   <div style="padding:3px 0;border-bottom:1px solid var(--linha);font-weight:600">Para quem entra</div><div style="padding:3px 0;border-bottom:1px solid var(--linha)"><div class="in">Casa/Família ▾</div></div>
+   <div style="padding:3px 0;font-weight:600">Observação</div><div style="padding:3px 0"><div class="in"></div></div></div></div>
+  <div class="rod"><span class="ck"><i></i> Dividir entre formas</span><span class="bn e" style="margin-left:8px">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Rótulo à esquerda, campo à direita, uma linha fina entre cada fileira. Parece uma ficha de banco. Alta, mas organizada.</div></div>
+
+<div><div class="nome">6 · Faixa única na horizontal</div>
+ <div class="j" style="max-width:none"><div class="t">Pagar · Empréstimo Itaú — Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63<u>Fechar</u></div><div class="c">
+  <div class="f" style="grid-template-columns:1fr 1fr .7fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1.4fr 1fr;margin-top:8px"><div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1fr auto;margin-top:8px;align-items:end"><div><div class="rot">Observação</div><div class="in"></div></div><span class="ck"><i></i> Dividir entre formas</span></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Tudo no título (mês, vencimento, falta), nenhum bloco, nenhuma linha solta: três fileiras de campos e os botões. A mais simples.</div></div>
+
+<div><div class="nome">7 · O que acontece depois</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="c">
+  <div class="peq">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="f" style="grid-template-columns:1.2fr 1fr .8fr;margin-top:8px"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1.4fr 1fr;margin-top:8px"><div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="sep"></div>
+  <div class="f" style="grid-template-columns:1fr 1fr 1fr;text-align:center"><div><div class="rot">Conta fica</div><b>Paga</b></div><div><div class="rot">Falta</div><b>R$ 0,00</b></div><div><div class="rot">Recebido do Marcus</div><b style="color:#9fe0b0">+ R$ 2.263,63</b></div></div></div>
+  <div class="rod"><span class="ck"><i></i> Dividir</span><span class="bn e" style="margin-left:8px">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Embaixo, uma prévia do que o pagamento muda: a conta, o que falta e o recebido de quem recebe. A prévia muda sozinha conforme a conta pagadora.</div></div>
+
+<div><div class="nome">8 · Cartão da conta no alto</div>
+ <div class="j"><div class="t">Pagar conta<u>Fechar</u></div><div class="c">
+  <div style="background:var(--suave);border-radius:8px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:700">Empréstimo Itaú</div><div class="peq">Novembro/2026 · vence 05/11/2026</div><div class="g" style="margin-top:2px">R$ 2.263,63 <span style="font-size:11px;font-weight:600">a pagar</span></div></div>
+  <div class="f" style="grid-template-columns:1.2fr 1fr .8fr;margin-top:10px"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1.4fr 1fr;margin-top:8px"><div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="f" style="grid-template-columns:1fr auto;margin-top:8px;align-items:end"><div><div class="rot">Observação</div><div class="in"></div></div><span class="ck"><i></i> Dividir entre formas</span></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Um cartão com o nome da conta e o que falta, depois o formulário sem blocos. Parece uma fatura.</div></div>
+
+</div>
+</body>
+</html>

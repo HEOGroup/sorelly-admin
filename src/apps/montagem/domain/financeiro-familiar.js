@@ -67,9 +67,16 @@ function pixDivisao(ff, pid, ym){   // direto × repassado a prestadores
 var FAMILIA4 = "__familia4";
 var MEMBROS_FAMILIA = ["marcus","anamaria","marco","anabeatriz"];
 function membrosFamilia(ff){ var l = MEMBROS_FAMILIA.filter(function(id){ return ff.personas.some(function(p){ return p.id===id; }); }); return l.length ? l : ff.personas.filter(function(p){ return p.tipo==="SOCIO" && p.ativo; }).map(function(p){ return p.id; }); }
-function destinoConta(ff, pid){ if(pid!==FAMILIA4) return {personaId:pid, rateio:null}; var casa = ff.personas.find(function(p){ return p.id==="familia"; }); return {personaId:casa ? casa.id : (ff.personas[0]||{}).id, rateio:membrosFamilia(ff)}; }
-var daPessoa = function(conta, pid){ return conta.rateio && conta.rateio.length ? conta.rateio.indexOf(pid)>=0 : conta.personaId===pid; };
-var parteDe = function(conta){ return conta.rateio && conta.rateio.length ? 1/conta.rateio.length : 1; };
+// CASAS (Marcus, 22/11/2026): a conta lançada numa casa guarda a casa como "pessoa" (é o centro de gasto) e divide entre os DONOS dela: Casa Praia e Casa Jardine = Anamaria e Marco Antonio (50% cada); Casa Alphaville = os 4 sócios (25% cada); Marco / Anamaria = os dois. Conta antiga que já está numa casa e ainda não tem divisão guardada divide pelos donos da casa, sem mexer no dado.
+var CASAS_DONOS = {juan:["anamaria", "marco"], casajardine:["anamaria", "marco"], casaalphaville:["marcus", "anamaria", "marco", "anabeatriz"], marco_ana:["anamaria", "marco"]};
+var ehCasa = function(pid){ return Object.prototype.hasOwnProperty.call(CASAS_DONOS, pid); };
+// o que mostrar em "Para quem entra": Família ÷4 só quando a divisão é a da Família; casa e pessoa aparecem pelo próprio id
+var paraQuemDe = function(conta){ return conta.rateio && conta.rateio.length && !ehCasa(conta.personaId) ? FAMILIA4 : conta.personaId; };
+function destinoConta(ff, pid){ if(ehCasa(pid)){ var donos = CASAS_DONOS[pid].filter(function(id){ return ff.personas.some(function(p){ return p.id===id; }); }); return {personaId:pid, rateio:donos}; } if(pid!==FAMILIA4) return {personaId:pid, rateio:null}; var casa = ff.personas.find(function(p){ return p.id==="familia"; }); return {personaId:casa ? casa.id : (ff.personas[0]||{}).id, rateio:membrosFamilia(ff)}; }
+// quem divide a conta: o que está guardado nela (rateio) ou, se for conta de casa sem divisão guardada, os donos da casa; null = uma pessoa só
+var donosDe = function(conta){ return conta.rateio && conta.rateio.length ? conta.rateio : (ehCasa(conta.personaId) ? CASAS_DONOS[conta.personaId] : null); };
+var daPessoa = function(conta, pid){ var d = donosDe(conta); return d ? d.indexOf(pid)>=0 : conta.personaId===pid; };
+var parteDe = function(conta){ var d = donosDe(conta); return d ? 1/d.length : 1; };
 function totaisPersona(ff, pid, ym){
   var ps = parcelasDe(ff, {ym:ym}).filter(function(x){ return daPessoa(x.conta, pid); }).map(function(x){ var f = parteDe(x.conta); return f===1 ? x : Object.assign({}, x, {valor:r2(x.valor*f), pago:r2(x.pago*f), restante:r2(x.restante*f)}); }), soma = function(l, k){ return r2(l.reduce(function(t, x){ return t+x[k]; }, 0)); };
   var contas = ps.filter(function(x){ return x.conta.categoria!=="PRO_LABORE"; }), pro = ps.filter(function(x){ return x.conta.categoria==="PRO_LABORE"; });
@@ -298,5 +305,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };

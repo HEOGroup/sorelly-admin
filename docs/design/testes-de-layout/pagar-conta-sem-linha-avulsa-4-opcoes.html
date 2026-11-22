@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagar conta: sem linha avulsa</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --borda:rgba(255,255,255,.4); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:16px; align-items:start; }
+  .nome{ font-weight:700; margin-bottom:4px; } .nota{ font-size:11px; margin-top:4px; }
+  .j{ background:var(--fundo); border:2px solid var(--az); border-radius:8px; overflow:hidden; font-size:11px; padding-bottom:6px; }
+  .t{ background:var(--az); text-align:center; font-weight:700; padding:4px 8px; position:relative; }
+  .t u{ position:absolute; right:8px; font-weight:600; }
+  .b{ margin:6px 6px 0; border:2px solid var(--borda); border-radius:6px; }
+  .bt{ background:var(--az); text-align:center; font-weight:700; height:18px; line-height:18px; position:relative; }
+  .bt label{ position:absolute; right:6px; font-weight:600; display:flex; gap:4px; align-items:center; }
+  .bt i{ width:10px; height:10px; border:1px solid #fff; border-radius:2px; display:inline-block; }
+  .bc{ padding:6px; display:flex; flex-direction:column; gap:5px; }
+  .f{ display:grid; gap:5px; } .f > div{ min-width:0; }
+  .rot{ text-align:center; font-weight:600; margin-bottom:2px; }
+  .in{ height:22px; background:var(--az); border:1px solid rgba(255,255,255,.3); border-radius:4px; display:flex; align-items:center; justify-content:center; white-space:nowrap; }
+  .lei{ height:22px; display:flex; align-items:center; justify-content:center; font-weight:700; }   /* informação só de leitura: sem caixa */
+  .rod{ display:flex; gap:6px; padding:6px 6px 0; } .rod .e{ margin-right:auto; }
+  .bn{ height:22px; padding:0 10px; border-radius:4px; background:var(--az); border:1px solid var(--borda); font-weight:600; display:inline-flex; align-items:center; }
+  .bn.p{ background:var(--claro); }
+  .rec .j{ border-color:#E8B84B; }
+</style>
+</head>
+<body>
+<h1>Pagar conta: sem a linha "Novembro/2026" solta</h1>
+<p class="sub">O mês, o vencimento e o que falta agora ficam <b>dentro de um bloco</b>. Nada fica solto entre o título e os blocos. Continua a Conta pagadora e os campos com borda.</p>
+<div class="grade">
+
+<div class="rec"><div class="nome">A · Bloco "Conta" no alto (só leitura)</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="b"><div class="bt">1 · Conta</div><div class="bc"><div class="f" style="grid-template-columns:1fr 1fr 1fr"><div><div class="rot">Mês</div><div class="lei">Novembro/2026</div></div><div><div class="rot">Vence</div><div class="lei">05/11/2026</div></div><div><div class="rot">Falta</div><div class="lei">R$ 2.263,63</div></div></div></div></div>
+  <div class="b"><div class="bt">2 · Pagamento<label><i></i> Dividir entre formas</label></div><div class="bc">
+   <div class="f" style="grid-template-columns:1.2fr 1fr .8fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+   <div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div></div>
+  <div class="b"><div class="bt">3 · Para quem entra</div><div class="bc"><div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div><div><div class="rot">Observação</div><div class="in"></div></div></div></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Três blocos: o que é a conta, como se paga, para quem entra. A observação divide a linha com "Para quem entra". Recomendada.</div></div>
+
+<div><div class="nome">B · Dois blocos, a conta dentro do primeiro</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="b"><div class="bt">1 · Pagamento<label><i></i> Dividir entre formas</label></div><div class="bc">
+   <div class="f" style="grid-template-columns:1fr 1fr 1fr"><div><div class="rot">Mês</div><div class="lei">Novembro/2026</div></div><div><div class="rot">Vence</div><div class="lei">05/11/2026</div></div><div><div class="rot">Falta</div><div class="lei">R$ 2.263,63</div></div></div>
+   <div class="f" style="grid-template-columns:1.2fr 1fr .8fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+   <div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div></div>
+  <div class="b"><div class="bt">2 · Para quem entra</div><div class="bc"><div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div><div><div class="rot">Observação</div><div class="in"></div></div></div></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Só 2 blocos, como hoje. O mês, o vencimento e o que falta ficam na primeira fileira do bloco 1.</div></div>
+
+<div><div class="nome">C · Informação dentro do título do bloco</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="b"><div class="bt" style="justify-content:space-between">1 · Pagamento · Novembro/2026<label><i></i> Dividir entre formas</label></div><div class="bc">
+   <div class="f" style="grid-template-columns:1.2fr 1fr .8fr"><div><div class="rot">Valor pago (falta R$ 2.263,63)</div><div class="in">2.263,63</div></div><div><div class="rot">Data (vence 05/11/2026)</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+   <div><div class="rot">Conta pagadora</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div></div>
+  <div class="b"><div class="bt">2 · Para quem entra</div><div class="bc"><div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div><div><div class="rot">Observação</div><div class="in"></div></div></div></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Sem linha extra. O mês vai na barra do bloco; "falta" e "vence" viram parte do nome do campo. A mais curta, mas os rótulos ficam longos.</div></div>
+
+<div><div class="nome">D · Dois blocos lado a lado</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="f" style="grid-template-columns:.8fr 1.7fr;margin:6px 6px 0;gap:6px;align-items:stretch">
+   <div class="b" style="margin:0"><div class="bt">Conta</div><div class="bc">
+    <div><div class="rot">Mês</div><div class="lei">Novembro/2026</div></div><div><div class="rot">Vence</div><div class="lei">05/11/2026</div></div><div><div class="rot">Falta</div><div class="lei">R$ 2.263,63</div></div></div></div>
+   <div class="b" style="margin:0"><div class="bt">Pagamento<label><i></i> Dividir</label></div><div class="bc">
+    <div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Valor pago (R$)</div><div class="in">2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div></div>
+    <div class="f" style="grid-template-columns:.6fr 1.4fr"><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div><div><div class="rot">Conta pagadora</div><div class="in">Itaú black ▾</div></div></div></div></div></div>
+  <div class="b"><div class="bt">Para quem entra</div><div class="bc"><div class="f" style="grid-template-columns:1fr 1fr"><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div><div><div class="rot">Observação</div><div class="in"></div></div></div></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">A conta fica numa coluna estreita à esquerda e o pagamento à direita (mesma altura). Aqui o nome da conta pagadora aparece encurtado; na tela ela ocuparia a janela mais larga.</div></div>
+
+</div>
+</body>
+</html>

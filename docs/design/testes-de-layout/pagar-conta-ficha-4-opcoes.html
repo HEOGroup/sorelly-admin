@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagar conta: a ficha melhorada</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --suave:#223f74; --borda:rgba(255,255,255,.4); --linha:rgba(255,255,255,.16); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(460px,1fr)); gap:18px; align-items:start; }
+  .nome{ font-weight:700; margin-bottom:4px; } .nota{ font-size:11px; margin-top:4px; }
+  .j{ background:var(--fundo); border:2px solid var(--az); border-radius:10px; overflow:hidden; font-size:11px; }
+  .t{ background:var(--az); text-align:center; font-weight:700; padding:5px 8px; position:relative; font-size:12px; }
+  .t u{ position:absolute; right:10px; font-weight:600; font-size:11px; }
+  .r{ display:grid; grid-template-columns:30% 70%; align-items:center; min-height:30px; border-bottom:1px solid var(--linha); }   /* uma fileira da ficha */
+  .r:last-child{ border-bottom:0; }
+  .r > b{ padding:0 10px; font-weight:600; text-align:left; height:100%; display:flex; align-items:center; background:var(--suave); border-right:1px solid var(--linha); }
+  .r > div{ padding:4px 8px; }
+  .in{ height:22px; background:var(--az); border:1px solid rgba(255,255,255,.3); border-radius:4px; display:flex; align-items:center; justify-content:center; white-space:nowrap; }
+  .f{ display:grid; gap:6px; } .f > div{ min-width:0; }
+  .cab{ background:var(--suave); display:grid; grid-template-columns:1fr 1fr 1fr; text-align:center; padding:6px 0; border-bottom:1px solid var(--linha); }
+  .cab span{ display:block; font-weight:600; } .cab b{ display:block; font-size:13px; margin-top:1px; }
+  .rod{ display:flex; gap:6px; padding:8px 10px 10px; align-items:center; border-top:1px solid var(--linha); } .rod .e{ margin-right:auto; }
+  .bn{ height:24px; padding:0 12px; border-radius:4px; background:var(--az); border:1px solid var(--borda); font-weight:600; display:inline-flex; align-items:center; }
+  .bn.p{ background:var(--claro); }
+  .ck{ display:inline-flex; gap:5px; align-items:center; } .ck i{ width:10px; height:10px; border:1px solid #fff; border-radius:2px; display:inline-block; }
+  .ck i.on{ background:var(--claro); }
+  .z .r:nth-child(even) > div{ background:rgba(255,255,255,.04); }
+  .rec .j{ border-color:#E8B84B; }
+</style>
+</head>
+<body>
+<h1>Pagar conta: a ficha (opção 5) melhorada</h1>
+<p class="sub">Continua a ficha: rótulo à esquerda e campo à direita. Melhorei: o mês, o vencimento e a falta viraram uma faixa de leitura no alto (nada avulso), a data e a forma ficam na mesma fileira, o "Dividir" ganhou fileira própria e os botões ficaram no pé.</p>
+<div class="grade">
+
+<div class="rec"><div class="nome">A · Faixa de leitura no alto + ficha</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="cab"><div><span>Mês</span><b>Novembro/2026</b></div><div><span>Vence</span><b>05/11/2026</b></div><div><span>Falta</span><b>R$ 2.263,63</b></div></div>
+  <div class="r"><b>Valor pago</b><div><div class="in">R$ 2.263,63</div></div></div>
+  <div class="r"><b>Data e forma</b><div><div class="f" style="grid-template-columns:1fr 1fr"><div class="in">22/11/2026</div><div class="in">PIX ▾</div></div></div></div>
+  <div class="r"><b>Conta pagadora</b><div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div>
+  <div class="r"><b>Para quem entra</b><div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="r"><b>Observação</b><div><div class="in"></div></div></div>
+  <div class="rod"><span class="ck"><i></i> Dividir entre formas</span><span class="bn e" style="margin-left:10px">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">A ficha de antes, mas sem a primeira fileira confusa "Vence · falta". A faixa do alto lê-se em um olhar. Recomendada.</div></div>
+
+<div><div class="nome">B · Duas seções separadas por uma linha forte</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú — Novembro/2026<u>Fechar</u></div>
+  <div class="r"><b>Vence · falta</b><div style="text-align:center;font-weight:700">05/11/2026 · R$ 2.263,63</div></div>
+  <div class="r"><b>Valor pago</b><div><div class="in">R$ 2.263,63</div></div></div>
+  <div class="r"><b>Data e forma</b><div><div class="f" style="grid-template-columns:1fr 1fr"><div class="in">22/11/2026</div><div class="in">PIX ▾</div></div></div></div>
+  <div style="height:0;border-top:2px solid rgba(255,255,255,.7)"></div>
+  <div class="r"><b>Conta pagadora</b><div><div class="in">Itaú black — Conta Itaú Black ▾</div></div></div>
+  <div class="r"><b>Para quem entra</b><div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="r"><b>Observação</b><div><div class="in"></div></div></div>
+  <div class="rod"><span class="ck"><i></i> Dividir entre formas</span><span class="bn e" style="margin-left:10px">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">A linha forte divide em "quanto" (em cima) e "de onde e para quem" (embaixo), como na lista do Para quem entra.</div></div>
+
+<div><div class="nome">C · Ficha em duas colunas (janela larga)</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú — Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63<u>Fechar</u></div>
+  <div class="f" style="grid-template-columns:1fr 1fr;gap:0">
+   <div style="border-right:1px solid var(--linha)">
+    <div class="r" style="grid-template-columns:38% 62%"><b>Valor pago</b><div><div class="in">R$ 2.263,63</div></div></div>
+    <div class="r" style="grid-template-columns:38% 62%"><b>Data</b><div><div class="in">22/11/2026</div></div></div>
+    <div class="r" style="grid-template-columns:38% 62%"><b>Forma</b><div><div class="in">PIX ▾</div></div></div></div>
+   <div>
+    <div class="r" style="grid-template-columns:38% 62%"><b>Conta pagadora</b><div><div class="in">Itaú black ▾</div></div></div>
+    <div class="r" style="grid-template-columns:38% 62%"><b>Para quem entra</b><div><div class="in">Casa/Família ▾</div></div></div>
+    <div class="r" style="grid-template-columns:38% 62%"><b>Observação</b><div><div class="in"></div></div></div></div></div>
+  <div class="rod"><span class="ck"><i></i> Dividir entre formas</span><span class="bn e" style="margin-left:10px">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Só 3 fileiras de altura. Fica mais larga: o nome da conta pagadora aparece encurtado só neste teste; na tela a janela cresce para caber inteiro.</div></div>
+
+<div><div class="nome">D · Ficha com "Dividir" ligado e prévia do efeito</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div>
+  <div class="cab"><div><span>Mês</span><b>Novembro/2026</b></div><div><span>Vence</span><b>05/11/2026</b></div><div><span>Falta</span><b>R$ 2.263,63</b></div></div>
+  <div class="r"><b>Dividir</b><div><span class="ck"><i class="on"></i> Pagar em mais de uma forma</span></div></div>
+  <div class="r"><b>1ª forma</b><div><div class="f" style="grid-template-columns:.9fr .6fr 1.5fr"><div class="in">1.263,63</div><div class="in">PIX ▾</div><div class="in">Itaú black ▾</div></div></div></div>
+  <div class="r"><b>2ª forma</b><div><div class="f" style="grid-template-columns:.9fr .6fr 1.5fr"><div class="in">1.000,00</div><div class="in">Dinheiro ▾</div><div class="in">Caixa financeiro ▾</div></div></div></div>
+  <div class="r"><b>Soma</b><div style="text-align:center;font-weight:700;color:#9fe0b0">✓ Soma certa · + Outra forma</div></div>
+  <div class="r"><b>Data</b><div><div class="in" style="width:140px;margin:0 auto">22/11/2026</div></div></div>
+  <div class="r"><b>Para quem entra</b><div><div class="in">Casa/Família ▾</div></div></div>
+  <div class="r"><b>Efeito</b><div style="text-align:center">Conta fica <b style="display:inline;background:none;border:0;padding:0">Paga</b> · recebido do Marcus <b style="display:inline;background:none;border:0;padding:0;color:#9fe0b0">+ R$ 2.263,63</b></div></div>
+  <div class="rod"><span class="bn e">Editar conta</span><span class="bn">Cancelar</span><span class="bn p">Registrar pagamento</span></div></div>
+ <div class="nota">Mostra como a ficha fica quando se divide o pagamento em duas formas, com a prévia do efeito no fim. A conta pagadora vai dentro de cada forma.</div></div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Para quem entra: 6 opções</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --borda:rgba(255,255,255,.4); --linha:rgba(255,255,255,.15); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ color:#fff; opacity:.9; margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:14px; }
+  .op{ border:2px solid var(--az); border-radius:8px; background:var(--fundo); overflow:hidden; display:flex; flex-direction:column; }
+  .op > header{ background:var(--az); padding:5px 8px; font-weight:700; display:flex; justify-content:space-between; gap:8px; }
+  .op > header small{ font-weight:500; opacity:.9; }
+  .corpo{ padding:8px; flex:1; } .nota{ padding:6px 8px; border-top:1px solid var(--linha); font-size:11px; }
+  .campo{ height:24px; border:1px solid var(--borda); border-radius:4px; background:var(--az); display:flex; align-items:center; justify-content:center; font-size:11px; margin-bottom:6px; }
+  /* sempre: linha de 24 px, letra de 11 px, centralizado, selecionada em azul claro */
+  .sel{ background:var(--claro) !important; }
+  .t{ width:100%; border-collapse:collapse; font-size:11px; } .t th{ background:var(--az); font-weight:700; height:20px; border:1px solid var(--borda); }
+  .t td{ height:24px; border:1px solid var(--linha); padding:0 6px; text-align:center; cursor:pointer; } .t tr:hover td{ background:var(--az); }
+  .t .g td{ background:var(--az); font-weight:700; cursor:default; height:18px; }
+  .t td.n{ font-weight:700; width:38%; } .t td.p{ width:44%; } .t td.q{ width:18%; opacity:.95; }
+  .dois{ display:grid; grid-template-columns:44% 56%; gap:6px; } .lista button{ display:block; width:100%; height:24px; border:0; border-bottom:1px solid var(--linha); background:transparent; color:#fff; font:inherit; font-size:11px; cursor:pointer; text-align:center; }
+  .lista button:hover,.lista button.sel{ background:var(--claro); } .painel{ border:1px solid var(--borda); border-radius:4px; padding:8px; text-align:center; min-height:150px; }
+  .painel b{ display:block; margin-bottom:6px; } .painel .pes{ display:block; padding:3px 0; border-bottom:1px solid var(--linha); }
+  .m td,.m th{ text-align:center; } .m td.n{ text-align:left; font-weight:700; width:34%; } .pt{ color:#fff; font-size:14px; }
+  .abas{ display:flex; gap:0; margin-bottom:6px; } .abas button{ flex:1; height:22px; border:1px solid var(--borda); background:transparent; color:#fff; font-size:11px; cursor:pointer; } .abas button.sel{ background:var(--claro); }
+  .cartoes{ display:grid; grid-template-columns:1fr 1fr; gap:6px; } .cartao{ border:1px solid var(--borda); border-radius:4px; padding:5px 6px; text-align:center; cursor:pointer; min-height:46px; } .cartao:hover{ background:var(--az); } .cartao b{ display:block; font-size:11px; } .cartao span{ display:block; font-size:10px; opacity:.95; margin-top:2px; }
+  .rec{ border-color:#E8B84B; } .rec > header{ background:#6b5420; }
+</style>
+</head>
+<body>
+<h1>Para quem entra: 6 opções de desenho</h1>
+<p class="sub">Todas abrem azul, com duas colunas: <b>o nome</b> e <b>quem está dentro</b>. Clique numa linha para escolher (a escolhida fica em azul claro). Os dados são os de hoje; a divisão vale para cada casa.</p>
+<div class="grade" id="grade"></div>
+
+<script>
+// nome, quem está dentro, parte de cada um, grupo
+var D = [
+  ["Família geral", "Marcus, Ana Beatriz, Marco, Anamaria", "25% cada", "Família"],
+  ["Viagem EUA", "Marcus, Ana Beatriz, Marco, Anamaria", "25% cada", "Família"],
+  ["Marcus", "Marcus", "100%", "Pessoas"], ["Anamaria", "Anamaria", "100%", "Pessoas"], ["Marco Antonio", "Marco Antonio", "100%", "Pessoas"], ["Ana Beatriz", "Ana Beatriz", "100%", "Pessoas"], ["Lucas", "Lucas", "100%", "Pessoas"],
+  ["Casa/Alphaville", "Marcus, Ana Beatriz, Marco, Anamaria", "25% cada", "Casas"], ["Casa/Praia", "Marco, Anamaria", "50% cada", "Casas"], ["Casa/Jardine", "Marco, Anamaria", "50% cada", "Casas"], ["Marco / Anamaria", "Marco, Anamaria", "50% cada", "Casas"]
+];
+var SOCIOS = ["Marcus", "Anamaria", "Marco", "Ana Beatriz", "Lucas"];
+var DONOS = function(i){ var q = D[i][1]; return SOCIOS.map(function(s){ return q.indexOf(s)>=0; }); };
+var atual = 2; // Marcus
+var el = function(h){ var d = document.createElement("div"); d.innerHTML = h; return d.firstElementChild; };
+function bloco(titulo, sub, corpoFn, nota, rec){
+  var b = el('<section class="op'+(rec?' rec':'')+'"><header><span>'+titulo+'</span><small>'+sub+'</small></header><div class="corpo"></div><div class="nota">'+nota+'</div></section>');
+  b._corpo = b.querySelector(".corpo"); corpoFn(b._corpo, b); document.getElementById("grade").appendChild(b); return b;
+}
+function renderTodos(){ document.querySelectorAll(".op").forEach(function(o){ if(o._re) o._re(); }); }
+function escolher(i){ atual = i; renderTodos(); }
+function campoAtual(){ return '<div class="campo">'+D[atual][0]+' ▾</div>'; }
+
+// 1. Tabela de duas colunas, em grupos
+var b1 = bloco("1 · Tabela em grupos","duas colunas",function(c, self){
+  self._re = function(){ var h = campoAtual()+'<table class="t"><tr><th>Nome</th><th>Quem está dentro</th></tr>', g = "";
+    D.forEach(function(r,i){ if(r[3]!==g){ g = r[3]; h += '<tr class="g"><td colspan="2">'+g+'</td></tr>'; } h += '<tr data-i="'+i+'"><td class="n'+(i===atual?' sel':'')+'">'+r[0]+'</td><td class="p'+(i===atual?' sel':'')+'">'+r[1]+'</td></tr>'; });
+    c.innerHTML = h+'</table>'; c.querySelectorAll("tr[data-i]").forEach(function(tr){ tr.onclick = function(){ escolher(+tr.dataset.i); }; }); }; self._re();
+}, "O mais simples e o mais parecido com a Lançar recebimento. Mostra tudo de uma vez; a lista cresce com as casas.", true);
+
+// 2. Três colunas com a parte de cada um
+var b2 = bloco("2 · Com a parte de cada um","três colunas",function(c, self){
+  self._re = function(){ var h = campoAtual()+'<table class="t"><tr><th>Nome</th><th>Quem está dentro</th><th>Parte</th></tr>';
+    D.forEach(function(r,i){ h += '<tr data-i="'+i+'"><td class="n'+(i===atual?' sel':'')+'">'+r[0]+'</td><td class="p'+(i===atual?' sel':'')+'">'+r[1]+'</td><td class="q'+(i===atual?' sel':'')+'">'+r[2]+'</td></tr>'; });
+    c.innerHTML = h+'</table>'; c.querySelectorAll("tr[data-i]").forEach(function(tr){ tr.onclick = function(){ escolher(+tr.dataset.i); }; }); }; self._re();
+}, "Igual à 1, com a parte (25% ou 50%) na terceira coluna. Mais informação, mais largura.");
+
+// 3. Lista à esquerda e detalhe à direita
+var b3 = bloco("3 · Lista e detalhe","dois blocos",function(c, self){
+  self._re = function(){ var l = D.map(function(r,i){ return '<button data-i="'+i+'" class="'+(i===atual?'sel':'')+'">'+r[0]+'</button>'; }).join("");
+    var r = D[atual], pes = r[1].split(", ").map(function(p){ return '<span class="pes">'+p+'</span>'; }).join("");
+    c.innerHTML = campoAtual()+'<div class="dois"><div class="lista">'+l+'</div><div class="painel"><b>'+r[0]+'</b>'+pes+'<span style="display:block;margin-top:6px;opacity:.95">'+r[2]+'</span></div></div>';
+    c.querySelectorAll("button").forEach(function(bt){ bt.onclick = function(){ escolher(+bt.dataset.i); }; }); }; self._re();
+}, "Dois blocos: nomes à esquerda e, à direita, quem está dentro do item escolhido. Fica curto, mas só mostra um por vez.");
+
+// 4. Grade de pessoas (marcas)
+var b4 = bloco("4 · Grade de pessoas","quem entra em cada um",function(c, self){
+  self._re = function(){ var h = campoAtual()+'<table class="t m"><tr><th>Nome</th>'+SOCIOS.map(function(s){ return '<th>'+s.split(" ")[0]+'</th>'; }).join("")+'</tr>';
+    D.forEach(function(r,i){ h += '<tr data-i="'+i+'"><td class="n'+(i===atual?' sel':'')+'">'+r[0]+'</td>'+DONOS(i).map(function(x){ return '<td class="'+(i===atual?'sel':'')+'">'+(x?'<span class="pt">●</span>':'')+'</td>'; }).join("")+'</tr>'; });
+    c.innerHTML = h+'</table>'; c.querySelectorAll("tr[data-i]").forEach(function(tr){ tr.onclick = function(){ escolher(+tr.dataset.i); }; }); }; self._re();
+}, "Uma coluna por pessoa e uma bolinha onde ela entra. Dá para ver as casas de relance; fica estreito para nomes.");
+
+// 5. Abas
+var aba5 = "Pessoas";
+var b5 = bloco("5 · Abas","Família | Pessoas | Casas",function(c, self){
+  self._re = function(){ var grupos = ["Família","Pessoas","Casas"], h = campoAtual()+'<div class="abas">'+grupos.map(function(g){ return '<button data-g="'+g+'" class="'+(g===aba5?'sel':'')+'">'+g+'</button>'; }).join("")+'</div><table class="t"><tr><th>Nome</th><th>Quem está dentro</th></tr>';
+    D.forEach(function(r,i){ if(r[3]===aba5) h += '<tr data-i="'+i+'"><td class="n'+(i===atual?' sel':'')+'">'+r[0]+'</td><td class="p'+(i===atual?' sel':'')+'">'+r[1]+'</td></tr>'; });
+    c.innerHTML = h+'</table>'; c.querySelectorAll("tr[data-i]").forEach(function(tr){ tr.onclick = function(){ escolher(+tr.dataset.i); }; }); c.querySelectorAll(".abas button").forEach(function(bt){ bt.onclick = function(){ aba5 = bt.dataset.g; self._re(); }; }); }; self._re();
+}, "Três abas e só 4 ou 5 linhas por vez. Mais curto, mas um clique a mais.");
+
+// 6. Cartões em duas colunas
+var b6 = bloco("6 · Cartões","dois por linha",function(c, self){
+  self._re = function(){ c.innerHTML = campoAtual()+'<div class="cartoes">'+D.map(function(r,i){ return '<div class="cartao '+(i===atual?'sel':'')+'" data-i="'+i+'"><b>'+r[0]+'</b><span>'+r[1]+'</span></div>'; }).join("")+'</div>';
+    c.querySelectorAll(".cartao").forEach(function(k){ k.onclick = function(){ escolher(+k.dataset.i); }; }); }; self._re();
+}, "Nome em cima e as pessoas embaixo, em dois cartões por linha. Bonito, mas ocupa mais altura.");
+</script>
+</body>
+</html>

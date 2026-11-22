@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Para quem entra: 4 opções de linha</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --borda:rgba(255,255,255,.4); --linha:rgba(255,255,255,.15); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:14px; }
+  .op{ border:2px solid var(--az); border-radius:8px; background:var(--fundo); overflow:hidden; display:flex; flex-direction:column; }
+  .op > header{ background:var(--az); padding:5px 8px; font-weight:700; }
+  .corpo{ padding:8px; flex:1; } .nota{ padding:6px 8px; border-top:1px solid var(--linha); font-size:11px; }
+  .campo{ height:24px; border:1px solid var(--borda); border-radius:4px; background:var(--az); display:flex; align-items:center; justify-content:center; font-size:11px; margin-bottom:6px; }
+  .lista{ border:1px solid var(--borda); border-radius:4px; overflow:hidden; }
+  .r{ display:grid; grid-template-columns:34% 66%; align-items:center; height:22px; font-size:11px; text-align:center; cursor:pointer; border-bottom:1px solid var(--linha); }
+  .r:hover{ background:var(--az); } .r.sel{ background:var(--claro); } .r b{ font-weight:700; }
+  .r.sep{ border-top:2px solid rgba(255,255,255,.7); }               /* 1 · linha mais forte */
+  .o2 .r.sep{ border-top:1px solid rgba(255,255,255,.4); margin-top:5px; }   /* 2 · linha fina + respiro */
+  .o3 .r.sep{ border-top:2px solid #E8B84B; }                           /* 3 · linha dourada */
+  .o4 .r{ grid-template-columns:34% 66%; } .o4 .r > :first-child{ border-right:1px solid var(--linha); height:100%; display:flex; align-items:center; justify-content:center; } /* 4 · coluna dividida por linha */
+  .o4 .r.sep{ border-top:2px solid rgba(255,255,255,.7); }
+  .rec{ border-color:#E8B84B; } .rec > header{ background:#6b5420; }
+</style>
+</head>
+<body>
+<h1>Para quem entra: 4 jeitos de separar com uma linha</h1>
+<p class="sub">Sem os títulos Família, Pessoas e Casas. Só uma linha entre um grupo e outro. Clique numa linha para escolher.</p>
+<div class="grade" id="grade"></div>
+<script>
+var D = [
+  ["Família geral", "Marcus, Ana Beatriz, Marco, Anamaria", 0],
+  ["Viagem EUA", "Marcus, Ana Beatriz, Marco, Anamaria", 0],
+  ["Marcus", "Marcus", 1], ["Anamaria", "Anamaria", 1], ["Marco Antonio", "Marco Antonio", 1], ["Ana Beatriz", "Ana Beatriz", 1],
+  ["Lucas", "Lucas", 2],
+  ["Casa/Alphaville", "Marcus, Ana Beatriz, Marco, Anamaria", 3], ["Casa/Praia", "Marco, Anamaria", 3], ["Casa/Jardine", "Marco, Anamaria", 3]
+];
+var atual = 2;
+function bloco(titulo, classe, nota, rec){
+  var s = document.createElement("section"); s.className = "op " + classe + (rec ? " rec" : "");
+  s.innerHTML = '<header>'+titulo+'</header><div class="corpo"></div><div class="nota">'+nota+'</div>';
+  s._re = function(){
+    var h = '<div class="campo">'+D[atual][0]+' ▾</div><div class="lista">';
+    D.forEach(function(r,i){ var sep = i>0 && D[i-1][2]!==r[2];
+      h += '<div class="r'+(sep?' sep':'')+(i===atual?' sel':'')+'" data-i="'+i+'"><b>'+r[0]+'</b><span>'+r[1]+'</span></div>'; });
+    s.querySelector(".corpo").innerHTML = h + '</div>';
+    s.querySelectorAll(".r").forEach(function(x){ x.onclick = function(){ atual = +x.dataset.i; document.querySelectorAll(".op").forEach(function(o){ o._re(); }); }; });
+  };
+  document.getElementById("grade").appendChild(s); return s;
+}
+bloco("1 · Linha mais forte", "o1", "A que já está no sistema: a linha entre os grupos é um pouco mais grossa e clara que as outras.", true);
+bloco("2 · Linha fina com respiro", "o2", "Linha fina e um espaço pequeno acima dela. Mais leve, mas ocupa um pouco mais de altura.");
+bloco("3 · Linha dourada", "o3", "A linha entre os grupos é dourada. Chama atenção para a separação; usa o dourado só como destaque.");
+bloco("4 · Linha entre as colunas", "o4", "Além da linha entre grupos, uma linha vertical separa o nome de quem está dentro. Parece uma tabela.");
+document.querySelectorAll(".op").forEach(function(o){ o._re(); });
+</script>
+</body>
+</html>
