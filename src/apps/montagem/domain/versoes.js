@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.90", data:"2026-11-23", titulo:"Entrada do Financeiro compacta, com fundo azul", itens:[
+  {tipo:"melhoria", area:"Menu lateral → Financeiro", txt:"A Entrada do Financeiro ficou compacta: fundo azul, grupos lado a lado em colunas e todos os nomes das telas numa tela só, sem rolar. Os outros setores seguem com a entrada em blocos."}
+ ]},
  {v:"0.21.89", data:"2026-11-22", titulo:"Faturamento: a soma ao vivo também conta bônus à mão, baixas e Pix do admin", itens:[
   {tipo:"correção", area:"Financeiro → Faturamento", txt:"Com o Faturamento aberto sozinho, o a pagar do mês somava R$ 2.000 a menos que o Resultado do mês (bônus do Nickolas lançado à mão): os lançamentos à mão, as baixas dadas no sistema, as classes e o Pix do admin só entravam depois de abrir a tela Contas a pagar. Agora a soma lê tudo isso do próprio estado, e as duas telas mostram o mesmo número."}]},
  {v:"0.21.88", data:"2026-11-22", titulo:"Faturamento e Resultado do mês: pago e a pagar ao vivo, sem duplicar", itens:[
