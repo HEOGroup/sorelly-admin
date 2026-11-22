@@ -3232,3 +3232,12 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - Decidido: a janela Pagar passa a ter 896 px (era 768) e vira uma ficha em grade de 4 colunas (rótulo, campo, rótulo, campo) com linha entre todas as células. Valor pago | Data e Forma | Para quem entra ficam em duas colunas; **Conta pagadora e Observação ocupam a linha inteira**, para o nome longo da conta caber sem cortar. O modo Dividir entre formas usa a mesma grade (cada forma = uma linha com Valor, Forma e Conta).
 - Código: `ModalPagar` e `JanelaJ` (`larga:"g"`) em `pages/FinFamiliar.js`.
 - A junção com a master de 22/11 tinha apagado o trabalho do dia no `FinFamiliar.js`; foi restaurado por junção de 3 lados (nota em memória: merge-22-11-perdeu-financeiro-familiar).
+
+## 22/11/2026 (Financeiro familiar: Contas a pagar e Contas pagas da família separadas, com o menu do Financeiro)
+- Pedido do Marcus: "o topo some o Financeiro ali; e por que tem situação de pagas e a pagar, nós tínhamos definido que seriam separadas?".
+- Decidido: nas duas telas da Família (Família › Contas › Contas a pagar da família / Contas pagas da família) **não existe** o seletor Situação. A pagar mostra só a pagar; Pagas mostra só pagas. As telas da empresa (Contas › A pagar / Pagas) não mudam.
+- Causa do topo sem menu: as abas `ctafam` e `ctafamp` estavam só no menu e não na lista de telas do setor (`T(...)` em `navigation/setores.js`), então o sistema não achava o setor e mostrava um topo genérico. Agora entram na lista.
+- A lista geral (`pages/ContasPagarLista.js`) desta pasta estava mais antiga que a da master (ignorava `quem:"familia"` e não tinha a janela Mudar a pessoa); voltou à versão da master, mais a trava da Situação para as telas da Família.
+
+## 22/11/2026 (Contas a pagar e Contas pagas da EMPRESA também separadas)
+- Marcus: "ok, execute" (separar também a empresa). Em `pages/ContasPagarLista.js` o seletor Situação saiu de todas as telas: A pagar mostra só a pagar, Pagas só pagas. A opção "Todas" deixou de existir; a busca do topo continua procurando em tudo.
