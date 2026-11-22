@@ -13,7 +13,7 @@ function cpDemo(){
   var d = function(nome, tipo, extra){ return Object.assign({id:uid("d"), nome:nome, tipo:tipo, cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true}, extra||{}); };
   return {v:1, orientacoes:[], destinos:[
     d("CNPJ 34 · Sorelly Atacadista", "CNPJ", {cnpjId:"34"}), d("CNPJ 46 · Mayz Comércio de Moda", "CNPJ", {cnpjId:"46"}), d("CNPJ 59 · Serenity", "CNPJ", {cnpjId:"59"}), d("CNPJ 67 · Axis", "CNPJ", {cnpjId:"67"}),
-    d("Marcus PF", "FAMILIA"), d("Pontual", "FORNECEDOR"), d("Point", "FORNECEDOR"), d("Office Graf", "FORNECEDOR"), d("Ellos Galvânica", "FORNECEDOR"), d("Mega Sul", "FORNECEDOR"), d("Art Ello Bruto", "FORNECEDOR"),
+    d("Marcus PF", "FAMILIA"), d("Pontual", "FORNECEDOR"), d("Point", "FORNECEDOR"), d("Office Graf", "FORNECEDOR"), d("Ellos Galvânica", "FORNECEDOR"), d("Mega Sul", "FORNECEDOR"), d("Art Ello", "FORNECEDOR"),
     d("Devmaster", "FORNECEDOR"), d("Linda", "FORNECEDOR"), d("Tucano", "FORNECEDOR"), d("Charme", "FORNECEDOR"), d("Higor (segurança)", "PRESTADOR"), d("Camilly", "PRESTADOR")]};
 }
 // Pix para representantes e para os sócios (21/10/2026): representantes viram destinos; "Marcus PF" vira um destino por sócio (cada um ligado à persona do Financeiro familiar) e as orientações do dia entram do arquivo local
