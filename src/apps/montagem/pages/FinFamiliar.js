@@ -94,9 +94,9 @@ function AbaFfHome(){
   var D = function(v){ return typeof v==="number" ? BK(v) : ND; }, I = function(v){ return typeof v==="number" ? String(v) : ND; };
   var verde = function(k){ return function(l){ return typeof l[k]==="number" && l[k]>0.005 ? "text-success" : ""; }; };
   var cols = [{k:"pessoa", t:"Pessoa"},
-    {k:"proRec", t:"Pró-labore recebido", fmt:D, cor:verde("proRec")}, {k:"proRest", t:"Pró-labore restante", fmt:D}, {k:"proTot", t:"Pró-labore total", fmt:D},
-    {k:"ctPago", t:"Contas pago", fmt:D, cor:verde("ctPago")}, {k:"ctRest", t:"Contas restante", fmt:D, cor:function(l){ return l.ctAtr>0.005 ? "text-destructive" : ""; }}, {k:"ctTot", t:"Contas total", fmt:D}, {k:"ctPend", t:"Contas pendentes", fmt:I},
-    {k:"pxEnv", t:"Pix enviado", fmt:D, cor:verde("pxEnv")}, {k:"pxRest", t:"Pix restante", fmt:D}, {k:"pxMeta", t:"Pix meta", fmt:D},
+    {k:"proRec", t:"Recebido", fmt:D, cor:verde("proRec")}, {k:"proRest", t:"Restante", fmt:D}, {k:"proTot", t:"Total", fmt:D},
+    {k:"ctPago", t:"Pago", fmt:D, cor:verde("ctPago")}, {k:"ctRest", t:"Restante", fmt:D, cor:function(l){ return l.ctAtr>0.005 ? "text-destructive" : ""; }}, {k:"ctTot", t:"Total", fmt:D}, {k:"ctPend", t:"Pendentes", fmt:I},
+    {k:"pxEnv", t:"Enviado", fmt:D, cor:verde("pxEnv")}, {k:"pxRest", t:"Restante", fmt:D}, {k:"pxMeta", t:"Meta", fmt:D},
     {k:"pagar", t:ANO ? "A pagar no ano" : "A pagar no mês", fmt:BK}];
   var soma = function(ls, k){ return r2(ls.reduce(function(t, x){ return t+(typeof x[k]==="number" ? x[k] : 0); }, 0)); };
   var rodape = function(ls){ return ["Total"].concat(["proRec", "proRest", "proTot", "ctPago", "ctRest", "ctTot"].map(function(k){ return BK(soma(ls, k)); }), [String(soma(ls, "ctPend"))], ["pxEnv", "pxRest", "pxMeta", "pagar"].map(function(k){ return BK(soma(ls, k)); })); };
@@ -106,7 +106,8 @@ function AbaFfHome(){
   return e(Guarda,{c:c}, e("div",{className:PADRAO_BLOCOS+" -mb-2 -ml-3 -mr-2 -mt-5 flex flex-col gap-1.5 pl-0 md:-mb-3 md:-ml-5 md:-mr-3 md:pl-0"},
     linhas.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
       e(BlocoPainel,{titulo:"Financeiro familiar", acao:seletor, compacto:false, cls:COMPACTA},
-        e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhuma pessoa.",
+        e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhuma pessoa.", cabAcima:[[{t:"", span:1}, {t:"Pró-labore", span:3}, {t:"Contas", span:4}, {t:"Pix revendedora", span:3}, {t:"", span:1}]],   // linha de cima agrupa as colunas: Pró-labore, Contas e Pix revendedora (Marcus, 22/11/2026)
+         
           detalhe:function(l){ return e(DetHome,{ff:ff, l:l, ym:ym, ANO:ANO, ir:ir}); }}))));
 }
 
