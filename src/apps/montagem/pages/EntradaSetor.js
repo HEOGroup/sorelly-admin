@@ -17,7 +17,7 @@ function BotaoTela(p){
 // todas lado a lado na mesma ordem do menu de cima. Nome comprido quebra em 2 linhas (todos os botões têm a mesma altura).
 // Título grande e texto de 14 px: exceção pedida pelo Marcus em 23/11/2026 (padrao-ok).
 function duasLinhas(nome){
-  if(nome.length <= 14 || nome.indexOf(" ") < 0) return nome;
+  if(nome.length <= 19 || nome.indexOf(" ") < 0) return nome;
   var meio = nome.length / 2, melhor = -1;
   for(var i = 0; i < nome.length; i++) if(nome[i] === " " && (melhor < 0 || Math.abs(i - meio) < Math.abs(melhor - meio))) melhor = i;
   return nome.slice(0, melhor) + String.fromCharCode(10) + nome.slice(melhor + 1);
@@ -29,12 +29,12 @@ function EntradaCompacta(p){
     e("div",{className:"mb-3 text-center text-[20px] font-semibold leading-tight text-white"}, en.nome),   // padrao-ok: título grande do Financeiro, pedido do Marcus (23/11/2026)
     e("div",{className:"flex flex-wrap items-start justify-center gap-2"},
       en.grupos.map(function(g, i){
-        return e("section",{key:i, className:"flex min-w-0 flex-col overflow-hidden rounded-lg", style:{background:mix(38), boxShadow:"inset 0 0 0 1px "+mix(65)}},
+        return e("section",{key:i, className:"flex min-w-44 flex-col overflow-hidden rounded-lg", style:{background:mix(38), boxShadow:"inset 0 0 0 1px "+mix(65)}},
           e("div",{className:"flex h-8 items-center justify-center whitespace-nowrap px-3 text-[11px] font-semibold text-white", style:{background:mix(65)}}, g.titulo || en.nome),
           e("div",{className:"flex flex-col gap-1 p-1.5"},
             g.itens.map(function(no, k){ return e("button",{key:no.nome+k, type:"button", onClick:function(){ en.abrir(no); }, title:no.nome,
               style:{background:mix(55), boxShadow:"inset 0 0 0 1px rgba(255,255,255,.2)", height:"2.75rem"},   // padrao-ok: botão de 2 linhas, mesma altura para todos (23/11/2026)
-              className:"flex items-center justify-center whitespace-pre-line rounded-md px-3 text-center text-[14px] font-medium leading-tight text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, duasLinhas(no.nome)); })));   // padrao-ok: texto de 14 px, pedido do Marcus
+              className:"flex items-center justify-center whitespace-pre rounded-md px-3 text-center text-[14px] font-medium leading-tight text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, duasLinhas(no.nome)); })));   // padrao-ok: texto de 14 px, pedido do Marcus
       })));
 }
 
