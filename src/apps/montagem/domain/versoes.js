@@ -3,7 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.21.92", data:"2026-11-22", titulo:"Financeiro familiar: mudar a pessoa de uma conta já paga", itens:[
+ {v:"0.21.92", data:"2026-11-22", titulo:"Contas a pagar da família: mudar a pessoa de uma conta já paga", itens:[
+  {tipo:"novo", area:"Financeiro → Contas → Contas a pagar (Contas: Família ou Junto)", txt:"Clicar numa conta da família, paga ou a pagar, abre a janela Mudar a pessoa direto na lista, sem ir para o Financeiro familiar. Troca a pessoa (ou Família) sem estornar e sem baixar de novo. Vale para a conta inteira, todos os meses. O botão Abrir na Família leva para a tela antiga. Só quem tem acesso ao Financeiro familiar vê a janela. Pedido da Anamaria."},
   {tipo:"novo", area:"Financeiro → Família → Contas pagas", txt:"Na janela Editar pagamento, novo campo Pessoa da conta com o botão Mudar só a pessoa. Troca a pessoa (ou Família) sem estornar e sem baixar de novo: o pagamento, a data e o comprovante ficam como estão. Vale para a conta inteira, todos os meses, e funciona também em mês passado. Pedido da Anamaria."}]},
   {v:"0.21.91", data:"2026-11-22", titulo:"Financeiro familiar: Home em extrato completo", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → Home da família", txt:"A Home virou um extrato: as linhas dizem o que é (entrou, saiu, falta pagar, categorias) e as colunas dizem quem (uma por pessoa e o total da família). Entram o Pix e para onde foi (ficou com a pessoa ou foi para prestadores), a meta, o saldo devido a prestadores, atrasado, vence em 7 dias, transferências entre sócios e a quebra por categoria."},
