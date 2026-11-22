@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negociações · versão antiga (20/11/2026)</title>
+<style>
+  body{margin:0;background:#0f1729;color:#fff;font:13px/1.45 Inter,Arial,sans-serif;padding:16px}
+  h1{font-size:16px;margin:0 0 4px;text-align:center}
+  p.sub{text-align:center;margin:0 0 14px;color:#cbd5e1}
+  .bloco{border:2px solid #2d5190;margin:0 0 10px}
+  .bloco h2{margin:0;background:#2d5190;font-size:12px;text-transform:uppercase;text-align:center;padding:6px}
+  .bloco .corpo{padding:8px 12px}
+  table{border-collapse:collapse;width:100%;margin-top:6px}
+  th,td{border:1px solid rgba(255,255,255,.3);padding:3px 6px;text-align:center;font-size:12px}
+  th{background:#1b2a4a}
+  code{background:#1b2a4a;padding:1px 5px}
+  .aviso{background:#1b2a4a;padding:8px 12px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<h1>Tela Negociações · como era antes de 20/11/2026</h1>
+<p class="sub">Mapa da versão antiga. O código completo está nos arquivos <code>Negociacoes.js.antiga</code> e <code>NegAbas.js.antiga</code>, na mesma pasta.</p>
+
+<div class="aviso"><b>Como voltar para esta versão:</b> copie <code>Negociacoes.js.antiga</code> para <code>src/apps/montagem/pages/pf/Negociacoes.js</code> e <code>NegAbas.js.antiga</code> para <code>src/apps/montagem/pages/pf/NegAbas.js</code>. Os dados não mudam: a tela só lê o módulo de Pagamentos a fornecedores.</div>
+
+<div class="bloco"><h2>Abas no topo</h2><div class="corpo">Negociações · Meses e dezenas · Limite e calendário</div></div>
+
+<div class="bloco"><h2>1 · Cabeçalho e filtros</h2><div class="corpo">
+  Botão <b>Lançar pedido</b>. Filtros: Tipo (Tudo, Sem NF, Com NF), Fornecedor (menu), Período (12 meses, 6 meses...) e Situação (Tudo, Em aberto, Quitado).
+</div></div>
+
+<div class="bloco"><h2>2 · Pedidos lançados</h2><div class="corpo">
+  Lista de todos os pedidos, do último para o primeiro.
+  <table><tr><th>Nº</th><th>Data</th><th>Fornecedor</th><th>Pedido</th><th>Total</th><th>Com NF</th><th>Sem NF</th><th>Pago</th><th>Falta</th><th>Parcelas</th></tr></table>
+  Clicar no pedido abre a janela de detalhe: ver, editar e dar baixa.
+</div></div>
+
+<div class="bloco"><h2>3 · Avisos da semana</h2><div class="corpo">Faixa colorida com a quantidade de avisos (vencendo, atrasados). Clicar abre a lista.</div></div>
+
+<div class="bloco"><h2>4 · Prestadores de serviço, pendente</h2><div class="corpo">
+  <table><tr><th>Prestador</th><th>Pagar até</th><th>Pix mínimo</th><th>Total</th><th>Pago</th><th>Falta pagar</th><th>Ver negociação</th></tr></table>
+</div></div>
+
+<div class="bloco"><h2>5 · Painel de endividamento</h2><div class="corpo">
+  4 cartões: A pagar sem NF · Em aberto · Registro com NF · Dívida total.<br>
+  3 visões: <b>Linha do tempo</b> (mês a mês, o mês abre as janelas) · <b>Janelas de pagamento</b> (uma linha por data de cada fornecedor) · <b>Fornecedor × mês</b> (matriz).
+</div></div>
+
+<div class="bloco"><h2>6 · Negociações por fornecedor / resumo da negociação</h2><div class="corpo">
+  Sem fornecedor escolhido: tabela com Fornecedor, Pedidos, Total, Com NF, Sem NF, Pago, Dívida e Sem parcela.<br>
+  Com fornecedor escolhido: 5 cartões (Dívida total, Total em pedidos, Total com NF, Total sem NF, Já pago) e a tabela Total por mês.
+</div></div>
+
+<div class="bloco"><h2>7 · Pedidos sem parcela lançada</h2><div class="corpo">Lista dos pedidos sem parcelas, com o botão Lançar parcela.</div></div>
+
+<div class="bloco"><h2>8 · Relação detalhada por mês</h2><div class="corpo">
+  Um bloco por mês: 4 cartões (A pagar sem NF, Pago, Em aberto, Com NF), a barra <b>Datas limite</b> com Editar datas, e as parcelas em duas seções que abrem e fecham: <b>SEM NF · pix revendedora</b> (controle de pagamento, por acerto) e <b>COM NF · registro</b>. Cada parcela tem Dar baixa ou Estornar.
+</div></div>
+
+<div class="bloco"><h2>9 · Janelas</h2><div class="corpo">Lançar pedido · Lançar parcela · Detalhe do pedido · Datas limite.</div></div>
+
+<div class="bloco"><h2>Telas especiais</h2><div class="corpo">
+  <b>Pontual</b> (pagamento de cartão a cada 10 dias): painel próprio com o que passou no cartão, o que já foi descontado e o que ainda vai descontar.<br>
+  <b>Point</b> (valor definido por mês): painel de conta corrente, com pedidos lançados e acerto mensal.
+</div></div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lançar pedido e enviar proposta · 8 formatos compactos</title>
+<style>
+  :root{--fundo:#0f1729;--azul:#2d5190;--azul2:#1b2a4a;--azul3:#16223d;--linha:rgba(255,255,255,.35);--ok:#4ade80;--aviso:#fbbf24;--bt:#fbbf24}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1220;color:#fff;font:10px/1.3 Inter,Arial,sans-serif;padding:12px}
+  h1{font-size:14px;text-align:center;margin:0 0 3px}
+  p.sub{text-align:center;margin:0 0 12px;color:#cbd5e1;font-size:11px}
+  .fmt{margin:0 0 22px;border:1px solid var(--linha)}
+  .fmt>.nome{background:#fff;color:#0b1220;font-weight:800;padding:4px 8px;text-transform:uppercase;font-size:11px}
+  .fmt>.dica{background:var(--azul3);padding:4px 8px;font-size:10px;color:#dbe4f5;border-bottom:1px solid var(--linha)}
+  .jan{background:var(--fundo);max-width:980px;margin:0 auto;border:1px solid var(--linha)}
+  .tit{background:var(--azul);text-align:center;font-weight:800;text-transform:uppercase;font-size:12px;padding:5px 8px;position:relative;border-bottom:1px solid var(--linha)}
+  .tit i{position:absolute;right:8px;top:4px;font-style:normal}
+  .bar{background:var(--azul);text-align:center;font-weight:700;text-transform:uppercase;font-size:10px;padding:2px 6px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--linha);padding:2px 5px;text-align:center;font-size:10px;white-space:nowrap;height:21px}
+  th{background:var(--azul2);text-transform:uppercase;font-size:10px;font-weight:700}
+  td.k{background:var(--azul3);font-weight:700;text-transform:uppercase;width:1%}
+  tfoot td,tr.tot td{background:var(--azul2);font-weight:800}
+  .in{display:block;width:100%;height:17px;line-height:15px;background:var(--azul2);border:1px solid rgba(255,255,255,.3);border-radius:3px;text-align:center;font-size:10px;color:#fff;padding:0 3px}
+  .in.v{color:#e2e8f0}
+  .ok{color:var(--ok)} .av{color:var(--aviso)}
+  .msg{background:var(--azul3);border:1px solid var(--linha);padding:5px 8px;font:10px/1.35 ui-monospace,Consolas,monospace;white-space:pre-wrap;text-align:left;max-height:230px;overflow:auto}
+  .botoes{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;padding:5px;background:var(--azul2);border-top:1px solid var(--linha)}
+  .bt{height:20px;line-height:18px;padding:0 10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);font-size:10px;font-weight:700;border-radius:3px;cursor:default}
+  .bt.p{border-color:var(--bt);color:var(--bt);background:rgba(251,191,36,.18)}
+  .g2{display:grid;grid-template-columns:1fr 1fr} .g2>div+div{border-left:1px solid var(--linha)}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr)} .g3>div+div{border-left:1px solid var(--linha)}
+  .g12{display:grid;grid-template-columns:1.1fr 1fr} .g12>div+div{border-left:1px solid var(--linha)}
+  .abas{display:flex;justify-content:center;gap:2px;background:var(--azul2);padding:3px;border-bottom:1px solid var(--linha)}
+  .abas button{background:transparent;color:#fff;border:1px solid var(--linha);font:700 10px Inter,Arial;padding:2px 12px;cursor:pointer}
+  .abas button.on{background:rgba(255,255,255,.28)}
+  .painel{display:none}.painel.on{display:block}
+  .campos{display:grid;gap:0;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  .campos>div{border:1px solid var(--linha);padding:2px 4px;text-align:center}
+  .campos label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;margin-bottom:1px;color:#cbd5e1}
+  .nota{max-width:980px;margin:6px auto 0;color:#94a3b8;font-size:10px;text-align:center}
+</style>
+</head>
+<body>
+<h1>Lançar pedido e enviar proposta · 8 formatos compactos</h1>
+<p class="sub">Todos centralizados, no padrão das telas de hoje: fundo azul escuro das tabelas, barras azuis, linhas finas, letra de <b>10 px</b> (rótulos em maiúsculas), campos de <b>17 px</b>. Exemplo: Pontual, NF 11881, R$ 28.767,81, 25% boleto e 75% Pix.</p>
+<div id="app"></div>
+<script>
+var D = ["12/12/2026","12/01/2027","12/02/2027","12/03/2027","12/04/2027","12/05/2027"], B = "R$ 1.198,66", PX = ["R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.596,00"];
+var MSG = "🧾 PEDIDO PONTUAL — NF 11881\n\n🏢 Pagador: CNPJ Mayz 46.873.285/0001-76\n🏭 Beneficiário: Pontual (32.206.541/0001-67)\n📅 Doc.: 12/11/2026\n\n💰 VALOR TOTAL: R$ 28.767,81\n\n━━━━━━━━━━━━━━━\n📄 BOLETO (25%) — R$ 7.191,96\n1️⃣ 12/12/2026 — R$ 1.198,66 ⚠️ (sábado)\n2️⃣ 12/01/2027 — R$ 1.198,66\n3️⃣ 12/02/2027 — R$ 1.198,66\n4️⃣ 12/03/2027 — R$ 1.198,66\n5️⃣ 12/04/2027 — R$ 1.198,66\n6️⃣ 12/05/2027 — R$ 1.198,66\n✅ Total Boleto: R$ 7.191,96\n━━━━━━━━━━━━━━━\n💸 PIX (75%) — R$ 21.575,85\n1️⃣ 12/12/2026 — R$ 3.595,97 ⚠️ (sábado)\n2️⃣ 12/01/2027 — R$ 3.595,97\n3️⃣ 12/02/2027 — R$ 3.595,97\n4️⃣ 12/03/2027 — R$ 3.595,97\n5️⃣ 12/04/2027 — R$ 3.595,97\n6️⃣ 12/05/2027 — R$ 3.596,00\n✅ Total Pix: R$ 21.575,85\n━━━━━━━━━━━━━━━\n💰 TOTAL GERAL: R$ 28.767,81";
+function f(rot, v){ return '<div><label>'+rot+'</label><span class="in v">'+v+'</span></div>'; }
+function kv(rot, v){ return '<tr><td class="k">'+rot+'</td><td><span class="in v">'+v+'</span></td></tr>'; }
+function jan(n, nome, dica, corpo){ return '<div class="fmt"><div class="nome">Formato '+n+' · '+nome+'</div><div class="dica">'+dica+'</div><div class="jan"><div class="tit">Lançar pedido e enviar proposta<i>✕</i></div>'+corpo+'</div></div>'; }
+var BOT = '<div class="botoes"><span class="bt">Cancelar</span><span class="bt">Copiar proposta</span><span class="bt">Só lançar o pedido</span><span class="bt p">Enviar proposta e lançar pedido</span></div>';
+var parcCom = '<table><thead><tr><th>#</th><th>Forma</th><th>Vencimento</th><th>Valor</th><th>Conta</th><th>Status</th></tr></thead><tbody>'+D.map(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>Boleto</td><td>'+d+'</td><td>'+B+'</td><td>—</td><td>Pendente</td></tr>'; }).join("")+'</tbody><tfoot><tr><td colspan="3">Total · fecha certo ✓</td><td>R$ 7.191,96</td><td colspan="2"></td></tr></tfoot></table>';
+var parcSem = '<table><thead><tr><th>#</th><th>Forma</th><th>Vencimento</th><th>Valor</th><th>Conta</th><th>Status</th></tr></thead><tbody>'+D.map(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>Pix revendedora</td><td>'+d+'</td><td>'+PX[i]+'</td><td>—</td><td>Pendente</td></tr>'; }).join("")+'</tbody><tfoot><tr><td colspan="3">Total · fecha certo ✓</td><td>R$ 21.575,85</td><td colspan="2"></td></tr></tfoot></table>';
+var parcUna = '<table><thead><tr><th>#</th><th>Vencimento</th><th>Boleto</th><th>Pix revendedora</th><th>Total da data</th></tr></thead><tbody>'+D.map(function(d, i){ return '<tr><td>'+(i+1)+'</td><td><span class="in v">'+d+'</span></td><td><span class="in v">'+B+'</span></td><td><span class="in v">'+PX[i]+'</span></td><td>'+(i<5?'R$ 4.794,63':'R$ 4.794,66')+'</td></tr>'; }).join("")+'</tbody><tfoot><tr><td colspan="2">Total · fecha certo ✓</td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>R$ 28.767,81</td></tr></tfoot></table>';
+var h = "";
+
+// 1 · formulário em tabela (rótulo na célula azul, valor ao lado), 2 colunas
+h += jan(1, "Formulário em tabela, duas colunas", "Os campos viram linhas de tabela: rótulo na célula azul e valor ao lado. Parcelas lado a lado, proposta e botões embaixo.",
+ '<div class="g2"><div><div class="bar">Pedido</div><table>'+kv("Fornecedor","Pontual")+kv("Nº do pedido","11881")+kv("Data","12/11/2026")+kv("CNPJ","46.873.285/0001-76")+kv("Descrição","Banho de ouro e prata")+'</table></div>'+
+ '<div><div class="bar">Valores e nota</div><table>'+kv("Valor total","R$ 28.767,81")+kv("% com nota","25")+kv("Com nota / sem nota","R$ 7.191,96 / R$ 21.575,85")+kv("Nº da nota","11881")+kv("Arquivo da nota","NF-11881.pdf · Trocar")+'</table></div></div>'+
+ '<div class="g2"><div><div class="bar">Parcelas com nota</div>'+parcCom+'</div><div><div class="bar">Parcelas sem nota</div>'+parcSem+'</div></div>'+
+ '<div class="bar">Proposta para o fornecedor</div><div class="msg" style="max-height:110px">'+MSG+'</div>'+BOT);
+
+// 2 · passos em abas
+h += jan(2, "Passos em abas", "Quatro abas curtas: Pedido, Valores, Parcelas e Proposta. A janela fica baixa porque só uma aparece de cada vez.",
+ '<div class="abas" data-g="f2"><button class="on" data-i="0">1 · Pedido</button><button data-i="1">2 · Valores e nota</button><button data-i="2">3 · Parcelas</button><button data-i="3">4 · Proposta</button></div>'+
+ '<div class="painel on" data-g="f2" data-i="0"><table>'+kv("Fornecedor","Pontual")+kv("Nº do pedido","11881")+kv("Data do pedido","12/11/2026")+kv("CNPJ (quem paga)","46.873.285/0001-76")+kv("O que estamos pagando","Banho de ouro e prata")+'</table></div>'+
+ '<div class="painel" data-g="f2" data-i="1"><table><thead><tr><th>Valor total</th><th>% com nota</th><th>Com nota</th><th>Sem nota</th><th>% sem nota</th><th>Nº da nota</th><th>Arquivo</th></tr></thead><tbody><tr><td>R$ 28.767,81</td><td>25%</td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>75%</td><td>11881</td><td>NF-11881.pdf</td></tr></tbody></table></div>'+
+ '<div class="painel" data-g="f2" data-i="2"><div class="g2"><div><div class="bar">Com nota</div>'+parcCom+'</div><div><div class="bar">Sem nota</div>'+parcSem+'</div></div></div>'+
+ '<div class="painel" data-g="f2" data-i="3"><div class="msg">'+MSG+'</div></div>'+BOT);
+
+// 3 · formulário à esquerda, proposta ao vivo à direita
+h += jan(3, "Formulário à esquerda, proposta ao vivo à direita", "Enquanto preenche, a mensagem aparece pronta ao lado. Não precisa rolar até o fim para ver a proposta.",
+ '<div class="g12"><div><div class="bar">Pedido e valores</div><table>'+kv("Fornecedor","Pontual")+kv("Nº do pedido","11881")+kv("Data","12/11/2026")+kv("CNPJ","46.873.285/0001-76")+kv("Valor total","R$ 28.767,81")+kv("% com nota","25")+kv("Nº da nota · arquivo","11881 · NF-11881.pdf")+'</table>'+
+ '<div class="bar">Parcelas</div>'+parcUna+'</div><div><div class="bar">Proposta (ao vivo)</div><div class="msg" style="max-height:370px;border:0">'+MSG+'</div></div></div>'+BOT);
+
+// 4 · barra de campos + uma tabela de parcelas por data
+h += jan(4, "Barra de campos e uma tabela só de parcelas", "Todos os campos numa barra de bloquinhos, e as parcelas numa tabela só (data, boleto e Pix lado a lado), como o calendário do pedido.",
+ '<div class="campos">'+f("Fornecedor","Pontual")+f("Nº do pedido","11881")+f("Data","12/11/2026")+f("CNPJ","46.873.285/0001-76")+f("Valor total","R$ 28.767,81")+f("% com nota","25")+f("Com nota","R$ 7.191,96")+f("Sem nota","R$ 21.575,85")+f("Nº da nota","11881")+f("Arquivo da nota","NF-11881.pdf")+'</div>'+
+ '<div class="bar">Parcelas</div>'+parcUna+'<div class="bar">Proposta para o fornecedor</div><div class="msg" style="max-height:100px">'+MSG+'</div>'+BOT);
+
+// 5 · uma planilha só, com linhas de seção
+h += jan(5, "Planilha única com linhas de seção", "Tudo numa tabela só, com linhas de seção em azul separando Pedido, Valores, Parcelas e Proposta. Parece uma planilha.",
+ '<table><tbody><tr><td colspan="6" class="bar" style="background:var(--azul)">Pedido</td></tr>'+
+ '<tr><td class="k">Fornecedor</td><td>Pontual</td><td class="k">Nº do pedido</td><td>11881</td><td class="k">Data</td><td>12/11/2026</td></tr>'+
+ '<tr><td class="k">CNPJ</td><td>46.873.285/0001-76</td><td class="k">Descrição</td><td colspan="3">Banho de ouro e prata</td></tr>'+
+ '<tr><td colspan="6" class="bar" style="background:var(--azul)">Valores e nota</td></tr>'+
+ '<tr><td class="k">Valor total</td><td>R$ 28.767,81</td><td class="k">% com nota</td><td>25%</td><td class="k">% sem nota</td><td>75%</td></tr>'+
+ '<tr><td class="k">Com nota</td><td>R$ 7.191,96</td><td class="k">Sem nota</td><td>R$ 21.575,85</td><td class="k">Nº e arquivo da nota</td><td>11881 · NF-11881.pdf</td></tr>'+
+ '<tr><td colspan="6" class="bar" style="background:var(--azul)">Parcelas</td></tr></tbody></table>'+parcUna+
+ '<div class="bar">Proposta para o fornecedor</div><div class="msg" style="max-height:100px">'+MSG+'</div>'+BOT);
+
+// 6 · três colunas + parcelas embaixo
+h += jan(6, "Três colunas e parcelas embaixo", "Três bloquinhos alinhados na primeira faixa: Pedido, Valores e Totais. As parcelas ocupam a faixa de baixo, lado a lado.",
+ '<div class="g3"><div><div class="bar">Pedido</div><table>'+kv("Fornecedor","Pontual")+kv("Nº","11881")+kv("Data","12/11/2026")+kv("CNPJ","46.873.285/0001-76")+'</table></div>'+
+ '<div><div class="bar">Valores</div><table>'+kv("Valor total","R$ 28.767,81")+kv("% com nota","25")+kv("Nº da nota","11881")+kv("Arquivo","NF-11881.pdf")+'</table></div>'+
+ '<div><div class="bar">Totais</div><table>'+kv("Com nota (25%)","R$ 7.191,96")+kv("Sem nota (75%)","R$ 21.575,85")+kv("Parcelas","12")+kv("Diferença","fecha certo ✓")+'</table></div></div>'+
+ '<div class="g2"><div><div class="bar">Parcelas com nota</div>'+parcCom+'</div><div><div class="bar">Parcelas sem nota</div>'+parcSem+'</div></div>'+
+ '<div class="bar">Proposta para o fornecedor</div><div class="msg" style="max-height:90px">'+MSG+'</div>'+BOT);
+
+// 7 · coluna estreita, tipo recibo
+h += jan(7, "Coluna estreita centralizada (recibo)", "Uma coluna só, estreita e centralizada, de cima para baixo na mesma ordem da mensagem. Boa para telas pequenas.",
+ '<div style="max-width:560px;margin:0 auto"><div class="bar">Pedido</div><table>'+kv("Fornecedor","Pontual")+kv("Nº do pedido","11881")+kv("Data","12/11/2026")+kv("CNPJ","46.873.285/0001-76")+'</table>'+
+ '<div class="bar">Valores e nota</div><table>'+kv("Valor total","R$ 28.767,81")+kv("% com nota","25")+kv("Com nota","R$ 7.191,96")+kv("Sem nota","R$ 21.575,85")+kv("Nº da nota · arquivo","11881 · NF-11881.pdf")+'</table>'+
+ '<div class="bar">Parcelas</div>'+parcUna+'<div class="bar">Proposta</div><div class="msg" style="max-height:90px">'+MSG+'</div></div>'+BOT);
+
+// 8 · duas fases: com nota à esquerda, sem nota à direita
+h += jan(8, "Duas metades: com nota e sem nota", "Em cima a identificação. Embaixo, uma metade para o Com nota (valor, %, nota e boletos) e outra para o Sem nota (valor, % e Pix). Cada metade fecha sozinha.",
+ '<table><tbody><tr><td class="k">Fornecedor</td><td>Pontual</td><td class="k">Nº do pedido</td><td>11881</td><td class="k">Data</td><td>12/11/2026</td><td class="k">CNPJ</td><td>46.873.285/0001-76</td><td class="k">Valor total</td><td>R$ 28.767,81</td></tr></tbody></table>'+
+ '<div class="g2"><div><div class="bar">Com nota · 25%</div><table><tbody>'+kv("Valor","R$ 7.191,96")+kv("Nº da nota","11881")+kv("Arquivo da nota","NF-11881.pdf · Trocar")+'</tbody></table>'+parcCom+'</div>'+
+ '<div><div class="bar">Sem nota · 75%</div><table><tbody>'+kv("Valor","R$ 21.575,85")+kv("Forma","Pix de revendedora")+kv("Observação","—")+'</tbody></table>'+parcSem+'</div></div>'+
+ '<div class="bar">Proposta para o fornecedor</div><div class="msg" style="max-height:90px">'+MSG+'</div>'+BOT);
+
+document.getElementById("app").innerHTML = h;
+document.addEventListener("click", function(ev){
+  var b = ev.target.closest(".abas button"); if(!b) return;
+  var g = b.parentElement.getAttribute("data-g"), i = b.getAttribute("data-i");
+  b.parentElement.querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x===b); });
+  document.querySelectorAll('.painel[data-g="'+g+'"]').forEach(function(p){ p.classList.toggle("on", p.getAttribute("data-i")===i); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negociações · 4 opções para o pedido aberto</title>
+<style>
+  :root{--fundo:#0f1729;--azul:#2d5190;--azul2:#1b2a4a;--linha:rgba(255,255,255,.35);--ok:#4ade80;--aviso:#fbbf24}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1220;color:#fff;font:13px/1.35 Inter,Arial,sans-serif;padding:14px}
+  h1{font-size:16px;text-align:center;margin:0 0 4px}
+  p.sub{text-align:center;margin:0 0 14px;color:#cbd5e1}
+  .opcao{margin:0 0 26px;border:3px solid #fff}
+  .opcao>.rotulo{background:#fff;color:#0b1220;font-weight:800;padding:6px 10px;text-transform:uppercase;font-size:13px}
+  .opcao>.nota{background:#16223d;padding:7px 10px;font-size:12px;border-bottom:1px solid var(--linha)}
+  .tela{background:var(--fundo)}
+  .barra{background:var(--azul);text-align:center;font-weight:700;text-transform:uppercase;padding:4px 8px;font-size:12px;position:relative;border-bottom:1px solid var(--linha)}
+  .barra.grande{font-size:20px;padding:8px}
+  .barra .dir{position:absolute;right:8px;top:4px;font-size:12px}
+  .hr{height:1px;background:#fff}
+  .info{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 28px;background:var(--azul2);padding:6px 10px;border-bottom:1px solid var(--linha);font-size:12px}
+  .info b{color:#93c5fd}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--linha);padding:3px 6px;text-align:center;font-size:12px;white-space:nowrap}
+  th{background:var(--azul2);text-transform:uppercase;font-size:11px}
+  tfoot td,tr.total td{font-weight:800;background:#1b2a4a}
+  .grande td{font-size:16px;height:34px}
+  .ok{color:var(--ok)} .av{color:var(--aviso)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr}
+  .grid2>div+div{border-left:1px solid #fff}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr)}
+  .grid4>div+div{border-left:1px solid #fff}
+  .barprog{height:8px;background:#334155;margin:0 auto;width:90%}
+  .barprog i{display:block;height:8px;background:var(--ok)}
+  .cnpj{background:#10213f;color:#fde68a;font-weight:700}
+  .nota-pe{padding:8px 12px;color:#cbd5e1;font-size:12px}
+  .secao{border:2px solid #fff;margin:0 0 20px}
+</style>
+</head>
+<body>
+<h1>Tela Negociações · pedido aberto: 4 opções</h1>
+<p class="sub">Exemplo real do Nickolas: Pontual, NF 11881 / Fatura 13745. Todos os valores abaixo são os da mensagem do WhatsApp (nenhum pagamento lançado ainda).</p>
+
+<!-- ============ OPÇÃO 1 ============ -->
+<div class="opcao">
+  <div class="rotulo">Opção 1 · Uma tabela só, por data (a que bate o olho mais rápido)</div>
+  <div class="nota">Cada linha é uma data de vencimento e mostra <b>Boleto</b> (com nota) e <b>Pix</b> (sem nota) lado a lado, como na mensagem do Nickolas. Nada aparece duas vezes. O CNPJ nosso fica no cabeçalho do pedido.</div>
+  <div class="tela">
+    <div class="barra grande">Pedido NF 11881 / Fatura 13745</div>
+    <div class="info"><span><b>CNPJ nosso:</b> 46 · Sorelly Comércio (46.873.285/0001-76)</span><span><b>Fornecedor:</b> Pontual (32.206.541/0001-67)</span><span><b>Data do pedido:</b> 12/11/2026</span></div>
+    <table>
+      <thead><tr><th>Total do pedido</th><th>Boleto (com nota) 25%</th><th>Pix (sem nota) 75%</th><th>Pago</th><th>Falta</th></tr></thead>
+      <tbody class="grande"><tr><td>R$ 28.767,81</td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td class="ok">—</td><td>R$ 28.767,81</td></tr></tbody>
+    </table>
+    <div class="hr"></div>
+    <table>
+      <thead><tr><th>Parcela</th><th>Vencimento</th><th>Boleto</th><th>Situação do boleto</th><th>Pix previsto</th><th>Pix pago na data</th><th>Total da data</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>12/12/2026</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.595,97</td><td class="ok">—</td><td>R$ 4.794,63</td></tr>
+        <tr><td>2</td><td>12/01/2027</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.595,97</td><td class="ok">—</td><td>R$ 4.794,63</td></tr>
+        <tr><td>3</td><td>12/02/2027</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.595,97</td><td class="ok">—</td><td>R$ 4.794,63</td></tr>
+        <tr><td>4</td><td>12/03/2027</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.595,97</td><td class="ok">—</td><td>R$ 4.794,63</td></tr>
+        <tr><td>5</td><td>12/04/2027</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.595,97</td><td class="ok">—</td><td>R$ 4.794,63</td></tr>
+        <tr><td>6</td><td>12/05/2027</td><td>R$ 1.198,66</td><td>Pendente</td><td>R$ 3.596,00</td><td class="ok">—</td><td>R$ 4.794,66</td></tr>
+      </tbody>
+      <tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td></td><td>R$ 21.575,85</td><td>—</td><td>R$ 28.767,81</td></tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- ============ OPÇÃO 2 ============ -->
+<div class="opcao">
+  <div class="rotulo">Opção 2 · Dois lados, com o resumo em cima de cada lado</div>
+  <div class="nota">Com nota (boleto) à esquerda e Sem nota (Pix) à direita. O resumo de cada lado (total, pago, falta) fica na primeira linha do próprio lado, e o total da tabela fica colado embaixo. Sem bloco de total repetido.</div>
+  <div class="tela">
+    <div class="barra grande">Pedido NF 11881 / Fatura 13745 · 12/11/2026</div>
+    <div class="info"><span><b>CNPJ nosso:</b> 46 · Sorelly Comércio (46.873.285/0001-76)</span><span><b>Fornecedor:</b> Pontual</span><span><b>Total do pedido:</b> R$ 28.767,81</span></div>
+    <div class="grid2">
+      <div>
+        <div class="barra">Com nota · Boleto</div>
+        <table><thead><tr><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody><tr><td>R$ 7.191,96</td><td class="ok">—</td><td>R$ 7.191,96</td></tr></tbody></table>
+        <table><thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>12/12/2026</td><td>R$ 1.198,66</td><td>Pendente</td></tr><tr><td>2</td><td>12/01/2027</td><td>R$ 1.198,66</td><td>Pendente</td></tr>
+            <tr><td>3</td><td>12/02/2027</td><td>R$ 1.198,66</td><td>Pendente</td></tr><tr><td>4</td><td>12/03/2027</td><td>R$ 1.198,66</td><td>Pendente</td></tr>
+            <tr><td>5</td><td>12/04/2027</td><td>R$ 1.198,66</td><td>Pendente</td></tr><tr><td>6</td><td>12/05/2027</td><td>R$ 1.198,66</td><td>Pendente</td></tr>
+          </tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td></td></tr></tfoot></table>
+      </div>
+      <div>
+        <div class="barra">Sem nota · Pix de revendedora</div>
+        <table><thead><tr><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody><tr><td>R$ 21.575,85</td><td class="ok">—</td><td>R$ 21.575,85</td></tr></tbody></table>
+        <table><thead><tr><th>Parcela</th><th>Vencimento</th><th>Previsto</th><th>Pago na data</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>12/12/2026</td><td>R$ 3.595,97</td><td class="ok">—</td></tr><tr><td>2</td><td>12/01/2027</td><td>R$ 3.595,97</td><td class="ok">—</td></tr>
+            <tr><td>3</td><td>12/02/2027</td><td>R$ 3.595,97</td><td class="ok">—</td></tr><tr><td>4</td><td>12/03/2027</td><td>R$ 3.595,97</td><td class="ok">—</td></tr>
+            <tr><td>5</td><td>12/04/2027</td><td>R$ 3.595,97</td><td class="ok">—</td></tr><tr><td>6</td><td>12/05/2027</td><td>R$ 3.596,00</td><td class="ok">—</td></tr>
+          </tbody><tfoot><tr><td>Total</td><td></td><td>R$ 21.575,85</td><td>—</td></tr></tfoot></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPÇÃO 3 ============ -->
+<div class="opcao">
+  <div class="rotulo">Opção 3 · Calendário do pedido, com barra de progresso</div>
+  <div class="nota">Uma linha por mês, com Boleto, Pix, total do mês, quanto já foi pago e uma barra que mostra o andamento. Serve para ver rápido "em que mês estamos neste pedido".</div>
+  <div class="tela">
+    <div class="barra grande">Pedido NF 11881 / Fatura 13745</div>
+    <div class="info"><span><b>CNPJ nosso:</b> 46 · Sorelly Comércio</span><span><b>Fornecedor:</b> Pontual</span><span><b>Doc.:</b> 12/11/2026</span><span><b>Total:</b> R$ 28.767,81</span><span><b>Pago:</b> R$ 0,00</span><span><b>Falta:</b> R$ 28.767,81</span></div>
+    <table>
+      <thead><tr><th>Mês</th><th>Vencimento</th><th>Boleto</th><th>Pix</th><th>Total do mês</th><th>Pago</th><th>Falta</th><th>Andamento</th></tr></thead>
+      <tbody>
+        <tr><td>Dezembro/2026</td><td>12/12</td><td>R$ 1.198,66</td><td>R$ 3.595,97</td><td>R$ 4.794,63</td><td class="ok">—</td><td>R$ 4.794,63</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+        <tr><td>Janeiro/2027</td><td>12/01</td><td>R$ 1.198,66</td><td>R$ 3.595,97</td><td>R$ 4.794,63</td><td class="ok">—</td><td>R$ 4.794,63</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+        <tr><td>Fevereiro/2027</td><td>12/02</td><td>R$ 1.198,66</td><td>R$ 3.595,97</td><td>R$ 4.794,63</td><td class="ok">—</td><td>R$ 4.794,63</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+        <tr><td>Março/2027</td><td>12/03</td><td>R$ 1.198,66</td><td>R$ 3.595,97</td><td>R$ 4.794,63</td><td class="ok">—</td><td>R$ 4.794,63</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+        <tr><td>Abril/2027</td><td>12/04</td><td>R$ 1.198,66</td><td>R$ 3.595,97</td><td>R$ 4.794,63</td><td class="ok">—</td><td>R$ 4.794,63</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+        <tr><td>Maio/2027</td><td>12/05</td><td>R$ 1.198,66</td><td>R$ 3.596,00</td><td>R$ 4.794,66</td><td class="ok">—</td><td>R$ 4.794,66</td><td><div class="barprog"><i style="width:0%"></i></div></td></tr>
+      </tbody>
+      <tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>R$ 28.767,81</td><td>—</td><td>R$ 28.767,81</td><td>0%</td></tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- ============ OPÇÃO 4 ============ -->
+<div class="opcao">
+  <div class="rotulo">Opção 4 · Igual à mensagem do Nickolas (ficha do pedido)</div>
+  <div class="nota">Reproduz a ordem da mensagem do WhatsApp: cabeçalho (pagador, fornecedor, data, total), depois Boleto, depois Pix, depois Total geral. Os pagamentos de Pix ficam num bloco embaixo.</div>
+  <div class="tela">
+    <div class="barra grande">Pedido Pontual · NF 11881 / Fatura 13745</div>
+    <table>
+      <thead><tr><th>Pagador (CNPJ nosso)</th><th>Beneficiário</th><th>Data do doc.</th><th>Valor total</th></tr></thead>
+      <tbody class="grande"><tr><td>46 · Sorelly Comércio<br><span style="font-size:11px">46.873.285/0001-76</span></td><td>Pontual<br><span style="font-size:11px">32.206.541/0001-67</span></td><td>12/11/2026</td><td>R$ 28.767,81</td></tr></tbody>
+    </table>
+    <div class="hr"></div>
+    <div class="barra">Boleto · 25% · R$ 7.191,96</div>
+    <table><thead><tr><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>Total boleto</th></tr></thead>
+      <tbody><tr><td>12/12/2026<br>R$ 1.198,66</td><td>12/01/2027<br>R$ 1.198,66</td><td>12/02/2027<br>R$ 1.198,66</td><td>12/03/2027<br>R$ 1.198,66</td><td>12/04/2027<br>R$ 1.198,66</td><td>12/05/2027<br>R$ 1.198,66</td><td><b>R$ 7.191,96</b></td></tr></tbody></table>
+    <div class="hr"></div>
+    <div class="barra">Pix de revendedora · 75% · R$ 21.575,85</div>
+    <table><thead><tr><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>Total Pix</th></tr></thead>
+      <tbody><tr><td>12/12/2026<br>R$ 3.595,97</td><td>12/01/2027<br>R$ 3.595,97</td><td>12/02/2027<br>R$ 3.595,97</td><td>12/03/2027<br>R$ 3.595,97</td><td>12/04/2027<br>R$ 3.595,97</td><td>12/05/2027<br>R$ 3.596,00</td><td><b>R$ 21.575,85</b></td></tr></tbody></table>
+    <div class="hr"></div>
+    <table><thead><tr><th>Total geral</th><th>Pago</th><th>Falta</th></tr></thead><tbody class="grande"><tr><td>R$ 28.767,81</td><td class="ok">—</td><td>R$ 28.767,81</td></tr></tbody></table>
+    <div class="hr"></div>
+    <div class="barra">Pagamentos de Pix deste pedido</div>
+    <table><thead><tr><th>Data</th><th>Revendedora</th><th>Conta</th><th>Acerto</th><th>Valor</th><th>Comprovante</th></tr></thead>
+      <tbody><tr><td colspan="6" style="padding:8px">Nenhum Pix lançado ainda. Os Pix entram pela tela Lançamento de pagamentos e aparecem aqui.</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ============ CNPJ NOSSO ============ -->
+<div class="secao">
+  <div class="rotulo" style="background:#fff;color:#0b1220;font-weight:800;padding:6px 10px;text-transform:uppercase">Em todas as opções · o CNPJ nosso nas tabelas</div>
+  <div class="tela">
+    <div class="barra">Lista de pedidos do fornecedor (com a coluna CNPJ)</div>
+    <table>
+      <thead><tr><th>Nº</th><th>Data</th><th>Pedido</th><th>CNPJ nosso</th><th>Total</th><th>Com nota</th><th>Sem nota</th><th>Vencimentos</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td>#166</td><td>12/11/2026</td><td>NF 11881 · Fatura 13745</td><td class="cnpj">46 · Sorelly Comércio</td><td>R$ 28.767,81</td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>12/26 a 05/27</td><td>Em aberto</td></tr>
+        <tr><td>#162</td><td>05/11/2026</td><td>NF 11879 · Fatura 13747</td><td class="cnpj">34 · Sorelly Atacadista</td><td>R$ 16.100,00</td><td>R$ 4.025,00</td><td>R$ 12.075,00</td><td>12/26 a 05/27</td><td>Em aberto</td></tr>
+      </tbody>
+    </table>
+    <div class="hr"></div>
+    <div class="barra">Resumo do fornecedor: em aberto por CNPJ nosso</div>
+    <table>
+      <thead><tr><th>Fornecedor</th><th>CNPJ nosso</th><th>Pedidos em aberto</th><th>Com nota a pagar</th><th>Sem nota a pagar</th><th>Em aberto</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2">Pontual</td><td class="cnpj">34 · Sorelly Atacadista</td><td>6</td><td>R$ 40.000,00</td><td>R$ 120.000,00</td><td>R$ 160.000,00</td></tr>
+        <tr><td class="cnpj">46 · Sorelly Comércio</td><td>9</td><td>R$ 196.640,70</td><td>R$ 348.474,80</td><td>R$ 545.115,50</td></tr>
+        <tr class="total"><td>Total Pontual</td><td></td><td>15</td><td>R$ 236.640,70</td><td>R$ 468.474,80</td><td>R$ 705.115,50</td></tr>
+      </tbody>
+    </table>
+    <div class="nota-pe">Atenção: os números da divisão por CNPJ nesta seção são <b>apenas um exemplo de como fica</b>. Os valores reais saem dos pedidos já lançados (cada pedido tem o CNPJ nosso).</div>
+  </div>
+</div>
+</body>
+</html>

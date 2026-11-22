@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negociações · 8 variações do estilo 6 (resumo à esquerda, pedido à direita)</title>
+<style>
+  :root{--fundo:#0f1729;--azul:#2d5190;--azul2:#1b2a4a;--azul3:#16223d;--linha:rgba(255,255,255,.35);--ok:#4ade80;--aviso:#fbbf24}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1220;color:#fff;font:13px/1.35 Inter,Arial,sans-serif;padding:14px}
+  h1{font-size:16px;text-align:center;margin:0 0 4px}
+  p.sub{text-align:center;margin:0 0 16px;color:#cbd5e1}
+  .est{margin:0 0 28px;background:var(--fundo);border:1px solid var(--linha)}
+  .est>.nome{background:var(--azul);font-weight:800;padding:6px 10px;text-transform:uppercase;font-size:12px}
+  .est>.dica{background:var(--azul3);padding:6px 10px;font-size:12px;color:#dbe4f5;border-bottom:1px solid var(--linha)}
+  .topo{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 16px;background:var(--azul);padding:5px 10px;border-bottom:1px solid var(--linha)}
+  .topo b.t{font-size:18px}
+  .topo span{font-size:12px}
+  .divide{display:grid;grid-template-columns:minmax(260px,32%) 1fr}
+  .divide>.esq{border-right:1px solid var(--linha)}
+  .barra{background:var(--azul);text-align:center;font-weight:700;text-transform:uppercase;font-size:11px;padding:3px 6px;border-bottom:1px solid var(--linha);border-top:1px solid var(--linha)}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--linha);padding:3px 7px;text-align:center;font-size:12px;white-space:nowrap}
+  th{background:var(--azul2);text-transform:uppercase;font-size:11px}
+  td.k{background:var(--azul3);font-weight:700;text-align:left}
+  tfoot td,tr.tot td{font-weight:800;background:var(--azul2)}
+  .ok{color:var(--ok)} .av{color:var(--aviso)}
+  .g td{font-size:15px;height:30px}
+  .abas{display:flex;gap:2px;background:var(--azul2);padding:3px 5px;border-bottom:1px solid var(--linha)}
+  .abas button{background:transparent;color:#fff;border:1px solid var(--linha);font:700 11px Inter,Arial;padding:3px 14px;cursor:pointer}
+  .abas button.on{background:rgba(255,255,255,.28)}
+  .painel{display:none} .painel.on{display:block}
+  .prog{display:block;height:7px;background:#334155;width:100%}
+  .prog i{display:block;height:7px;background:var(--ok)}
+  .mini td,.mini th{font-size:11px;padding:2px 5px}
+  .exemplo{color:#fde68a;font-size:11px}
+  .nota{padding:8px 12px;color:#cbd5e1;font-size:12px}
+  @media (max-width:760px){.divide{grid-template-columns:1fr}.divide>.esq{border-right:0;border-bottom:1px solid var(--linha)}}
+</style>
+</head>
+<body>
+<h1>Tela Negociações · 8 variações do estilo 6</h1>
+<p class="sub">Resumo à <b>esquerda</b>, pedido à <b>direita</b>, tudo em tabela com linhas. Exemplo: Pontual, NF 11881 / Fatura 13745. Os Pix pagos (R$ 2.000,00 e R$ 1.200,00) são <b>exemplo</b>.</p>
+<div id="app"></div>
+<script>
+var DATAS = ["12/12/2026","12/01/2027","12/02/2027","12/03/2027","12/04/2027","12/05/2027"];
+var BOL = "R$ 1.198,66", PIXV = ["R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.595,97","R$ 3.596,00"], TOTD = ["R$ 4.794,63","R$ 4.794,63","R$ 4.794,63","R$ 4.794,63","R$ 4.794,63","R$ 4.794,66"];
+var TOPO = '<div class="topo"><b class="t">Pedido NF 11881 / Fatura 13745</b><span><b>CNPJ nosso:</b> 46 · Sorelly Comércio (46.873.285/0001-76) · <b>Pontual</b> · doc. 12/11/2026</span></div>';
+function rows(fn){ return DATAS.map(function(d, i){ return fn(d, i); }).join(""); }
+function est(n, nome, dica, corpo){ return '<div class="est"><div class="nome">Variação '+n+' · '+nome+'</div><div class="dica">'+dica+'</div>'+TOPO+corpo+'</div>'; }
+function abas(id, lista){ return '<div class="abas" data-g="'+id+'">'+lista.map(function(t, i){ return '<button class="'+(i===0?'on':'')+'" data-i="'+i+'">'+t+'</button>'; }).join("")+'</div>'; }
+var h = "";
+
+// 1 · resumo chave-valor | abas Parcelas / Pagamentos
+h += est(1, "Resumo em lista · parcelas e pagamentos em abas", "Esquerda: o pedido em lista (campo e valor). Direita: abas Parcelas e Pagamentos; as parcelas juntam Boleto e Pix por data.",
+ '<div class="divide"><div class="esq"><div class="barra">Resumo</div><table>'+
+ '<tr><td class="k">Total do pedido</td><td>R$ 28.767,81</td></tr><tr><td class="k">Com nota (boleto)</td><td>R$ 7.191,96</td></tr><tr><td class="k">Pago com nota</td><td class="ok">—</td></tr><tr><td class="k">Falta com nota</td><td>R$ 7.191,96</td></tr>'+
+ '<tr><td class="k">Sem nota (Pix)</td><td>R$ 21.575,85</td></tr><tr><td class="k">Pago sem nota</td><td class="ok">R$ 3.200,00</td></tr><tr><td class="k">Falta sem nota</td><td>R$ 18.375,85</td></tr><tr class="tot"><td class="k">Falta total</td><td>R$ 25.567,81</td></tr></table></div>'+
+ '<div class="dir">'+abas("v1", ["Parcelas (12)","Pagamentos (2)"])+
+ '<div class="painel on" data-g="v1" data-i="0"><table><thead><tr><th>#</th><th>Vencimento</th><th>Boleto</th><th>Situação</th><th>Pix previsto</th><th>Pix pago</th><th>Total da data</th></tr></thead><tbody>'+
+ rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+BOL+'</td><td>Pendente</td><td>'+PIXV[i]+'</td><td class="ok">'+(i===0?'R$ 3.200,00':'—')+'</td><td>'+TOTD[i]+'</td></tr>'; })+
+ '</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td></td><td>R$ 21.575,85</td><td class="ok">R$ 3.200,00</td><td>R$ 28.767,81</td></tr></tfoot></table></div>'+
+ '<div class="painel" data-g="v1" data-i="1"><table><thead><tr><th>Data</th><th>Revendedora</th><th>Conta</th><th>Acerto</th><th>Valor</th><th>Comprovante</th></tr></thead><tbody><tr><td>10/12/2026</td><td>Revendedora A <span class="exemplo">(exemplo)</span></td><td>Nisis Joias Ltda</td><td>12/12/2026</td><td class="ok">R$ 2.000,00</td><td>Sim</td></tr><tr><td>11/12/2026</td><td>Revendedora B <span class="exemplo">(exemplo)</span></td><td>Nisis Joias Ltda</td><td>12/12/2026</td><td class="ok">R$ 1.200,00</td><td>Sim</td></tr></tbody><tfoot><tr><td colspan="4">Total pago</td><td>R$ 3.200,00</td><td></td></tr></tfoot></table></div></div></div>');
+
+// 2 · resumo por lado | dois blocos empilhados (boleto em cima, pix embaixo)
+h += est(2, "Resumo por lado · boleto e Pix empilhados", "Esquerda: dois mini resumos (Com nota e Sem nota). Direita: a tabela do Boleto em cima e a do Pix embaixo, uma colada na outra.",
+ '<div class="divide"><div class="esq"><div class="barra">Com nota · Boleto</div><table class="mini"><thead><tr><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody><tr><td>R$ 7.191,96</td><td class="ok">—</td><td>R$ 7.191,96</td></tr></tbody></table>'+
+ '<div class="barra">Sem nota · Pix</div><table class="mini"><thead><tr><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody><tr><td>R$ 21.575,85</td><td class="ok">R$ 3.200,00</td><td>R$ 18.375,85</td></tr></tbody></table>'+
+ '<div class="barra">Pedido</div><table class="mini g"><tbody><tr class="tot"><td>R$ 28.767,81</td><td class="ok">R$ 3.200,00</td><td>R$ 25.567,81</td></tr></tbody></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">Boleto · 6 parcelas</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead><tbody>'+
+ rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+BOL+'</td><td>Pendente</td></tr>'; })+'</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td></td></tr></tfoot></table>'+
+ '<div class="barra">Pix · 6 parcelas</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Previsto</th><th>Pago na data</th></tr></thead><tbody>'+
+ rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+PIXV[i]+'</td><td class="ok">'+(i===0?'R$ 3.200,00':'—')+'</td></tr>'; })+'</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 21.575,85</td><td>R$ 3.200,00</td></tr></tfoot></table></div></div>');
+
+// 3 · resumo + pagamentos à esquerda | parcelas à direita
+h += est(3, "Esquerda: resumo e pagamentos · Direita: parcelas", "Os dois ficam à esquerda (o que o pedido vale e o que já foi pago). A direita é só o calendário de parcelas, grande e limpo.",
+ '<div class="divide"><div class="esq"><div class="barra">Resumo</div><table><thead><tr><th></th><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody>'+
+ '<tr><td class="k">Boleto</td><td>R$ 7.191,96</td><td class="ok">—</td><td>R$ 7.191,96</td></tr><tr><td class="k">Pix</td><td>R$ 21.575,85</td><td class="ok">R$ 3.200,00</td><td>R$ 18.375,85</td></tr></tbody><tfoot><tr><td>Pedido</td><td>R$ 28.767,81</td><td class="ok">R$ 3.200,00</td><td>R$ 25.567,81</td></tr></tfoot></table>'+
+ '<div class="barra">Pagamentos</div><table class="mini"><thead><tr><th>Data</th><th>Revendedora</th><th>Valor</th></tr></thead><tbody><tr><td>10/12</td><td>Revendedora A <span class="exemplo">(ex.)</span></td><td class="ok">R$ 2.000,00</td></tr><tr><td>11/12</td><td>Revendedora B <span class="exemplo">(ex.)</span></td><td class="ok">R$ 1.200,00</td></tr></tbody><tfoot><tr><td colspan="2">Total pago</td><td>R$ 3.200,00</td></tr></tfoot></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">Parcelas</div><table class="g"><thead><tr><th>#</th><th>Vencimento</th><th>Boleto</th><th>Pix</th><th>Total da data</th><th>Situação</th></tr></thead><tbody>'+
+ rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+BOL+'</td><td>'+PIXV[i]+'</td><td>'+TOTD[i]+'</td><td>'+(i===0?'<span class="av">Parcial</span>':'Aberta')+'</td></tr>'; })+
+ '</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>R$ 28.767,81</td><td></td></tr></tfoot></table></div></div>');
+
+// 4 · resumo por forma | parcelas com saldo acumulado
+h += est(4, "Resumo por forma · parcelas com saldo", "Esquerda: uma linha por forma de pagamento (Boleto, Pix, Total). Direita: as parcelas em ordem, com o saldo que ainda falta depois de cada data.",
+ '<div class="divide"><div class="esq"><div class="barra">Resumo por forma</div><table><thead><tr><th>Forma</th><th>%</th><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody>'+
+ '<tr><td class="k">Boleto</td><td>25%</td><td>R$ 7.191,96</td><td class="ok">—</td><td>R$ 7.191,96</td></tr><tr><td class="k">Pix</td><td>75%</td><td>R$ 21.575,85</td><td class="ok">R$ 3.200,00</td><td>R$ 18.375,85</td></tr></tbody>'+
+ '<tfoot><tr><td>Total</td><td>100%</td><td>R$ 28.767,81</td><td class="ok">R$ 3.200,00</td><td>R$ 25.567,81</td></tr></tfoot></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">Parcelas e saldo</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Forma</th><th>Valor</th><th>Pago</th><th>Saldo do pedido</th></tr></thead><tbody>'+
+ [["12/12/2026","Boleto",BOL,"—","R$ 27.569,15"],["12/12/2026","Pix",PIXV[0],"R$ 3.200,00","R$ 24.370,32"],["12/01/2027","Boleto",BOL,"—","R$ 23.171,66"],["12/01/2027","Pix",PIXV[1],"—","R$ 19.575,69"],["12/02/2027","Boleto",BOL,"—","R$ 18.377,03"],["12/02/2027","Pix",PIXV[2],"—","R$ 14.781,06"]].map(function(r, i){ return '<tr><td>'+(i+1)+'</td><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td class="ok">'+r[3]+'</td><td>'+r[4]+'</td></tr>'; }).join("")+
+ '<tr><td colspan="6" style="color:#94a3b8">… 03/2027, 04/2027 e 05/2027 seguem do mesmo jeito até zerar</td></tr></tbody></table></div></div>');
+
+// 5 · identificação + totais | calendário por mês
+h += est(5, "Identificação e totais · calendário por mês", "Esquerda: quem é o pedido (CNPJ nosso, fornecedor, datas) e os totais. Direita: uma linha por mês com barra de andamento.",
+ '<div class="divide"><div class="esq"><div class="barra">Identificação</div><table><tr><td class="k">CNPJ nosso</td><td>46 · Sorelly Comércio</td></tr><tr><td class="k">Fornecedor</td><td>Pontual</td></tr><tr><td class="k">Data do pedido</td><td>12/11/2026</td></tr><tr><td class="k">Nota / Fatura</td><td>NF 11881 · 13745</td></tr></table>'+
+ '<div class="barra">Totais</div><table><tr><td class="k">Pedido</td><td>R$ 28.767,81</td></tr><tr><td class="k">Pago</td><td class="ok">R$ 3.200,00</td></tr><tr class="tot"><td class="k">Falta</td><td>R$ 25.567,81</td></tr></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">Calendário</div><table><thead><tr><th>Mês</th><th>Boleto</th><th>Pix</th><th>Total do mês</th><th>Pago</th><th>Andamento</th></tr></thead><tbody>'+
+ ["Dezembro/2026","Janeiro/2027","Fevereiro/2027","Março/2027","Abril/2027","Maio/2027"].map(function(m, i){ return '<tr><td>'+m+'</td><td>'+BOL+'</td><td>'+PIXV[i]+'</td><td>'+TOTD[i]+'</td><td class="ok">'+(i===0?'R$ 3.200,00':'—')+'</td><td style="width:140px"><span class="prog"><i style="width:'+(i===0?'67':'0')+'%"></i></span></td></tr>'; }).join("")+
+ '</tbody><tfoot><tr><td>Total</td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>R$ 28.767,81</td><td>R$ 3.200,00</td><td>11%</td></tr></tfoot></table></div></div>');
+
+// 6 · resumo + pagamentos | abas Boleto / Pix
+h += est(6, "Resumo e pagamentos · abas Boleto e Pix", "Esquerda: resumo e pagamentos juntos. Direita: abas para escolher Boleto ou Pix, cada um com as suas parcelas.",
+ '<div class="divide"><div class="esq"><div class="barra">Resumo</div><table><tr><td class="k">Pedido</td><td>R$ 28.767,81</td></tr><tr><td class="k">Pago</td><td class="ok">R$ 3.200,00</td></tr><tr class="tot"><td class="k">Falta</td><td>R$ 25.567,81</td></tr></table>'+
+ '<div class="barra">Pagamentos</div><table class="mini"><thead><tr><th>Data</th><th>Valor</th></tr></thead><tbody><tr><td>10/12/2026</td><td class="ok">R$ 2.000,00</td></tr><tr><td>11/12/2026</td><td class="ok">R$ 1.200,00</td></tr></tbody><tfoot><tr><td>Total</td><td>R$ 3.200,00</td></tr></tfoot></table></div>'+
+ '<div class="dir">'+abas("v6", ["Boleto · R$ 7.191,96","Pix · R$ 21.575,85"])+
+ '<div class="painel on" data-g="v6" data-i="0"><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead><tbody>'+rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+BOL+'</td><td>Pendente</td></tr>'; })+'</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td></td></tr></tfoot></table></div>'+
+ '<div class="painel" data-g="v6" data-i="1"><table><thead><tr><th>#</th><th>Vencimento</th><th>Previsto</th><th>Pago na data</th><th>Falta na data</th></tr></thead><tbody>'+rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+PIXV[i]+'</td><td class="ok">'+(i===0?'R$ 3.200,00':'—')+'</td><td>'+(i===0?'R$ 395,97':PIXV[i])+'</td></tr>'; })+'</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 21.575,85</td><td>R$ 3.200,00</td><td>R$ 18.375,85</td></tr></tfoot></table></div></div></div>');
+
+// 7 · lista de pedidos do fornecedor à esquerda | pedido à direita
+h += est(7, "Lista de pedidos à esquerda · pedido escolhido à direita", "Esquerda: os pedidos do fornecedor, em tabela pequena com o CNPJ nosso (o escolhido fica marcado). Direita: o pedido escolhido, com Boleto e Pix por data.",
+ '<div class="divide"><div class="esq"><div class="barra">Pedidos da Pontual</div><table class="mini"><thead><tr><th>Pedido</th><th>CNPJ nosso</th><th>Total</th><th>Falta</th></tr></thead><tbody>'+
+ '<tr style="background:rgba(255,255,255,.2)"><td>NF 11881</td><td>46 · Comércio</td><td>R$ 28.767,81</td><td>R$ 25.567,81</td></tr><tr><td>NF 11879</td><td>34 · Atacadista</td><td>R$ 16.100,00</td><td>R$ 16.100,00</td></tr><tr><td>NF 11824</td><td>46 · Comércio</td><td>R$ 22.226,64</td><td>R$ 0,00</td></tr><tr><td>NF 11791</td><td>59 · Serenity</td><td>R$ 20.233,31</td><td>R$ 0,00</td></tr></tbody><tfoot><tr><td colspan="2">Total</td><td>R$ 87.327,76</td><td>R$ 41.667,81</td></tr></tfoot></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">NF 11881 · 12/11/2026 · CNPJ 46</div><table class="g"><thead><tr><th>#</th><th>Vencimento</th><th>Boleto</th><th>Pix</th><th>Pago</th><th>Falta</th></tr></thead><tbody>'+
+ rows(function(d, i){ return '<tr><td>'+(i+1)+'</td><td>'+d+'</td><td>'+BOL+'</td><td>'+PIXV[i]+'</td><td class="ok">'+(i===0?'R$ 3.200,00':'—')+'</td><td>'+(i===0?'R$ 1.594,63':TOTD[i])+'</td></tr>'; })+
+ '</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 7.191,96</td><td>R$ 21.575,85</td><td>R$ 3.200,00</td><td>R$ 25.567,81</td></tr></tfoot></table></div></div>');
+h += '<div class="nota">(Variação 7: os outros pedidos da lista são exemplo, só para mostrar a coluna CNPJ nosso.)</div>';
+
+// 8 · resumo com percentuais | extrato
+h += est(8, "Resumo com percentuais · extrato à direita", "Esquerda: a divisão Boleto 25% e Pix 75% em tabela, com o quanto já foi pago de cada. Direita: extrato único, em ordem de data, com o saldo.",
+ '<div class="divide"><div class="esq"><div class="barra">Divisão do pedido</div><table><thead><tr><th>Forma</th><th>%</th><th>Pago</th></tr></thead><tbody>'+
+ '<tr><td class="k">Boleto · R$ 7.191,96</td><td>25%</td><td><span class="prog"><i style="width:0%"></i></span> 0%</td></tr><tr><td class="k">Pix · R$ 21.575,85</td><td>75%</td><td><span class="prog"><i style="width:15%"></i></span> 15%</td></tr></tbody>'+
+ '<tfoot><tr><td>Pedido · R$ 28.767,81</td><td>100%</td><td>11%</td></tr></tfoot></table>'+
+ '<div class="barra">Falta pagar</div><table><tr><td class="k">Boleto</td><td>R$ 7.191,96</td></tr><tr><td class="k">Pix</td><td>R$ 18.375,85</td></tr><tr class="tot"><td class="k">Total</td><td>R$ 25.567,81</td></tr></table></div>'+
+ '<div class="dir"><div class="barra" style="border-top:0">Extrato do pedido</div><table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Situação</th><th>Falta depois</th></tr></thead><tbody>'+
+ '<tr><td>10/12/2026</td><td>Pix</td><td>Pagamento · Revendedora A <span class="exemplo">(ex.)</span></td><td class="ok">− R$ 2.000,00</td><td>Pago</td><td>R$ 26.767,81</td></tr>'+
+ '<tr><td>11/12/2026</td><td>Pix</td><td>Pagamento · Revendedora B <span class="exemplo">(ex.)</span></td><td class="ok">− R$ 1.200,00</td><td>Pago</td><td>R$ 25.567,81</td></tr>'+
+ '<tr><td>12/12/2026</td><td>Boleto</td><td>Parcela 1 de 6</td><td>R$ 1.198,66</td><td>Pendente</td><td>—</td></tr><tr><td>12/12/2026</td><td>Pix</td><td>Parcela 1 de 6 · previsto</td><td>R$ 3.595,97</td><td>Parcial</td><td>—</td></tr>'+
+ '<tr><td>12/01/2027</td><td>Boleto</td><td>Parcela 2 de 6</td><td>R$ 1.198,66</td><td>Pendente</td><td>—</td></tr><tr><td>12/01/2027</td><td>Pix</td><td>Parcela 2 de 6 · previsto</td><td>R$ 3.595,97</td><td>Aberto</td><td>—</td></tr>'+
+ '<tr><td colspan="6" style="color:#94a3b8">… parcelas 3 a 6 seguem do mesmo jeito</td></tr></tbody><tfoot><tr><td>Total</td><td></td><td></td><td>R$ 28.767,81</td><td>Pago R$ 3.200,00</td><td>R$ 25.567,81</td></tr></tfoot></table></div></div>');
+
+document.getElementById("app").innerHTML = h;
+document.addEventListener("click", function(ev){
+  var b = ev.target.closest(".abas button"); if(!b) return;
+  var g = b.parentElement.getAttribute("data-g"), i = b.getAttribute("data-i");
+  b.parentElement.querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x===b); });
+  document.querySelectorAll('.painel[data-g="'+g+'"]').forEach(function(p){ p.classList.toggle("on", p.getAttribute("data-i")===i); });
+});
+</script>
+</body>
+</html>
