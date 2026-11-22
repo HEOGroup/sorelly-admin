@@ -64,7 +64,7 @@ Cada mudança grava quem (ou "ranking automático"), quando, estado anterior, es
 
 ## 9. Estado da tela
 
-Existe a tela Encomendas › Top 50 (`pages/encomendas/Top50.js`: lista, Pedidos ao Marcus, Entradas e saídas, Importar lista, Aprovar lista do mês). Não existe ranking automático, estados nem proteção; falta ligar isso (conversa dona dos arquivos de Encomendas).
+Existem duas telas em Encomendas: **Top 100** (`pages/encomendas/Top50.js`: regras no topo, coluna Posição, lista, Pedidos ao Marcus, Entradas e saídas, Importar lista, Aprovar lista do mês) e **Ranking** (`pages/encomendas/Ranking.js`, dados de `src/server/encomendas-ranking.js`: classificação por total de 3 meses, posição de 1 mês atrás, se está na lista e a situação Ativa, Entrar, Protegida, Sem acesso ou Em saída; só leitura). Falta ligar o ranking à lista (entrada e saída automáticas no dia 1º) e os estados dentro da lista.
 
 ## 10. Fonte dos números
 

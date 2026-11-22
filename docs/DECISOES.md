@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 22/11/2026 (Encomendas: tela Ranking)
+- **Marcus pediu a tela de ranking do Top 100:** Encomendas › Ranking (`pages/encomendas/Ranking.js`, `src/server/encomendas-ranking.js`, rota `/api/encomendas/ranking`). Classifica pelo total de vendas dos últimos 3 meses (mesma base da média: sem brinde, troca, indicação e prêmio, mesmo dia junto, Leilão fora), mostra a posição de 1 mês atrás e a situação diante da lista: Ativa (1 a 100 e na lista), Entrar (1 a 100 e fora), Protegida (101 a 150 e na lista), Sem acesso (101 a 150 e fora), Em saída (depois do 150 e na lista). Só leitura; ainda não muda a lista. Regra completa em `docs/setores/encomendas-e-reposicoes/regras-top100.md`.
+- Textos "Top 50" trocados por "Top 100" nas janelas, no Quadro, nas Regras e no Funil.
+
 ## 23/11/2026 (Junção geral das conversas)
 - **Pedido do Marcus:** "sobe tudo": juntar na master tudo o que as conversas salvaram na pasta principal (ramo alteracoes-27-10) e arquivar as conversas. Regra para evitar o problema de várias cópias: cada conversa sobe em pedaços pequenos com `npm run conferir`; a pasta principal só puxa a master e ninguém edita nela.
 - **Ficou de fora (escolha C do Marcus):** `pages/BonusMontagem.js` (12/11/2026, reprova o padrão: usa TabelaCampos; sem dono). Fica no ramo `uniao-23-11`. A rota `comissoes-montagem` segue apontando para `ComissoesTodos`.
