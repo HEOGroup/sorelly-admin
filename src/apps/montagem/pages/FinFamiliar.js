@@ -62,53 +62,109 @@ function totaisAno(ff, pid, ano){
     pro:{total:s(function(x){ return x.pro.total; }), recebido:s(function(x){ return x.pro.recebido; }), restante:s(function(x){ return x.pro.restante; })},
     pix:{meta:s(function(x){ return x.pix.meta; }), recebido:s(function(x){ return x.pix.recebido; }), restante:s(function(x){ return x.pix.restante; })}};
 }
-// HOME EM TABELA ÚNICA (Marcus, 22/11/2026): igual às Negociações e ao Prestadores: uma tabela só, uma linha por pessoa, cor só para estado (verde = pago/recebido/enviado, vermelho = conta atrasada).
-// Clicar na linha abre embaixo as contas em aberto da pessoa e os atalhos para as telas dela.
+// HOME = EXTRATO COMPLETO (Marcus, 22/11/2026, modelo A): linhas dizem O QUE É (entrou, saiu, falta pagar, categorias) e colunas dizem QUEM (uma por pessoa + total da família).
+// Clicar numa linha abre embaixo a lista que explica o número (prestadores, Pix, contas atrasadas...). Substitui Resumo do grupo, Sócios (consolidado) e Relatório. Cor só para estado: verde = entrou/pago, vermelho = atrasado.
 var diaBr = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(2,4) : "—"; };
-function DetHome(p){
-  var ff = p.ff, pid = p.l.id, yms = p.ANO ? janela().filter(function(k){ return k.slice(0,4)===p.ANO && k<=hojeYm(); }) : [p.ym];
-  var itens = parcelasDe(ff, {yms:yms}).filter(function(x){ return daPessoa(x.conta, pid) && x.status!=="PAGO"; }).map(function(x){ var q = x.conta.rateio && x.conta.rateio.length ? 1/x.conta.rateio.length : 1;
-    return {id:x.chave, conta:x.conta.descricao+(x.conta.categoria==="PRO_LABORE" ? " (pró-labore)" : ""), venc:diaBr(x.venc), valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, sit:x.atrasada ? "Atrasada" : x.status==="PARCIAL" ? "Parcial" : "Pendente"}; })
-    .sort(function(a, b){ return a.venc.split("/").reverse().join("").localeCompare(b.venc.split("/").reverse().join("")); });
-  var cols = [{k:"conta", t:"Conta"}, {k:"venc", t:"Vencimento"}, {k:"valor", t:"Valor", fmt:BK}, {k:"pago", t:"Pago", fmt:BK, cor:function(l){ return l.pago>0 ? "text-success" : ""; }}, {k:"restante", t:"Restante", fmt:BK, cor:function(l){ return l.atrasada ? "text-destructive" : ""; }},
-    {k:"sit", t:"Situação", cor:function(l){ return l.atrasada ? "text-destructive" : l.sit==="Parcial" ? "text-warning" : ""; }}];
+var LIM_DET = 80;   // linhas de cada lista aberta (a lista completa fica na tela de lançar)
+function DetTab(p){
+  var l = p.linhas || [], corte = l.length>LIM_DET;
   return e("div",{className:"flex flex-col gap-1.5 p-1.5", onClick:function(ev){ ev.stopPropagation(); }},
-    itens.length===0 ? e("p",{className:"py-2 text-center text-[11px]"}, "Nenhuma conta em aberto para "+p.l.pessoa+" neste período.") :
-      e(TabelaPlanilha,{cols:cols, linhas:itens, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nenhuma conta."}),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
-      p.l.p.mostrarContas && e(Botao,{onClick:function(){ p.ir("ffcontas"); }}, "Abrir contas a pagar"),
-      p.l.p.mostrarProlabore && e(Botao,{onClick:function(){ p.ir("ffprolab"); }}, "Abrir pró-labore"),
-      p.l.p.mostrarPix && e(Botao,{onClick:function(){ p.ir("ffpix"); }}, "Abrir Pix revendedora")));
+    l.length===0 ? e("p",{className:"py-2 text-center text-[11px]"}, p.vazio || "Nada neste período.") :
+      e(TabelaPlanilha,{cols:p.cols, linhas:corte ? l.slice(0, LIM_DET) : l, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nada."}),
+    corte && e("p",{className:"text-center text-[11px]"}, "Mostrando as "+LIM_DET+" primeiras de "+l.length+". A lista completa fica em "+(p.onde || "outra tela")+"."),
+    p.ir && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ p.ir(p.ir2); }}, p.rotuloIr)));
 }
 function AbaFfHome(){
   var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ANO = /^ANO:/.test(ym) ? ym.slice(4) : "";
   var mesesOp = janela().filter(function(k){ return k<=hojeYm(); }), anosOp = mesesOp.map(function(k){ return k.slice(0,4); }).filter(function(a, i, l){ return l.indexOf(a)===i; });
   var ir = function(aba){ c.d({type:"ABA", aba:aba}); };
-  var ND = "—", num = function(ok, v){ return ok ? v : ND; };
-  var linhas = ff.personas.filter(function(p){ return p.ativo; }).map(function(p){ var t = ANO ? totaisAno(ff, p.id, ANO) : totaisPersona(ff, p.id, ym);
-    return {id:p.id, p:p, pessoa:p.nome, tipo:p.tipo==="SOCIO" ? "Sócio" : "Família",
-      proRec:num(p.mostrarProlabore, t.pro.recebido), proRest:num(p.mostrarProlabore, t.pro.restante), proTot:num(p.mostrarProlabore, t.pro.total),
-      ctPago:num(p.mostrarContas, t.contas.pago), ctRest:num(p.mostrarContas, t.contas.restante), ctTot:num(p.mostrarContas, t.contas.total), ctPend:num(p.mostrarContas, t.contas.pendentes), ctAtr:t.contas.atrasado || 0,
-      pxEnv:num(p.mostrarPix, t.pix.recebido), pxRest:num(p.mostrarPix, t.pix.restante), pxMeta:num(p.mostrarPix, t.pix.meta),
-      pagar:r2((p.mostrarContas ? t.contas.total : 0)+(p.mostrarProlabore ? t.pro.total : 0))}; });
-  var D = function(v){ return typeof v==="number" ? BK(v) : ND; }, I = function(v){ return typeof v==="number" ? String(v) : ND; };
-  var verde = function(k){ return function(l){ return typeof l[k]==="number" && l[k]>0.005 ? "text-success" : ""; }; };
-  var cols = [{k:"pessoa", t:"Pessoa"},
-    {k:"proRec", t:"Recebido", fmt:D, cor:verde("proRec")}, {k:"proRest", t:"Restante", fmt:D}, {k:"proTot", t:"Total", fmt:D},
-    {k:"ctPago", t:"Pago", fmt:D, cor:verde("ctPago")}, {k:"ctRest", t:"Restante", fmt:D, cor:function(l){ return l.ctAtr>0.005 ? "text-destructive" : ""; }}, {k:"ctTot", t:"Total", fmt:D}, {k:"ctPend", t:"Pendentes", fmt:I},
-    {k:"pxEnv", t:"Enviado", fmt:D, cor:verde("pxEnv")}, {k:"pxRest", t:"Restante", fmt:D}, {k:"pxMeta", t:"Meta", fmt:D},
-    {k:"pagar", t:ANO ? "A pagar no ano" : "A pagar no mês", fmt:BK}];
-  var soma = function(ls, k){ return r2(ls.reduce(function(t, x){ return t+(typeof x[k]==="number" ? x[k] : 0); }, 0)); };
-  var rodape = function(ls){ return ["Total"].concat(["proRec", "proRest", "proTot", "ctPago", "ctRest", "ctTot"].map(function(k){ return BK(soma(ls, k)); }), [String(soma(ls, "ctPend"))], ["pxEnv", "pxRest", "pxMeta", "pagar"].map(function(k){ return BK(soma(ls, k)); })); };
-  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";   // mesmo fundo azul-marinho do Prestadores (Marcus, 18/11/2026)
-  var COMPACTA = FUNDO+" [&_td]:!h-[22px] [&_td]:!px-2 [&_td]:!py-0 [&_td]:!leading-[14px] [&_td]:!text-[11px] [&_th]:!h-6 [&_td[colspan]]:!p-0 [&_th]:!text-[10px] [&_th_button]:!px-1 [&_th_button]:!gap-0.5 [&_th_button]:!tracking-normal [&_th_span]:!tracking-normal [&_th_button>span]:!hidden";   // padrao-ok: linhas de 22 px, letra de 11 px e cabeçalho de 10 px sem seta, para as 12 colunas caberem sem rolar
+  var yms = ANO ? mesesOp.filter(function(k){ return k.slice(0,4)===ANO; }) : [ym], hoje = hojeIso();
+  var emSete = (function(){ var d = new Date(hoje+"T12:00:00"); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); })();
+  var todasParc = parcelasDe(ff, {yms:yms});
+  var contaPessoa = {}; (ff.contasBanc||[]).forEach(function(b){ contaPessoa[b.id] = b.personaId; });
+  // 1) dados de cada pessoa (as colunas)
+  var D = ff.personas.filter(function(p){ return p.ativo && (p.mostrarContas || p.mostrarPix || p.mostrarProlabore); }).map(function(p){
+    var t = ANO ? totaisAno(ff, p.id, ANO) : totaisPersona(ff, p.id, ym);
+    var itens = todasParc.filter(function(x){ return daPessoa(x.conta, p.id); }).map(function(x){ var q = x.conta.rateio && x.conta.rateio.length ? 1/x.conta.rateio.length : 1;
+      return {id:x.chave+"|"+p.id, pessoa:p.nome, pid:p.id, desc:x.conta.descricao, cat:catNome(ff, x.conta.categoria), venc:x.venc, valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, status:x.status, pagamentos:(x.pagamentos||[]).map(function(g){ return Object.assign({}, g, {valor:r2(g.valor*q)}); })}; });
+    var soma = function(l, k){ return r2(l.reduce(function(a, x){ return a+x[k]; }, 0)); };
+    var prestMes = r2(yms.reduce(function(a, k){ return a+pixDivisao(ff, p.id, k).prestadores; }, 0));
+    var trEnv = 0, trRec = 0; (ff.transf||[]).forEach(function(x){ if(yms.indexOf(String(x.data).slice(0,7))<0) return; if(contaPessoa[x.origem]===p.id) trEnv += x.valor; if(contaPessoa[x.destino]===p.id) trRec += x.valor; });
+    var cats = {}; itens.forEach(function(x){ cats[x.cat] = r2((cats[x.cat]||0)+x.valor); });
+    var saldoPrest = r2(ff.prest.filter(function(x){ return x.ativo && x.responsavelId===p.id; }).reduce(function(a, x){ return a+saldoPrestador(ff, x.id); }, 0));
+    return {p:p, t:t, itens:itens, cats:cats, trEnv:r2(trEnv), trRec:r2(trRec), prestMes:prestMes, saldoPrest:saldoPrest,
+      atras:soma(itens.filter(function(x){ return x.atrasada; }), "restante"), prox:soma(itens.filter(function(x){ return !x.atrasada && x.restante>0.005 && x.venc>=hoje && x.venc<=emSete; }), "restante"),
+      pix:t.pix.recebido, meta:t.pix.meta, direto:r2(Math.max(0, t.pix.recebido-prestMes))};
+  }).filter(function(d){ return d.p.tipo==="SOCIO" || d.t.pro.total>0 || d.t.contas.total>0 || d.pix>0 || d.meta>0; });
+  var todosItens = [].concat.apply([], D.map(function(d){ return d.itens; }));
+  // 2) listas que abrem ao clicar
+  var C = function(k, t, extra){ return Object.assign({k:k, t:t}, extra||{}); };
+  var sit = function(x){ return x.atrasada ? "Atrasada" : x.status==="PARCIAL" ? "Parcial" : "Pendente"; };
+  var corSit = function(l){ return l.sit==="Atrasada" ? "text-destructive" : l.sit==="Parcial" ? "text-warning" : ""; };
+  var colsConta = [C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("vencBr","Vencimento"), C("valor","Valor",{fmt:BK}), C("pago","Pago",{fmt:BK, cor:function(l){ return l.pago>0 ? "text-success" : ""; }}), C("restante","Restante",{fmt:BK, cor:function(l){ return l.atrasada ? "text-destructive" : ""; }}), C("sit","Situação",{cor:corSit})];
+  var viraConta = function(x){ return Object.assign({}, x, {vencBr:diaBr(x.venc), sit:sit(x)}); };
+  var porVenc = function(a, b){ return a.venc.localeCompare(b.venc); };
+  var abertas = todosItens.filter(function(x){ return x.restante>0.005; }).sort(porVenc).map(viraConta);
+  var listaAtras = abertas.filter(function(x){ return x.atrasada; }).sort(function(a, b){ return b.restante-a.restante; }), listaProx = abertas.filter(function(x){ return !x.atrasada && x.venc>=hoje && x.venc<=emSete; });
+  var listaPagas = [].concat.apply([], todosItens.map(function(x){ return x.pagamentos.map(function(g, j){ return {id:x.id+"#"+j, em:g.em, emBr:diaBr(g.em), pessoa:x.pessoa, desc:x.desc, cat:x.cat, forma:g.forma||"—", conta:g.conta||"—", valor:g.valor}; }); })).sort(function(a, b){ return String(b.em).localeCompare(String(a.em)); });
+  var pixLista = ff.pix.filter(function(x){ return yms.indexOf(x.data.slice(0,7))>=0 && !pixCasa(ff, x) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && D.some(function(d){ return d.p.id===x.personaId; }); })
+    .sort(function(a, b){ return b.data.localeCompare(a.data); }).map(function(x){ return {id:x.id, dataBr:diaBr(x.data), pessoa:pessoaNome(ff, x.personaId), origem:x.origem||"—", valor:x.valor, conta:contaLabel(ff, x.contaId)||"—", aud:x.auditoria==="CONFIRMADO" ? "Confirmado" : "Pendente"}; });
+  var repMes = ff.repasses.filter(function(r){ return yms.indexOf(String(r.data).slice(0,7))>=0; });
+  var prestLista = ff.prest.filter(function(x){ return x.ativo || repMes.some(function(r){ return r.prestId===x.id; }); }).map(function(x){ var dv = ff.dividas.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0), rp = ff.repasses.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0);
+    return {id:x.id, prest:nomePropio(x.nome), serv:x.servico||"—", dono:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", noPeriodo:r2(repMes.filter(function(r){ return r.prestId===x.id; }).reduce(function(a, r){ return a+r.valor; }, 0)), dividas:r2(dv), pagoTotal:r2(rp), saldo:saldoPrestador(ff, x.id)}; }).sort(function(a, b){ return b.saldo-a.saldo; });
+  var ultimoYm = yms[yms.length-1] || ym;
+  var proLista = D.filter(function(d){ return d.p.mostrarProlabore; }).map(function(d){ var v = vigenciaEm(ff, d.p.id, ultimoYm); return {id:d.p.id, pessoa:d.p.nome, bruto:v ? v.bruto : 0, inss:v ? v.inss : 0, irrf:v ? v.irrf : 0, liquido:v ? v.liquido : 0, datas:v && v.valor1 ? "dia "+v.dia1+": "+BK(v.valor1)+" · dia "+v.dia2+": "+BK(v.valor2) : "—"}; }).filter(function(x){ return x.bruto>0; });
+  var detCat = function(cat){ return e(DetTab,{cols:colsConta, linhas:todosItens.filter(function(x){ return x.cat===cat; }).sort(porVenc).map(viraConta), onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); };
+  var fmtSaldo = function(v){ return v<-0.005 ? "Pago a mais "+BK(-v) : BK(v); }, corSaldo = function(l){ return l.saldo<-0.005 ? "text-warning" : l.saldo>0.005 ? "text-destructive" : "text-success"; };
+  var detPrest = function(cols, linhas){ return function(){ return e(DetTab,{cols:cols, linhas:linhas, vazio:"Nenhum prestador.", onde:"Cadastro de prestadores", ir:ir, ir2:"ffprest", rotuloIr:"Abrir cadastro de prestadores"}); }; };
+  var colsPrest = [C("prest","Prestador"), C("serv","Serviço"), C("dono","Dono"), C("noPeriodo","Repassado no período",{fmt:BK}), C("dividas","Dívidas",{fmt:BK}), C("pagoTotal","Pago (todos os tempos)",{fmt:BK, cor:function(){ return "text-success"; }}), C("saldo","Saldo",{fmt:fmtSaldo, cor:corSaldo})];
+  var detConta = function(lista, vazio){ return function(){ return e(DetTab,{cols:colsConta, linhas:lista, vazio:vazio, onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); }; };
+  // 3) as linhas do extrato
+  var num = function(ok, v){ return ok ? v : null; };
+  var linhas = [], L = function(id, rot, f, o){ linhas.push(Object.assign({id:id, rot:rot, f:f}, o||{})); }, SEC = function(t){ linhas.push({id:"s-"+t, rot:t, tipo:"secao"}); };
+  SEC("ENTROU");
+  L("proLiq", "Pró-labore líquido recebido", function(d){ return num(d.p.mostrarProlabore, d.t.pro.recebido); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("pessoa","Pessoa"), C("bruto","Bruto",{fmt:BK}), C("inss","INSS",{fmt:BK}), C("irrf","IRRF",{fmt:BK}), C("liquido","Líquido",{fmt:BK}), C("datas","Datas")], linhas:proLista, vazio:"Nenhum pró-labore cadastrado.", onde:"Pró-labores", ir:ir, ir2:"ffprolab", rotuloIr:"Abrir pró-labores"}); }});
+  L("pix", "Pix de revendedora recebido", function(d){ return num(d.p.mostrarPix, d.pix); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("dataBr","Data"), C("pessoa","Pessoa"), C("origem","Revendedora"), C("valor","Valor",{fmt:BK}), C("conta","Conta"), C("aud","Conferência",{cor:function(l){ return l.aud==="Pendente" ? "text-warning" : "text-success"; }})], linhas:pixLista, vazio:"Nenhum Pix neste período.", onde:"PIX revendedoras", ir:ir, ir2:"ffpix", rotuloIr:"Abrir Pix revendedoras"}); }});
+  L("direto", "dos quais: ficou na conta da pessoa", function(d){ return num(d.p.mostrarPix, d.direto); }, {sub:1});
+  L("prestPix", "dos quais: foi para prestadores", function(d){ return num(d.p.mostrarPix, d.prestMes); }, {sub:1, det:detPrest(colsPrest, prestLista)});
+  L("meta", "meta do Pix", function(d){ return num(d.p.mostrarPix, d.meta); }, {sub:1, vz:1});
+  L("pcMeta", "% da meta", function(d){ return d.p.mostrarPix && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {sub:1, pc:1});
+  L("trRec", "Transferências entre sócios recebidas", function(d){ return d.trRec; }, {vz:1});
+  SEC("SAIU");
+  L("pagas", "Contas pagas", function(d){ return num(d.p.mostrarContas, d.t.contas.pago); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("emBr","Pago em"), C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("forma","Forma"), C("conta","Conta utilizada"), C("valor","Valor",{fmt:BK, cor:function(){ return "text-success"; }})], linhas:listaPagas, vazio:"Nenhum pagamento neste período.", onde:"Contas pagas da família", ir:ir, ir2:"ffpagas", rotuloIr:"Abrir contas pagas"}); }});
+  L("prestSaiu", "Prestadores de serviço (Pix repassado)", function(d){ return d.prestMes; }, {vz:1, det:detPrest(colsPrest, prestLista.filter(function(x){ return x.noPeriodo>0.005; }))});
+  L("trEnv", "Transferências entre sócios enviadas", function(d){ return d.trEnv; }, {vz:1});
+  SEC("FALTA PAGAR");
+  L("aPagar", "Contas a pagar", function(d){ return num(d.p.mostrarContas, d.t.contas.restante); }, {det:detConta(abertas, "Nenhuma conta em aberto.")});
+  L("proRest", "Pró-labore restante", function(d){ return num(d.p.mostrarProlabore, d.t.pro.restante); });
+  L("atras", "atrasado (contas e pró-labore)", function(d){ return d.atras; }, {sub:1, cor:"ruim", det:detConta(listaAtras, "Nada atrasado.")});
+  L("prox", "vence nos próximos 7 dias", function(d){ return d.prox; }, {sub:1, vz:1, det:detConta(listaProx, "Nada vence nos próximos 7 dias.")});
+  L("saldoPrest", "Saldo devido a prestadores (todos os tempos)", function(d){ return d.saldoPrest; }, {vz:1, det:detPrest(colsPrest, prestLista)});
+  L("total", ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)", function(d){ return r2((d.p.mostrarContas ? d.t.contas.total : 0)+(d.p.mostrarProlabore ? d.t.pro.total : 0)); }, {tipo:"total"});
+  var totCat = function(k){ return D.reduce(function(a, d){ return a+(d.cats[k]||0); }, 0); };
+  var catNomes = Object.keys(D.reduce(function(o, d){ Object.keys(d.cats).forEach(function(k){ o[k] = 1; }); return o; }, {})).sort(function(a, b){ return totCat(b)-totCat(a); });
+  SEC("COMPROMISSOS "+(ANO ? "DO ANO" : "DO MÊS")+" POR CATEGORIA (valor total de cada categoria)");
+  catNomes.forEach(function(k){ if(totCat(k)<0.005) return; L("cat-"+k, k, function(d){ return d.cats[k] || 0; }, {sub:1, vz:1, det:function(){ return detCat(k); }}); });
+  // 4) vira linhas da tabela (uma coluna por pessoa + total)
+  var corpo = linhas.map(function(l){ if(l.tipo==="secao") return l; var o = {id:l.id, rot:l.rot, sub:l.sub, cor:l.cor, vz:l.vz, pc:l.pc, tipo:l.tipo, det:l.det}, tot = 0, algum = false;
+    D.forEach(function(d){ var v = l.f(d); o["p_"+d.p.id] = v; if(typeof v==="number"){ tot += v; algum = true; } });
+    o.total = l.pc ? (function(){ var px = D.reduce(function(a, d){ return a+d.pix; }, 0), mt = D.reduce(function(a, d){ return a+d.meta; }, 0); return mt>0 ? Math.round(px/mt*100) : null; })() : (algum ? r2(tot) : null); return o; });
+  var celula = function(v, l){ if(l.tipo==="secao") return ""; if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); var txt = l.pc ? v+"%" : (l.vz && v===0 ? "—" : BK(v)), cl = l.cor && v>0.005 ? (l.cor==="ruim" ? "text-destructive" : "text-success") : ""; return e("span",{className:cl+(l.tipo==="total" ? " font-bold" : "")}, txt); };
+  var cols = [{k:"rot", t:(ANO ? "Total "+ANO : nomeMes(ym)), render:function(v, l, aberta){ return e("span",{className:"block text-left "+(l.tipo==="secao" || l.tipo==="total" ? "font-bold" : "")+(l.sub ? " pl-4" : "")}, (l.det ? (aberta ? "▾ " : "▸ ") : "")+v); }}]
+    .concat(D.map(function(d){ return {k:"p_"+d.p.id, t:d.p.nome, render:celula}; }), [{k:"total", t:"Total da família", render:function(v, l){ return l.tipo==="secao" ? "" : e("b",null, celula(v, l)); }}]);
+  var fech = ff.fechamentos[ym];
+  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";
+  var COMPACTA = FUNDO+" [&_td]:!h-[22px] [&_td]:!px-2 [&_td]:!py-0 [&_td]:!leading-[14px] [&_td]:!text-[11px] [&_th]:!h-6 [&_td[colspan]]:!p-0";   // padrao-ok: linhas de 22 px e letra de 11 px, igual ao Prestadores
   var seletor = e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:mesesOp.map(function(k){ return [k, nomeMes(k)]; }).concat(anosOp.map(function(a){ return ["ANO:"+a, "Total "+a]; }))});
   return e(Guarda,{c:c}, e("div",{className:PADRAO_BLOCOS+" -mb-2 -ml-3 -mr-2 -mt-5 flex flex-col gap-1.5 pl-0 md:-mb-3 md:-ml-5 md:-mr-3 md:pl-0"},
-    linhas.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
+    !ANO && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#5b74ad] bg-[#1b2a4a] px-2 py-1 text-[11px]"},
+      e("span",null, fech ? "Mês fechado em "+new Date(fech.em).toLocaleDateString("pt-BR")+" por "+fech.por+". Os números ficaram guardados." : "Mês aberto. Fechar guarda uma foto destes números para consultar depois."),
+      fech ? e(Botao,{onClick:function(){ if(window.confirm("Reabrir "+nomeMes(ym)+"? A foto guardada será apagada.")) acao(c, "reabrir", {ym:ym}); }}, "Reabrir") : e(Botao,{onClick:function(){ if(window.confirm("Fechar "+nomeMes(ym)+" e guardar os números?")) acao(c, "fechar", {ym:ym}); }}, "Fechar o mês")),
+    D.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
       e(BlocoPainel,{titulo:"Financeiro familiar", acao:seletor, compacto:false, cls:COMPACTA},
-        e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhuma pessoa.", cabAcima:[[{t:"", span:1}, {t:"Pró-labore", span:3}, {t:"Contas", span:4}, {t:"Pix revendedora", span:3}, {t:"", span:1}]],   // linha de cima agrupa as colunas: Pró-labore, Contas e Pix revendedora (Marcus, 22/11/2026)
-         
-          detalhe:function(l){ return e(DetHome,{ff:ff, l:l, ym:ym, ANO:ANO, ir:ir}); }}))));
+        e(TabelaPlanilha,{cols:cols, linhas:corpo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada neste período.",
+          detalhe:function(l){ return l.det ? l.det() : null; },
+          linhaCls:function(l){ return l.tipo==="secao" ? "!bg-[#2d5190] !cursor-default" : l.tipo==="total" ? "!bg-[#1a2540] !cursor-default" : l.det ? "" : "!cursor-default"; }}))));
 }
 
 // ───────────────── Alertas ─────────────────
@@ -671,4 +727,4 @@ function AbaFfConfig(){
       ff.liberados.length>0 && e("div",{className:"flex flex-wrap gap-2"}, ff.liberados.slice().sort().map(function(k){ return e("span",{key:k, className:"flex items-center gap-2 rounded-full bg-warning/20 px-3 py-1 text-[12.5px] font-bold text-warning"}, nomeMes(k)+" liberado", e("button",{onClick:function(){ acao(c, "mes_revogar", {ym:k}); }, className:"underline"}, "travar")); }))))));
 }
 
-export { DetPrest, DetHome, AbaFfHome, AbaFfContas, AbaFfPagas, AbaFfPix, AbaFfPrest, AbaFfProlab, AbaFfRelatorio, AbaFfHist, AbaFfConfig };
+export { DetPrest, AbaFfHome, AbaFfContas, AbaFfPagas, AbaFfPix, AbaFfPrest, AbaFfProlab, AbaFfRelatorio, AbaFfHist, AbaFfConfig };

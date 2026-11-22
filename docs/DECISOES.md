@@ -3137,3 +3137,7 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 
 ## 22/11/2026 · Home da família em tabela única
 - Marcus: a Home do Familiar não tem cartões nem cor por pessoa; é uma tabela só no estilo das Negociações. Cor só para estado (verde pago, vermelho atrasado). Clicar na linha abre as contas em aberto da pessoa. Próximas telas do Familiar seguem o mesmo estilo, uma de cada vez.
+
+## 22/11/2026 · Home da família vira extrato completo
+- Marcus escolheu o modelo A (extrato: linhas = o que é, colunas = quem), com a lista aberta ao clicar nos números. A tabela de 12 colunas e os cartões saíram.
+- Passam a ser absorvidas pela Home: Resumo do grupo, Sócios (consolidado) e Relatório (inclui Fechar o mês). Só saem do menu depois que o Marcus conferir a Home na tela. Ficam as telas de lançar: Contas a pagar, Contas pagas, Pix revendedoras, Prestadores e Pró-labores.

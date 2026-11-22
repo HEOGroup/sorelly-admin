@@ -3,8 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.21.90", data:"2026-11-22", titulo:"Financeiro familiar: Home em tabela única", itens:[
-  {tipo:"melhoria", area:"Financeiro → Família → Home da família", txt:"Os 6 cartões coloridos viraram UMA tabela, uma linha por pessoa (pró-labore, contas, Pix e quanto pagar), no mesmo estilo do Prestadores e das Negociações. Cor só para estado: verde = pago/recebido/enviado, vermelho = contas atrasadas. Clicar na linha abre embaixo as contas em aberto da pessoa e os atalhos para as telas dela."}
+  {v:"0.21.90", data:"2026-11-22", titulo:"Financeiro familiar: Home em extrato completo", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Home da família", txt:"A Home virou um extrato: as linhas dizem o que é (entrou, saiu, falta pagar, categorias) e as colunas dizem quem (uma por pessoa e o total da família). Entram o Pix e para onde foi (ficou com a pessoa ou foi para prestadores), a meta, o saldo devido a prestadores, atrasado, vence em 7 dias, transferências entre sócios e a quebra por categoria."},
+  {tipo:"novo", area:"Financeiro → Família → Home da família", txt:"Clicar numa linha abre embaixo a lista que explica o número (prestadores, Pix, contas pagas, contas atrasadas, pró-labore, categoria), com atalho para a tela de lançar. Fechar o mês e Reabrir agora ficam na Home. Cor só para estado: verde = entrou/pago, vermelho = atrasado."}
  ]},
  {v:"0.21.89", data:"2026-11-22", titulo:"Faturamento: a soma ao vivo também conta bônus à mão, baixas e Pix do admin", itens:[
   {tipo:"correção", area:"Financeiro → Faturamento", txt:"Com o Faturamento aberto sozinho, o a pagar do mês somava R$ 2.000 a menos que o Resultado do mês (bônus do Nickolas lançado à mão): os lançamentos à mão, as baixas dadas no sistema, as classes e o Pix do admin só entravam depois de abrir a tela Contas a pagar. Agora a soma lê tudo isso do próprio estado, e as duas telas mostram o mesmo número."}]},
