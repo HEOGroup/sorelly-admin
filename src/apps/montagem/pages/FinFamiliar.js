@@ -289,10 +289,14 @@ function AbaFfPagas(){
 }
 function EditarPago(p){
   var g = p.x.pagamentos[p.x.pagamentos.length-1]||{}, st = useState({valor:fmtN(p.x.pago), em:g.em||hojeIso(), forma:g.forma||"PIX", contaTxt:g.conta||"", obs:g.obs||""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  // Pessoa da conta já baixada (Anamaria, 22/11/2026): muda a pessoa SEM mexer no pagamento, sem estornar e baixar de novo. Vale para a conta inteira (todos os meses), igual ao "Para quem entra" do Pagar.
+  var pessoaAtual = p.x.conta.rateio && p.x.conta.rateio.length ? FAMILIA4 : p.x.conta.personaId, ps = useState(pessoaAtual), pessoa = ps[0];
   return e(Modal,{t:"Editar pagamento · "+p.x.conta.descricao, sub:nomeMes(p.x.ym)+" · a divisão anterior (se houve) se perde", fechar:p.fechar},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"}, e(Campo,{rot:"Valor (R$)"}, e(Txt,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})), e(Campo,{rot:"Data"}, e(Txt,{value:f.em, type:"date", label:"Data", onChange:function(v){ set({em:v}); }})),
       e(Campo,{rot:"Forma"}, e(Sel,{value:f.forma, label:"Forma", className:"w-full", onChange:function(v){ set({forma:v}); }}, FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); }))), e(Campo,{rot:"Conta utilizada"}, e(Txt,{value:f.contaTxt, label:"Conta", onChange:function(v){ set({contaTxt:v}); }})),
       e(Campo,{rot:"Observação", className:"sm:col-span-2"}, e(Txt,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))),
+    e("div",{className:"flex flex-wrap items-end gap-2 rounded-xl bg-card px-3 py-2 ring-1 ring-[#EC4899]/30"}, e(Campo,{rot:"Pessoa da conta (vale para todos os meses)", className:"min-w-60 flex-1"}, e(Sel,{value:pessoa, label:"Pessoa da conta", className:"w-full", onChange:function(v){ ps[1](v); }}, e("option",{value:FAMILIA4}, "Família (divide igual entre os "+membrosFamilia(p.c.ff).length+")"), p.c.ff.personas.map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
+      e(Btn,{v:"ghost", onClick:function(){ if(pessoa!==pessoaAtual) acao(p.c, "conta_set", {id:p.x.conta.id, patch:{personaId:pessoa}}); p.fechar(); }}, "Mudar só a pessoa")),
     e("div",{className:"flex justify-end gap-2"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", onClick:function(){ acao(p.c, "parc_pago_edit", {id:p.x.conta.id, ym:p.x.ym, valor:num(f.valor), em:f.em, forma:f.forma, contaTxt:f.contaTxt, obs:f.obs}); p.fechar(); }}, "Salvar")));
 }
 
