@@ -13,29 +13,20 @@ function BotaoTela(p){
     className:"flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-[13px] font-medium text-foreground hover:brightness-150"+(p.no.breve ? " opacity-55" : "")}, p.no.nome);
 }
 
-// Financeiro: tela inteira em azul escuro (nada preto). 3 colunas de mesma largura; os grupos seguem a ordem do menu, em pedaços seguidos
-// com quase o mesmo número de botões em cada coluna. Blocos com a mesma barra de título; um botão por linha, todos iguais.
-function repartir(grupos, n){
-  var peso = function(g){ return g.itens.length + 2; }, total = grupos.reduce(function(t, g){ return t + peso(g); }, 0), alvo = total / n, cols = [[]], soma = 0;
-  grupos.forEach(function(g){ if(soma >= alvo * cols.length && cols.length < n) cols.push([]); cols[cols.length-1].push(g); soma += peso(g); });
-  return cols;
-}
+// Financeiro: tela inteira em azul escuro (nada preto). Cada grupo do menu é UMA COLUNA (título em cima, botões embaixo, um por linha),
+// todas lado a lado na mesma ordem do menu de cima. Só quebra para a linha de baixo se a tela não tiver largura.
 function EntradaCompacta(p){
   var en = p.en, cor = en.cor || "#3B82F6";
   var mix = function(pct){ return "color-mix(in srgb, "+cor+" "+pct+"%, #0b1730)"; };
   return e("div",{className:"-m-4 min-h-screen p-3 md:-m-6 md:p-4", style:{background:mix(30)}},
-    e("div",{className:"mb-3 text-center text-[13px] font-semibold text-white"}, en.nome),
-    e("div",{className:"grid grid-cols-1 items-start gap-3 md:grid-cols-3"},
-      repartir(en.grupos, 3).map(function(col, c){
-        return e("div",{key:c, className:"flex min-w-0 flex-col gap-3"},
-          col.map(function(g, i){
-            return e("section",{key:i, className:"flex flex-col overflow-hidden rounded-lg", style:{background:mix(45), boxShadow:"inset 0 0 0 1px "+mix(75)}},
-              e("div",{className:"flex h-8 items-center justify-center text-[11px] font-semibold text-white", style:{background:mix(75)}}, g.titulo || en.nome),
-              e("div",{className:"flex flex-col gap-1.5 p-2"},
-                g.itens.map(function(no, k){ return e("button",{key:no.nome+k, type:"button", onClick:function(){ en.abrir(no); }, title:no.nome,
-                  style:{background:mix(65), boxShadow:"inset 0 0 0 1px rgba(255,255,255,.2)"},
-                  className:"flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-md px-2 text-center text-[13px] font-medium text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, no.nome); })));
-          }));
+    e("div",{className:"flex flex-wrap items-start gap-2"},
+      en.grupos.map(function(g, i){
+        return e("section",{key:i, className:"flex min-w-0 flex-col overflow-hidden rounded-lg", style:{background:mix(45), boxShadow:"inset 0 0 0 1px "+mix(75)}},
+          e("div",{className:"flex h-8 items-center justify-center whitespace-nowrap px-3 text-[11px] font-semibold text-white", style:{background:mix(75)}}, g.titulo || en.nome),
+          e("div",{className:"flex flex-col gap-1 p-1.5"},
+            g.itens.map(function(no, k){ return e("button",{key:no.nome+k, type:"button", onClick:function(){ en.abrir(no); }, title:no.nome,
+              style:{background:mix(65), boxShadow:"inset 0 0 0 1px rgba(255,255,255,.2)"},
+              className:"flex h-8 items-center justify-center whitespace-nowrap rounded-md px-3 text-center text-[13px] font-medium text-white hover:brightness-125"+(no.breve ? " opacity-60" : "")}, no.nome); })));
       })));
 }
 
