@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.94", data:"2026-11-22", titulo:"Menu Contas: Pagas e A pagar como duas telas", itens:[
+  {tipo:"melhoria", area:"Financeiro → Contas", txt:"O menu Contas agora mostra Pagas e A pagar como duas entradas, no lugar de A pagar / Pagas. As duas abrem a mesma lista, que já tem o filtro de Situação (A pagar, Pagas, Todas) e de Contas (Empresa, Família, Junto); Pagas abre já na situação Pagas e A pagar abre já na situação A pagar. Cada uma guarda a sua última escolha."}]},
  {v:"0.21.93", data:"2026-11-22", titulo:"Mudar a pessoa: janela com texto inteiro", itens:[
   {tipo:"correção", area:"Financeiro → Contas → Contas a pagar (família)", txt:"A janela Mudar a pessoa ficou mais larga: os botões Mudar, Abrir na Família e Cancelar aparecem inteiros e o título do campo não vem mais em letra maiúscula nem cortado."}]},
  {v:"0.21.92", data:"2026-11-22", titulo:"Contas a pagar da família: mudar a pessoa de uma conta já paga", itens:[
