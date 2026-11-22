@@ -134,7 +134,7 @@ function pfMigrar(pf){
   if(!pf.elloSemeado){
     var ello = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()==="ello print"; })[0];
     if(!ello){ ello = {id:pf.seq.F++, nome:"Ello Print", tipo:"fornecedor", cat:"Outros", cnpj:"", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(ello); }
-    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Sorelly Comércio", nfNum:"",
+    pf.pedidos.push({id:pf.seq.P++, fornId:ello.id, numero:"Ello Print · 20/10/2026", data:"2026-10-20", total:3600, nfTipo:"misto", comNF:1080, semNF:2520, cnpj:"CNPJ 46 · Mayz Comércio de Moda", nfNum:"",
       descricao:"Refil de tinta Epson T544122 Preto (3 un, R$ 207,00); bolsas de tinta C5390/C5810/C5890: Preta 10K (3 un, R$ 1.197,00), Ciano 5K (2 un, R$ 732,00), Yellow 5K (2 un, R$ 732,00) e Magenta 5K (2 un, R$ 732,00). Faturado na Mayz (CNPJ 46): 30% com nota (R$ 1.080,00) no cartão de crédito à vista em 20/10; 70% sem nota (R$ 2.520,00) em pix de revendedora para a conta PF informada, quitando até 01/11/2026.",
       parcelas:[{forma:"cartao", venc:"2026-10-20", valor:1080, conta:"Cartão de crédito à vista · CNPJ 46 Mayz", status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-01", valor:2520, conta:"", status:"Pendente"}]});
     invalidar(pf); pf.elloSemeado = true;
@@ -1411,7 +1411,7 @@ function pfReduz(s, a){
       var F5 = FORMAS[pc5.forma];
       if(F5.nf==="com") return recusa("Parcela com NF é apenas registro — não tem controle de baixa");
       if(pc5.status==="Pago"){
-        if(!estornarBaixaAuto(pf, pd5, pc5)) return recusa("Esta parcela foi paga por Pix lançado. Estorne o Pix na tela de Lançamento de pagamentos.");
+        if(!estornarBaixaAuto(pf, pd5, pc5)) return recusa("Esta parcela foi paga por Pix lançado. Estorne o Pix na tela de Conferência de pagamentos.");
         return ok("Parcela estornada — "+brl(pc5.valor)+" devolvido ao saldo");
       }
       if(!lancarBaixaAuto(pf, pd5, pc5)) return recusa("Não achei a data de pagamento desta parcela.");
@@ -1502,7 +1502,7 @@ function pfReduz(s, a){
       else if(a.campo==="status"){
         ptSync(pdp); invalidar(pf);
         if(a.valor==="Pago" && pa.status!=="Pago"){ if(!lancarBaixaAuto(pf, pdp, pa)) return recusa("Não achei a data de pagamento desta parcela."); }
-        else if(a.valor!=="Pago" && pa.status==="Pago"){ if(!estornarBaixaAuto(pf, pdp, pa)) return recusa("Este Pix foi pago por lançamento. Estorne o lançamento na tela de Lançamento de pagamentos."); }
+        else if(a.valor!=="Pago" && pa.status==="Pago"){ if(!estornarBaixaAuto(pf, pdp, pa)) return recusa("Este Pix foi pago por lançamento. Estorne o lançamento na tela de Conferência de pagamentos."); }
       } else return recusa("Campo inválido.");
       ptSync(pdp);
       return ok(a.campo==="valor" ? "Pix de "+mesLabel(pdp.data)+" definido em "+brl(pa.valor) : "Salvo");

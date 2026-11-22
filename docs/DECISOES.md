@@ -3,6 +3,16 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 22/11/2026 (Entrada do setor)
+- **Pedido do Marcus:** clicar num setor do menu lateral não abre mais a primeira aba. Abre a **Entrada do setor**: botões grandes só com os nomes das telas (sem dados). Ele escolheu "tela com nomes das abas grandes", não tela preta.
+- **Regras:** vale para todo setor com mais de uma tela visível para a pessoa; setor com uma tela só abre a tela direto. A lista respeita o acesso da pessoa. Telas em grupos do menu (ex.: Contas) aparecem sob o nome do grupo. Código: `pages/EntradaSetor.js`, aba `entradasetor` (endereço `/entrada-do-setor?setor=<id>`), lista montada em `App.js` (`gruposDaEntrada`).
+
+## 21/11/2026 (Nome da tela Lançamento de pagamentos)
+- **Pedido do Marcus:** a tela Lançamento de pagamentos passa a se chamar **Conferência de pagamentos**, porque hoje ela serve para conferir e corrigir (o Pix nasce no Direcionar).
+- **Resumo geral (22/11/2026):** parcela sem número de pedido mostra "Sem número"; a Xangai tem romaneio E fatura (confirmado pelo Marcus em 22/11/2026): cada parcela mostra "Romaneio nº" ou "Fatura nº" conforme o dado. Linha "Desconto da maquininha" no card da Pontual: mantida.
+- **Diferença entre as telas:** Negociações = o que a Sorelly deve (pedidos e parcelas); Conferência de pagamentos = o que já foi pago (Pix com comprovante, conferência, estorno, extrato ao fornecedor). O Resumo geral junta as duas (A pagar das Negociações, Pago dos Pix e da maquininha).
+- Só o nome mudou (menu, aba, mensagens). O endereço `pf-lancamento` e o código `pflanc` ficam, para não quebrar link nem acesso por pessoa.
+
 ## 21/11/2026 (Negociações: Lançar pedido só dentro do fornecedor, em tabelas, regra e propostas na Pontual)
 - **Pontual na DevMaster e dívida junto (Marcus, 21/11/2026):** a forma de escrita da Pontual precisa ficar junto para as meninas saberem o que preencher: "PIX - BANHO" (e as maquininhas "- P", Getnet e Cielo) é a Pontual (dá baixa em CAIXA PIX PONTUAL); a lista Definir a conta (chat) mostra "· Pontual" ao lado e o Direcionar mostra "DevMaster: PIX - BANHO" ao lado da Pontual; o valor gravado continua o nome da DevMaster. Na Contas a receber a coluna Conta mostra Pontual para PIX - BANHO e Título DevMaster fica entre Forma e Conta. Pix para prestador da Família pode nascer com a dívida junto (Higor, R$ 485,00, "Vip sexta e sábado 19 e 20/11"): Pix, pagamento e dívida do mesmo valor, o pagamento apontando para ela. A lista de Pix lançados na tela se atualiza sozinha (30 s e ao voltar para a aba).
 - **Pedido do Marcus:** o lançamento de pedido sai do topo e só abre na tela do fornecedor; a janela é toda em TABELAS (pedido metade e metade, regra, propostas, parcelas); campos de 20 px em caixa clara centralizada; data com calendário; botões azuis (nada de dourado) embaixo do bloco da esquerda.
@@ -3119,3 +3129,15 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - Prestador que a Sorelly e o Marcus pagam existe uma vez de cada lado: Sorelly (Pagamentos a fornecedores) e Marcus (Financeiro familiar). No Direcionar aparecem como Sorelly · Nome e Marcus · Nome. Higor e Lucas Castilho funcionam assim.
 - O Direcionar nunca liga destino da Sorelly ao Familiar pelo nome. Só o destino com dono (personaId) procura por nome; o da Sorelly fica do lado Sorelly. Caso real: o R$ 150,00 de bônus Sorelly para Lucas Castilho (Karine) foi para o Familiar por engano e foi devolvido ao lado Sorelly.
 - CNPJ 46 = Mayz (confirmado pelo Marcus). Nomes pendentes de alinhar: Dávila, Confraternização, Lucas (sócio), Priscila, Amanda de Miranda, Madalosso.
+
+## 22/11/2026 · Nomes dos CNPJs e Dávila
+- Lista oficial de CNPJs (domain/cnpjs.js): 34 Sorelly Atacadista, 46 Mayz Comércio de Moda, 59 Serenity, 67 Axis, H&O Apps. Pagamentos a fornecedores usava Sorelly Comércio (46) e Axis Joias (67): corrigido.
+- Dávila: um nome só, serviço Produção externa. R$ 150,00 do Lucas Castilho (bônus Sorelly) entrou em Pagamentos a fornecedores (janela de 23/11, comprovante anexado).
+- Pendente de decisão: pró-labore da família ainda escreve a empresa do CNPJ 46 como Sorelly Comércio; blocos de contas bancárias (módulo sc) chamam o 46 de Sorelly Comércio · 46.
+
+## 22/11/2026 · Home da família em tabela única
+- Marcus: a Home do Familiar não tem cartões nem cor por pessoa; é uma tabela só no estilo das Negociações. Cor só para estado (verde pago, vermelho atrasado). Clicar na linha abre as contas em aberto da pessoa. Próximas telas do Familiar seguem o mesmo estilo, uma de cada vez.
+
+## 22/11/2026 · Home da família vira extrato completo
+- Marcus escolheu o modelo A (extrato: linhas = o que é, colunas = quem), com a lista aberta ao clicar nos números. A tabela de 12 colunas e os cartões saíram.
+- Passam a ser absorvidas pela Home: Resumo do grupo, Sócios (consolidado) e Relatório (inclui Fechar o mês). Só saem do menu depois que o Marcus conferir a Home na tela. Ficam as telas de lançar: Contas a pagar, Contas pagas, Pix revendedoras, Prestadores e Pró-labores.

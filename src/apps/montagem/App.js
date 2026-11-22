@@ -253,8 +253,9 @@ function App(){
   if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || (srv.repCodDaConta() ? k==="inicio" : ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0); });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
-  var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
+  var abas = ABAS.filter(function(a){ return a[0]==="entradasetor" || !permitidas || permitidas.indexOf(a[0])>=0; });   // a entrada do setor (22/11/2026) é de todos; a lista de telas dentro dela já vem filtrada pelo acesso
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
+  var entradaId = aba==="entradasetor" ? new URLSearchParams(loc.search).get("setor") : null;   // entrada do setor (22/11/2026): qual setor mostrar
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
   useEffect(function(){ if(aba!=="melhorias") window.__ultimaTela = loc.pathname; }, [aba, loc.pathname]);   // guarda a última tela aberta: a solicitação de melhoria já vem com ela preenchida
   var titulo = aba==="breve" ? (breveURL||s.breveNome||"Em breve") : ABAS.find(function(a){return a[0]===aba;})[1];
@@ -284,8 +285,15 @@ function App(){
     e(Icon,{n:st.ic, s:12, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
   var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
-  var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
-    return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
+  // Entrada do setor (22/11/2026, Marcus): clicar no setor abre uma tela só com os nomes das telas; setor com uma tela só abre a tela direto
+  var folhasDoMenu = function(nos){ var r = []; (nos||[]).forEach(function(n){ if(n.itens) r = r.concat(folhasDoMenu(n.itens)); else if(podeMenu(n)) r.push(n); }); return r; };
+  var gruposDaEntrada = function(st){ var nos = st.menu || menuAuto(st), soltos = [], gs = [];
+    nos.forEach(function(n){ if(n.itens){ var f = folhasDoMenu(n.itens); if(f.length) gs.push({titulo:n.nome, itens:f}); } else if(podeMenu(n)) soltos.push(n); });
+    return (soltos.length ? [{titulo:null, itens:soltos}] : []).concat(gs); };
+  var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : (st.areas.some(function(ar){ return ar.telas.some(ativaTela); }) || entradaId===st.id);
+    return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); setAreaTopo(null);
+        if(!st.direto && gruposDaEntrada(st).reduce(function(n, g){ return n+g.itens.length; }, 0)>1){ navigate(caminhoDaAba("entradasetor")+"?setor="+encodeURIComponent(st.id)); setMenu(false); return; }
+        if(t) abrirTela(t); },
       className:"flex min-h-[26px] w-full items-center gap-2 rounded-md px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},   // padrao-ok: linha de 26 px na barra lateral, mais compacta, a pedido do Marcus (20/11/2026)
       tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
@@ -295,6 +303,9 @@ function App(){
   var comoSetor = function(st){ return st.direto ? Object.assign({}, st, {menu:[{nome:st.direto.nome, aba:st.direto.aba, breve:st.direto.breve}], areas:[{nome:st.nome, telas:[st.direto]}]}) : st; };
   var setorAtual = (function(){ var ach = []; setoresV.map(comoSetor).forEach(function(st){ var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
+  // entrada do setor: a barra de cima mostra o setor (menu sem tela ativa) e o título é o nome do setor
+  var entradaSt = entradaId ? setoresV.find(function(x){ return x.id===entradaId && !x.direto; }) : null;
+  if(entradaSt){ setorAtual = {st:comoSetor(entradaSt), ar:{nome:entradaSt.nome}}; titulo = entradaSt.nome.replace(/\n/g," "); }
   // tela que não está em nenhum setor (ex.: Configurador, Painel dos acertos): entra na faixa de telas abertas como "Sistema"
   if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba) && (visao==="pontual")===/^pont/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
   setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
@@ -387,7 +398,7 @@ function App(){
               var t = x.t, on = ativaTela(t);
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
-      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
+      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet,{context: aba==="entradasetor" ? {entrada: entradaSt ? {id:entradaSt.id, nome:entradaSt.nome.replace(/\n/g," "), cor:entradaSt.cor, grupos:gruposDaEntrada(entradaSt), abrir:abrirMenu} : null} : undefined}))),
     e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     visao!=="pontual" && chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),

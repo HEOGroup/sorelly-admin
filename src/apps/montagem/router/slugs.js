@@ -118,6 +118,7 @@ export const SLUG_DA_ABA = {
   indhistorico: "indicacoes-historico",
   msgcad: "mensagens-prontas",
   regrasguias: "regras-guias",
+  entradasetor: "entrada-do-setor",   // 22/11/2026: tela com os nomes das telas do setor (o setor vai em ?setor=)
   repcad: "representantes-do-setor",
   compras: "compras-e-estoque",
   cequadro: "compras-quadro",
