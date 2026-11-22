@@ -19,7 +19,7 @@ var MENU_FINANCEIRO = [
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Comissão interna","comisstodos"), M("Agendamento","agbonus"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
-    {nome:"Fornecedores", itens:[M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
+    {nome:"Fornecedores", itens:[M("Conferência de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
@@ -167,7 +167,7 @@ var SETORES = [
       ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras"), T("ffgrupo","Resumo do grupo")]],
       ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [
-      ["Principal", [T("pfresumo","Geral"), T("pflanc","Lançamento de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
+      ["Principal", [T("pfresumo","Geral"), T("pflanc","Conferência de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
       ["Cadastros", [T("pfcadastro","Cadastro"), T("pfforn","Fornecedores"), T("pfprest","Prestadores de serviço")]]]),
     G("Faturamento &\ncontas a pagar", [
       ["Faturamento", [I("previsaofat","Consolidado do faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"])]],

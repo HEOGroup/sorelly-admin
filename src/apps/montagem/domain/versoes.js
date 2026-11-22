@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.84", data:"2026-11-22", titulo:"Lançamento de pagamentos passa a se chamar Conferência de pagamentos", itens:[
+  {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"No card de detalhe, parcela sem número de pedido agora mostra Sem número (antes aparecia um traço). A Xangai tem romaneio e fatura: cada parcela mostra o que o dado diz (Romaneio nº ou Fatura nº)."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"A tela Lançamento de pagamentos agora se chama Conferência de pagamentos (menu, aba de cima e mensagens de estorno), porque o Pix nasce no Direcionar e a tela serve para conferir, corrigir, estornar e enviar o extrato. Endereço (pf-lancamento) e código interno não mudam. O título dentro da tela muda junto com a nova versão dela, que está em outra conversa."}
+ ]},
  {v:"0.21.83", data:"2026-11-22", titulo:"Contas a receber: dívida junto do Pix, lista que se atualiza sozinha e dica da Pontual", itens:[
   {tipo:"novo", area:"Financeiro → Contas a receber", txt:"Pix lançado para um prestador da Família pode criar a dívida junto (campo divida da chamada de lançar): nascem o Pix, o pagamento e a dívida do mesmo valor, com o pagamento apontando para ela (divId). Primeiro uso: Higor, R$ 485,00, \"Vip sexta e sábado 19 e 20/11\". Ainda sem campo na janela."},
   {tipo:"melhoria", area:"Financeiro → Contas a receber", txt:"Os Pix lançados na tela se atualizam sozinhos: ao abrir, a cada 30 segundos e quando a aba volta ao foco (antes só liam uma vez e o lançamento de outra pessoa não aparecia). Título DevMaster fica entre Forma e Conta, e a forma PIX - BANHO aparece como Pontual também na coluna Conta."},
