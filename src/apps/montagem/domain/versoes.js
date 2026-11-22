@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.85", data:"2026-11-22", titulo:"Nomes alinhados: CNPJ 46 = Mayz, CNPJ 67 = Axis e Dávila; R$ 150,00 do Lucas Castilho nos fornecedores", itens:[
+  {tipo:"correção", area:"Financeiro → Pagamentos a fornecedores", txt:"CNPJ 46 passa a se chamar Mayz Comércio de Moda (era Sorelly Comércio) e CNPJ 67 passa a Axis (era Axis Joias), igual à lista oficial de CNPJs; a lista da janela de Negociações acompanha. 41 e 10 registros ajustados."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores / Direcionar", txt:"Dávila fica com um nome só (Dávila, serviço Produção externa) nas duas telas. O Pix de R$ 150,00 do Lucas Castilho (bônus Sorelly, Karine) também consta em Pagamentos a fornecedores, na data de 23/11, com o comprovante."}
+ ]},
  {v:"0.21.84", data:"2026-11-22", titulo:"Lançamento de pagamentos passa a se chamar Conferência de pagamentos", itens:[
   {tipo:"melhoria", area:"Financeiro → Pagamentos → Resumo geral", txt:"No card de detalhe, parcela sem número de pedido agora mostra Sem número (antes aparecia um traço). A Xangai tem romaneio e fatura: cada parcela mostra o que o dado diz (Romaneio nº ou Fatura nº)."},
   {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores", txt:"A tela Lançamento de pagamentos agora se chama Conferência de pagamentos (menu, aba de cima e mensagens de estorno), porque o Pix nasce no Direcionar e a tela serve para conferir, corrigir, estornar e enviar o extrato. Endereço (pf-lancamento) e código interno não mudam. O título dentro da tela muda junto com a nova versão dela, que está em outra conversa."}

@@ -3125,3 +3125,8 @@ Marcus: "não pode ficar um bloco maior que o outro". Blocos lado a lado têm a 
 - Prestador que a Sorelly e o Marcus pagam existe uma vez de cada lado: Sorelly (Pagamentos a fornecedores) e Marcus (Financeiro familiar). No Direcionar aparecem como Sorelly · Nome e Marcus · Nome. Higor e Lucas Castilho funcionam assim.
 - O Direcionar nunca liga destino da Sorelly ao Familiar pelo nome. Só o destino com dono (personaId) procura por nome; o da Sorelly fica do lado Sorelly. Caso real: o R$ 150,00 de bônus Sorelly para Lucas Castilho (Karine) foi para o Familiar por engano e foi devolvido ao lado Sorelly.
 - CNPJ 46 = Mayz (confirmado pelo Marcus). Nomes pendentes de alinhar: Dávila, Confraternização, Lucas (sócio), Priscila, Amanda de Miranda, Madalosso.
+
+## 22/11/2026 · Nomes dos CNPJs e Dávila
+- Lista oficial de CNPJs (domain/cnpjs.js): 34 Sorelly Atacadista, 46 Mayz Comércio de Moda, 59 Serenity, 67 Axis, H&O Apps. Pagamentos a fornecedores usava Sorelly Comércio (46) e Axis Joias (67): corrigido.
+- Dávila: um nome só, serviço Produção externa. R$ 150,00 do Lucas Castilho (bônus Sorelly) entrou em Pagamentos a fornecedores (janela de 23/11, comprovante anexado).
+- Pendente de decisão: pró-labore da família ainda escreve a empresa do CNPJ 46 como Sorelly Comércio; blocos de contas bancárias (módulo sc) chamam o 46 de Sorelly Comércio · 46.
