@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.106", data:"2026-11-22", titulo:"Família › Contas: telas próprias, títulos e botão Lançar conta", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A pagar e Pagas abrem as telas próprias da Família (sem CNPJ), não a lista da Sorelly. Títulos: Contas a pagar - Família, Contas pagas - Família e Contas pagas / A pagar - Sorelly."},
+  {tipo:"melhoria", area:"Contas a pagar da família", txt:"O botão Lançar conta fica no início da barra, em tamanho médio."},
+  {tipo:"correção", area:"Contas a pagar", txt:"Cada lista abre com o seu filtro Contas (a Sorelly não aparece mais dentro da Família). Natureza: Comissão consignado."}]},
  {v:"0.21.105", data:"2026-11-23", titulo:"Zerada a pasta principal: documentação das conversas salva", itens:[
   {tipo:"melhoria", area:"Sistema → Organização", txt:"Os últimos commits das conversas (menu Família, Home da família, Negociações, Material gráfico, Produção) e 11 documentos soltos (pendências por conversa, formas de pagamento do PDV, scripts de uso único) foram juntados com a master. A pasta principal ficou sem arquivo solto."}
  ]},
