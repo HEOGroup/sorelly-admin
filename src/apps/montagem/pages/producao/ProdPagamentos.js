@@ -16,6 +16,9 @@ import { e, useEffect, useState } from "@/shared/react";
 
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 var LINK = "h-8 text-[13px] font-semibold underline hover:text-primary";
+// MESMA PESSOA (23/11/2026): "Davila Aline" (Produção) e "Dávila" (Financeiro) são a mesma prestadora. Vale quando TODAS as palavras do nome mais curto aparecem no mais longo, sem acento. Antes só valia se o nome do Financeiro tivesse todas as palavras da Produção, e o envio da Dávila recusava.
+var palavrasDe = function(t){ return semAcento(t).split(" ").filter(Boolean); };
+var mesmaPessoa = function(a, b){ var wa = palavrasDe(a), wb = palavrasDe(b), menor = wa.length<=wb.length ? wa : wb, maior = menor===wa ? wb : wa; return menor.length>0 && menor.every(function(w){ return maior.indexOf(w)>=0; }); };
 
 function AbaProdPagamentos(props){
   var x = usePr(), cf = usePf(), hoje = hojeSP(), sDias = useState(null), sPag = useState(null);
@@ -23,11 +26,11 @@ function AbaProdPagamentos(props){
   var temDestino = function(f){ var ws = semAcento(f.nome).split(/\s+/).filter(Boolean).slice(0, 2), cp = cf.s.cp; return !!(cp && cp.destinos && cp.destinos.some(function(z){ var n = semAcento(z.nome); return z.ativo && z.tipo==="PRESTADOR" && ws.every(function(w){ return n.indexOf(w)>=0; }); })); };
   var garantirDestino = function(f){ if(f && cf.s.cp && !temDestino(f)) cf.d({type:"CP", op:"destino_add", por:cf.por, nome:f.nome.split(" ").slice(0, 2).join(" "), tipo:"PRESTADOR", banco:f.banco||"", chavePix:f.chavePix||""}); };
   var pendentesEnvio = x.admin ? pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).map(function(q){ return q.func; }).join("|") : "";
-  useEffect(function(){ pendentesEnvio.split("|").filter(Boolean).forEach(function(nome){ var ws = semAcento(nome).split(/\s+/).filter(Boolean), f = ((cf.pf && cf.pf.fornecedores) || []).filter(function(g){ var n = semAcento(g.nome); return g.tipo==="prestador" && ws.every(function(w){ return n.indexOf(w)>=0; }); })[0]; garantirDestino(f); }); pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).forEach(function(q){ if(!temConta(q)) criaConta(q); }); }, [pendentesEnvio, Object.keys(x.pr.envios||{}).join(), !!(cf.s.cp && cf.s.cp.destinos), !!(cf.s.cpe && cf.s.cpe.lanc)]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ pendentesEnvio.split("|").filter(Boolean).forEach(function(nome){ var f = ((cf.pf && cf.pf.fornecedores) || []).filter(function(g){ return g.tipo==="prestador" && mesmaPessoa(nome, g.nome); })[0]; garantirDestino(f); }); pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).forEach(function(q){ if(!temConta(q)) criaConta(q); }); }, [pendentesEnvio, Object.keys(x.pr.envios||{}).join(), !!(cf.s.cp && cf.s.cp.destinos), !!(cf.s.cpe && cf.s.cpe.lanc)]);   // eslint-disable-line react-hooks/exhaustive-deps
   if(!x.admin && !x.leitura) return casca(props && props.semRaiz, e(BlocoPainel,{titulo:"Pagamentos da produção", compacto:true}, e(Aviso,null, "Somente a diretoria acessa.")));
   var lista = pagamentosDaProducao(x.pr, hoje).filter(function(q){ return !(props && props.func) || String(q.func).trim().toLowerCase()===String(props.func).trim().toLowerCase(); });   // uma pessoa por vez (escolhida na tela Produção externa)
   // prestador do Financeiro com o mesmo nome (todas as palavras do nome da produção estão no nome do cadastro)
-  var prestadorDe = function(nome){ var ws = semAcento(nome).split(/\s+/).filter(Boolean); return ((cf.pf && cf.pf.fornecedores) || []).filter(function(f){ var n = semAcento(f.nome); return f.tipo==="prestador" && ws.every(function(w){ return n.indexOf(w)>=0; }); })[0] || null; };
+  var prestadorDe = function(nome){ return ((cf.pf && cf.pf.fornecedores) || []).filter(function(f){ return f.tipo==="prestador" && mesmaPessoa(nome, f.nome); })[0] || null; };
 
   // CONTA A PAGAR (Marcus, 17/11/2026: "sempre sobe no Contas a pagar e na aba de fornecedores, igual dos outros"): cada envio vira uma conta a pagar na quarta (natureza 3.01.01.19 Freelancer, Folha e pessoal); marcar pago dá a baixa nela
   var idConta = function(p){ return "prod-"+p.id; };

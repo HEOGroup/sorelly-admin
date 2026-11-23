@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.133", data:"2026-11-23", titulo:"Produção: envio da produção externa acha a prestadora pelo nome", itens:[
+  {tipo:"correção", area:"Produção › Pagamento por produção", txt:"O botão Enviar ao Financeiro não achava a Dávila: na Produção ela é Davila Aline e no Financeiro (Prestadores de serviço) é Dávila. Agora vale a mesma pessoa quando todas as palavras do nome mais curto aparecem no mais longo, sem acento (mesmaPessoa em ProdPagamentos.js). Vale também para Leci e Didi quando forem cadastrados."}
+ ]},
  {v:"0.21.132", data:"2026-11-23", titulo:"Encomendas: Top vendedoras e Premiação do mês", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Premiação do mês", txt:"Tela nova com o Top 10 do mês pelo valor de acerto, com a foto e a descrição do prêmio de cada colocação (campanha Top 10 de novembro). O mês vira sozinho; mês sem campanha mostra o Top 10 sem prêmio (prêmios em domain/premiacao-mes.js e fotos em public/premiacao)."},
   {tipo:"melhoria", area:"Encomendas e reposições → Top vendedoras", txt:"O Ranking virou Top vendedoras e foi para o alto do menu: Top 20 do mês com o comparativo dos 3 acertos anteriores e Top 50 pelo acerto de 3 meses com quem ainda falta acertar, previsão e totais fixos. Atualiza sozinho a cada minuto e muda de mês sozinho."}]},
