@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.114", data:"2026-11-22", titulo:"Lançar conta e já pagar, com recibo (formato 7C)", itens:[
+  {tipo:"novo", area:"Financeiro → Família → Contas a pagar → Lançar conta", txt:"A janela Lançar conta tem dois blocos (1 A conta, 2 Como paga e o pagamento) e, ao lado, o recibo O que vai acontecer. Marcando Já foi pago, a conta nasce com o pagamento da primeira parcela e o botão mostra Lançar e pagar com o valor. Dá para Só lançar e pagar depois. Editar conta continua como antes."}]},
  {v:"0.21.113", data:"2026-11-22", titulo:"Pix da Casa: marcar a casa de vários de uma vez", itens:[
   {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Botão Marcar os sem casa como Alphaville: marca de uma vez todos os Pix da Casa que ainda estão sem casa."}]},
  {v:"0.21.112", data:"2026-11-22", titulo:"Janela Pagar da Família mais fácil", itens:[

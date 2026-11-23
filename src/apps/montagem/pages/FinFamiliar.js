@@ -368,7 +368,59 @@ function opcoesPessoa(ff){   // lista de "Para quem entra" (nome | quem está de
   ff.personas.forEach(function(q){ if(!usadas[q.id]) opPessoa.push([q.id, q.nome, "Outros", q.nome]); });
   return opPessoa;
 }
-function FormConta(p){   // lançar ou editar conta
+// LANÇAR CONTA no formato 7C (Marcus, 22/11/2026): à esquerda dois blocos (1 A conta, 2 Como paga e o pagamento, se já pagou); à direita o recibo "O que vai acontecer". Editar conta continua em FormConta.
+function FormContaNova(p){
+  var c = p.c, ff = c.ff, hj = hojeIso(), temViagem = ff.categorias.some(function(k){ return k.chave==="VIAGEM_EUA"; });
+  var st = useState({personaId:(ff.personas[0]||{}).id||"", descricao:"", categoria:"OUTROS", contaBancId:"", forma:"PIX", beneficiario:"", obs:"", recorrencia:"unica", venc:hj, mesFim:somaMes(hojeYm(), 5), valor:"", pago:false, vp:"", vpMexeu:false, em:hj}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  var ctas = contasPagadoras(ff), opPessoa = opcoesPessoa(ff), ehViagem = f.personaId===FAMILIA4 && f.categoria==="VIAGEM_EUA";
+  var vConta = num(f.valor), vPago = f.pago ? (f.vpMexeu ? num(f.vp) : vConta) : 0, quita = f.pago && vPago>0 && vPago>=vConta-0.005;
+  var mesIni = String(f.venc || hj).slice(0, 7), diaV = Number(String(f.venc || hj).slice(8, 10)) || 1;
+  var contaTxt = f.contaBancId ? contaLabel(ff, f.contaBancId) : "";
+  var invalido = !f.descricao.trim() || !(vConta>0) || !f.venc || (f.pago && (!(vPago>0) || vPago>vConta+0.005));
+  var lancar = function(comPagamento){ var base = {personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:diaV, forma:f.forma, beneficiario:f.beneficiario, obs:f.obs, recorrencia:f.recorrencia, mesInicio:mesIni, mesFim:f.mesFim, valor:vConta};
+    if(comPagamento) base.pago = {valor:vPago, em:f.em, forma:f.forma, contaTxt:contaTxt, obs:""};
+    acao(c, "conta_add", base); p.fechar(); };
+  var nomePessoa = (opPessoa.filter(function(o){ return o[0]===f.personaId; })[0] || [])[1] || "";
+  var depois = !f.pago ? "A PAGAR" : !(vPago>0) ? "Digite o valor" : quita ? "PAGA" : "PARCIAL · falta "+BK(r2(vConta-vPago));
+  var cor = !f.pago ? "" : quita ? "text-success" : "text-warning";
+  var Lr = function(rot, val, extra){ return e("div",{className:"flex justify-between gap-2 border-b border-white/15 py-0.5 text-[11px] "+(extra || "")}, e("span",null, rot), e("b",{className:"text-right"}, val)); };
+  return e(JanelaJ,{t:"Lançar conta", larga:"g", fechar:p.fechar},
+    e("div",{className:"grid", style:{gridTemplateColumns:"1.6fr 1fr"}},
+      e("div",{className:"pb-1"},
+        e(BlocoJ,{t:"1 · A conta"},
+          e("div",{className:"grid w-full grid-cols-4 gap-x-2 gap-y-1"},
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Nome da conta", cls:"w-full"}, e(TxtJ,{value:f.descricao, label:"Nome da conta", ph:"Ex.: Condomínio Praia", onChange:function(v){ set({descricao:v}); }}))),
+            e(CampoJ,{rot:"Vence em", cls:"w-full"}, e(TxtJ,{value:f.venc, type:"date", label:"Vence em", onChange:function(v){ set({venc:v}); }})),
+            e(CampoJ,{rot:"Valor (R$)", cls:"w-full"}, e(TxtJ,{value:f.valor, label:"Valor da conta", ph:"0,00", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, e(SelJ,{value:ehViagem ? "__viagem" : f.personaId, label:"Para quem entra", opcoes:opPessoa, onChange:function(v){ if(v==="__viagem") set({personaId:FAMILIA4, categoria:"VIAGEM_EUA"}); else if(ehViagem) set({personaId:v, categoria:(ff.categorias.filter(function(k){ return k.chave!=="VIAGEM_EUA"; })[0] || {}).chave || f.categoria}); else set({personaId:v}); }}))),
+            e(CampoJ,{rot:"Categoria", cls:"w-full"}, e(SelJ,{value:f.categoria, label:"Categoria", opcoes:ff.categorias.map(function(k){ return [k.chave, k.nome]; }), onChange:function(v){ set({categoria:v}); }})),
+            e(CampoJ,{rot:"Repete", cls:"w-full"}, e(SelJ,{value:f.recorrencia, label:"Repete", opcoes:[["unica", "Única (1 mês)"], ["parcelada", "Parcelada"], ["fixa", "Fixa (24 meses)"]], onChange:function(v){ set({recorrencia:v}); }})),
+            f.recorrencia==="parcelada" && e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Termina em", cls:"w-full"}, e(TxtJ,{value:f.mesFim, type:"month", label:"Termina em", onChange:function(v){ set({mesFim:v}); }}))),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, e(TxtJ,{value:f.beneficiario, label:"Beneficiário", onChange:function(v){ set({beneficiario:v}); }}))),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Observação", cls:"w-full"}, e(TxtJ,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))))),
+        e(BlocoJ,{t:"2 · Como paga e o pagamento"},
+          e("div",{className:"grid w-full grid-cols-2 gap-x-2 gap-y-1"},
+            e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, e(SelJ,{value:f.forma, label:"Forma de pagamento", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }})),
+            e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, e(SelJ,{value:f.contaBancId, label:"Conta pagadora", opcoes:[["", "Não definida"]].concat(ctas.map(function(b){ return [b.id, contaLabel(ff, b.id)]; })), onChange:function(v){ set({contaBancId:v}); }}))),
+          e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold"}, e("input",{type:"checkbox", checked:f.pago, className:"size-3", onChange:function(ev){ set({pago:ev.target.checked}); }}), "Já foi pago"),
+          f.pago && e("div",{className:"grid w-full grid-cols-2 gap-x-2 gap-y-1"},
+            e(CampoJ,{rot:"Valor pago (R$)", cls:"w-full"}, e(TxtJ,{value:f.vpMexeu ? f.vp : fmtN(vConta), label:"Valor pago", ph:"0,00", onChange:function(v){ set({vp:v.replace(/[^\d,.]/g,""), vpMexeu:true}); }})),
+            e(CampoJ,{rot:"Data do pagamento", cls:"w-full"}, e(TxtJ,{value:f.em, type:"date", label:"Data do pagamento", onChange:function(v){ set({em:v}); }}))))),
+      e("div",{className:"border-l border-white/15 bg-[#223f74] px-2.5 py-2"},
+        e("div",{className:"pb-1 text-center text-[11px] font-semibold"}, "O que vai acontecer"),
+        Lr("Nova conta", f.descricao.trim() || "—"), Lr("Para quem entra", nomePessoa || "—"), Lr("Categoria", catNome(ff, f.categoria)),
+        Lr("Valor da conta", vConta>0 ? BK(vConta) : "—"), Lr("Vence", f.venc ? br(f.venc) : "—"),
+        Lr("Repete", f.recorrencia==="unica" ? "Só este mês" : f.recorrencia==="fixa" ? "24 meses" : "até "+nomeMes(f.mesFim)),
+        Lr("Pagamento", f.pago ? (vPago>0 ? BK(vPago)+" em "+br(f.em) : "—") : "Nenhum agora"),
+        Lr("Sai de", contaTxt || "Não definida"),
+        Lr("Depois fica", depois, cor),
+        e("div",{className:"pt-2 text-center text-[13px] font-bold"}, "Total: "+(f.pago ? BK(vPago) : BK(vConta))))),
+    e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-3 py-1.5"},
+      f.pago && e("button",{type:"button", disabled:!f.descricao.trim() || !(vConta>0) || !f.venc, style:ALTO_J, className:BTN_J, title:"Lança a conta sem registrar o pagamento", onClick:function(){ lancar(false); }}, "Só lançar, pagar depois"),
+      e("span",{className:"ml-auto"}), e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"),
+      e("button",{type:"button", style:{height:"28px", lineHeight:"26px"}, className:BTN_J+" !bg-[#3f6bb8] !px-5 !text-[13px]", disabled:invalido, onClick:function(){ lancar(f.pago); }}, f.pago ? "Lançar e pagar"+(vPago>0 ? " · "+BK(vPago) : "") : "Lançar"+(vConta>0 ? " · "+BK(vConta) : ""))));
+}
+function FormConta(p){   // editar conta (lançar conta nova é a FormContaNova)
   var c = p.c, ff = c.ff, x = p.x, nova = !x;
   var st = useState({personaId:x ? paraQuemDe(x) : (ff.personas[0]||{}).id||"", descricao:x ? x.descricao : "", categoria:x ? x.categoria : "OUTROS", contaBancId:x ? x.contaBancId : "", dia:x ? String(x.dia) : "10", forma:x ? x.forma : "PIX", beneficiario:x ? x.beneficiario : "", obs:x ? x.obs : "",
     recorrencia:"unica", mesInicio:hojeYm(), mesFim:somaMes(hojeYm(), 5), valor:"", estAte:"", estValor:""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
@@ -432,7 +484,7 @@ function AbaFfContas(){
       encerrar:function(){ var x = modal.x; if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")){ acao(c, "conta_encerrar", {id:x.conta.id}); setModal(null); } },
       excluir:function(){ var x = modal.x; if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")){ acao(c, "conta_del", {id:x.conta.id}); setModal(null); } },
       fechar:function(){ setModal(null); }}),
-    modal && modal.tipo==="conta" && e(FormConta,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
+    modal && modal.tipo==="conta" && e(modal.x ? FormConta : FormContaNova,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
     e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
       e(BarraTabela,null,
         e("div",{role:"button", tabIndex:0, title:"Lançar uma conta da família", onClick:function(){ setModal({tipo:"conta"}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setModal({tipo:"conta"}); } }, className:"flex w-[124px] shrink-0 cursor-pointer whitespace-nowrap items-center justify-center border-r border-white/25 bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar conta"),   // padrao-ok: botão no INÍCIO da barra, tamanho médio (Marcus, 22/11/2026)

@@ -1,0 +1,33 @@
+// Teste: LANÇAR CONTA JÁ PAGANDO (formato 7C, Marcus, 22/11/2026). Dados INVENTADOS.
+// Uso: node scripts/testar-lancar-e-pagar.mjs
+import { createJiti } from "jiti";
+import path from "node:path";
+const raiz = process.cwd();
+globalThis.localStorage = { getItem(){ return null; }, setItem(){}, removeItem(){} };
+globalThis.window = globalThis.window || { localStorage: globalThis.localStorage, addEventListener(){}, location:{ search:"" } };
+const jiti = createJiti(path.join(raiz, "x.js"), { alias: { "@": path.join(raiz, "src") }, interopDefault: true });
+const ffm = await jiti.import("@/apps/montagem/domain/financeiro-familiar");
+let ok = 0, falha = 0;
+const t = (n, c, x) => { if(c){ ok++; console.log("  OK   "+n); } else { falha++; console.log("  FALHA "+n+(x ? " -> "+x : "")); } };
+const ff0 = () => ({personas:[{id:"marcus", nome:"Marcus", tipo:"SOCIO", ativo:true}], categorias:[], contasBanc:[], contas:[], parcelas:{}, pix:[], pixMeta:{}, repasses:[], dividas:[], prest:[], hist:[], liberados:[], fechamentos:{}, transf:[], regras:[], prolabore:{}});
+const run = (ff, a) => { const r = ffm.ffReduz({ff:ff}, Object.assign({type:"FF", por:"Teste"}, a)); return {ff:(r.patch && r.patch.ff) || ff, msg:r.msg, vazio:!(r.patch && r.patch.ff)}; };
+const base = {op:"conta_add", personaId:"marcus", descricao:"Conta Teste", categoria:"OUTROS", dia:5, forma:"Boleto", recorrencia:"unica", mesInicio:"2026-11", valor:352};
+let r = run(ff0(), base);
+t("sem pagamento: a conta nasce a pagar", !r.vazio && r.ff.parcelas[r.ff.contas[0].id]["2026-11"].pagamentos.length===0);
+r = run(ff0(), Object.assign({}, base, {pago:{valor:352, em:"2026-11-22", forma:"Boleto", contaTxt:"PF · Marcus · Nubank"}}));
+let pc = r.ff.parcelas[r.ff.contas[0].id]["2026-11"];
+t("com pagamento: a parcela nasce paga", pc.pagamentos.length===1 && pc.pagamentos[0].valor===352, JSON.stringify(pc));
+t("guarda data, forma, conta e quem pagou", pc.pagamentos[0].em==="2026-11-22" && pc.pagamentos[0].forma==="Boleto" && pc.pagamentos[0].conta==="PF · Marcus · Nubank" && pc.pagamentos[0].por==="Teste");
+t("mensagem diz que lançou e pagou", /paga/.test(r.msg || ""), r.msg);
+r = run(ff0(), Object.assign({}, base, {pago:{valor:100, em:"2026-11-22"}}));
+pc = r.ff.parcelas[r.ff.contas[0].id]["2026-11"];
+t("pagamento parcial fica na parcela", pc.pagamentos[0].valor===100);
+r = run(ff0(), Object.assign({}, base, {pago:{valor:500, em:"2026-11-22"}}));
+t("pagar mais que a conta é recusado", r.vazio && /passa/.test(r.msg || ""), r.msg);
+r = run(ff0(), Object.assign({}, base, {pago:{valor:0, em:"2026-11-22"}}));
+t("pagamento zerado é recusado", r.vazio && /valor pago/.test(r.msg || ""), r.msg);
+r = run(ff0(), Object.assign({}, base, {recorrencia:"parcelada", mesFim:"2027-01", pago:{valor:352, em:"2026-11-22"}}));
+const ps = r.ff.parcelas[r.ff.contas[0].id];
+t("parcelada: só o primeiro mês nasce pago", ps["2026-11"].pagamentos.length===1 && ps["2026-12"].pagamentos.length===0 && ps["2027-01"].pagamentos.length===0);
+console.log("\n"+ok+" ok, "+falha+" com falha");
+process.exit(falha ? 1 : 0);
