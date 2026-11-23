@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.109", data:"2026-11-22", titulo:"Contas a pagar da Família: coluna Forma, sem ÷, observações dentro da janela", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas → A pagar", txt:"Nova coluna Forma (Boleto, PIX, Débito em conta...). O ÷2 e o ÷4 saíram da coluna Pessoa (também em Pagas). A coluna Observação saiu da tabela."},
+  {tipo:"novo", area:"Financeiro → Família → janela Pagar", txt:"As observações da conta ficam dentro da janela: a antiga em cima, as novas com data e quem anotou, e um campo para anotar outra."}]},
  {v:"0.21.108", data:"2026-11-22", titulo:"Lista Para quem entra abre inteira e com borda mais grossa", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → janelas Lançar conta e Pagar", txt:"A lista Para quem entra (nome e quem está dentro) abre inteira, até Sorelly, sem rolar, e com a borda mais grossa."}]},
  {v:"0.21.107", data:"2026-11-22", titulo:"Pix da Casa: para qual casa foi (Alphaville, Praia, Jardine, Família)", itens:[
