@@ -18,6 +18,7 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 ## 23/11/2026 (Junção geral das conversas)
 - **Fechamento (Marcus: "sim, sobe e salva tudo"):** os últimos commits das conversas e os 11 documentos soltos (sem CPF, telefone, e-mail, chave ou senha: conferido antes, repositório é público) entraram na master. Pasta principal sem arquivo solto.
+- **Quem vê o quê na Produção (23/11/2026):** as funcionárias da produção veem só a aba Produção, o mesmo relatório (grade e janela de lançamento) SEM as linhas da produção externa, sem a coluna A receber e sem Produção por tipo. As abas Produção externa, Pagamento por produção e Cadastro só aparecem para quem tem a autorização producao_externa (padrão Marcus, Nickolas e Lucas; Anamaria e Leonardo têm todas) ou producao_ver (só consulta). Ajusta em RH › Acessos e autorizações.
 - **Pedido do Marcus:** "sobe tudo": juntar na master tudo o que as conversas salvaram na pasta principal (ramo alteracoes-27-10) e arquivar as conversas. Regra para evitar o problema de várias cópias: cada conversa sobe em pedaços pequenos com `npm run conferir`; a pasta principal só puxa a master e ninguém edita nela.
 - **Ficou de fora (escolha C do Marcus):** `pages/BonusMontagem.js` (12/11/2026, reprova o padrão: usa TabelaCampos; sem dono). Fica no ramo `uniao-23-11`. A rota `comissoes-montagem` segue apontando para `ComissoesTodos`.
 

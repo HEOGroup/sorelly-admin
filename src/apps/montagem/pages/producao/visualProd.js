@@ -21,7 +21,7 @@ var VAZIO_PR = null;
 function usePr(){
   var cx = use(), s = cx.state, d = cx.dispatch, por = nomeDe(s.usuario);
   var admin = DIRETORIA.some(function(x){ return x.id===s.usuario; }) || s.usuario===29;
-  var leitura = !admin && temAutorizacao("producao_ver", s.usuario);   // só consulta de Premiação e Configurações (Maria Claudia, 12/11/2026): vê, mas não grava
+  var leitura = !admin && (temAutorizacao("producao_ver", s.usuario) || temAutorizacao("producao_externa", s.usuario));   // só consulta de Premiação e Configurações (Maria Claudia, 12/11/2026): vê, mas não grava
   if(!s.pr && !VAZIO_PR) VAZIO_PR = prMigrar(null);
   var exec = function(op, dados){ if(leitura) return false; var a = Object.assign({type:"PR", op:op, por:por, admin:admin}, dados||{}); var r = prReduz(s, a); d(a); return !!(r.patch && r.patch.pr); };
   return {s:s, pr:s.pr || VAZIO_PR, por:por, admin:admin, leitura:leitura, exec:exec};

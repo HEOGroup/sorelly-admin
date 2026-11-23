@@ -80,7 +80,8 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 ];
 
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
-var MENU_PRODUCAO = [M("Produção","producao"), M("Produção externa","prodcasa"), M("Pagamento por produção","prodpagproducao"), M("Cadastro","prodfunc")];   // setor próprio desde 16/11/2026: Produção (grade do mês, com o bônus), Produção externa (Dávila) e Cadastro
+var PERM_PROD = "producao_externa,producao_ver";
+var MENU_PRODUCAO = [M("Produção","producao"), M("Produção externa","prodcasa",{perm:PERM_PROD}), M("Pagamento por produção","prodpagproducao",{perm:PERM_PROD}), M("Cadastro","prodfunc",{perm:PERM_PROD})];   // as funcionárias da produção só veem a aba Produção (sem a produção externa, sem pagamento e sem cadastro): Marcus, 23/11/2026   // setor próprio desde 16/11/2026: Produção (grade do mês, com o bônus), Produção externa (Dávila) e Cadastro
 var MENU_REPRESENTANTES = [
   // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},

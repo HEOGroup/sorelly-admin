@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.123", data:"2026-11-23", titulo:"Produção: funcionárias não veem a produção externa", itens:[
+  {tipo:"regra", area:"Produção › Acesso", txt:"As abas Produção externa, Pagamento por produção e Cadastro só aparecem para quem tem a autorização nova producao_externa (padrão Marcus, Nickolas e Lucas) ou producao_ver (só consulta). As funcionárias da produção veem só a aba Produção, sem as linhas da produção externa (a grade e a janela de lançamento já escondiam), sem a coluna A receber e sem Produção por tipo."}
+ ]},
  {v:"0.21.122", data:"2026-11-23", titulo:"Produção: visual plano, pagamento por produção com as internas e regras de pagamento novas", itens:[
   {tipo:"melhoria", area:"Produção › todas as telas", txt:"Todas as telas da Produção seguem o formato da Negociações: fundo azul, blocos colados, faixa branca de 3 px entre eles, cabeçalho azul claro, linhas finas (letra de 10 px e linha de 18 px na Produção externa). O visual mora numa peça só (Raiz e casca, em pages/producao/visualProd.js). Grade da Produção: os 30 dias cabem na tela e as colunas são em porcentagem."},
   {tipo:"melhoria", area:"Produção › Produção externa", txt:"Só o controle das peças: um card único Estoque e movimentações, com as movimentações por dia (total que entrou e voltou; clicar no dia abre os códigos). Os resumos de dinheiro e peças e os pagamentos foram para Pagamento por produção."},
