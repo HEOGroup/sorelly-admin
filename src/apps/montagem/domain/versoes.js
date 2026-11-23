@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.116", data:"2026-11-23", titulo:"Passar conta da Família para a empresa", itens:[
+  {tipo:"novo", area:"Financeiro → Família → Contas a pagar → janela Pagar → Mais ações", txt:"Botão Passar para a empresa: lança a conta na Contas a pagar da empresa como Retirada de sócio paga em dinheiro e tira a conta da Família (as parcelas em aberto saem, o histórico pago fica). Serve para retirada em dinheiro e gasto da conta PJ."}]},
  {v:"0.21.115", data:"2026-11-22", titulo:"Janelas Lançar e Pagar iguais, Observações embaixo do Total, sem Beneficiário", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar", txt:"Pagar conta agora tem o mesmo desenho do Lançar conta (formato 7C: 1 A conta, 2 Como paga e o pagamento e o recibo O que vai acontecer). Lançar conta abre zerada, só com a data de hoje."},
   {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar", txt:"As observações viraram um campo só, Observações, embaixo do Total. Saíram Observação da conta e Observação deste pagamento."},

@@ -354,6 +354,7 @@ function ModalPagar(p){
       p.editar && e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.editar}, "Editar conta"),
       p.valor && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Corrigir o valor deste mês", onClick:p.valor}, "Corrigir valor"),
       p.encerrar && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Tira as parcelas em aberto e guarda o histórico pago", onClick:p.encerrar}, "Encerrar conta"),
+      p.empresa && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Lança na Contas a pagar da empresa como Retirada de sócio, paga em dinheiro, e tira esta conta da Família", onClick:p.empresa}, "Passar para a empresa"),
       p.excluir && e("button",{type:"button", style:ALTO_J, className:BTN_J+" !border-red-300", title:"Exclui a conta inteira, com todas as parcelas", onClick:p.excluir}, "Excluir conta")));
 }
 // JANELA AZUL (Marcus, 22/11/2026: "copia o bloco de lançamento de contas, cores, tudo mais alinhado"): a mesma moldura da janela Lançar recebimento da Contas a receber: título azul, blocos numerados com borda, campos de 22 px, letra de 11 px, tudo centralizado.
@@ -496,6 +497,10 @@ function AbaFfContas(){
       valor:function(){ var x = modal.x, v2 = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v2!==null && num(v2)>0){ acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v2)}); setModal(null); } },
       encerrar:function(){ var x = modal.x; if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")){ acao(c, "conta_encerrar", {id:x.conta.id}); setModal(null); } },
       excluir:function(){ var x = modal.x; if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")){ acao(c, "conta_del", {id:x.conta.id}); setModal(null); } },
+      empresa:function(){ var x = modal.x, quem = pessoaNome(ff, x.conta.personaId), v = x.restante;
+        if(!window.confirm("Passar \""+x.conta.descricao+" · "+quem+"\" ("+BK(v)+", "+br(x.venc)+") para a Contas a pagar da empresa, como Retirada de sócio paga em dinheiro?\n\nA conta sai da Família: as parcelas em aberto saem e o que já foi pago fica no histórico.")) return;
+        c.d({type:"CPE_LANC_ADD", itens:[{id:"fam"+Date.now(), filial:"fora", nat:"3.01.01.99", natNome:"Retirada de sócio", pref:"DIN", forn:quem, nome:x.conta.descricao+" · "+quem, venc:x.venc, valor:v, status:"pago", baixa:x.venc, fam:false, saida:"Dinheiro", hist:"Veio do Contas a pagar da Família ("+x.conta.descricao+")"}]});
+        acao(c, "conta_encerrar", {id:x.conta.id}); setModal(null); },
       fechar:function(){ setModal(null); }}),
     modal && modal.tipo==="conta" && e(modal.x ? FormConta : FormContaNova,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
     e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
