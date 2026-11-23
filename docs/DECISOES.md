@@ -3,6 +3,16 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Lançar recebimento por forma de pagamento)
+- **Pedido do Marcus:** "não é pedido de Pix, é lançamento de recebimento; pode ser dinheiro, cartão, débito...; no Para onde foi precisa melhorar e organizar as contas"; e ligar as contas pessoais dos sócios à aba Chaves Pix ("Sim, liga e organiza por forma").
+- **Forma:** Pix, Dinheiro, Crédito, Débito, Link. **Para onde foi por forma:** Pix = Empresa (CNPJ, Fornecedor / Prestador, Representante, Funcionário) e Sócios; Crédito, Débito e Link = contas e maquininhas da lista de formas da DevMaster (`domain/contas-grupos.js`), agrupadas por CNPJ e "Maquininhas · Pontual"; Dinheiro = uma só. A mensagem com a chave só aparece no Pix.
+- **Nome:** "Pedido de Pix" saiu. Os modos são **Aguardando recebimento** e **Recebido**.
+- **Sócios:** a conta pessoal (Nubank, Caixa, Itaú, Santander, Sicredi) usa a chave da aba Chaves Pix › Sócios, achada pelo banco. Sem chave cadastrada lá, aparece o aviso (dado que falta, não erro).
+- **Dado que falta na aba Chaves Pix (conferido na tela em 24/11):** representantes Mariana Ribeiro Amaral e Viviane Laskoski; funcionários Amanda de Oliveira Silva, Marco Antonio de Oliveira, Lucas Oliveira da Rocha, Leonardo e Diego Franco; sócios Marcus (Sicredi), Anamaria (Sicredi), Marco Antonio (Sicredi) e Lucas (a definir); prestadores Higor (Segurança), Ulisses Detran, Amanda Souza, Lucas Castilho e Julia Marketing.
+- **Decidi sem resposta:** Dinheiro não pede conta (uma só); o aguardando recebimento vale para qualquer forma.
+- Código: `NOME_FORMA`, `arvoreForma`, `alvoDe` e a mensagem dos sócios em `pages/ContasReceberLista.js`; `forma` em `server/recebimentos-antecipados.js` e no domínio. Teste: seção 12 de `scripts/testar-recebimento-antecipado-servidor.mjs` (114 verificações).
+
+
 ## 24/11/2026 (Pedido de Pix completo)
 - **Pedido do Marcus:** "faz os quatro itens" do modo pedido.
 - **Os quatro itens:** valor combinado (opcional; não entra em totais nem em acerto; vem preenchido ao completar); representante que pediu (opcional, da lista da aba Chaves Pix); tempo de espera na situação ("Aguardando Pix · hoje / 1 dia / N dias"); aviso azul no topo com os pedidos aguardando e há quanto tempo espera o mais antigo (clicar filtra a origem "Lançadas aqui").

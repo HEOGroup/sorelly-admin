@@ -49,6 +49,8 @@ export async function lancar(eu, b, deps) {
   const por = nomeDe(eu);
   // PEDIDO DE PIX (Marcus, 23/11/2026): o Lucas manda a conta à representante ANTES de o Pix existir. Só a conta é obrigatória; revendedora e valor são opcionais e entram depois em "completar".
   const ehPedido = b.tipo === "pedido";
+  // FORMA DE PAGAMENTO (Marcus, 24/11/2026: "pode ser dinheiro, cartão, débito..."): pix (padrão), dinheiro, credito, debito ou link. Fora do Pix a conta vem da lista de formas da DevMaster e entra pelo nome (semDestino).
+  const forma = ["pix", "dinheiro", "credito", "debito", "link"].includes(b.forma) ? b.forma : "pix";
   let ativas = [];
   if (!(ehPedido && !b.cod)) { try { ativas = await ((deps && deps.ativas) || (await import("./revendedoras.js")).revendedorasAtivasBasico)(); } catch (e) { return { erro: "Não consegui ler as revendedoras da DevMaster agora. Tente de novo em um minuto." }; } }
   const rv = (ativas || []).find((x) => String(x.cod) === String(b.cod || ""));
@@ -68,13 +70,13 @@ export async function lancar(eu, b, deps) {
   const rd = semDest ? { destino: "empresa", personaId: "", contaId: "", contaTxt: nomeSem, nome: nomeSem } : resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome), String(b.contaId || ""));
   if (rd.erro) return { erro: rd.erro };
   if (ehPedido) {   // pedido: não entra em acerto (valor 0), não vai para a Família e não cruza com nada até ser completado
-    const ped = { id: "ra" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data: hojeIso(), valor: 0, rev: rv ? rv.nome : "", revCod: rv ? String(rv.cod) : "", repNome: rv ? String(rv.representante || "") : "", destino: rd.destino, tipo: "pedido", destinoId: dCp ? dCp.id : "", destinoNome: rd.nome, personaId: "", contaId: "", contaTxt: rd.nome, pagador: "", valorCombinado: Number(b.valorCombinado) > 0 && Number(b.valorCombinado) <= 1000000 ? Math.round(Number(b.valorCombinado) * 100) / 100 : 0, repPediu: String(b.repPediu || "").replace(/\s+/g, " ").trim().slice(0, 80), compKey: "", compNome: "", compTipo: "", ffPixId: "", por, em: new Date().toISOString(), pedidoDest: { destinoId: dCp ? dCp.id : "", semDestino: semDest, destinoNome: nomeSem, leaf: String(b.leaf || "").slice(0, 200), contaNome, contaId: String(b.contaId || ""), casa: String(b.casa || "") } };
+    const ped = { id: "ra" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data: hojeIso(), valor: 0, rev: rv ? rv.nome : "", revCod: rv ? String(rv.cod) : "", repNome: rv ? String(rv.representante || "") : "", destino: rd.destino, tipo: "pedido", forma, destinoId: dCp ? dCp.id : "", destinoNome: rd.nome, personaId: "", contaId: "", contaTxt: rd.nome, pagador: "", valorCombinado: Number(b.valorCombinado) > 0 && Number(b.valorCombinado) <= 1000000 ? Math.round(Number(b.valorCombinado) * 100) / 100 : 0, repPediu: String(b.repPediu || "").replace(/\s+/g, " ").trim().slice(0, 80), compKey: "", compNome: "", compTipo: "", ffPixId: "", por, em: new Date().toISOString(), pedidoDest: { destinoId: dCp ? dCp.id : "", semDestino: semDest, destinoNome: nomeSem, leaf: String(b.leaf || "").slice(0, 200), contaNome, contaId: String(b.contaId || ""), casa: String(b.casa || "") } };
     await gravarModulo("contasreceber", {}, "patch", por, (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.concat([ped]), usados: g.usados, adotados: g.adotados }); });
     return { ok: true, id: ped.id, pedido: true };
   }
   const v = validarLancamento(Object.assign({}, b, { rev: rv.nome, destino: rd.destino, personaId: rd.personaId, contaId: rd.contaId, contaTxt: rd.contaTxt, destinoId: dCp ? dCp.id : "", destinoNome: rd.nome }), hojeIso(), ((await lerModulo("contasreceber")) || {}).antecipados);
   if (v.erro) return { erro: v.erro };
-  const item = v.item; item.por = por; item.em = new Date().toISOString(); item.revCod = String(rv.cod);
+  const item = v.item; item.forma = forma; item.por = por; item.em = new Date().toISOString(); item.revCod = String(rv.cod);
   item.repNome = String(rv.representante || "");   // quem faz o acerto dela: "Sorelly" = atendimento interno; outro nome = representante
   item.pagador = String(b.pagador || "").replace(/\s+/g, " ").trim().slice(0, 80);   // vazio = o Pix veio no nome da própria revendedora; senão, o nome de quem fez o Pix (ex.: pai dela)
   if (b.key) {   // comprovante já enviado para o módulo contasreceber
@@ -107,7 +109,7 @@ export async function lancar(eu, b, deps) {
 export async function completar(eu, b, deps) {
   const id = String(b.id || ""), rcb = garantir(await lerModulo("contasreceber")), ped = rcb.antecipados.find((x) => x.id === id && x.tipo === "pedido");
   if (!ped || !ped.pedidoDest) return { erro: "Pedido não encontrado (talvez já tenha sido completado)." };
-  const r = await lancar(eu, Object.assign({}, b, { acao: "lancar", tipo: b.tipo === "outro" ? "outro" : "antes", destinoId: ped.pedidoDest.destinoId, semDestino: !!ped.pedidoDest.semDestino, destinoNome: ped.pedidoDest.destinoNome || "", leaf: ped.pedidoDest.leaf || "", contaNome: ped.pedidoDest.contaNome, contaId: ped.pedidoDest.contaId, casa: ped.pedidoDest.casa, key: b.key || ped.compKey || "", nome: b.nome || ped.compNome || "", compTipo: b.compTipo || ped.compTipo || "" }), deps);
+  const r = await lancar(eu, Object.assign({}, b, { acao: "lancar", tipo: b.tipo === "outro" ? "outro" : "antes", forma: ped.forma || "pix", destinoId: ped.pedidoDest.destinoId, semDestino: !!ped.pedidoDest.semDestino, destinoNome: ped.pedidoDest.destinoNome || "", leaf: ped.pedidoDest.leaf || "", contaNome: ped.pedidoDest.contaNome, contaId: ped.pedidoDest.contaId, casa: ped.pedidoDest.casa, key: b.key || ped.compKey || "", nome: b.nome || ped.compNome || "", compTipo: b.compTipo || ped.compTipo || "" }), deps);
   if (r.erro) return r;
   await gravarModulo("contasreceber", {}, "patch", nomeDe(eu), (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.filter((x) => x.id !== id), usados: g.usados, adotados: g.adotados }); });
   return { ok: true, id: r.id };
