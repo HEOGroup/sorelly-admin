@@ -297,11 +297,8 @@ function ModalPagar(p){
   // Ficha em grade de 4 colunas (rótulo | campo | rótulo | campo), com linha entre todas as células. Conta pagadora e Observação ocupam a linha toda para o nome longo da conta caber inteiro (Marcus, 22/11/2026).
   var L = function(rot, extra){ return e("b",{className:"flex min-h-[32px] items-center border-b border-r border-white/15 bg-[#223f74] px-2.5 text-left text-[11px] font-semibold "+(extra || "")}, rot); };
   var F = function(filho, span){ return e("div",{className:"flex min-h-[32px] items-center border-b border-white/15 px-2.5 py-1", style:span ? {gridColumn:"span "+span} : undefined}, e("div",{className:"w-full"}, filho)); };
-  var Cab = function(rot, val, ultimo){ return e("div",{className:"px-2 text-center "+(ultimo ? "" : "border-r border-white/15")}, e("span",{className:"block text-[11px] font-semibold"}, rot), e("b",{className:"mt-0.5 block text-[13px]"}, val)); };
   var peso = x.pago>0, nm = useState(false), mais = nm[0], setMais = nm[1];
-  // RESUMO do que vai acontecer (Marcus, 22/11/2026: "mais intuitivo para pagar a conta")
   var vPag = f.dividir ? somaL : num(f.valor);
-  var resumo = !(vPag>0) ? "Digite o valor pago." : vPag>=x.restante-0.005 ? "Quita esta conta: ela fica PAGA." : "Pagamento parcial: continua faltando "+BK(r2(x.restante-vPag))+".";
   // OBSERVAÇÕES DA CONTA dentro da janela (Marcus, 22/11/2026): a antiga (obs) em cima, depois as anotadas, da mais nova para a mais velha; campo para anotar outra
   var contaV = c.ff.contas.find(function(k){ return k.id===x.conta.id; }) || x.conta, ns = useState(""), nota = ns[0], setNota = ns[1];
   var notasV = (contaV.notas || []).slice().reverse();
@@ -319,21 +316,41 @@ function ModalPagar(p){
     f.linhas.forEach(function(l, i){ cels.push(L((i+1)+"ª forma"), F(e("div",{className:"grid grid-cols-[7rem_9rem_1fr] gap-1.5"}, e(TxtJ,{value:l.valor, ph:"Valor", label:"Valor "+(i+1), onChange:function(v){ setL(i, {valor:v.replace(/[^\d,.]/g,"")}); }}), e(SelJ,{value:l.forma, label:"Forma", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ setL(i, {forma:v}); }}), e(SelJ,{value:l.contaTxt, label:"Conta pagadora", opcoes:opContas, onChange:function(v){ setL(i, {contaTxt:v}); }})), 3)); });
     cels.push(L("Soma"), F(e("div",{className:"flex items-center justify-between text-[11px] font-semibold"}, e("button",{type:"button", className:"underline", onClick:function(){ set({linhas:f.linhas.concat([{valor:"", forma:"PIX", contaTxt:""}])}); }}, "+ Outra forma"), e("span",{className:Math.abs(falta)<0.005 ? "text-success" : "text-warning"}, Math.abs(falta)<0.005 ? "✓ Soma certa" : "Falta distribuir "+BK(falta))), 3), L("Observação"), F(campoObs, 3));
   }
-  return e(JanelaJ,{t:"Pagar · "+x.conta.descricao, larga:"g", fechar:p.fechar},
-    e("div",{className:"grid border-b border-white/15 bg-[#223f74] py-1 "+(peso ? "grid-cols-4" : "grid-cols-3")}, Cab("Mês", nomeMes(x.ym)), Cab("Vence", br(x.venc)), peso && Cab("Já pago", BK(x.pago)), Cab("Falta", BK(x.restante), true)),
-    f.dividir ? e.apply(null, ["div", {className:"grid", style:{gridTemplateColumns:"16% 34% 16% 34%"}}].concat(cels)) : e("div",{className:"grid gap-x-2 gap-y-1 px-3 pb-1 pt-2", style:{gridTemplateColumns:"1fr 1fr 1fr 1.7fr"}},
-      e(CampoJ,{rot:"Valor pago (R$)", cls:"w-full"}, campoValor), e(CampoJ,{rot:"Data", cls:"w-full"}, campoData), e(CampoJ,{rot:"Forma", cls:"w-full"}, campoForma), e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, campoConta),
-      e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, campoPara), e("div",{style:{gridColumn:"span 3"}}, e(CampoJ,{rot:"Observação deste pagamento", cls:"w-full"}, campoObs))),
-    e("div",{className:"mx-3 mt-1 border-t border-white/20 pt-1"},
-      (contaV.obs || notasV.length>0) && e("div",{className:"mb-1 max-h-24 overflow-y-auto text-left text-[11px]"},
-        contaV.obs && e("div",{className:"py-0.5"}, e("b",null, "Anotada antes: "), contaV.obs),
-        notasV.map(function(n){ return e("div",{key:n.id, className:"py-0.5"}, e("b",null, br(String(n.em).slice(0, 10))+" · "+(n.por || "—")+": "), n.txt); })),
-      e("div",{className:"flex w-full items-center gap-1.5"}, e(TxtJ,{value:nota, label:"Nova observação da conta", ph:"Observação da conta (fica guardada): escreva e clique em Anotar", onChange:function(v){ setNota(v); }}), e("button",{type:"button", style:ALTO_J, className:BTN_J+" shrink-0", disabled:!nota.trim(), onClick:anotarNota}, "Anotar"))),
-    e("div",{className:"flex flex-wrap items-center gap-1.5 px-3 pb-1.5 pt-1.5"},
+  // MESMO DESENHO da janela Lançar conta (formato 7C, Marcus, 22/11/2026: "o lançar e o pagar não estão iguais"): à esquerda 1 A conta e 2 Como paga e o pagamento; à direita o recibo O que vai acontecer.
+  var Fixo = function(txt){ return e("div",{style:ALTO_J, className:CAMPO_J+" flex items-center justify-center"}, txt || "—"); };
+  var nomePara = (opcoesPessoa(c.ff).filter(function(o){ return o[0]===f.paraQuem; })[0] || [])[1] || "";
+  var depoisP = !(vPag>0) ? "Digite o valor" : vPag>=x.restante-0.005 ? "PAGA" : "PARCIAL · falta "+BK(r2(x.restante-vPag)), corP = !(vPag>0) ? "" : vPag>=x.restante-0.005 ? "text-success" : "text-warning";
+  var Lr = function(rot, val, extra){ return e("div",{className:"flex justify-between gap-2 border-b border-white/15 py-0.5 text-[11px] "+(extra || "")}, e("span",null, rot), e("b",{className:"text-right"}, val)); };
+  return e(JanelaJ,{t:"Pagar conta", larga:"g", fechar:p.fechar},
+    e("div",{className:"grid", style:{gridTemplateColumns:"1.6fr 1fr"}},
+      e("div",{className:"pb-1"},
+        e(BlocoJ,{t:"1 · A conta"},
+          e("div",{className:"grid w-full grid-cols-4 gap-x-2 gap-y-1"},
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Nome da conta", cls:"w-full"}, Fixo(x.conta.descricao))),
+            e(CampoJ,{rot:"Vence em", cls:"w-full"}, Fixo(br(x.venc))),
+            e(CampoJ,{rot:"Falta (R$)", cls:"w-full"}, Fixo(BK(x.restante))),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, campoPara)),
+            e(CampoJ,{rot:"Categoria", cls:"w-full"}, Fixo(catNome(c.ff, x.conta.categoria))),
+            e(CampoJ,{rot:"Mês", cls:"w-full"}, Fixo(nomeMes(x.ym))),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, Fixo(x.conta.beneficiario))),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Observação da conta", cls:"w-full"}, e("div",{className:"flex w-full items-center gap-1.5"}, e(TxtJ,{value:nota, label:"Nova observação da conta", ph:contaV.obs || "Escreva e clique em Anotar", onChange:function(v){ setNota(v); }}), e("button",{type:"button", style:ALTO_J, className:BTN_J+" shrink-0", disabled:!nota.trim(), onClick:anotarNota}, "Anotar"))))),
+          notasV.length>0 && e("div",{className:"max-h-16 w-full overflow-y-auto text-left text-[11px]"}, notasV.map(function(n){ return e("div",{key:n.id, className:"py-0.5"}, e("b",null, br(String(n.em).slice(0, 10))+" · "+(n.por || "—")+": "), n.txt); }))),
+        e(BlocoJ,{t:"2 · Como paga e o pagamento"},
+          f.dividir ? e.apply(null, ["div", {className:"grid w-full", style:{gridTemplateColumns:"16% 34% 16% 34%"}}].concat(cels)) : e("div",{className:"grid w-full grid-cols-2 gap-x-2 gap-y-1"},
+            e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, campoForma), e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, campoConta),
+            e(CampoJ,{rot:"Valor pago (R$)", cls:"w-full"}, campoValor), e(CampoJ,{rot:"Data do pagamento", cls:"w-full"}, campoData),
+            e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Observação deste pagamento", cls:"w-full"}, campoObs))))),
+      e("div",{className:"border-l border-white/15 bg-[#223f74] px-2.5 py-2"},
+        e("div",{className:"pb-1 text-center text-[11px] font-semibold"}, "O que vai acontecer"),
+        Lr("Conta", x.conta.descricao), Lr("Para quem entra", nomePara || "—"), Lr("Vence", br(x.venc)), Lr("Falta hoje", BK(x.restante)),
+        peso && Lr("Já pago antes", BK(x.pago)),
+        Lr("Pagamento", vPag>0 ? BK(vPag)+" em "+br(f.em) : "—"), Lr("Sai de", f.dividir ? "Mais de uma forma" : (f.contaTxt || "Não definida")),
+        Lr("Depois fica", depoisP, corP),
+        e("div",{className:"pt-2 text-center text-[13px] font-bold"}, "Total: "+BK(vPag)))),
+    e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-3 py-1.5"},
       e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Pagar com mais de uma forma, por exemplo parte em Pix e parte em dinheiro", onClick:function(){ set({dividir:!f.dividir}); }}, f.dividir ? "Voltar para uma forma só" : "Dividir entre formas"),
       e("button",{type:"button", style:ALTO_J, className:BTN_J, "aria-expanded":mais, onClick:function(){ setMais(!mais); }}, mais ? "Mais ações ▴" : "Mais ações ▾"),
-      e("span",{className:"min-w-0 flex-1 px-2 text-center text-[11px] font-semibold "+(vPag>0 && vPag>=x.restante-0.005 ? "text-success" : "text-warning")}, resumo),
-      e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"),
+      e("span",{className:"ml-auto"}), e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"),
       e("button",{type:"button", style:{height:"28px", lineHeight:"26px"}, className:BTN_J+" !bg-[#3f6bb8] !px-5 !text-[13px]", disabled:!(vPag>0), onClick:pagar}, "Registrar pagamento"+(vPag>0 ? " · "+BK(vPag) : ""))),
     mais && e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-2.5 pb-1.5 pt-1.5"},
       p.editar && e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.editar}, "Editar conta"),
@@ -371,12 +388,12 @@ function opcoesPessoa(ff){   // lista de "Para quem entra" (nome | quem está de
 // LANÇAR CONTA no formato 7C (Marcus, 22/11/2026): à esquerda dois blocos (1 A conta, 2 Como paga e o pagamento, se já pagou); à direita o recibo "O que vai acontecer". Editar conta continua em FormConta.
 function FormContaNova(p){
   var c = p.c, ff = c.ff, hj = hojeIso(), temViagem = ff.categorias.some(function(k){ return k.chave==="VIAGEM_EUA"; });
-  var st = useState({personaId:(ff.personas[0]||{}).id||"", descricao:"", categoria:"OUTROS", contaBancId:"", forma:"PIX", beneficiario:"", obs:"", recorrencia:"unica", venc:hj, mesFim:somaMes(hojeYm(), 5), valor:"", pago:false, vp:"", vpMexeu:false, em:hj}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  var st = useState({personaId:"", descricao:"", categoria:"", contaBancId:"", forma:"", beneficiario:"", obs:"", recorrencia:"unica", venc:hj, mesFim:somaMes(hojeYm(), 5), valor:"", pago:false, vp:"", vpMexeu:false, em:hj}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var ctas = contasPagadoras(ff), opPessoa = opcoesPessoa(ff), ehViagem = f.personaId===FAMILIA4 && f.categoria==="VIAGEM_EUA";
   var vConta = num(f.valor), vPago = f.pago ? (f.vpMexeu ? num(f.vp) : vConta) : 0, quita = f.pago && vPago>0 && vPago>=vConta-0.005;
   var mesIni = String(f.venc || hj).slice(0, 7), diaV = Number(String(f.venc || hj).slice(8, 10)) || 1;
   var contaTxt = f.contaBancId ? contaLabel(ff, f.contaBancId) : "";
-  var invalido = !f.descricao.trim() || !(vConta>0) || !f.venc || (f.pago && (!(vPago>0) || vPago>vConta+0.005));
+  var invalido = !f.descricao.trim() || !f.personaId || !(vConta>0) || !f.venc || (f.pago && (!(vPago>0) || vPago>vConta+0.005));
   var lancar = function(comPagamento){ var base = {personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:diaV, forma:f.forma, beneficiario:f.beneficiario, obs:f.obs, recorrencia:f.recorrencia, mesInicio:mesIni, mesFim:f.mesFim, valor:vConta};
     if(comPagamento) base.pago = {valor:vPago, em:f.em, forma:f.forma, contaTxt:contaTxt, obs:""};
     acao(c, "conta_add", base); p.fechar(); };
@@ -408,7 +425,7 @@ function FormContaNova(p){
             e(CampoJ,{rot:"Data do pagamento", cls:"w-full"}, e(TxtJ,{value:f.em, type:"date", label:"Data do pagamento", onChange:function(v){ set({em:v}); }}))))),
       e("div",{className:"border-l border-white/15 bg-[#223f74] px-2.5 py-2"},
         e("div",{className:"pb-1 text-center text-[11px] font-semibold"}, "O que vai acontecer"),
-        Lr("Nova conta", f.descricao.trim() || "—"), Lr("Para quem entra", nomePessoa || "—"), Lr("Categoria", catNome(ff, f.categoria)),
+        Lr("Nova conta", f.descricao.trim() || "—"), Lr("Para quem entra", nomePessoa || "—"), Lr("Categoria", f.categoria ? catNome(ff, f.categoria) : "—"),
         Lr("Valor da conta", vConta>0 ? BK(vConta) : "—"), Lr("Vence", f.venc ? br(f.venc) : "—"),
         Lr("Repete", f.recorrencia==="unica" ? "Só este mês" : f.recorrencia==="fixa" ? "24 meses" : "até "+nomeMes(f.mesFim)),
         Lr("Pagamento", f.pago ? (vPago>0 ? BK(vPago)+" em "+br(f.em) : "—") : "Nenhum agora"),
@@ -416,7 +433,7 @@ function FormContaNova(p){
         Lr("Depois fica", depois, cor),
         e("div",{className:"pt-2 text-center text-[13px] font-bold"}, "Total: "+(f.pago ? BK(vPago) : BK(vConta))))),
     e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-3 py-1.5"},
-      f.pago && e("button",{type:"button", disabled:!f.descricao.trim() || !(vConta>0) || !f.venc, style:ALTO_J, className:BTN_J, title:"Lança a conta sem registrar o pagamento", onClick:function(){ lancar(false); }}, "Só lançar, pagar depois"),
+      f.pago && e("button",{type:"button", disabled:!f.descricao.trim() || !f.personaId || !(vConta>0) || !f.venc, style:ALTO_J, className:BTN_J, title:"Lança a conta sem registrar o pagamento", onClick:function(){ lancar(false); }}, "Só lançar, pagar depois"),
       e("span",{className:"ml-auto"}), e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"),
       e("button",{type:"button", style:{height:"28px", lineHeight:"26px"}, className:BTN_J+" !bg-[#3f6bb8] !px-5 !text-[13px]", disabled:invalido, onClick:function(){ lancar(f.pago); }}, f.pago ? "Lançar e pagar"+(vPago>0 ? " · "+BK(vPago) : "") : "Lançar"+(vConta>0 ? " · "+BK(vConta) : ""))));
 }
