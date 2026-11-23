@@ -74,3 +74,6 @@ html.dark.app-montagem { --muted-foreground: oklch(0.86 0 0); }
 @media (hover: none) and (pointer: coarse) {
   .app-claro input, .app-claro select, .app-claro textarea, form input[autocomplete="username"], form input[autocomplete="current-password"] { font-size: 16px !important; }
 }
+
+/* APP DA REPRESENTANTE EM TELA INTEIRA (23/11/2026): o topo escuro de cada tela fica preso no alto, como no app; só a lista de baixo rola. */
+.app-fixo #app-screen > :first-child { position: sticky; top: -8px; z-index: 20; }

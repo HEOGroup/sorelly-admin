@@ -172,7 +172,7 @@ function InicioRepresentante(){
   var dela = cod ? todas : todas.filter(function(x){ return String(x.rep||"").trim().split(/ +/)[0].toLowerCase()===pn; });
   var repNome = cod ? (quem.nome || (dela[0] && dela[0].rep) || "Representante") : (ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "));
   var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+(cod || s.usuario), rep:repNome, data:"", horario:"", retiradas:[]};
-  return e("div",{className:"mx-auto flex w-full max-w-[430px] flex-col items-center "+(cod ? "" : "py-2")}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, semMoldura:cod ? "cheia" : true}));
+  return e("div",{className:cod ? "flex min-h-0 w-full flex-1 flex-col" : "mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, semMoldura:cod ? "cheia" : true}));
 }
 function AbaInicioGeral(){ var cx = use(); return repCodDaConta() || grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
 export { AbaInicioGeral as AbaInicio };

@@ -328,9 +328,11 @@ function App(){
     e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
   // CONTA DE REPRESENTANTE (23/11/2026, Marcus: "100% a visão do app somente"): sem menu e sem as barras do Admin; só o app dela na tela inteira e o Sair.
   if(srv.repCodDaConta()) return e(Ctx.Provider,{value:{state:s, dispatch:d}},
-    e("div",{className:"min-h-screen bg-background"},
-      e("main",{className:"mx-auto flex w-full max-w-[430px] flex-col"}, e(Outlet)),
-      e("button",{type:"button", onClick:function(){ srv.sair(); }, className:"mx-auto block h-8 px-4 text-[13px] font-semibold underline"}, "Sair da conta")),
+    // TRAVADO COMO APP (Marcus, 23/11/2026: "não pode quebrar para cima e para baixo"): a página não rola nem balança; só o miolo do app rola, o topo fica preso e o "Sair da conta" fica embaixo.
+    e("div",{className:"fixed inset-0 flex flex-col bg-background", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation"}},
+      e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%}"),
+      e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet)),
+      e("button",{type:"button", onClick:function(){ srv.sair(); }, className:"mx-auto block h-8 shrink-0 px-4 text-[13px] font-semibold underline"}, "Sair da conta")),
     e(Aviso));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)

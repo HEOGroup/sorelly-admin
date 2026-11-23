@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.148", data:"2026-11-23", titulo:"App da representante travado como app", itens:[
+  {tipo:"correção", area:"App da representante", txt:"A página não balança mais no celular: o topo escuro fica preso, só o miolo rola e o Sair da conta fica no pé da tela."}]},
  {v:"0.21.147", data:"2026-11-23", titulo:"Conta de representante: abre direto no app", itens:[
   {tipo:"correção", area:"Representantes → App no Admin", txt:"A conta de representante que abria na tela Entrada do setor ficava numa tela preta com o aviso Escolha o setor no menu, porque ela não tem menu. Agora essa tela leva direto para o app da representante."}]},
  {v:"0.21.146", data:"2026-11-23", titulo:"RH › Acessos: Setor editável para todos", itens:[
