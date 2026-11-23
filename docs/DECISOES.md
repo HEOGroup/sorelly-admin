@@ -3333,3 +3333,8 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - Pedido: "retorne a opção de conferir manualmente, pois ali o financeiro vai verificar se está tudo correto". Desde 21/11 o Pix ficava Conferido sozinho quando tinha comprovante (`conferidoDe`).
 - Agora `conferidoDe` = só a marca do financeiro (`l.conferido`, operação `lanc_conferido`); `temComprovante` separa "Aguardando conferência" (tem comprovante) de "Falta o comprovante". Botões Conferir / Desfazer conferência na linha do Pix (pages/pf/Lancamentos.js, `AcoesLanc`). Editar fica travado com o Pix conferido.
 - Efeito no dia: 11 Pix (8 de novembro e 3 de outubro) que tinham comprovante deixaram de aparecer como Conferido e passam a Aguardando conferência.
+
+## 23/11/2026 — Encomendas: Top vendedoras e Premiação do mês
+- O Ranking virou **Top vendedoras** e as duas telas ficam no alto do menu de Encomendas e reposições (Top vendedoras, Premiação do mês). Top vendedoras = só para premiar: Top 20 do mês + Top 50 pelo acerto de 3 meses; nada de lista de acesso.
+- **Premiação do mês** = só o Top 10 do mês pelo VALOR DE ACERTO (soma do acerto_dm das linhas de venda; brinde, troca, indicação e prêmio não contam), com a foto e a descrição do prêmio ao lado. Campanha de novembro/2026 (artes do Instagram @sorellyoficial) em domain/premiacao-mes.js; mês novo = nova entrada + fotos em public/premiacao/AAAA-MM/.
+- Em aberto na campanha: data da divulgação, desempate (hoje: maior venda), se acertos de novembro feitos em dezembro entram, pagamento dos R$ 1.000 do 1º lugar, reserva do jantar.

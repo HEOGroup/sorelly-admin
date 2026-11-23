@@ -12,6 +12,7 @@ import { KIT_STATUS, formatarReais, hojeSP, kitDe, mediaVendas, mesesColunas, ro
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { e, useEffect, useState } from "@/shared/react";
 
+var AZUL = "!h-[16px] !py-0 !text-[11px] !leading-none !border-white/40 !bg-[var(--bloco-titulo)] !font-normal !text-white";   // campos da planilha no azul do menu (Marcus, 23/11/2026)
 var COR_KIT = {"Finalizado":"text-success", "Urgente":"text-destructive", "Pendente":"text-warning", "Montagem na empresa":"text-foreground"};
 var vazio = function(x){ return x===undefined || x===null || x===""; };
 
@@ -35,12 +36,12 @@ function CampoTxt(p){
     onChange:function(ev){ st[1](ev.target.value); },
     onBlur:function(){ if(v!==null && v!==atual) p.on(v); st[1](null); },
     onKeyDown:function(ev){ if(ev.key==="Enter") ev.currentTarget.blur(); },
-    className:CAMPO+" text-center"});
+    className:CAMPO+" text-center "+AZUL});
 }
 // seleção dentro da célula; cor = classe de cor do texto
 function Escolha(p){
-  return e("select",{value:p.v, "aria-label":p.rot, title:p.rot, onChange:function(ev){ p.on(ev.target.value); }, className:CAMPO.replace("text-foreground", p.cor || "text-foreground")+" text-center"},
-    p.opcoes.map(function(o){ return e("option",{key:o, value:o}, o || "—"); }));
+  return e("select",{value:p.v, "aria-label":p.rot, title:p.rot, onChange:function(ev){ p.on(ev.target.value); }, className:CAMPO+" text-center "+AZUL},
+    p.opcoes.map(function(o){ return e("option",{key:o, value:o, className:"bg-card text-foreground"}, o || "—"); }));
 }
 
 function TabelaRev(p){
@@ -61,11 +62,8 @@ function TabelaRev(p){
   });
   if(extra){ linhas.slice().sort(function(a, b){ return b.tot3-a.tot3 || a.nome.localeCompare(b.nome); }).forEach(function(l, i){ l.pos = i+1; }); linhas.sort(function(a, b){ return a.pos-b.pos; }); }   // classificação: total das vendas dos 3 últimos meses (regra do Top 100)
   var marca = function(id, campos){ E.exec("rev_montagem", Object.assign({id:id}, campos)); };
-  var C = (extra ? [{k:"pos", t:"Posição", w:"5rem", fixa:true}] : []).concat([{k:"nome", t:"Revendedora", w:"15rem", fixa:extra ? "5rem" : true}, {k:"rep", t:"Representante", w:"8.5rem"}, {k:"tel", t:"Telefone", w:"8.5rem"}]);
+  var C = (extra ? [{k:"pos", t:"Posição", w:"5rem", fixa:true}] : []).concat([{k:"nome", t:"Revendedora", w:"15rem", fixa:extra ? "5rem" : true}, {k:"rep", t:"Representante", w:"8.5rem"}].concat(extra ? [] : [{k:"tel", t:"Telefone", w:"8.5rem"}]));
   if(extra) C = C.concat([
-    {k:"ult", t:"Última venda", w:"8rem", fmt:function(v){ return formatarReais(v); }},
-    {k:"acerto", t:"Acerto", w:"6rem", data:true, fmt:function(v){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v)); return m ? m[3]+"/"+m[2] : String(v); }},
-    {k:"kit", t:"Kit", w:"11.5rem", render:function(v, l){ return e(Escolha,{v:v, opcoes:KIT_STATUS, cor:COR_KIT[v], rot:"Situação do kit de "+l.nome, on:function(x){ marca(l.id, {kit:x}); }}); }},
     {k:"resp", t:"Responsável", w:"9.5rem", render:function(v, l){ return e(Escolha,{v:v, opcoes:[""].concat(resps, v && resps.indexOf(v)<0 ? [v] : []), rot:"Quem monta o kit de "+l.nome, on:function(x){ marca(l.id, {resp:x}); }}); }},
     {k:"obs", t:"Observação", w:"13rem", render:function(v, l){ return e(CampoTxt,{v:v, rot:"Observação de "+l.nome, on:function(x){ marca(l.id, {obs:x}); }}); }}]);
   C = C.concat(cols.map(function(m){ return {k:"m_"+m, t:rotuloMes(m), w:"7rem", fmt:function(v){ return formatarReais(v); }}; }));
@@ -82,7 +80,7 @@ function TabelaRev(p){
     if(c.k==="sit") return ls.filter(function(l){ return l._alerta; }).length+" abaixo da média";
     if(c.k==="marcus") return String(ls.filter(function(l){ return l._r.marcus; }).length);
     return ""; }); };
-  return e(TabelaPlanilha,{cols:C, linhas:linhas, chave:"id", semCaixaAlta:true, grade:true, semContagem:true, barraGrossa:true, alturaMax:"calc(100vh - 9rem)", totalRodape:total, vazio:"Nenhuma revendedora encontrada."});
+  return e(TabelaPlanilha,{fina:p.grupo==="top50", semMao:p.grupo==="top50", centro:p.grupo==="top50", cols:C, linhas:linhas, chave:"id", semCaixaAlta:true, grade:true, semContagem:true, barraGrossa:true, alturaMax:p.grupo==="top50" ? "calc(100vh - 13rem)" : "calc(100vh - 9rem)", totalRodape:total, vazio:"Nenhuma revendedora encontrada."});
 }
 
 // Planilha dentro do bloco azul do Financeiro (BlocoPainel compacto: letra de 11 px, linha baixa, campos como células). Funil › Revendedoras usa esta peça inteira.

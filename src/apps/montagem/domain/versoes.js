@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.132", data:"2026-11-23", titulo:"Encomendas: Top vendedoras e Premiação do mês", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Premiação do mês", txt:"Tela nova com o Top 10 do mês pelo valor de acerto, com a foto e a descrição do prêmio de cada colocação (campanha Top 10 de novembro). O mês vira sozinho; mês sem campanha mostra o Top 10 sem prêmio (prêmios em domain/premiacao-mes.js e fotos em public/premiacao)."},
+  {tipo:"melhoria", area:"Encomendas e reposições → Top vendedoras", txt:"O Ranking virou Top vendedoras e foi para o alto do menu: Top 20 do mês com o comparativo dos 3 acertos anteriores e Top 50 pelo acerto de 3 meses com quem ainda falta acertar, previsão e totais fixos. Atualiza sozinho a cada minuto e muda de mês sozinho."}]},
  {v:"0.21.131", data:"2026-11-24", titulo:"Pedido de Pix completo: valor combinado, representante, tempo de espera e aviso no topo", itens:[
   {tipo:"novo", area:"Financeiro › Receber › Contas a receber", txt:"O Pedido de Pix ganhou: (1) Valor combinado, opcional, que aparece na ficha e já vem preenchido ao completar (não entra nos totais nem em acerto); (2) Representante que pediu, opcional, da lista da aba Chaves Pix, que aparece na ficha e na coluna Representante da tabela; (3) tempo de espera na situação (Aguardando Pix · hoje, · 1 dia, · 3 dias); (4) um aviso azul no topo da tela com a quantidade de pedidos aguardando Pix e há quanto tempo espera o mais antigo, que ao clicar mostra os Pix lançados aqui. Ao completar, a revendedora do pedido (se já havia) volta preenchida. Servidor: valorCombinado e repPediu no pedido (testes: 105 verificações)."}
  ]},

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
-// Encomendas › Ranking: classificação pelo total de vendas dos últimos 3 meses (só leitura; cache de 10 min).
+// Encomendas › Ranking: classificação pelo total de vendas dos últimos 3 meses (só leitura; cache de 1 min).
 //   GET /api/encomendas/ranking  →  { pronto, janela, itens: [{pos, cod, nome, rep, total, media, acertos, ultimo, posAntes}], corte100, corte150 }
 import { erro, json, rota } from "@/server/http";
 import { podeModulo } from "@/server/permissoes";

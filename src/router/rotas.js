@@ -167,6 +167,7 @@ const montagem = {
     pagina("ida-na-empresa", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncIda"),
     pagina("top-50", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncTop50"),
     pagina("ranking-encomendas", () => import("@/apps/montagem/pages/encomendas/Ranking"), "AbaEncRanking"),
+    pagina("premiacao-do-mes", () => import("@/apps/montagem/pages/encomendas/Premiacao"), "AbaEncPremiacao"),
     pagina("reposicao-representantes", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncRep"),
     pagina("regras-e-mensagens-reposicao", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncRegras"),
     pagina("marketing", () => import("@/apps/montagem/pages/Marketing"), "AbaMarketing"),
