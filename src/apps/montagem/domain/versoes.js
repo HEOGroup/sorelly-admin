@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.115", data:"2026-11-22", titulo:"Janelas Lançar e Pagar iguais, Observações embaixo do Total, sem Beneficiário", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar", txt:"Pagar conta agora tem o mesmo desenho do Lançar conta (formato 7C: 1 A conta, 2 Como paga e o pagamento e o recibo O que vai acontecer). Lançar conta abre zerada, só com a data de hoje."},
+  {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar", txt:"As observações viraram um campo só, Observações, embaixo do Total. Saíram Observação da conta e Observação deste pagamento."},
+  {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar", txt:"Saiu o Beneficiário da tabela e das janelas (166 de 170 contas não tinham). Os dados já guardados ficam."}]},
  {v:"0.21.114", data:"2026-11-22", titulo:"Lançar conta e já pagar, com recibo (formato 7C)", itens:[
   {tipo:"novo", area:"Financeiro → Família → Contas a pagar → Lançar conta", txt:"A janela Lançar conta tem dois blocos (1 A conta, 2 Como paga e o pagamento) e, ao lado, o recibo O que vai acontecer. Marcando Já foi pago, a conta nasce com o pagamento da primeira parcela e o botão mostra Lançar e pagar com o valor. Dá para Só lançar e pagar depois. Editar conta continua como antes."}]},
  {v:"0.21.113", data:"2026-11-22", titulo:"Pix da Casa: marcar a casa de vários de uma vez", itens:[

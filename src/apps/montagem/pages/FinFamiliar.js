@@ -330,8 +330,7 @@ function ModalPagar(p){
             e(CampoJ,{rot:"Falta (R$)", cls:"w-full"}, Fixo(BK(x.restante))),
             e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, campoPara)),
             e(CampoJ,{rot:"Categoria", cls:"w-full"}, Fixo(catNome(c.ff, x.conta.categoria))),
-            e(CampoJ,{rot:"Mês", cls:"w-full"}, Fixo(nomeMes(x.ym))),
-            e("div",{style:{gridColumn:"span 4"}}, e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, Fixo(x.conta.beneficiario))))),
+            e(CampoJ,{rot:"Mês", cls:"w-full"}, Fixo(nomeMes(x.ym))))),
         e(BlocoJ,{t:"2 · Como paga e o pagamento"},
           f.dividir ? e.apply(null, ["div", {className:"grid w-full", style:{gridTemplateColumns:"16% 34% 16% 34%"}}].concat(cels)) : e("div",{className:"grid w-full grid-cols-2 gap-x-2 gap-y-1"},
             e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, campoForma), e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, campoConta),
@@ -411,8 +410,7 @@ function FormContaNova(p){
             e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, e(SelJ,{value:ehViagem ? "__viagem" : f.personaId, label:"Para quem entra", opcoes:opPessoa, onChange:function(v){ if(v==="__viagem") set({personaId:FAMILIA4, categoria:"VIAGEM_EUA"}); else if(ehViagem) set({personaId:v, categoria:(ff.categorias.filter(function(k){ return k.chave!=="VIAGEM_EUA"; })[0] || {}).chave || f.categoria}); else set({personaId:v}); }}))),
             e(CampoJ,{rot:"Categoria", cls:"w-full"}, e(SelJ,{value:f.categoria, label:"Categoria", opcoes:ff.categorias.map(function(k){ return [k.chave, k.nome]; }), onChange:function(v){ set({categoria:v}); }})),
             e(CampoJ,{rot:"Repete", cls:"w-full"}, e(SelJ,{value:f.recorrencia, label:"Repete", opcoes:[["unica", "Única (1 mês)"], ["parcelada", "Parcelada"], ["fixa", "Fixa (24 meses)"]], onChange:function(v){ set({recorrencia:v}); }})),
-            f.recorrencia==="parcelada" && e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Termina em", cls:"w-full"}, e(TxtJ,{value:f.mesFim, type:"month", label:"Termina em", onChange:function(v){ set({mesFim:v}); }}))),
-            e("div",{style:{gridColumn:"span 4"}}, e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, e(TxtJ,{value:f.beneficiario, label:"Beneficiário", onChange:function(v){ set({beneficiario:v}); }}))))),
+            f.recorrencia==="parcelada" && e("div",{style:{gridColumn:"span 2"}}, e(CampoJ,{rot:"Termina em", cls:"w-full"}, e(TxtJ,{value:f.mesFim, type:"month", label:"Termina em", onChange:function(v){ set({mesFim:v}); }}))))),
         e(BlocoJ,{t:"2 · Como paga e o pagamento"},
           e("div",{className:"grid w-full grid-cols-2 gap-x-2 gap-y-1"},
             e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, e(SelJ,{value:f.forma, label:"Forma de pagamento", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }})),
@@ -456,7 +454,6 @@ function FormConta(p){   // editar conta (lançar conta nova é a FormContaNova)
       e("div",{className:"grid w-full grid-cols-2 gap-1"},
         e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, e(SelJ,{value:f.contaBancId, label:"Conta pagadora", opcoes:[["", "Não definida"]].concat(ctas.map(function(b){ return [b.id, contaLabel(ff, b.id)]; })), onChange:function(v){ set({contaBancId:v}); }})),
         e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, e(SelJ,{value:f.forma, label:"Forma de pagamento", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }})),
-        e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, e(TxtJ,{value:f.beneficiario, label:"Beneficiário", onChange:function(v){ set({beneficiario:v}); }})),
         e(CampoJ,{rot:"Dia do vencimento", cls:"w-full"}, e(TxtJ,{value:f.dia, label:"Dia do vencimento", onChange:function(v){ set({dia:v.replace(/\D/g,"").slice(0,2)}); }}))),
       e(CampoJ,{rot:"Observação", cls:"w-full"}, e(TxtJ,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))),
     nova && e(BlocoJ,{t:"3 · Valor e meses"},
@@ -488,8 +485,8 @@ function AbaFfContas(){
   var cbs = ff.contasBanc.filter(function(b){ return b.ativo; });
   var dias = function(x){ return Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(x.venc+"T00:00:00"))/86400000)); };
   var linhas = lista.map(function(x){ return {id:x.chave, x:x, sit:x.atrasada ? "Atrasada · "+dias(x)+" dias" : x.status==="PARCIAL" ? "Parcial" : "A pagar", venc:br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4)),
-    pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, cat:catNome(ff, x.conta.categoria), forma:x.conta.forma || "—", pagadora:x.conta.contaBancId ? contaLabel(ff, x.conta.contaBancId) : "Não definida", benef:x.conta.beneficiario || "—", valor:x.valor, falta:x.restante, obs:(x.conta.obs || (x.conta.notas || []).length) ? "✓" : "—"}; });
-  var cols = [{k:"sit", t:"Situação", cor:function(l){ return l.sit.indexOf("Atrasada")===0 ? "text-warning" : l.sit==="Parcial" ? "text-warning" : ""; }}, {k:"venc", t:"Vence"}, {k:"pessoa", t:"Pessoa"}, {k:"nome", t:"Conta"}, {k:"cat", t:"Categoria"}, {k:"forma", t:"Forma"}, {k:"pagadora", t:"Conta pagadora"}, {k:"benef", t:"Beneficiário"},
+    pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, cat:catNome(ff, x.conta.categoria), forma:x.conta.forma || "—", pagadora:x.conta.contaBancId ? contaLabel(ff, x.conta.contaBancId) : "Não definida", valor:x.valor, falta:x.restante, obs:(x.conta.obs || (x.conta.notas || []).length) ? "✓" : "—"}; });
+  var cols = [{k:"sit", t:"Situação", cor:function(l){ return l.sit.indexOf("Atrasada")===0 ? "text-warning" : l.sit==="Parcial" ? "text-warning" : ""; }}, {k:"venc", t:"Vence"}, {k:"pessoa", t:"Pessoa"}, {k:"nome", t:"Conta"}, {k:"cat", t:"Categoria"}, {k:"forma", t:"Forma"}, {k:"pagadora", t:"Conta pagadora"},
     {k:"valor", t:"Valor", fmt:BK}, {k:"falta", t:"Falta", fmt:BK}, {k:"obs", t:"Obs"}];
   var somaCampo = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(Number(l[k]) || 0); }, 0)); };
   var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="nome" ? ls.length+(ls.length===1 ? " conta" : " contas") : col.k==="valor" || col.k==="falta" ? BK(somaCampo(ls, col.k)) : ""; }); };
@@ -504,7 +501,7 @@ function AbaFfContas(){
     e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
       e(BarraTabela,null,
         e("div",{role:"button", tabIndex:0, title:"Lançar uma conta da família", onClick:function(){ setModal({tipo:"conta"}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setModal({tipo:"conta"}); } }, className:"flex w-[124px] shrink-0 cursor-pointer whitespace-nowrap items-center justify-center border-r border-white/25 bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar conta"),   // padrao-ok: botão no INÍCIO da barra, tamanho médio (Marcus, 22/11/2026)
-        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas"})),
+        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, valor...", rotulo:"Buscar nas contas"})),
         e(CelulaBarra,{rotulo:"Situação"}, e(CampoMini,{valor:f.status, aoMudar:function(v){ set({status:v}); }, rotulo:"Situação", ops:[["", "Todas abertas"], ["pendente", "A pagar"], ["parcial", "Parciais"], ["atrasado", "Atrasadas"]]})),
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),
         e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:f.pessoa, aoMudar:function(v){ set({pessoa:v}); }, rotulo:"Pessoa", ops:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")})),
@@ -538,7 +535,7 @@ function AbaFfPagas(){
   return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
     e(BlocoPainel,{titulo:"Contas pagas - Família", compacto:true},
       e(BarraTabela,null,
-        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas pagas"})),
+        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, valor...", rotulo:"Buscar nas contas pagas"})),
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),
         e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:f.pessoa, aoMudar:function(v){ set({pessoa:v}); }, rotulo:"Pessoa", ops:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")})),
         e(CelulaBarra,{rotulo:"Categoria"}, e(CampoMini,{valor:f.cat, aoMudar:function(v){ set({cat:v}); }, rotulo:"Categoria", ops:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}))),
