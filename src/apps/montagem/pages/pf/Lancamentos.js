@@ -369,7 +369,8 @@ function AbaPfLanc(){
       e(BlocoPainel,{titulo:"Pagamentos a fornecedores", compacto:true, cls:COMPACTA},
         e(TabelaPlanilha,{cols:colsResumo, linhas:linhasResumo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, filtroInicial:filtroTopo, totalRodape:rodapeAno, vazio:"Nada neste filtro."}))),
     [
-      e(BlocoPainel,{key:"lista", titulo:"Pagamentos do mês", compacto:true, cls:COMPACTA, acao:e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:meses.map(function(m){ return [m, mesLabel(m+"-01")]; })})},   // o mês fica no canto esquerdo da barra do bloco, em cima da coluna Tipo (Marcus, 21/11/2026)
+      e(BlocoPainel,{key:"lista", titulo:"Pagamentos do mês", compacto:true, cls:COMPACTA, acao:e("span",{className:"inline-flex items-center gap-2"}, e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:meses.map(function(m){ return [m, mesLabel(m+"-01")]; })}),
+          c.edita && e(BotaoMini,{principal:true, title:"Lançar um Pix: escolhe o fornecedor e a data de pagamento", onClick:function(){ lancarFaixa(); }}, "+ Lançar pagamento"))},   // Lançar voltou (Lucas, 23/11/2026)   // o mês fica no canto esquerdo da barra do bloco, em cima da coluna Tipo (Marcus, 21/11/2026)
         !cart.grupos.length ? e("p",{className:"px-3 py-2 text-center text-[11px]"}, "Nenhum pagamento sem NF (Pix) em "+mesLabel(mes+"-01")+".") : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhum pagamento.",
           aoClicar:function(l){ setSel(l.id); setTimeout(function(){ var el = document.getElementById("pag-detalhe"); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"}); }, 60); },
           linhaCls:function(l){ return l.id===sel ? "!bg-[#26385c]" : ""; }})),
@@ -377,6 +378,7 @@ function AbaPfLanc(){
         cdSel ? e(BlocoPainel,{titulo:gSel.f.nome+" · "+dbr(cdSel.limite)+" · "+gSel.f.cat+" · "+gSel.cicloTxt, compacto:true, cls:DETALHE},
           e("div",{className:"w-0 min-w-full overflow-x-auto", "data-sem-arrastar":""},
             e(BarraTabela,null,
+              c.edita && e(CelulaBarra,{rotulo:"Pix"}, e(BotaoMini,{principal:true, title:"Lançar um Pix nesta data de pagamento", onClick:function(){ lancar(cdSel.chave); }}, "+ Lançar pagamento")),   // Lançar voltou (Lucas, 23/11/2026)
               e(CelulaBarra,{rotulo:"Acerto"}, e(BotaoMini,{onClick:function(){ enviar(cdSel.chave); }}, cdSel.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor")),
               e(CelulaBarra,{rotulo:"Ciclo"}, e(BotaoMini,{title:"Configurar o ciclo deste fornecedor", onClick:function(){ c.d({type:"ABA", aba:"pfforn"}); }}, "Ciclo do fornecedor"))),
             e(ListaPagamentos,{cd:cdSel, c:c}),

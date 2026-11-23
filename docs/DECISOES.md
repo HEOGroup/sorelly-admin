@@ -3316,3 +3316,8 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 
 ## 23/11/2026 · Conferência de pagamentos: volta o Estornar (Lucas)
 - Pedido: "não consigo apagar lançamentos errados" / "volta com a opção de estorno". A tela refeita em 21/11 (v0.21.78) tirou o Estornar; ficou só o Editar. O botão voltou ao lado do Editar (`AcoesLanc` em pages/pf/Lancamentos.js, operação `lanc_del`), com confirmação; Pix dividido sai com as partes ligadas. Lançamento automático ("Crédito" do pago do mês) não tem Estornar.
+
+## 23/11/2026 · Lançar Pix volta nos fornecedores e na família (Lucas)
+- Pedido: "adicione o botão de lançar pagamento de Pix na parte de Pag. fornecedores e na parte de Pix do Financeiro familiar; não estou conseguindo lançar". Em 21/11 (v0.21.77 e v0.21.78) os dois tinham saído, com a ideia de o Pix nascer só no Direcionar; os dois caminhos passam a existir juntos.
+- Conferência de pagamentos (pages/pf/Lancamentos.js): "+ Lançar pagamento" na barra Pagamentos do mês (janela completa, escolhe fornecedor e data) e na barra da data aberta (já com a data). Mesma janela `ModalLancar` e operação `lanc_add`.
+- Família › PIX revendedoras (pages/FinFamiliar.js, `CartaoPix`): volta o formulário Anotar PIX igual ao de antes de 21/11 (operação `pix_add`).

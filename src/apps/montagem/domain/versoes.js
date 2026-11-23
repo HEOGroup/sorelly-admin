@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.128", data:"2026-11-23", titulo:"Lançar Pix volta nos fornecedores e na família", itens:[
+  {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"Volta o botão + Lançar pagamento: na barra Pagamentos do mês (ao lado do Mês; escolhe o fornecedor e a data) e na data aberta embaixo (já com a data). Abre a mesma janela Lançar pagamento de antes. Tinha saído na tela refeita de 21/11."},
+  {tipo:"correção", area:"Financeiro → Família → PIX revendedoras", txt:"Volta o formulário Anotar PIX (Data, Valor, Revendedora, Conta que recebeu) no bloco de cada sócio e da Casa. Tinha saído em 21/11 (v0.21.77)."}
+ ]},
  {v:"0.21.127", data:"2026-11-23", titulo:"Conferência de pagamentos: volta o Estornar", itens:[
   {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"O botão Estornar voltou em cada Pix lançado, ao lado de Editar (tinha saído na tela refeita de 21/11). Pede confirmação; Pix dividido sai com todas as partes."}
  ]},
