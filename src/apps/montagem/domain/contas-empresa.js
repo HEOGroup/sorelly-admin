@@ -19,7 +19,8 @@ var FILIAIS = [["34","CNPJ 34","Sorelly"], ["46","CNPJ 46","Mayz"], ["59","CNPJ 
 var G = {folha:"Folha e pessoal", enc:"Encargos da folha", bruto:"Bruto", banho:"Banho", grafico:"Material gráfico e embalagem", outros:"Outros fornecedores", prest:"Prestadores de serviço", rep:"Representantes", comfunc:"Comissões de funcionários", seg:"Segurança", socios:"Sócios e despesas pessoais", mkt:"Sistemas e tecnologia", trafego:"Marketing e tráfego pago", fin:"Financeiro (empréstimos, juros)", imp:"Impostos", adm:"Administrativo", axis:"Axis e H&O"};
 var GRUPOS = [G.folha, G.enc, G.bruto, G.banho, G.grafico, G.outros, G.prest, G.rep, G.comfunc, G.seg, G.socios, G.trafego, G.mkt, G.fin, G.imp, G.adm, G.axis];
 // fornecedores conhecidos (20/10/2026): [teste no nome, nome único, grupo]. Um fornecedor = uma linha, mesmo pago por CNPJs e formas diferentes. Ellos (banho) NÃO é a Art Ello (bruto), só do mesmo grupo de empresas.
-var FORNS = [[/ELLOS|GALVANOPLAST/i, "Ellos (banho)", G.banho], [/PONTUAL|CHP IND/i, "Pontual", G.banho], [/OFFICE ?GRAF/i, "Office Graf", G.grafico], [/MEGA ?SUL/i, "MegaSul", G.bruto], [/ART ELLO/i, "Art Ello", G.bruto], [/POINT/i, "Point", G.bruto], [/LINDA|LINN|LIIN/i, "Linda", G.bruto], [/TUCANO/i, "Tucano", G.bruto], [/CHARME/i, "Charme", G.bruto], [/XANGAI/i, "Xangai", G.bruto], [/RAMOS/i, "Ramos Laser", G.bruto], [/JOIAS (&|E) CIA/i, "Bruto Joias e Cia", G.bruto]];
+// 23/11/2026: "Pontual Prestação de Serviços em Galvanoplastia" caía em Ellos pela palavra Galvanoplastia; Pontual vem primeiro.
+var FORNS = [[/PONTUAL|CHP IND/i, "Pontual", G.banho], [/ELLOS|GALVANOPLAST/i, "Ellos (banho)", G.banho], [/OFFICE ?GRAF/i, "Office Graf", G.grafico], [/MEGA ?SUL/i, "MegaSul", G.bruto], [/ART ELLO/i, "Art Ello", G.bruto], [/POINT/i, "Point", G.bruto], [/LINDA|LINN|LIIN/i, "Linda", G.bruto], [/TUCANO/i, "Tucano", G.bruto], [/CHARME/i, "Charme", G.bruto], [/XANGAI/i, "Xangai", G.bruto], [/RAMOS/i, "Ramos Laser", G.bruto], [/JOIAS (&|E) CIA/i, "Bruto Joias e Cia", G.bruto]];
 function fornDe(nat, tit){ var t = String(nat||"")+" "+String(tit||""); for(var k = 0; k<FORNS.length; k++) if(FORNS[k][0].test(t)) return FORNS[k]; return null; }
 
 // Texto do DevMaster vem TUDO EM MAIÚSCULO: aqui vira letra normal ("SALÁRIO" → "Salário", "PRÓ-LABORE MARCUS" → "Pró-labore Marcus"); siglas continuam em maiúsculo
@@ -173,6 +174,68 @@ function setPfParcelas(pf){
     (ped.parcelas || []).forEach(function(x, k){ if(x.status!=="Pago" || !(Number(x.valor)>0) || !x.venc || String(x.venc).slice(0, 10)>hoje) return; PF_PARC.push({id:ped.id+"#"+k, canon:canon, venc:String(x.venc).slice(0,10), valor:r2(Number(x.valor)), tipo:tipoDaParcela(x.forma), ped:ped.numero || ("Pedido "+ped.id)}); });
   });
 }
+// CRUZAMENTO ADMIN x DEVMASTER (Marcus, 23/11/2026): boleto e cheque que o Admin ainda mostra como pendente, mas a DevMaster já BAIXOU (título pago), contam como pagos.
+// Casa pelo MESMO fornecedor, MESMO tipo (boleto ou cheque), MESMO valor (até 3 centavos: o banco arredonda diferente) e vencimento até 10 dias de diferença; cada baixa da DevMaster casa com UMA parcela.
+// Pix fica de fora: o Pix revendedora é lançado à mão no Admin (vale o Admin) e a DevMaster nunca foi controlada por aqui. Só leitura: nada é gravado em lugar nenhum.
+// Devolve {"idDoPedido#posição": {baixa, tipo, pago}} das parcelas pendentes que têm título igual na DevMaster: pago:true = a DevMaster já baixou; pago:false = ainda está ABERTO lá (cheque vencido continua em aberto, vontade da Anamaria/Marcus, 23/11/2026).
+var _bxDmSig = "", _bxDm = {};
+function parcelasBaixadasDm(pf){
+  var peds = (pf && pf.pedidos) || [], base = baseItens(), sig = (SERV ? SERV.geradoEm || "ok" : "-")+"|"+peds.length+"|"+base.length+"|"+(new Date().toISOString().slice(0,10));
+  var pend = 0; peds.forEach(function(p){ (p.parcelas || []).forEach(function(x){ if(x.status!=="Pago") pend++; }); }); sig += "|"+pend;
+  if(sig===_bxDmSig) return _bxDm; _bxDmSig = sig; _bxDm = {};
+  var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
+  var dm = {}; base.forEach(function(i){ if(i.origem==="pf" || i.bx || i.faltaBaixaDm || !i.fornCanon) return; var t = tipoDoTitulo(i); if(t==="outro") t = "boleto"; if(t!=="boleto" && t!=="cheque") return; (dm[i.fornCanon] = dm[i.fornCanon] || []).push({t:t, pago:i.status==="pago", venc:String(i.venc || "").slice(0,10), baixa:String(i.baixa || "").slice(0,10), valor:r2(i.status==="pago" ? i.valor : (i.valorTitulo==null ? i.valor : i.valorTitulo)), usado:false}); });
+  var dif = function(a, b){ return Math.abs(Date.UTC(+a.slice(0,4), +a.slice(5,7)-1, +a.slice(8,10))-Date.UTC(+b.slice(0,4), +b.slice(5,7)-1, +b.slice(8,10)))/86400000; };
+  peds.forEach(function(ped){
+    var f = fn[ped.fornId]; if(!f || f.tipo==="prestador") return;
+    var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome, lista = dm[canon]; if(!lista) return;
+    (ped.parcelas || []).forEach(function(x, k){
+      if(x.status==="Pago" || !x.venc) return;
+      var t = tipoDaParcela(x.forma); if(t!=="boleto" && t!=="cheque") return;
+      var v = String(x.venc).slice(0,10), melhor = null;
+      lista.forEach(function(b){ if(b.usado || b.t!==t || Math.abs(b.valor-Number(x.valor))>Math.max(1.01, 0.005*b.valor)) return; var d = dif(b.venc, v); if(d>10) return; if(!melhor || d<melhor.d) melhor = {b:b, d:d}; });
+      if(melhor){ melhor.b.usado = true; _bxDm[ped.id+"#"+k] = {baixa:melhor.b.baixa, tipo:t, pago:melhor.b.pago}; }
+    });
+  });
+  return _bxDm;
+}
+// O QUE A DEVMASTER TEM E O ADMIN NÃO (Marcus, 23/11/2026: "pega o que achou, lança nos fornecedores e atualiza o saldo do mês"): boletos e cheques da DevMaster que não casam com nenhuma parcela do Admin
+// (mesmo fornecedor, mesmo tipo, valor até R$ 1,01 ou 0,5%, e vencimento até 10 dias) contam como Com NF do fornecedor: em aberto, a pagar no mês e pago no mês. Pix fica de fora (vale o Admin) e a Point tem regra própria (pela nota fiscal).
+// Só leitura e só na tela: nada é gravado. Devolve {fornId: {aberto, mesAP, mesPg, n}}.
+var _exDmSig = "", _exDm = {};
+function extrasDevmaster(pf, mes){
+  var peds = (pf && pf.pedidos) || [], base = baseItens(), sig = (SERV ? SERV.geradoEm || "ok" : "-")+"|"+peds.length+"|"+base.length+"|"+mes+"|"+((pf && pf.fornecedores) || []).length;
+  var np = 0; peds.forEach(function(p){ np += (p.parcelas || []).length; }); sig += "|"+np;
+  if(sig===_exDmSig) return _exDm; _exDmSig = sig; _exDm = {};
+  var dif = function(a, b){ return Math.abs(Date.UTC(+a.slice(0,4), +a.slice(5,7)-1, +a.slice(8,10))-Date.UTC(+b.slice(0,4), +b.slice(5,7)-1, +b.slice(8,10)))/86400000; };
+  var dm = {};
+  base.forEach(function(i){
+    if(i.origem==="pf" || i.manual || !i.fornCanon || i.bx || i.faltaBaixaDm) return;
+    var t = tipoDoTitulo(i); if(t==="outro") t = "boleto"; if(t!=="boleto" && t!=="cheque") return;
+    var venc = String(i.venc || "").slice(0,10); if(!venc) return;
+    (dm[i.fornCanon] = dm[i.fornCanon] || []).push({t:t, venc:venc, pago:i.status==="pago", valor:r2(i.valorTitulo==null ? i.valor : i.valorTitulo), saldo:i.status==="pago" ? 0 : r2(i.valor), usado:false});
+  });
+  ((pf && pf.fornecedores) || []).forEach(function(f){
+    if(f.tipo==="prestador") return;
+    var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome; if(canon==="Point") return;
+    var lista = dm[canon]; if(!lista) return;
+    var parcs = []; peds.forEach(function(ped){ if(ped.fornId!==f.id) return; (ped.parcelas || []).forEach(function(x){ var t = tipoDaParcela(x.forma); if((t==="boleto" || t==="cheque") && x.venc) parcs.push({t:t, venc:String(x.venc).slice(0,10), valor:Number(x.valor) || 0}); }); });
+    parcs.forEach(function(p){
+      var melhor = null;
+      lista.forEach(function(b){ if(b.usado || b.t!==p.t || Math.abs(b.valor-p.valor)>Math.max(1.01, 0.005*b.valor)) return; var d = dif(b.venc, p.venc); if(d>10) return; if(!melhor || d<melhor.d) melhor = {b:b, d:d}; });
+      if(melhor) melhor.b.usado = true;
+    });
+    var o = {aberto:0, mesAP:0, mesPg:0, n:0};
+    lista.forEach(function(b){
+      if(b.usado) return;
+      var noMes = b.venc.slice(0,7)===mes;
+      if(!b.pago){ o.aberto += b.saldo; o.n++; if(noMes){ o.mesAP += b.valor; o.mesPg += b.valor-b.saldo; } }
+      else if(noMes){ o.mesAP += b.valor; o.mesPg += b.valor; o.n++; }
+    });
+    if(o.n) _exDm[f.id] = {aberto:r2(o.aberto), mesAP:r2(o.mesAP), mesPg:r2(o.mesPg), n:o.n};
+  });
+  return _exDm;
+}
 function setPf(pf){
   setPfParcelas(pf);
   var lanc =(pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+lanc.filter(function(l){ return l.aguardaComp; }).length+"|"+((pf && pf.fornecedores) || []).length;
@@ -322,4 +385,4 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
-export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { extrasDevmaster, parcelasBaixadasDm, definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

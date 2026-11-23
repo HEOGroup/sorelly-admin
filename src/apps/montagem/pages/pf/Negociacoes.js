@@ -4,6 +4,7 @@
 // Quando o fornecedor filtrado é a Point, mostra o painel de conta corrente dela (pf/Point.js). As contas ficam em domain/pf.js; aqui só desenha.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { CNPJS0 } from "@/apps/montagem/domain/cnpjs";
+import { extrasDevmaster, parcelasBaixadasDm } from "@/apps/montagem/domain/contas-empresa";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { menuMini } from "@/apps/montagem/pages/ContasReceberLista";
 import { FILTRO_PADRAO, FORMAS, FORN_CATS, addDias, addMeses, F_PER, F_SIT, F_TIPO, NF_LABEL, PT_FORN, acertoPreset, acertoPresetAtivo, acertoResumo, agregar, alertasDe, blocosDoMes, cicloLabel,
@@ -14,7 +15,8 @@ import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
+import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { BotaoMini, COMPACTA } from "./Lancamentos";
 import { PointPainel } from "./Point";
 import { PainelPontual } from "./Resumo";
@@ -26,6 +28,9 @@ var BlocoBarra = function(p){ return e(BlocoPainel,{titulo:p.t, dir:p.dir, acao:
 var MIUDO = " [&_*]:!text-[10px] [&_*]:!leading-tight [&_button]:!h-[18px] [&_button]:!min-h-0 [&_button]:!py-0 [&_button]:!px-1.5 [&_select]:!h-[18px] [&_select]:!py-0 [&_input]:!h-[18px] [&_input]:!py-0 [&_td]:!text-center [&_th]:!text-center [&_td]:!whitespace-nowrap [&_th]:!whitespace-nowrap [&_tbody_tr]:!border-b [&_tbody_tr]:!border-white/45 [&_tbody_td]:!border-b [&_tbody_td]:!border-white/45 [&_td_span.rounded-full]:!px-1.5 [&_td_span.rounded-full]:!py-0 [&_td_span.rounded-full]:!leading-[14px]";   // padrao-ok: tela inteira com a letra fina da tela de Lançamento (pedido do Marcus, 20/11/2026)
 var GRANDE = "[&_table_tbody_td]:!h-[46px] [&_table_tbody_tr]:!h-[46px] [&_table_tbody_td]:!text-[17px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: fornecedor escolhido, linha e letra 3 vezes maiores (pedido do Marcus, 21/11/2026)
 var BARRA_TOPO = "flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b-2 border-white/30 bg-[var(--bloco-titulo)] px-2 py-0.5 [&_button]:!h-[18px] [&_button]:!py-0 [&_button]:!leading-none [&_button]:!px-1 [&_button]:!text-[10px] [&_button]:!border-white/25 [&_button]:!bg-white/10";   // padrao-ok: barra única de filtros e abas (Marcus, 21/11/2026)
+var COR_TIPO = {"Banho":"text-[#e0b64a]", "Bruto":"text-sky-400", "Material gráfico":"text-violet-300", "Sistema":"text-emerald-300", "Tintas":"text-pink-300", "Prestador":"text-orange-300"};   // padrao-ok: cor por tipo de fornecedor (pedido do Marcus, 23/11/2026)
+var corTipo = function(l){ return (COR_TIPO[l.tipo] || "") + " font-bold"; };
+var LISTA = "[&_table_tbody_td]:!h-[24px] [&_table_tbody_tr]:!h-[24px] [&_table_tbody_td]:!text-[10px] [&_table_tbody_td:nth-child(-n+2)]:!text-[11px] [&_table_tfoot_td]:!text-[11px] [&_table_tfoot_td]:!h-[24px] [&_table_tfoot_tr]:!h-[24px] [&_table_td]:!px-1 [&_table_th]:!px-1 [&_table_th]:!tracking-normal [&_table_th]:!text-[10px] [&_table_th_div]:!px-1 [&_table_th_div]:!text-[10px] [&_table_th_div]:!tracking-normal [&_thead_tr:first-child_th:nth-child(2)]:!bg-[rgba(45,212,191,0.1)] [&_thead_tr:first-child_th:nth-child(3)]:!bg-[rgba(45,212,191,0.16)] [&_thead_tr:first-child_th:nth-child(4)]:!bg-[rgba(45,212,191,0.24)] [&_thead_tr:nth-child(2)_th:nth-child(n+3):nth-child(-n+5)]:!bg-[rgba(45,212,191,0.1)] [&_thead_tr:nth-child(2)_th:nth-child(n+6):nth-child(-n+8)]:!bg-[rgba(45,212,191,0.16)] [&_thead_tr:nth-child(2)_th:nth-child(n+9):nth-child(-n+11)]:!bg-[rgba(45,212,191,0.24)] [&_.border-l-2]:!border-l-[3px] [&_.border-l-2]:!border-l-white/85 [&_table_tfoot_td]:!font-bold [&_table_tbody_td]:!leading-tight";   // padrao-ok: lista de fornecedores 20% maior, Tipo e Fornecedor 13 px, números 1,5 px menores, Total maior (Marcus, 23/11/2026)
 var GRANDE_TOTAL = "[&_table_tbody_td]:!h-[29px] [&_table_tbody_tr]:!h-[29px] [&_table_tbody_td]:!text-[14px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: total do pedido com letra maior (Marcus, 21/11/2026)
 var MEIO = "[&_.overflow-x-auto]:!h-full [&_table]:!h-full";   // as linhas do mini bloco esticam (a letra não muda), para o Total ficar embaixo, na mesma altura da direita
 var FONTE_ESQ = "[&_table_tbody_td]:!text-[12px] [&_table_tfoot_td]:!text-[12px] [&_table_th]:!text-[11px] [&_table_tbody_td]:!leading-tight";   // padrao-ok: coluna da esquerda com uma fonte só (Marcus, 21/11/2026)
@@ -124,9 +129,31 @@ var pedidoParaEdicao = function(pd){
 };
 var pedidoNovo = function(pf, fornId){ var id = fornId || (pf.fornecedores.length ? pf.fornecedores[0].id : 0); return {prop:0, parcManual:false, msgManual:null, verParc:false, fornId:id, numero:"", ref:"", nfArq:null, fornBruto:"", notaForn:"", cpcId:"", pct:id ? String(regraPadrao(pf, id).pct) : "", data:hojeIso(), total:"", nf:"misto", editado:"", com:"", sem:"", cnpj:CNPJS[0], nfNum:"", lcom:[], lsem:[], qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:"", limite:"", pixMin:""}; };
 
+// Boletos da Point (C Group, Mayz...) lidos da DevMaster pelo servidor, ligados pelo número da nota fiscal (Marcus, 23/11/2026). Só leitura.
+var POINT_NF = null;
+function usePointNf(){
+  var st = useState(0), setTick = st[1], tk = token();
+  useEffect(function(){
+    if(!apiAtiva() || !tk) return undefined;
+    var vivo = true;
+    chamar("GET", "/point-nf").then(function(r){ if(!vivo || !r || !r.boletos) return; POINT_NF = r; setTick(function(n){ return n+1; }); }).catch(function(){});
+    return function(){ vivo = false; };
+  }, [tk]);
+  return POINT_NF;
+}
+// o que os boletos da Point somam: em aberto (todos os meses) e, no mês de hoje, o que vence, o que já foi pago e o que falta
+function somaBoletosPoint(nf, mes){
+  var o = {aberto:0, mesAP:0, mesPg:0};
+  ((nf && nf.boletos) || []).forEach(function(b){
+    o.aberto += b.saldo;
+    if(String(b.venc).slice(0,7)===mes){ o.mesAP += b.valor; o.mesPg += b.valor-b.saldo; }
+  });
+  return o;
+}
 function AbaPfNeg(props){
   var visao = (props && props.visao) || "neg";
   var c = usePf(), pf = c.pf, ed = c.edita;
+  var pnf = usePointNf();   // boletos da Point na DevMaster, ligados pela nota fiscal
   var sf = useState(FILTRO_PADRAO), filtro = sf[0], setFiltro = sf[1];
   var sfo = useState(""), fornF = sfo[0], setFornF = sfo[1];
   var sa = useState("tempo"), aba = sa[0], setAba = sa[1];
@@ -248,29 +275,39 @@ function AbaPfNeg(props){
     pf.pedidos.forEach(function(pd){ sobe(ultAtiv, pd.fornId, pd.data); sobe(ultPed, pd.fornId, pd.data); (pd.parcelas || []).forEach(function(x){ sobe(ultAtiv, pd.fornId, x.venc); }); });
     pf.lancamentos.forEach(function(l){ sobe(ultAtiv, l.fornId, l.data); });
     var diasDesde = function(d){ return d ? Math.round((new Date(hojeIso()+"T12:00:00") - new Date(d+"T12:00:00"))/864e5) : 9999; };
+    var baixaDm = parcelasBaixadasDm(pf), extraDm = extrasDevmaster(pf, hojeIso().slice(0,7));
     var linhasR = RN.linhas.map(function(x){
       var ff = forn(pf, x.fornId), tipo = (ff && ff.tipoNeg) || (ff && ehPrestador(ff) ? "Prestador" : "—");
       var aberto = x.divida>0.005, semP = x.semParcela>0.005, parado = diasDesde(ultAtiv[x.fornId]);
       var sit = aberto ? "Em aberto" : semP ? "Sem parcela" : parado>30 ? "Encerrado" : "Quitado";
-      var abCom = 0, abSem = 0, nAb = 0, em7 = 0, prox = "", hj = hojeIso(), lim7 = addDias(hj, 7);
+      var abCom = 0, abSem = 0, nAb = 0, em7 = 0, dmAbat = 0, apC = 0, pgC = 0, apS = 0, pgS = 0, prox = "", hj = hojeIso(), lim7 = addDias(hj, 7);
       pf.pedidos.filter(function(pd){ return pd.fornId===x.fornId; }).forEach(function(pd){ var tem = false, alocCom = 0, alocSem = 0;
-        (pd.parcelas || []).forEach(function(pc){ var com = FORMAS[pc.forma].nf==="com"; if(com) alocCom += pc.valor; else alocSem += pc.valor; var pago = pc.status==="Pago" || (com && pc.venc.slice(0,7)<mesHoje); if(pago) return; tem = true; if(com) abCom += pc.valor; else abSem += pc.valor; if(pc.venc>=hj){ if(!prox || pc.venc<prox) prox = pc.venc; if(pc.venc<=lim7) em7 += pc.valor; } });   // o sistema não sabe quando cada Pix ou boleto foi pago (Pix paga no acerto, boleto some no fim do mês): por isso não há coluna Vencido, só o que vem pela frente
+        (pd.parcelas || []).forEach(function(pc, kp){ var com = FORMAS[pc.forma].nf==="com"; if(com) alocCom += pc.valor; else alocSem += pc.valor; var bdm = baixaDm[pd.id+"#"+kp], pago = pc.status==="Pago" || (com && pc.venc.slice(0,7)<mesHoje && !(pc.forma==="cheque" && bdm && !bdm.pago)), dmPg = !pago && !!(bdm && bdm.pago); if(!pago && com && pc.status!=="Pago" && pc.forma==="cheque" && pc.venc.slice(0,7)<mesHoje) dmAbat -= pc.valor; if(pc.venc.slice(0,7)===hj.slice(0,7)){ var pg = pago || dmPg; if(com){ apC += pc.valor; if(pg) pgC += pc.valor; } else { apS += pc.valor; if(pg) pgS += pc.valor; } } if(pago) return; if(dmPg){ dmAbat += pc.valor; return; } tem = true; if(com) abCom += pc.valor; else abSem += pc.valor; if(pc.venc.slice(0,7)===hj.slice(0,7)) em7 += pc.valor; if(pc.venc>=hj){ if(!prox || pc.venc<prox) prox = pc.venc; } });   // o sistema não sabe quando cada Pix ou boleto foi pago (Pix paga no acerto, boleto some no fim do mês): por isso não há coluna Vencido, só o que vem pela frente   // cheque vencido que a DevMaster ainda tem em aberto continua em aberto
         var rest = pd.total-alocCom-alocSem;   // o que ainda não tem parcela entra no a pagar (a coluna Sem parcela saiu): sem nota se o pedido tem parte sem nota, senão com nota
         if(pd.semNF>0.005) abSem += rest; else abCom += rest; if(tem || rest>0.005) nAb++; });
-      return Object.assign({}, x, {tipo:tipo, sit:sit, ultimo:ultPed[x.fornId] || "", abCom:abCom, abSem:abSem, nAb:nAb, em7:em7, prox:prox});
+      var exd = extraDm[x.fornId]; if(exd){ abCom += exd.aberto; apC += exd.mesAP; pgC += exd.mesPg; dmAbat -= exd.aberto; }   // boletos e cheques que só a DevMaster tem
+      if(ff && ff.nome==="Point" && pnf){ var bp = somaBoletosPoint(pnf, hj.slice(0,7)); abCom += bp.aberto; apC += bp.mesAP; pgC += bp.mesPg; dmAbat -= bp.aberto; }   // boletos com nota da Point (DevMaster, pela NF) entram no Com NF; dmAbat negativo soma ao Em aberto
+      var lancMes = pf.lancamentos.filter(function(l){ return l.fornId===x.fornId && l.valor>0 && String(l.data).slice(0,7)===hj.slice(0,7); }).reduce(function(t, l){ return t+l.valor; }, 0);
+      pgS = Math.min(apS, Math.max(pgS, lancMes));   // Pix já lançado no Admin conta como pago no mês, mesmo sem baixa na DevMaster (Marcus, 23/11/2026; caso Point)
+      var dv = Math.max(0, x.divida-dmAbat), sit2 = dv>0.005 ? "Em aberto" : semP ? "Sem parcela" : parado>30 ? "Encerrado" : "Quitado";   // a baixa que a DevMaster já deu tira a parcela do aberto
+      return Object.assign({}, x, {divida:dv, dmAbat:dmAbat, apC:apC, pgC:pgC, fC:apC-pgC, apS:apS, pgS:pgS, fS:apS-pgS, apT:apC+apS, pgT:pgC+pgS, fT:apC+apS-pgC-pgS, tipo:tipo, sit:sit2, ultimo:ultPed[x.fornId] || "", abCom:abCom, abSem:abSem, nAb:nAb, em7:em7, prox:prox});
     }).filter(function(x){
       if(fTipo!=="todos" && x.tipo!==fTipo) return false;
       if(fSit==="ativos" ? x.sit==="Encerrado" : fSit==="todos" ? false : x.sit!==({aberto:"Em aberto", semparcela:"Sem parcela", quitado:"Quitado", encerrado:"Encerrado"})[fSit]) return false;
       var q = fBusca.trim().toLowerCase(); if(q && (x.nome+" "+x.tipo+" "+x.sit).toLowerCase().indexOf(q)<0 && String(x.total).indexOf(q)<0) return false;
       return true;
-    }).sort(function(a, b){ var O = ["Banho", "Bruto", "Material gráfico", "Sistema", "Tintas", "Prestador"], i = O.indexOf(a.tipo), j = O.indexOf(b.tipo); return (i<0 ? 99 : i)-(j<0 ? 99 : j) || String(a.nome).localeCompare(String(b.nome)); });
+    }).sort(function(a, b){ var O = ["Banho", "Bruto", "Material gráfico", "Sistema", "Tintas", "Prestador"], i = O.indexOf(a.tipo), j = O.indexOf(b.tipo); var N = ["Pontual", "Ellos Galvânica", "Point", "Point · Compra de NF", "Mega Sul"], p = N.indexOf(a.nome), q = N.indexOf(b.nome); return (i<0 ? 99 : i)-(j<0 ? 99 : j) || (p<0 ? 99 : p)-(q<0 ? 99 : q) || String(a.nome).localeCompare(String(b.nome)); });   // ordem pedida pelo Marcus (23/11/2026): Pontual, Ellos; no bruto Point, Point · Compra de NF, Mega Sul
     if(fornF) linhasR = linhasR.filter(function(x){ return String(x.fornId)===fornF; });   // fornecedor escolhido: fecha os outros e fica só a linha dele (clicar de novo reabre a lista)
     var ocultos = RN.linhas.length - linhasR.length;
-    var colsFull = [{k:"tipo", t:"Tipo"}, {k:"nome", t:"Fornecedor"}, {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Em aberto" ? "text-warning" : l.sit==="Sem parcela" ? "text-destructive" : l.sit==="Quitado" ? "text-success" : ""; }},
+    var colsFull = [{k:"nome", t:"Fornecedor", cor:corTipo}, {k:"tipo", t:"Tipo", cor:function(l){ return COR_TIPO[l.tipo] || ""; }}, {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Em aberto" ? "text-warning" : l.sit==="Sem parcela" ? "text-destructive" : l.sit==="Quitado" ? "text-success" : ""; }},
       {k:"nPedidos", t:"Pedidos"}, {k:"total", t:"Total negociado", fmt:brl}, {k:"comNF", t:"Com NF", fmt:brl}, {k:"semNF", t:"Sem NF", fmt:brl},
       {k:"pago", t:"Pago", fmt:brl, cor:function(){ return "text-success"; }}, {k:"divida", t:"Falta", fmt:brlOu, cor:function(l){ return l.divida>0.005 ? "text-destructive" : ""; }}];
-    var colsAb = [{k:"tipo", t:"Tipo"}, {k:"nome", t:"Fornecedor"}, {k:"nAb", t:"Pedidos em aberto"}, {k:"prox", t:"Próximo vencimento", fmt:function(v){ return v ? dbr(v) : "—"; }},
-      {k:"em7", t:"Vence em 7 dias", fmt:brlOu}, {k:"abCom", t:"Com NF a pagar", fmt:brlOu}, {k:"abSem", t:"Sem NF a pagar", fmt:brlOu}, {k:"divida", t:"Em aberto", fmt:brl}];
+    var cG = function(k, t, extra){ return Object.assign({k:k, t:t, fmt:brlOu}, extra || {}); }, cF = function(k){ return cG(k, "Falta", {cor:function(){ return "text-destructive"; }}); }, cPg = function(k, t){ return cG(k, t, {cor:function(){ return "text-success"; }}); };
+    var colsAb = [{k:"nome", t:"Fornecedor", cor:corTipo}, {k:"tipo", t:"Tipo", cor:function(l){ return COR_TIPO[l.tipo] || ""; }},
+      cG("apS", "A pagar", {sep:true}), cPg("pgS", "Pago"), cF("fS"),
+      cG("apC", "A pagar", {sep:true}), cPg("pgC", "Pago"), cF("fC"),
+      cG("apT", "A pagar", {sep:true}), cPg("pgT", "Pago"), cF("fT"),
+      cG("abCom", "Com NF", {sep:true}), cG("abSem", "Sem NF"), {k:"divida", t:"Total", fmt:brl}];
     var emAberto = fSit==="aberto", colsR = emAberto ? colsAb : colsFull;
     var campo = function(rot, ctl){ return e("label",{className:"flex items-center gap-1", title:rot}, ctl); };   // padrao-ok: letra de 10 px igual à faixa do Lançamento de pagamentos (Marcus, 21/11/2026)
     var filtrosR = e("div",{className:BARRA_TOPO},   // padrao-ok: filtros à esquerda e abas à direita, na mesma linha
@@ -280,9 +317,9 @@ function AbaPfNeg(props){
       props && props.abasEl);
     resumo = e(BlocoBarra,{t:"Fornecedores", semBarra:true},
       filtrosR,
-      e("div",{className:fornF ? GRANDE : ""},
-      tab({cols:colsR, linhas:linhasR, chave:"fornId", semFiltro:true, aoClicar:function(l){ verForn(l.fornId); }, linhaCls:function(l){ return String(l.fornId)===fornF ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum fornecedor neste filtro.",
-        key:emAberto ? "ab" : "todos", totalRodape:fornF ? undefined : function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; if(emAberto) return ["Total", "", String(ls.reduce(function(t, x){ return t+Number(x.nAb||0); }, 0)), "", sm("em7"), sm("abCom"), sm("abSem"), sm("divida")]; return ["Total", "", "", String(ls.reduce(function(t, x){ return t+Number(x.nPedidos||0); }, 0)), sm("total"), sm("comNF"), sm("semNF"), sm("pago"), sm("divida")]; }})));
+      e("div",{className:LISTA},   // fornecedor escolhido usa o mesmo tamanho da lista (Marcus, 23/11/2026)
+      tab({cols:colsR, cabAcima:emAberto ? [[{t:"", span:2}, {t:"Mês sem NF", span:3, sep:true}, {t:"Mês com NF", span:3, sep:true}, {t:"Soma do mês", span:3, sep:true}, {t:"Total geral a pagar", span:3, sep:true}]] : undefined, linhas:linhasR, chave:"fornId", semFiltro:true, aoClicar:function(l){ verForn(l.fornId); }, linhaCls:function(l){ return String(l.fornId)===fornF ? "!bg-[#26385c]" : ""; }, vazio:"Nenhum fornecedor neste filtro.",
+        key:emAberto ? "ab" : "todos", totalRodape:fornF ? undefined : function(ls){ var sm = function(k){ return brl(ls.reduce(function(t, x){ return t+Number(x[k]||0); }, 0)); }; if(emAberto) return ["Total", "", sm("apS"), sm("pgS"), sm("fS"), sm("apC"), sm("pgC"), sm("fC"), sm("apT"), sm("pgT"), sm("fT"), sm("abCom"), sm("abSem"), sm("divida")]; return ["Total", "", "", String(ls.reduce(function(t, x){ return t+Number(x.nPedidos||0); }, 0)), sm("total"), sm("comNF"), sm("semNF"), sm("pago"), sm("divida")]; }})));
   }
 
   // ---------- PEDIDO ABERTO (versão 2 aprovada pelo Marcus, 21/11/2026): à esquerda o mini bloco do pedido (CNPJ nosso, número, fornecedor, data) e o Resumo por forma; à direita o calendário por mês, com uma coluna para cada forma de pagamento ----------

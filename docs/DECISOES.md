@@ -3255,3 +3255,30 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - Marcus: "B faz agora e sobe tudo". Na ficha do pedido, o botão **Confirmar pagamento** (só quem abre Encomendas) lança UMA taxa já paga: Contas a receber (recebimento sem acerto, pago ao entregador) e Contas a pagar (conta lançada e baixada, forma Pix revendedora), com o mesmo comprovante da revendedora. Taxa não paga não lança nada.
 - Código: `src/server/taxa-entrega.js` (`confirmarTaxa`), rota `app/api/encomendas/link/confirmar`, botão em `pages/encomendas/FichaPedido.js`. Trava: o pedido guarda `pagamento.confirmado`, então não lança duas vezes. O `linkId` fica nos dois lançamentos para cruzar.
 - Testado com pedido de teste (criado e apagado): 1 conta a pagar, 1 baixa com comprovante, 1 recebimento; segunda confirmação recusada.
+
+## 23/11/2026 (Negociações: cruzar o admin com a baixa da DevMaster)
+- Marcus: Pix revendedora é lançado à mão no Admin e a DevMaster nunca foi controlada por aqui; agora cruza. Decidido (opção A): boleto e cheque pendentes em Pagamentos a fornecedores contam como pagos quando a DevMaster já baixou o título (mesmo fornecedor, mesmo tipo, valor até 1 centavo, vencimento até 5 dias; cada baixa casa com uma parcela). Pix fica de fora: vale o Admin.
+- Código: `parcelasBaixadasDm` em `domain/contas-empresa.js`, usada na lista de fornecedores de `pages/pf/Negociacoes.js`. Só leitura; nada é gravado.
+- Efeito em 23/11: Em aberto caiu R$ 21.829 (Mega Sul R$ 15.247, Ellos R$ 5.070, Art Ello R$ 1.512). Coluna "Vence em 7 dias" virou "Falta pagar no mês".
+
+## 23/11/2026 (Point: boletos ligados pela nota fiscal)
+- Marcus: a Point emite as notas em nome de outras empresas (C Group Ind. e Com. de Acessórios da Moda, Mayz Comércio de Moda Praia). Em cada nota, 20% é boleto com nota (DevMaster) e 80% é Pix revendedora sem nota (lançado no Admin).
+- Decidido: os boletos vêm da DevMaster (dmabe, fornecedores 000127, 000165 e 001406) e são ligados pelo NÚMERO DA NOTA, lido do histórico do título ("NF 22.574 - C GROUP..."). Código: src/server/point-nf.js, rota /api/point-nf, soma na lista de fornecedores de pages/pf/Negociacoes.js (somaBoletosPoint). Só leitura.
+- Efeito em 23/11: Com NF da Point R$ 42.351,18 em aberto; no mês R$ 8.176,73 a pagar, R$ 4.554,55 pagos, R$ 3.622,18 faltam.
+- Pendente: mostrar os boletos por nota dentro do detalhe da Point; os pedidos "Point · Compra de NF" (R$ 11.550 e R$ 17.050) não casam com nenhuma nota.
+
+## 23/11/2026 (decisões de 22/11 que a junção com a master tinha devolvido: refeitas)
+- Marcus pediu pela 4ª vez para tirar Histórico e Configurações do menu da Família. A junção com a master os tinha devolvido, e junto o Relatório. Saíram de novo de `MENU_FINANCEIRO` (Família: Home da família, Contas, PIX revendedoras, Sócios, Cadastro de prestadores, Pró-labores). As telas e rotas continuam; só não aparecem no menu.
+- Contas a pagar e Contas pagas da EMPRESA voltaram a ser separadas: o seletor Situação saiu de `pages/ContasPagarLista.js` (cada tela mostra só a sua situação, "Todas" deixou de existir) e o menu Contas tem "A pagar" e "Pagas" (`ctalista` e `pagaspordia`).
+- Cuidado ao juntar com a master: conferir `navigation/setores.js` e `ContasPagarLista.js` depois da junção.
+
+## 23/11/2026 (Negociações: o que só a DevMaster tem entra no saldo do mês)
+- Marcus: não precisa de tela nova de conferência; fazer em código. Pegar o que a DevMaster tem e o admin não e atualizar o saldo do mês em Pagamentos a fornecedores.
+- Decidido: boletos e cheques da DevMaster que não casam com nenhuma parcela do admin (mesmo fornecedor, mesmo tipo, valor até R$ 1,01, vencimento até 10 dias) entram como Com NF do fornecedor (em aberto, a pagar no mês, pago no mês). Pix fica de fora (vale o admin); Point tem regra própria (pela nota fiscal). Só leitura, nada é gravado. Código: `extrasDevmaster` em `domain/contas-empresa.js`, usada em `pages/pf/Negociacoes.js`. A tolerância do cruzamento de baixas subiu de 3 centavos para R$ 1,01 (caso Office Graf, R$ 1,00 de diferença).
+- Efeito em 23/11 no Em aberto: Xangai +R$ 29.670 (7 cheques Itaú), Mega Sul +R$ 27.422, Devmaster +R$ 42.120, Pontual +R$ 17.374, Office Graf +R$ 6.039, Ellos +R$ 5.184, Art Ello +R$ 1.800. A conferir com o Marcus: Devmaster (títulos sem tipo escrito) e Mega Sul (cheques com valor diferente do admin).
+
+## 23/11/2026 (Xangai: 4 pedidos com cheques lançados a partir da DevMaster)
+- Marcus: "adiciona todos esses cheques; nós não temos esses pedidos?". Conferência: os 4 pedidos existiam só no Cadastro de peças (notas 4280, 4307, 4337 e 4393 = romaneio 005288, pedido 5288); em Pagamentos a fornecedores a Xangai tinha só 5499 e 005457.
+- Gravados em Pagamentos a fornecedores (ids 176 a 179, números 005012, 005113, 005167 e 005288): só os cheques Itaú que a DevMaster mostra (R$ 6.874,58, R$ 7.442,48, R$ 9.649,50 e R$ 4.338,48), forma cheque, com NF, status Pendente (o de 21/10 de R$ 3.437,29 já pago). Os boletos e Pix dessas mesmas notas não foram lançados (a DevMaster não mostra em aberto). CNPJ "A confirmar" (a NF 4280 é da Axis, CNPJ 67). Cópia de segurança antes de gravar: scratchpad `backup-pf-antes-xangai-23-11.json`.
+- Regra: cheque vencido que a DevMaster ainda tem em aberto continua em aberto (vontade da Anamaria: "às vezes perdem os cheques, mas tem que deixar em aberto"); só boleto de mês passado com NF segue como pago.
+- Mega Sul: o cheque de R$ 4.065,00 (NF 6363, vencido em 15/11/2025) continua em aberto, por decisão da Anamaria.
