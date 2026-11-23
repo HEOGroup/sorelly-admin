@@ -4,6 +4,61 @@
 import { consulta } from "./db.js";
 import { listaRevendedoras, listaAgenda, nomeNormal } from "./revendedoras.js";
 import { consultarTabela } from "./devmaster2.js";
+import https from "node:https";
+import http from "node:http";
+import tls from "node:tls";
+
+// Conversa com o app (só GET). O Avast do Windows troca o certificado: além das autoridades padrão usamos as do sistema (a verificação continua LIGADA), igual a src/server/representantes-app.js.
+let agenteApp = null;
+function agenteTls() {
+  if (agenteApp) return agenteApp;
+  let ca; try { ca = [...tls.getCACertificates("default"), ...tls.getCACertificates("system")]; } catch (x) { ca = undefined; }
+  agenteApp = new https.Agent(ca ? { ca, keepAlive: true } : { keepAlive: true });
+  return agenteApp;
+}
+function chamarApp(_metodo, rota) {
+  const base = (process.env.MOBILE_API_URL || "").trim().replace(/\/+$/, ""), chave = (process.env.MOBILE_API_KEY || "").trim();
+  if (!base || !chave) return Promise.reject(new Error("MOBILE_API_URL e MOBILE_API_KEY não configurados"));
+  const url = new URL(base + rota), lib = url.protocol === "http:" ? http : https;
+  return new Promise((resolve, reject) => {
+    const req = lib.request(url, { method: "GET", ...(lib === https ? { agent: agenteTls() } : {}), headers: { Authorization: "Bearer " + chave, "X-App-Version": "3.5.0", Accept: "application/json" }, timeout: 20000 }, (res) => {
+      const partes = [];
+      res.on("data", (c) => partes.push(c));
+      res.on("end", () => { let j = null; try { j = JSON.parse(Buffer.concat(partes).toString("utf8")); } catch (x) { /* resposta que não é JSON */ } resolve({ status: res.statusCode, j }); });
+    });
+    req.on("timeout", () => req.destroy(new Error("tempo esgotado")));
+    req.on("error", (x) => reject(x));
+    req.end();
+  });
+}
+
+// VENDA NO APP DA REVENDEDORA (Marcus, 23/11/2026): quanto cada uma já vendeu NESTE MÊS para as clientes dela, direto do app (GET /admin/resellers/ranking, só leitura).
+// O app não guarda o código da DevMaster: a ligação é pelo telefone (últimos 8 números) e, se não casar, pelo nome inteiro igual. Falha do app não derruba o ranking (a coluna fica vazia).
+const soNumeros = (s) => String(s || "").replace(/[^0-9]/g, "");
+const fim8 = (s) => { const n = soNumeros(s); return n.length >= 8 ? n.slice(-8) : ""; };
+const chaveNome = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z ]/g, " ").split(" ").filter(Boolean).join(" ");
+async function vendasDoApp(cods, nomes) {
+  try {
+    const lista = [];
+    for (let i = 0; i < cods.length; i += 100) {
+      const l = await consultarTabela("dmaam", { registros: 100, campos: ["aam_codigo", "aam_celular", "aam_whatsapp"], filtro: { aam_codigo: { in: cods.slice(i, i + 100) } } });
+      l.itens.forEach((p) => lista.push(p));
+    }
+    const r = await chamarApp("GET", "/admin/resellers/ranking?period=month&limit=2000&order_by=total_vendido&order_dir=desc");
+    const dados = r && r.j && Array.isArray(r.j.data) ? r.j.data : null;
+    if (!dados) return {};
+    const porFone = new Map(), porNome = new Map();
+    dados.forEach((u) => { const v = Number(u.total_vendido) || 0, f = fim8(u.telefone), nm = chaveNome(u.nome); if (f && !porFone.has(f)) porFone.set(f, v); if (nm && !porNome.has(nm)) porNome.set(nm, v); });
+    const out = {};
+    cods.forEach((c) => {
+      const p = lista.find((x) => x.aam_codigo === c) || {};
+      const v = [fim8(p.aam_celular), fim8(p.aam_whatsapp)].filter(Boolean).map((f) => porFone.get(f)).find((x) => x !== undefined);
+      const w = v !== undefined ? v : porNome.get(chaveNome(nomes.get(c)));
+      if (w !== undefined) out[c] = Math.round(w * 100) / 100;
+    });
+    return out;
+  } catch (x) { G.__rankAppErro = String((x && x.message) || x).slice(0, 160); return {}; }
+}
 
 const G = globalThis;
 const TTL = 60 * 1000;   // tempo real: a tela pede de novo a cada minuto
@@ -70,10 +125,12 @@ export async function rankingGeral({ forcar = false } = {}) {
   const meses = mesesJanela.map((m, i) => ({ ym: m.ym, ate: m.fim, fez: porMes[i].map((x) => x.cod), ac: i >= mesesJanela.length - 4 ? Object.fromEntries(porMes[i].map((x) => [x.cod, x.acerto])) : undefined, valores: i === mesesJanela.length - 1 ? Object.fromEntries(porMes[i].map((x) => [x.cod, [x.total, x.acerto]])) : undefined, itens: topoMes[i].map((x) => ({ pos: x.pos, cod: x.cod, nome: nomeDe(x.cod), rep: porCod.get(x.cod) ? porCod.get(x.cod).representante : "", venda: x.total, acerto: x.acerto })) }));
   const prev = new Map(((agenda && agenda.itens) || []).map((i) => [i.cod, i.agendaEm || i.prev]));
   const meses3 = mesesJanela.slice(Math.max(0, n - 4), n - 1).map((m) => m.ym);
-  const rankAcerto = { meses: meses3, mesAtual: mesesJanela[n - 1].ym, itens: top50.map(([cod, ac], i) => { const a = atualMes.get(cod), por = tres.map((l) => l.find((x) => x.cod === cod)); return { pos: i + 1, cod, rep: porCod.get(cod) ? porCod.get(cod).representante : "", mm: por.map((x) => (x ? [x.total, x.acerto] : [0, 0])), nome: nomeDe(cod), acerto: r2(ac), fezMes: !!a, acertoMes: a ? a.acerto : 0, dataMes: a ? a.ultimo : "", previsao: a ? "" : (prev.get(cod) || "") }; }) };
+  const codsApp = [...new Set(top50.map(([c]) => c).concat(top10Ac.map((x) => x.cod)))];
+  const noApp = await vendasDoApp(codsApp, new Map(codsApp.map((c) => [c, nomeDe(c)])));
+  const rankAcerto = { meses: meses3, mesAtual: mesesJanela[n - 1].ym, itens: top50.map(([cod, ac], i) => { const a = atualMes.get(cod), por = tres.map((l) => l.find((x) => x.cod === cod)); return { pos: i + 1, cod, vendaApp: noApp[cod] === undefined ? null : noApp[cod], rep: porCod.get(cod) ? porCod.get(cod).representante : "", mm: por.map((x) => (x ? [x.total, x.acerto] : [0, 0])), nome: nomeDe(cod), acerto: r2(ac), fezMes: !!a, acertoMes: a ? a.acerto : 0, dataMes: a ? a.ultimo : "", previsao: a ? "" : (prev.get(cod) || "") }; }) };
   // PREMIAÇÃO DO MÊS: as 10 maiores somas de acerto do mês atual (desempate pelo maior valor de venda)
   const premiacao = { ym: mesesJanela[n - 1].ym, ate: mesesJanela[n - 1].fim, itens: top10Ac.map((x, i) => ({ pos: i + 1, cod: x.cod, nome: nomeDe(x.cod), rep: porCod.get(x.cod) ? porCod.get(x.cod).representante : "", acerto: x.acerto, venda: x.total })) };
-  const dados = { pronto: true, meses, rankAcerto, premiacao, geradoEm: new Date().toISOString(), janela: { ini, fim }, janelaAntes: { ini: iniAntes, fim: fimAntes }, limite: LIMITE, corte100: agora[99] ? agora[99].total : 0, corte150: agora[149] ? agora[149].total : 0, itens };
+  const dados = { pronto: true, meses, rankAcerto, premiacao, appErro: Object.keys(noApp).length ? "" : (G.__rankAppErro || "sem retorno do app"), geradoEm: new Date().toISOString(), janela: { ini, fim }, janelaAntes: { ini: iniAntes, fim: fimAntes }, limite: LIMITE, corte100: agora[99] ? agora[99].total : 0, corte150: agora[149] ? agora[149].total : 0, itens };
   G.__sorellyRanking = { dados, em: Date.now() };
   return dados;
 }

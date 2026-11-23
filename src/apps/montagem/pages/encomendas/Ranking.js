@@ -59,7 +59,7 @@ var br = function(iso){ var t = String(iso || "").slice(0, 10).split("-"); retur
 function BlocoTop50(p){
   var rk = p.rk, mAtual = nomeMes(rk.mesAtual);
   var linhas = rk.itens.map(function(x){
-    var o = {id:x.cod, pos:x.pos, nome:nomeCurto(x.nome), rep:doisNomes(x.rep), fez:x.fezMes, tv:0, ta:0, acertoMes:x.fezMes ? x.acertoMes : "", dia:x.fezMes ? br(x.dataMes) : "", prev:x.fezMes ? "" : (br(x.previsao) || "Sem data")};
+    var o = {id:x.cod, pos:x.pos, nome:nomeCurto(x.nome), rep:doisNomes(x.rep), app:x.vendaApp===null || x.vendaApp===undefined ? "" : x.vendaApp, fez:x.fezMes, tv:0, ta:0, acertoMes:x.fezMes ? x.acertoMes : "", dia:x.fezMes ? br(x.dataMes) : "", prev:x.fezMes ? "" : (br(x.previsao) || "Sem data")};
     (x.mm || []).forEach(function(v, i){ o["v"+i] = v[0]; o["a"+i] = v[1]; o.tv += v[0]; o.ta += v[1]; });
     return o; });
   var cols = [{k:"pos", t:"#", w:"1.8rem", cor:MEDALHA}, {k:"nome", t:"Revendedora", w:"8rem"}];
@@ -70,15 +70,16 @@ function BlocoTop50(p){
     {k:"acertoMes", t:"Acerto "+mAtual, w:larg("Acerto "+mAtual), sep:true, render:function(v){ return e("span",null, v==="" ? "Falta" : R(v)); }},
     {k:"dia", t:"Acertou em", w:"3.9rem", render:function(v){ return e("span",null, v || "—"); }},
     {k:"prev", t:"Previsão", w:"3.7rem", render:function(v){ return e("span",null, v || "—"); }},
-    {k:"rep", t:"Representante", w:"5.6rem", sep:true});
+    {k:"rep", t:"Representante", w:"5.6rem", sep:true},
+    {k:"app", t:"Venda no app", w:"5.6rem", fmt:R, sep:true});
   var faltam = linhas.filter(function(l){ return !l.fez; }).length;
   var total = function(ls){ return cols.map(function(c, i){
     if(i===0) return "Total";
     if(c.k==="nome") return ls.length+" revendedoras";
-    if(c.k==="tv" || c.k==="ta" || c.k==="acertoMes" || (c.k.length===2 && (c.k.charAt(0)==="v" || c.k.charAt(0)==="a"))) return R(soma(ls, c.k));
+    if(c.k==="tv" || c.k==="ta" || c.k==="acertoMes" || c.k==="app" || (c.k.length===2 && (c.k.charAt(0)==="v" || c.k.charAt(0)==="a"))) return R(soma(ls, c.k));
     return ""; }); };
   return e(BlocoPainel,{titulo:"Top 50 · acerto dos últimos 3 meses", compacto:true, cls:FUNDO, dir:faltam+" faltam · "+(linhas.length-faltam)+" já acertaram"},
-    e("div",{ref:refCheia(), className:CLS_FINA+" [&_table_td]:!px-[3px] [&_table_th]:!px-[3px] [&_table]:!min-w-[64rem] [&_th]:!font-normal [&_td]:!font-normal [&_tfoot_td]:sticky [&_tfoot_td]:bottom-0 [&_tfoot_td]:z-10 [&_tfoot_td]:!bg-[#1f3358] [&_tfoot_th]:sticky [&_tfoot_th]:bottom-0 [&_tfoot_th]:z-10 [&_tfoot_th]:!bg-[#1f3358] [&_td:nth-child(3)]:!border-l-[3px] [&_td:nth-child(3)]:!border-l-white [&_th:nth-child(3)]:!border-l-[3px] [&_th:nth-child(3)]:!border-l-white [&_td:nth-child(5)]:!border-l-[3px] [&_td:nth-child(5)]:!border-l-white [&_th:nth-child(5)]:!border-l-[3px] [&_th:nth-child(5)]:!border-l-white [&_td:nth-child(7)]:!border-l-[3px] [&_td:nth-child(7)]:!border-l-white [&_th:nth-child(7)]:!border-l-[3px] [&_th:nth-child(7)]:!border-l-white [&_td:nth-child(9)]:!border-l-[3px] [&_td:nth-child(9)]:!border-l-white [&_th:nth-child(9)]:!border-l-[3px] [&_th:nth-child(9)]:!border-l-white [&_td:nth-child(11)]:!border-l-[3px] [&_td:nth-child(11)]:!border-l-white [&_th:nth-child(11)]:!border-l-[3px] [&_th:nth-child(11)]:!border-l-white [&_td:nth-child(9)]:!bg-[#2d5190] [&_th:nth-child(9)]:!bg-[#2d5190] [&_td:nth-child(10)]:!bg-[#2d5190] [&_th:nth-child(10)]:!bg-[#2d5190]", style:{"--lh":"17px"}},   // linhas brancas grossas entre os grupos (Agosto, Setembro, Outubro, Total 3 meses, Novembro) e cor própria no Total 3 meses
+    e("div",{ref:refCheia(), className:CLS_FINA+" [&_table_td]:!px-[3px] [&_table_th]:!px-[3px] [&_table]:!min-w-[70rem] [&_th]:!font-normal [&_td]:!font-normal [&_tfoot_td]:sticky [&_tfoot_td]:bottom-0 [&_tfoot_td]:z-10 [&_tfoot_td]:!bg-[#1f3358] [&_tfoot_th]:sticky [&_tfoot_th]:bottom-0 [&_tfoot_th]:z-10 [&_tfoot_th]:!bg-[#1f3358] [&_td:nth-child(3)]:!border-l-[3px] [&_td:nth-child(3)]:!border-l-white [&_th:nth-child(3)]:!border-l-[3px] [&_th:nth-child(3)]:!border-l-white [&_td:nth-child(5)]:!border-l-[3px] [&_td:nth-child(5)]:!border-l-white [&_th:nth-child(5)]:!border-l-[3px] [&_th:nth-child(5)]:!border-l-white [&_td:nth-child(7)]:!border-l-[3px] [&_td:nth-child(7)]:!border-l-white [&_th:nth-child(7)]:!border-l-[3px] [&_th:nth-child(7)]:!border-l-white [&_td:nth-child(9)]:!border-l-[3px] [&_td:nth-child(9)]:!border-l-white [&_th:nth-child(9)]:!border-l-[3px] [&_th:nth-child(9)]:!border-l-white [&_td:nth-child(11)]:!border-l-[3px] [&_td:nth-child(11)]:!border-l-white [&_th:nth-child(11)]:!border-l-[3px] [&_th:nth-child(11)]:!border-l-white [&_td:nth-child(9)]:!bg-[#2d5190] [&_th:nth-child(9)]:!bg-[#2d5190] [&_td:nth-child(10)]:!bg-[#2d5190] [&_th:nth-child(10)]:!bg-[#2d5190]", style:{"--lh":"17px"}},   // linhas brancas grossas entre os grupos (Agosto, Setembro, Outubro, Total 3 meses, Novembro) e cor própria no Total 3 meses
       e(TabelaPlanilha,{fina:true, cols:cols, linhas:linhas, chave:"id", semCaixaAlta:true, grade:true, semMao:true, centro:true, semContagem:true, alturaMax:"15rem", totalRodape:total,
         linhaCls:function(l){ return l.fez ? "[&>td]:!text-white" : "!bg-[#4a3a10] [&>td]:!text-warning"; }, vazio:"Sem vendas."})));
 }
