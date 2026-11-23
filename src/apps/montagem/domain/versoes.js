@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.127", data:"2026-11-23", titulo:"Conferência de pagamentos: volta o Estornar", itens:[
+  {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"O botão Estornar voltou em cada Pix lançado, ao lado de Editar (tinha saído na tela refeita de 21/11). Pede confirmação; Pix dividido sai com todas as partes."}
+ ]},
  {v:"0.21.126", data:"2026-11-23", titulo:"Lançar recebimento: Conta que recebeu ligada à aba Chaves Pix", itens:[
   {tipo:"melhoria", area:"Financeiro › Receber › Contas a receber", txt:"A lista Conta que recebeu agora vem da aba Pagamentos › Chaves Pix: Fornecedor / Prestador (fornecedores e prestadores da aba), Representante (as representantes da aba) e Funcionário (por CNPJ). A chave e o Escrever na folha da mensagem são os da linha dela na aba. Conta que existe na aba mas não é destino do Direcionar entra como recebimento da empresa pelo nome (servidor: semDestino). A montagem das chaves virou uma função só (blocosChavesPix em pages/ChavesPixBancos.js), usada pela aba e pela janela."}
  ]},

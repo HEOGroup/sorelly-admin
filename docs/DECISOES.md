@@ -3313,3 +3313,6 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - Gravados em Pagamentos a fornecedores (ids 176 a 179, números 005012, 005113, 005167 e 005288): só os cheques Itaú que a DevMaster mostra (R$ 6.874,58, R$ 7.442,48, R$ 9.649,50 e R$ 4.338,48), forma cheque, com NF, status Pendente (o de 21/10 de R$ 3.437,29 já pago). Os boletos e Pix dessas mesmas notas não foram lançados (a DevMaster não mostra em aberto). CNPJ "A confirmar" (a NF 4280 é da Axis, CNPJ 67). Cópia de segurança antes de gravar: scratchpad `backup-pf-antes-xangai-23-11.json`.
 - Regra: cheque vencido que a DevMaster ainda tem em aberto continua em aberto (vontade da Anamaria: "às vezes perdem os cheques, mas tem que deixar em aberto"); só boleto de mês passado com NF segue como pago.
 - Mega Sul: o cheque de R$ 4.065,00 (NF 6363, vencido em 15/11/2025) continua em aberto, por decisão da Anamaria.
+
+## 23/11/2026 · Conferência de pagamentos: volta o Estornar (Lucas)
+- Pedido: "não consigo apagar lançamentos errados" / "volta com a opção de estorno". A tela refeita em 21/11 (v0.21.78) tirou o Estornar; ficou só o Editar. O botão voltou ao lado do Editar (`AcoesLanc` em pages/pf/Lancamentos.js, operação `lanc_del`), com confirmação; Pix dividido sai com as partes ligadas. Lançamento automático ("Crédito" do pago do mês) não tem Estornar.

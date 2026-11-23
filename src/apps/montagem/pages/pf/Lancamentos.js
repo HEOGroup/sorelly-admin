@@ -8,7 +8,7 @@ import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-pai
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { cartoesLancamento, conferidoDe, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { comprovantesDosRecebidos } from "@/apps/montagem/domain/comprovantes-receber";
-import { baixarArquivo, obterArquivo } from "@/apps/montagem/lib/arquivos";
+import { apagarArquivo, baixarArquivo, obterArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, msgWhatsApp, nomeArquivoExtrato, useLinkConferencia, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
@@ -95,6 +95,11 @@ function AcoesLanc(p){
     // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
     !l.auto && e(BtL,{ic:"pencil-simple", disabled:!c.edita, titulo:c.edita ? "Alterar este pagamento" : "Só financeiro e diretoria", onClick:function(){ setEditando(true); }}, "Editar"),
     editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
+    // Estornar voltou (Lucas, 23/11/2026): apaga o Pix lançado errado, com confirmação; Pix dividido sai com todas as partes
+    !l.auto && e(BtL,{ic:"trash", tipo:"perigo", disabled:!c.edita, titulo:c.edita ? "Estornar este pagamento" : "Só financeiro e diretoria", onClick:function(){
+      if(!window.confirm("Estornar este pagamento de "+brl(l.valor)+" ("+(l.revendedora||"sem nome")+", "+dbr(l.data)+")?")) return;
+      if(l.arqId) apagarArquivo(l.arqId);
+      op(c, "lanc_del", {id:l.id}); }}, "Estornar"),
     porPed && !l.auto && e(MarcaPedidos,{c:c, l:l, abrir:function(){ si[1](true); }}),   // para qual pedido foi o dinheiro (não confere o pagamento)
     si[0] && e(ModalIdent,{c:c, l:l, fechar:function(){ si[1](false); }}),
     null);
