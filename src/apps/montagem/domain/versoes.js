@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.130", data:"2026-11-23", titulo:"PIX revendedoras: campo Valor aceita números de novo", itens:[
+  {tipo:"correção", area:"Financeiro → Família → PIX revendedoras", txt:"O campo Valor do Anotar PIX e do Editar PIX apagava os números ao digitar (regra do campo errada na volta do Anotar PIX). Agora aceita números, vírgula e ponto."}
+ ]},
  {v:"0.21.129", data:"2026-11-23", titulo:"Conferência de pagamentos: volta o Conferir manual", itens:[
   {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"Cada Pix volta a ter o botão Conferir (e Desfazer conferência), ao lado de Editar e Estornar. Conferido agora é só o que o financeiro conferiu na tela; o Pix com comprovante e ainda não conferido aparece como Aguardando conferência, e sem comprovante como Falta o comprovante. Pix conferido não se edita (desfazer a conferência antes)."}
  ]},
