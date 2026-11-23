@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.108", data:"2026-11-22", titulo:"Lista Para quem entra abre inteira e com borda mais grossa", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → janelas Lançar conta e Pagar", txt:"A lista Para quem entra (nome e quem está dentro) abre inteira, até Sorelly, sem rolar, e com a borda mais grossa."}]},
  {v:"0.21.107", data:"2026-11-22", titulo:"Pix da Casa: para qual casa foi (Alphaville, Praia, Jardine, Família)", itens:[
   {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Cada Pix da Casa ganha o campo Para qual casa (Alphaville, Praia, Jardine ou Família geral), só no nosso sistema: o DevMaster e as funcionárias não veem. Dá para trocar a casa na própria linha e mover o Pix para um sócio quando ele não é da Casa."},
   {tipo:"novo", area:"Financeiro → Receber → Contas a receber (lançar Pix)", txt:"Ao lançar um Pix em conta de sócio ou da Casa, o campo Para qual casa grava a casa junto."},
