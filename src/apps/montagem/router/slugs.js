@@ -168,7 +168,7 @@ export const SLUG_DA_ABA = {
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",
   enctop50: "top-50",
-  encranking: "ranking-encomendas", encpremio: "premiacao-do-mes",
+  encranking: "ranking-encomendas", encpremio: "premiacao-do-mes", enccrono: "cronograma-de-postagens",
   encrep: "reposicao-representantes",
   encregras: "regras-e-mensagens-reposicao",
   avaliacoes: "avaliacoes",

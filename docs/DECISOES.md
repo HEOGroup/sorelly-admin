@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 · Encomendas › Ranking › Cronograma de postagens (Marcus)
+- Terceira aba do menu Ranking. Um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro + janeiro + fevereiro). O Marcus liberará o acesso do Marketing a esta tela depois; por isso o módulo do servidor `ercrono` já aceita Encomendas e Marketing.
+- Nas parciais a tela escreve o acerto do 1º e do 10º lugar do momento, sem nomes. Nome de revendedora só depois da Diretoria liberar. O ranking da nova disputa (soma de 3 meses) ainda não existe; as regras finais saem em 24/11.
 ## 23/11/2026 (Comissões: Pix representante conta comissão; comissões no servidor)
 - **Marcus: "isso da comissão precisa resolver".** Fluxo que ele descreveu: o Pix cai no Consolidado → cai nas Comissões → com tudo alinhado, o Financeiro dá o check e confirma **para gerar as contas a pagar**. A parte "gerar conta a pagar" ainda NÃO foi feita.
 - **Pix representante (decisão de 10/11 aplicada):** o acerto paga comissão como qualquer acerto, para quem FEZ o acerto; o Pix que foi direto para a representante é só um pagamento já feito a ela. No código a linha virou dois itens em `itensComissao` (`domain/comissoes.js`): a comissão (item normal, fica "Aguardando o OK do Pix representante" até o Financeiro confirmar) e o pagamento direto (`pixRep`, sem comissão). Teste: `node scripts/testar-pix-representante.mjs` (8 verificações).

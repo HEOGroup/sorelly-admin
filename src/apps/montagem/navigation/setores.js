@@ -60,7 +60,7 @@ var MENU_CADPECAS = [
 
 // Menu das Encomendas e reposições (23/10/2026): mesmo estilo do Financeiro e do Cadastro. Poucas telas = palavras diretas no topo (sem lista), na ORDEM DO FLUXO: pedido → ida na empresa → Top 100 → representantes → expositores → regras.
 var MENU_ENCOMENDAS = [
-  {nome:"Ranking", itens:[M("Top vendedoras","encranking"), M("Premiação do mês","encpremio")]},   // 23/11/2026 (Marcus): Top vendedoras e Premiação do mês são abas DENTRO de um menu, no alto do setor
+  {nome:"Ranking", itens:[M("Top vendedoras","encranking"), M("Premiação do mês","encpremio"), M("Cronograma de postagens","enccrono")]},   // 23/11/2026 (Marcus): Top vendedoras e Premiação do mês são abas DENTRO de um menu, no alto do setor
   M("Funil de pedidos","encomendas"),
   M("Top 100","enctop50"),
   M("Representantes","encrep"),
@@ -249,6 +249,7 @@ var SETORES = [
   {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Top vendedoras", telas:[T("encranking","Top vendedoras")]},
     {nome:"Premiação do mês", telas:[T("encpremio","Premiação do mês")]},
+    {nome:"Cronograma de postagens", telas:[T("enccrono","Cronograma de postagens")]},
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
     {nome:"Top 100", telas:[T("enctop50","Top 100")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},

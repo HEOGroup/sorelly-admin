@@ -13,6 +13,7 @@ export const SETORES_DO_MODULO = {
   contasEmpresa: ["financeiro"],
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
+  ercrono: ["encomendas", "marketing"],   // cronograma de postagens do ranking (23/11/2026): situação de cada dia; o Marketing já grava quando o Marcus liberar a tela
   er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],

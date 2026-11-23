@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.149", data:"2026-11-23", titulo:"Encomendas › Ranking: Cronograma de postagens", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Ranking → Cronograma de postagens", txt:"Nova aba com um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro, janeiro e fevereiro): formato, o que postar, legenda sugerida e o acerto do 1º e do 10º lugar nos dias de parcial. Cada dia tem a situação Para fazer, Feito ou Postado, gravada no servidor (módulo ercrono). Temas em domain/cronograma-ranking.js."}
+ ]},
  {v:"0.21.148", data:"2026-11-23", titulo:"App da representante travado como app", itens:[
   {tipo:"correção", area:"App da representante", txt:"A página não balança mais no celular: o topo escuro fica preso, só o miolo rola e o Sair da conta fica no pé da tela."}]},
  {v:"0.21.147", data:"2026-11-23", titulo:"Conta de representante: abre direto no app", itens:[
