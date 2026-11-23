@@ -247,7 +247,7 @@ function App(){
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || (srv.repCodDaConta() ? k==="inicio" : ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0); });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return srv.repCodDaConta() ? k==="inicio" : abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0; });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
   var abas = ABAS.filter(function(a){ return a[0]==="entradasetor" || !permitidas || permitidas.indexOf(a[0])>=0; });   // a entrada do setor (22/11/2026) é de todos; a lista de telas dentro dela já vem filtrada pelo acesso
@@ -326,6 +326,12 @@ function App(){
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
     e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
+  // CONTA DE REPRESENTANTE (23/11/2026, Marcus: "100% a visão do app somente"): sem menu e sem as barras do Admin; só o app dela na tela inteira e o Sair.
+  if(srv.repCodDaConta()) return e(Ctx.Provider,{value:{state:s, dispatch:d}},
+    e("div",{className:"min-h-screen bg-background"},
+      e("main",{className:"mx-auto flex w-full max-w-[430px] flex-col"}, e(Outlet)),
+      e("button",{type:"button", onClick:function(){ srv.sair(); }, className:"mx-auto block h-8 px-4 text-[13px] font-semibold underline"}, "Sair da conta")),
+    e(Aviso));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},

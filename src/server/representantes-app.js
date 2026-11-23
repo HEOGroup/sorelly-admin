@@ -38,7 +38,7 @@ function pedir(rota) {
     req.end();
   });
 }
-async function ler(rota, tentativa = 0) {
+export async function ler(rota, tentativa = 0) {
   try {
     const r = await pedir(rota);
     if (r.status < 200 || r.status >= 300 || r.json === null) throw new Error("o app respondeu " + r.status);

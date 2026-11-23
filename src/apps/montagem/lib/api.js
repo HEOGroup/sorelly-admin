@@ -40,6 +40,9 @@ function grupoPorSetores(setores){ return Array.isArray(setores) && setores.inde
 function cidDaConta(){ return lerConta().cid || ""; }
 // código do vendedor da conta de REPRESENTANTE (17/11/2026): menu só com as telas dela; o servidor é quem filtra os dados
 function repCodDaConta(){ return lerConta().repCod || ""; }
+// nome da representante nas telas (o do Agendamento, ex.: "Vanessa"): vem de /representante/eu e fica guardado junto do código (só vale para o mesmo código)
+function nomeRepDaConta(){ try { var o = JSON.parse(localStorage.getItem("sorelly_rep_nome") || "null"); return o && o.cod===repCodDaConta() ? (o.nome || "") : ""; } catch(x){ return ""; } }
+function guardaNomeRep(cod, nome){ try { localStorage.setItem("sorelly_rep_nome", JSON.stringify({cod:cod, nome:nome||""})); } catch(x){} }
 function nomeDaConta(){ return lerConta().nome || ""; }
 function abasDaConta(){ var l = lerConta().abas; return Array.isArray(l) ? l : null; }
 function ocultosDaConta(){ var l = lerConta().ocultar; return Array.isArray(l) ? l : null; }
@@ -48,4 +51,4 @@ function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ i
 async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {repCod:u.repCod, abas:u.abas, ocultar:u.ocultar, grupo:u.grupo || grupoPorSetores(u.setores), cid:u.cid, nome:u.nome}); return j.usuario; }
 function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, repCodDaConta, nomeDaConta };
+export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, repCodDaConta, nomeRepDaConta, guardaNomeRep, nomeDaConta };

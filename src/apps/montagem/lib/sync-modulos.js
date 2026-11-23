@@ -164,6 +164,9 @@ function useSyncModulos(s, d){
     var vAntes = m.versao;
     return chamar("PUT", "/estado/"+chave, porDif ? {patches:patches} : {chaves:mudou}).then(function(r){
       Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); });
+      // conta de representante (rpo/rpf): o servidor devolve o que recusou ou carimbou; a tela fica igual ao que vale lá (23/11/2026)
+      if(r.devolver && Object.keys(r.devolver).length){ Object.keys(r.devolver).forEach(function(k){ m.snaps[k] = json(r.devolver[k]); }); d({type:"SYNC_MODULO", chave:chave, conteudo:r.devolver}); m.aguarda = ref.current.s; }
+      if(r.avisos && r.avisos.length) d({type:"AVISO", txt:r.avisos.join(" "), tom:"alerta"});
       // só avança a versão se ninguém mais gravou no meio; senão a próxima leitura traz o módulo de novo (com o que a outra pessoa gravou)
       if(r.versao===vAntes+1 || !porDif) m.versao = r.versao;
       if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora;

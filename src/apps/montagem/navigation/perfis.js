@@ -15,7 +15,7 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   cadastropecas:["cpcompras","cadpecas","cpsol","cpctrl","cppecas","cpfp","cpfe","cpouro","cpbanho","cplotes","cpcalc","cpforn","cpdev","cpcfg"],          // Rayssa e Graziella
   linkcadastro:["linkpag","linkrel","linkcomp","linkdesc","linkhist","linkanal","linktaxas","linkmeios","linkreps","comlink","compras","cequadro","ceplanilha","cevisao","ceestoque","gfpainel","gfcompras","gfestoque","gfkits","gfvendas","cemov","cesol","cecad","cecfg","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Hellen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
   inadimplencia:["inadimp","comprasrep","cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfregras","cfconfig","inaddiv","inadcob","inadpag","inadser","inadkit","inadrel","inadreg"],          // Amanda de Miranda
-  representante:["celrep","painel","consrep","comissoes"],
+  representante:[],   // 23/11/2026 (Marcus): a representante vê SÓ o app (o Início dela); Financeiro e Listagens do Admin saíram, ele libera depois
   encomendas:["encomendas","encsep","encida","enctop50","encranking","encpremio","encrep","expositores","encregras"],   // Encomendas e reposições (05/11/2026): as três meninas do setor (Agatha, Elen e Eduarda Gabriela) estavam em Acesso básico e não abriam as telas do setor
   garantia:["garantia","garantiacred"],   // Garantia (03/11/2026): as meninas do setor lançam os créditos de garantia que sobem para o acerto no app da representante
   estoque:["ceestoque","gfestoque"],   // Estoque de materiais: só as duas telas de Estoque (Geovana, 18/11/2026)

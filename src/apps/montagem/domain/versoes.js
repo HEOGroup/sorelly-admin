@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.143", data:"2026-11-23", titulo:"App da representante dentro do Admin: só o app e gravando de verdade", itens:[
+  {tipo:"novo", area:"Conta de representante", txt:"A representante vê só o app, na tela inteira do celular. Cada uma carrega a própria carteira de revendedoras pelo código do vendedor."},
+  {tipo:"novo", area:"Conta de representante", txt:"Listagem, revendedora na listagem, pré-acerto, acerto, kit novo entregue, entrega na empresa e km gravam no servidor e aparecem na Montagem, no Consolidado e nas Comissões."},
+  {tipo:"novo", area:"Conta de representante", txt:"No acerto, o pedido de conta (Pix, link, cartão) vai para a fila do Direcionar e a resposta do Financeiro volta para o app dela."},
+  {tipo:"novo", area:"App da representante", txt:"O cartão da revendedora mostra o que ela vendeu no app desde o último acerto."},
+  {tipo:"correção", area:"App da representante", txt:"Nome da revendedora inteiro no cartão; nada cortado em Comissões; campos sem zoom no iPhone; textos de 48 horas e do acordo corrigidos."}]},
  {v:"0.21.142", data:"2026-11-23", titulo:"Fila de resgates: cartão mostra quem já teve contato", itens:[
   {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações → Resgates", txt:"O cartão do pedido ficou em três partes: nome, prêmio e situação. Pedido marcado mostra \"Em contato desde\" com a data, em verde, como no admin antigo. Pedido sem a marca mostra o botão \"Já entrei em contato\" no próprio cartão (antes ficava só no menu ⋯). O tempo de espera foi para a linha da situação e o nome ganhou a largura toda. Na coluna Aguardando retirada o dia e a hora aparecem em destaque. O valor repetido (R$ 400 em semijoias · R$ 400,00) saiu."}]},
  {v:"0.21.141", data:"2026-11-23", titulo:"Lançamentos marcados como Automático ou Manual", itens:[

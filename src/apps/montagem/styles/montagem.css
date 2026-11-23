@@ -68,3 +68,9 @@ html.dark.app-montagem { --muted-foreground: oklch(0.86 0 0); }
 
 /* Parte principal (cabeçalho escuro) FIXA no topo de todos os apps de celular: só o resto da tela rola (Marcus, 29/10/2026). */
 .app-claro #app-screen > :first-child { position: sticky; top: -8px; z-index: 6; }   /* -8px cancela o padding de cima da rolagem: sem faixa clara em cima do cabeçalho */
+
+/* CELULAR (toque), 23/11/2026: o iPhone dá zoom sozinho ao tocar num campo com letra menor que 16 px e a tela "pula".
+   Só em aparelho de toque, os campos do app da representante e da tela de entrada ficam com 16 px. No computador nada muda. */
+@media (hover: none) and (pointer: coarse) {
+  .app-claro input, .app-claro select, .app-claro textarea, form input[autocomplete="username"], form input[autocomplete="current-password"] { font-size: 16px !important; }
+}

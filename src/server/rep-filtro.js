@@ -7,14 +7,14 @@
 import { consulta } from "./db.js";
 import { garantirTabela, versaoItens } from "./estado-itens.js";
 
-export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc"];
-export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude"];
+export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc", "pag"];   // pag = pedidos de conta (Direcionar Pix): só os dos kits dela (src/server/rep-pag.js)
+export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante"];   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
 export const rotaPermitidaRep = (caminho) => ROTAS_REP.some((p) => caminho === p || caminho.startsWith(p + "/"));
 
 const sem = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const cacheNome = (globalThis.__sorellyRepNome = globalThis.__sorellyRepNome || new Map());
 // nome que as telas usam para o código (o do Agendamento: "Vanessa"); registros antigos só têm o nome, não o código
-async function nomeDaRep(cod) {
+export async function nomeDaRep(cod) {
   const c = cacheNome.get(cod);
   if (c && Date.now() - c.em < 60000) return c.nome;
   const r = await consulta("select conteudo->'config'->'representantes' as reps from sorelly.estado_modulo where modulo = 'agend'");
@@ -42,7 +42,8 @@ export async function respostaItensRep(modulo, desde, repCod) {
     : `(left(chave,2)='a_' and substr(chave,3) in ${ids("a_")}) or (left(chave,3) in ('ax_','ar_') and substr(chave,4) in ${ids("a_")})
        or (left(chave,3) in ('km_','gv_') and valor->>'repCod' = $1)`;
   const params = [repCod, nome, parcial ? desde : null, modulo];
-  const r = await consulta(`select chave, valor, seq from sorelly.estado_item where modulo = $4 and ${seq} and (${filtro})`, params);
+  const lapides = modulo === "rpo" ? "left(chave,2) in ('l_','k_')" : "left(chave,2) = 'a_'";   // lápide não tem dono escrito: desce só a marca {_apagado}, sem dado nenhum
+  const r = await consulta(`select chave, case when valor->>'_apagado' = 'true' then '{"_apagado":true}'::jsonb else valor end as valor, seq from sorelly.estado_item where modulo = $4 and ${seq} and ((${filtro}) or (valor->>'_apagado' = 'true' and ${lapides}))`, params);
   const conteudo = {}; let versao = desde || 0;
   r.rows.forEach((l) => { conteudo[l.chave] = l.valor; versao = Math.max(versao, Number(l.seq)); });
   if (parcial && !r.rows.length) return { modulo, versao: Math.max(v, desde), igual: true };

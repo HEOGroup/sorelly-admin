@@ -179,6 +179,62 @@ function espelharAdmin(s, nomes){
   return novasRpo || novasRpf ? {rpo:novasRpo, rpf:novasRpf} : null;
 }
 
+// ── o que a REPRESENTANTE faz no app DENTRO do Admin (conta com rep_cod, 23/11/2026) vira chave do APP (l_, k_, ke_, en_, a_, ar_, km_, gv_) ──
+// É o mesmo lugar onde o app da loja grava: Montagem › Listagens, Consolidado e Comissões leem sem mudar nada. O servidor confere se cada chave é dela
+// (src/server/rep-gravar.js). Item novo vai inteiro (l_, k_, a_); mudança em kit que já existe vai em ke_ (eventos do app: pré-acerto, acertado, entregue);
+// kit que ela tirou da listagem vira lápide. Nunca escreve chave da equipe (lx_, kx_, ax_).
+function semId(o){ var x = Object.assign({}, o); delete x.id; delete x.origem; delete x._montNome; delete x._bipNome; return x; }
+function espelharRep(s, repCod, repNome){
+  var rpo = s.rpo, rpf = s.rpf, novasRpo = null, novasRpf = null, agora = new Date().toISOString();
+  var pRpo = function(k, v){ if(j((rpo||{})[k])===j(v)) return; novasRpo = novasRpo || {}; novasRpo[k] = v; };
+  var pRpf = function(k, v){ if(j((rpf||{})[k])===j(v)) return; novasRpf = novasRpf || {}; novasRpf[k] = v; };
+  var dela = function(o){ return Object.assign(o, {repCod:repCod, rep:repNome || o.rep || "", origem:"app"}); };
+  if(rpo && s._rpoPronto){
+    (s.listagens||[]).forEach(function(l){
+      var base = rpo["l_"+l.id];
+      if(base && base._apagado) return;
+      if(!base){ pRpo("l_"+l.id, dela(Object.assign(semId(l), {criadoEm:agora}))); return; }
+      var d = diferenca(l, Object.assign({}, base, vivo(rpo["lx_"+l.id]) ? rpo["lx_"+l.id] : {}));
+      if(d) pRpo("l_"+l.id, Object.assign({}, base, d));
+    });
+    var idsK = {};
+    (s.kits||[]).forEach(function(k){
+      idsK[k.id] = 1;
+      var base = rpo["k_"+k.id], kx = rpo["kx_"+k.id], ke = vivo(rpo["ke_"+k.id]) ? rpo["ke_"+k.id] : {};
+      if(base && base._apagado) return;
+      if(!base && !(kx && kx._full)){ pRpo("k_"+k.id, dela(Object.assign(semId(k), {criadoEm:agora}))); return; }
+      var d = diferenca(k, Object.assign({}, base||{}, kx ? semMeta(kx) : {}, ke), {_montNome:1, _bipNome:1});
+      if(d) pRpo("ke_"+k.id, Object.assign({}, ke, d));
+    });
+    // kit do app que saiu da lista dela (ela excluiu da listagem): lápide
+    Object.keys(rpo).forEach(function(c){ if(prefixo(c)!=="k") return; var id = idDaChave(c), kx = rpo["kx_"+id]; if(vivo(rpo[c]) && !idsK[id] && !(kx && kx._apagado)) pRpo(c, LAPIDE("tirado pela representante")); });
+    // entrega guiada do kit novo (etapas, foto do expositor, assinatura)
+    Object.keys(s.entregasKN||{}).forEach(function(kitId){ if(idsK[kitId] && s.entregasKN[kitId]) pRpo("en_"+kitId, s.entregasKN[kitId]); });
+  }
+  if(rpf && s._rpfPronto){
+    (s.acertosConsignado||[]).forEach(function(r){
+      var base = rpf["a_"+r.id];
+      if(base && base._apagado) return;
+      var semRec = Object.assign({}, r); delete semRec.recebimento;
+      if(!base) pRpf("a_"+r.id, dela(Object.assign(semId(semRec), {recebimento:null, recebidoEm:agora})));
+      else { var d = diferenca(semRec, Object.assign({}, base, vivo(rpf["ax_"+r.id]) ? rpf["ax_"+r.id] : {}), {recebimento:1}); if(d) pRpf("a_"+r.id, Object.assign({}, base, d)); }
+      // "Entreguei o dinheiro / as condicionais" (Comissões › Entrega na empresa)
+      var rp = r.recebimento && r.recebimento.rep;
+      if(rp){ var ar = {din:rp.din||null, cond:rp.cond||null}, at = vivo(rpf["ar_"+r.id]) ? rpf["ar_"+r.id] : {}; if(j(ar)!==j({din:at.din||null, cond:at.cond||null})) pRpf("ar_"+r.id, Object.assign({}, at, ar)); }
+    });
+    // km do período e aviso de gasolina visto (só os dela)
+    var fech = (s.comis && s.comis.fech) || {};
+    Object.keys(fech).forEach(function(ch){
+      var p = ch.split("|"), f = fech[ch]; if(p[1]!==repNome || !f || f.kmPor!=="rep" || f.km==null) return;
+      var c = "km_"+p[0]+"_"+repCod, at = vivo(rpf[c]) ? rpf[c] : null;
+      if(!at || at.km!==f.km) pRpf(c, {data:p[0], rep:repNome, repCod:repCod, km:f.km, kmPor:"rep", kmTs:f.kmTs || agora, kmModo:"total"});
+    });
+    var visto = s.comis && s.comis.gasolinaVisto && s.comis.gasolinaVisto[repNome], gv = vivo(rpf["gv_"+repCod]) ? rpf["gv_"+repCod] : null;
+    if(visto && (!gv || gv.em!==visto)) pRpf("gv_"+repCod, {em:visto, rep:repNome, ts:Date.now()});
+  }
+  return novasRpo || novasRpf ? {rpo:novasRpo, rpf:novasRpf} : null;
+}
+
 // ── formato que o app recebe (contrato 1.5) ─────────────────────────────────────
 function kitParaApp(k){
   var st = k.status==="precond" ? "pendente" : k.status==="acertado" ? "retirado" : k.status;
@@ -197,4 +253,4 @@ function listagemParaApp(l, kits, agoraMs){
 
 export { ITENS_MODULOS, LAPIDE, MAX_LISTAGEM, REPOSICOES_SEMANA, PRAZO_PEDIDO_HORAS, SEM_KIT, TIPOS_KIT_APP, STATUS_TIRAR,
   prefixo, donoDaChave, moduloDaChave, idDaChave, vivo, ehViagem, capacidade, inicioSemana, horasAteRetirada, codigoRetirada, semAcento,
-  montarListagens, montarKits, montarAcertos, aplicarAppNoEstado, espelharAdmin, kitParaApp, listagemParaApp };
+  montarListagens, montarKits, montarAcertos, aplicarAppNoEstado, espelharAdmin, espelharRep, kitParaApp, listagemParaApp };

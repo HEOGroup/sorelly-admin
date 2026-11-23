@@ -51,7 +51,7 @@ function TelaEntrar(p){
     var senha = tipo==="password", ver = senha && vendo[k];
     var entrada = e("input",{id:id, type:ver ? "text" : tipo, autoComplete:auto, required:true, value:f[k], onChange:troca(k), className:INPUT+" h-11!"+(senha ? " w-full pr-11!" : "")});
     // 17/11/2026 (Marcus: "não dá para deixar meu login e senha salvos?"): o Chrome só oferece "Salvar senha" quando o campo tem nome e identificação; usuário = "username" e senha = "password" (o olho troca o tipo, o nome continua)
-    entrada = cloneElement(entrada, {id:id || (senha ? (criando ? "ent-nova-"+k : "ent-senha") : undefined), name:criando ? k : (k==="email" ? "username" : k==="senha" ? "password" : k)});
+    entrada = cloneElement(entrada, {autoCapitalize:"none", autoCorrect:"off", spellCheck:false, id:id || (senha ? (criando ? "ent-nova-"+k : "ent-senha") : undefined), name:criando ? k : (k==="email" ? "username" : k==="senha" ? "password" : k)});
     return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, rotulo,
       senha ? e("span",{className:"relative block"}, entrada,
         e("button",{type:"button", tabIndex:-1, onClick:function(){ var c = Object.assign({}, vendo); c[k] = !c[k]; setVendo(c); }, "aria-label":ver ? "Esconder a senha" : "Mostrar a senha", title:ver ? "Esconder a senha" : "Mostrar a senha",

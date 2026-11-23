@@ -5,7 +5,7 @@
 import { rotDoDia, daPessoa, rotResumo } from "@/apps/montagem/domain/rotina";
 import { nomeDe, papelDe, grupoDe, REPRESENTANTES_VER } from "@/apps/montagem/domain/equipe";
 import { mensagemDaVez, msAteTrocar } from "@/apps/montagem/domain/mensagens-fe";
-import { apiAtiva, chamar, ehAdmin } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar, ehAdmin, repCodDaConta, guardaNomeRep } from "@/apps/montagem/lib/api";
 import { AppRepresentante } from "@/apps/montagem/mobile/representante";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
@@ -162,11 +162,17 @@ function AbaInicio(){
 // INÍCIO DA REPRESENTANTE (18/11/2026, Marcus: "puxa a primeira tela que as representantes precisam ver na tela inicial"): conta de representante abre direto a primeira tela do app dela
 // (mês, vendido, acerto, comissão e os atalhos: Revendedoras, Listagens, Kits novos, Comissões, Regras), numa coluna do tamanho do celular, centralizada. O resto do Admin segue no menu.
 function InicioRepresentante(){
-  var cx = use(), s = cx.state, todas = s.listagens || [];
+  var cx = use(), s = cx.state, todas = s.listagens || [], cod = repCodDaConta();
+  // CONTA REAL de representante (login dela): o servidor diz o nome que as telas usam (o do Agendamento) e as listagens já vêm só as dela.
+  var qm = useState(null), quem = qm[0], setQuem = qm[1];
+  useEffect(function(){ if(!cod) return; var vivo = true; chamar("GET", "/representante/eu").then(function(j){ guardaNomeRep(j.cod, j.nome); if(vivo) setQuem(j); }).catch(function(){ if(vivo) setQuem({cod:cod, nome:""}); }); return function(){ vivo = false; }; }, [cod]);
+  // Diretoria vendo pelo seletor "Atuar como": a pessoa escolhida (REPRESENTANTES_VER)
   var nome = nomeDe(s.usuario), ver = REPRESENTANTES_VER.find(function(x){ return x.id===s.usuario; }), pn = String(nome||"").trim().split(/ +/)[0].toLowerCase();
-  var dela = todas.filter(function(x){ return String(x.rep||"").trim().split(/ +/)[0].toLowerCase()===pn; });
-  var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+s.usuario, rep:ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "), data:"", horario:"", retiradas:[]};
-  return e("div",{className:"mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(AppRepresentante,{key:l.id, l:l, semMoldura:true}));
+  if(cod && !quem) return e("p",{className:"py-10 text-center text-[13px]"}, "Carregando…");
+  var dela = cod ? todas : todas.filter(function(x){ return String(x.rep||"").trim().split(/ +/)[0].toLowerCase()===pn; });
+  var repNome = cod ? (quem.nome || (dela[0] && dela[0].rep) || "Representante") : (ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "));
+  var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+(cod || s.usuario), rep:repNome, data:"", horario:"", retiradas:[]};
+  return e("div",{className:"mx-auto flex w-full max-w-[430px] flex-col items-center "+(cod ? "" : "py-2")}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, semMoldura:cod ? "cheia" : true}));
 }
-function AbaInicioGeral(){ var cx = use(); return grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
+function AbaInicioGeral(){ var cx = use(); return repCodDaConta() || grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
 export { AbaInicioGeral as AbaInicio };

@@ -51,7 +51,7 @@ function Situacao(p){
   return e("div",{className:CARD},
     e("button",{onClick:p.alt, "aria-expanded":ab, className:"flex w-full items-center gap-2 px-3 py-2.5 text-left", style:ab ? OURO_CLARO : undefined},
       e("span",{className:"text-[#A67C12]"}, e(Icon,{n:ab ? "chevrondown" : "chevron", s:14})),
-      e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[13.5px] text-[#111827]"},"Dia "+dm(p.data)), e("span",{className:"block truncate text-[11px] text-[#9A8B63]"},"atendimentos "+dm(jan.ini)+" a "+dm(jan.fim))),
+      e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[13.5px] text-[#111827]"},"Dia "+dm(p.data)), e("span",{className:"block text-[11px] text-[#9A8B63]"},"atendimentos "+dm(jan.ini)+" a "+dm(jan.fim))),
       e("span",{className:"text-right"}, e("b",{className:MONO+" block text-[13px] text-[#A67C12]"}, BK(rs.comissaoTotal)), e("span",{className:"block text-[10.5px] text-[#6B7280]"}, status))),
     ab && e("div",{className:"flex flex-col"},
       rs.itens.length>0 ? rs.itens.slice().sort(function(a,b){ return a.r.data.localeCompare(b.r.data); }).map(function(it){
@@ -59,10 +59,10 @@ function Situacao(p){
         // 2 etapas que a representante acompanha: o agendamento receber (✓ Agend.) e o financeiro confirmar (✓ Finan.)
         var etapa = function(ok, nome){ return e("span",{className:"font-semibold "+(ok ? "text-[#15803D]" : "text-[#B45309]")}, (ok ? "✓ " : "○ ")+nome); };
         return e("div",{key:it.id, className:"flex flex-col gap-0.5 border-t border-[#E9DDBB] px-3 py-2"},
-          e("div",{className:"flex items-baseline justify-between gap-2"}, e("p",{className:"min-w-0 flex-1 truncate text-[13px] font-semibold text-[#111827]"}, it.rev),
+          e("div",{className:"flex items-baseline justify-between gap-2"}, e("p",{className:"min-w-0 flex-1 text-[13px] font-semibold text-[#111827]"}, it.rev),
             e("b",{className:MONO+" shrink-0 text-[13px] "+(it.confirmado || direto ? "text-[#15803D]" : "text-[#A67C12]")}, BK(direto ? it.valorPago : it.comissao))),
           e("div",{className:"flex items-baseline justify-between gap-2 text-[11px] text-[#6B7280]"},
-            e("span",{className:"min-w-0 truncate"}, dm(it.data)+(forma ? " · "+forma : "")+(it.valorPago>0 ? " · pagou "+BK(it.valorPago) : "")),
+            e("span",{className:"min-w-0"}, dm(it.data)+(forma ? " · "+forma : "")+(it.valorPago>0 ? " · pagou "+BK(it.valorPago) : "")),
             e("span",{className:"shrink-0 font-semibold "+(it.confirmado || direto ? "text-[#15803D]" : "text-[#B45309]")}, direto ? "pago direto" : it.confirmado ? "confirmada" : "pendente")),
           !direto && e("div",{className:"flex flex-wrap items-center gap-x-3 text-[10.5px]"}, etapa(it.conferido, "Agendamento"), etapa(!!it.fin, "Financeiro"),
             it.conferido && !it.confirmado && it.motivo && e("span",{className:"text-[#B45309]"}, it.motivo)));
@@ -79,7 +79,7 @@ function EntregaEmpresa(p){
   var marca = function(r, campo, ligar){ var rec = r.recebimento || {}, rp = Object.assign({}, rec.rep || {}); rp[campo] = ligar ? {ok:true, ts:new Date().toISOString()} : {ok:false};
     d({type:"CONSREP_RECEBER", id:r.id, patch:{rep:rp}}); };
   var linha = function(titulo, sub, feito, onClick, desab, feitoTxt){ return e("div",{className:"flex items-center gap-2 border-t border-[#E9DDBB] px-3 py-2"},
-    e("div",{className:"min-w-0 flex-1"}, e("p",{className:"truncate text-[13px] text-[#111827]"}, titulo), e("p",{className:"truncate text-[11px] text-[#9A8B63]"}, sub)),
+    e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[13px] text-[#111827]"}, titulo), e("p",{className:"text-[11px] text-[#9A8B63]"}, sub)),
     e("button",{onClick:onClick, disabled:desab, className:"h-9 shrink-0 rounded-xl px-3 text-[12px] font-bold disabled:opacity-60 "+(feito ? "bg-white text-[#A67C12] ring-1 ring-[#C9A13B]" : "bg-[#C9A13B] txt-branco")}, feito ? "✓ "+(feitoTxt||"Entreguei") : "Entreguei")); };
   var card = function(r){
     var rec = r.recebimento || {}, rp = rec.rep || {}, din = rec.din || {}, conf = !!rec.ok;
@@ -88,7 +88,7 @@ function EntregaEmpresa(p){
     var diverge = din.ok && din.contado!=null && Math.abs(din.contado-dinTot)>0.009;
     return e("div",{key:r.id, className:CARD},
       e("div",{className:"flex items-center justify-between gap-2 px-3 py-2.5", style:OURO_CLARO},
-        e("div",{className:"min-w-0"}, e("b",{className:"block truncate text-[13.5px] text-[#111827]"}, r.rev), e("span",{className:"block text-[11px] text-[#9A8B63]"}, dm(r.data)+" · "+(kitNovo ? "Kit novo" : "Acerto"))),
+        e("div",{className:"min-w-0"}, e("b",{className:"block text-[13.5px] text-[#111827]"}, r.rev), e("span",{className:"block text-[11px] text-[#9A8B63]"}, dm(r.data)+" · "+(kitNovo ? "Kit novo" : "Acerto"))),
         e("span",{className:"shrink-0 text-[11px] font-semibold text-[#6B7280]"}, conf ? "✓ Conferido" : rec.inicioTs ? "Funcionária conferindo" : "Aguardando")),
       dinTot>0 && linha("Dinheiro "+BK(dinTot), din.ok ? "Empresa: ✓ recebeu"+(diverge ? " "+BK(din.contado) : "") : "Código para a funcionária digitar: "+codigoDinheiro("R"+r.id, 1), !!(rp.din && rp.din.ok), function(){ marca(r, "din", !(rp.din && rp.din.ok)); }, conf, "Entreguei o dinheiro"),
       diverge && e("p",{className:"border-t border-[#E9DDBB] bg-[#FEF2F2] px-3 py-2 text-[11.5px] font-semibold leading-snug text-[#B91C1C]"},"Divergência: você lançou "+BK(dinTot)+" e a empresa contou "+BK(din.contado)+". A diferença de "+BK(dinTot-din.contado)+" ficou em aberto."),

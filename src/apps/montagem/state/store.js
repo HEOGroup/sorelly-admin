@@ -13,7 +13,8 @@ import { COMIS0 } from "@/apps/montagem/domain/comissoes";
 import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
 import { formasPagamentoPadrao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
-import { espelharAdmin } from "@/apps/montagem/domain/app-rep";
+import { espelharAdmin, espelharRep } from "@/apps/montagem/domain/app-rep";
+import { repCodDaConta, nomeRepDaConta } from "@/apps/montagem/lib/api";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
 import { agendDemo, sincPrevistosAcertos } from "@/apps/montagem/domain/agendamento";
 import { globLocal } from "@/lib/glob-local";
@@ -583,6 +584,8 @@ function espelharKn(n){ if(!n.novas) return n; var kn = null; n.novas.forEach(fu
 function espelharApp(n, patch){
   if(!(patch.kits || patch.listagens || patch.acertosConsignado || patch.comis)) return n;
   if(!(n._rpoPronto || n._rpfPronto)) return n;
+  var codR = repCodDaConta();   // conta de REPRESENTANTE: o que ela faz no app vira chave do app (l_, k_, ke_, a_...), nunca chave da equipe
+  if(codR){ var nomeR = nomeRepDaConta(); if(!nomeR) return n; var mR = espelharRep(n, codR, nomeR); if(!mR) return n; var oR = Object.assign({}, n); if(mR.rpo) oR.rpo = Object.assign({}, n.rpo, mR.rpo); if(mR.rpf) oR.rpf = Object.assign({}, n.rpf, mR.rpf); return oR; }
   var m = espelharAdmin(n, nomeDe) || {};
   // configuração de comissões (régua, % e grupo de cada representante, gasolina, pagamentos lançados): o servidor calcula "só as minhas comissões" com ela
   if(patch.comis && n._rpfPronto && n.comis){

@@ -42,7 +42,7 @@ import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
-import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar, repCodDaConta } from "@/apps/montagem/lib/api";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
@@ -69,7 +69,8 @@ var nomeBonito = function(x){ return String(x||"").toLowerCase().replace(/(^|[ -
 var LISTA_REVS = {};   // uma lista por representante
 var semAcento = function(x){ return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/s+/g, " ").trim(); };
 // código do vendedor na DevMaster (lista do Agendamento): resolve nomes repetidos como Jessica e Thalita
-function codigoRep(s, rep){ var v = REPRESENTANTES_VER.find(function(x){ return x.rep===rep && x.cod; }); if(v) return v.cod; var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
+function codigoRep(s, rep){ var cc = repCodDaConta(); if(cc) return cc;   // conta de representante: o código do vendedor é o da própria conta
+  var v = REPRESENTANTES_VER.find(function(x){ return x.rep===rep && x.cod; }); if(v) return v.cod; var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
 function listaReal(rep, cod){
   var k = rep+"|"+(cod||"");
   if(!LISTA_REVS[k]) LISTA_REVS[k] = chamar("GET", "/representante/revendedoras?rep="+encodeURIComponent(rep)+(cod ? "&vendedor="+encodeURIComponent(cod) : "")).catch(function(){ LISTA_REVS[k] = null; return null; });
@@ -90,8 +91,9 @@ function carteiraRep(s, rep, reais){
   var dmISO = function(iso){ var p = (iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1] : ""; };
   var perfis = s.perfisRev||{};
   var lids = s.listagens.filter(function(x){return x.rep===rep;}).map(function(x){return x.id;});
+  var appDe = {}; (reais||[]).forEach(function(it){ if(it.vendaApp>0) appDe[semAcento(it.nome)] = it.vendaApp; });   // venda lançada no app da revendedora desde o último acerto
   var hojeK = s.kits.filter(function(k){return lids.indexOf(k.lid)>=0;}).map(function(k){
-    return {id:k.id, rev:k.rev, fone:k.fone||"", bairro:k.endereco||k.bairro, vendas:k.vendas||[], cond:k.valor, hora:k.horaAtend, hoje:true, data:dm(new Date()), nova:(k.tipoKit||"").indexOf("kit_novo")===0, tipoKit:k.tipoKit, status:k.status, lid:k.lid}; });
+    return {vendaApp:appDe[semAcento(k.rev)]||0, id:k.id, rev:k.rev, fone:k.fone||"", bairro:k.endereco||k.bairro, vendas:k.vendas||[], cond:k.valor, hora:k.horaAtend, hoje:true, data:dm(new Date()), nova:(k.tipoKit||"").indexOf("kit_novo")===0, tipoKit:k.tipoKit, status:k.status, lid:k.lid}; });
   // Revendedora que já fez o acerto neste mês: o card mostra "Acerto realizado · mês" e o vendido/acerto reais do acerto
   var mesAtual = isoDia(new Date()).slice(0,7);
   var feito = function(rev){ return (s.acertosConsignado||[]).find(function(a){ return a.tipo==="acerto" && a.rev===rev && (a.data||"").slice(0,7)===mesAtual; }); };
@@ -102,7 +104,7 @@ function carteiraRep(s, rep, reais){
   var jaHoje = {}; hojeK.forEach(function(k){ jaHoje[semAcento(k.rev)] = 1; });
   var reaisC = (reais||[]).filter(function(it){ return !jaHoje[semAcento(it.nome)]; }).map(function(it){
     var vs = (it.vendas||[]).map(function(v){ return v.v; }), md = vs.length ? vs.reduce(function(t,x){ return t+x; }, 0)/vs.length : 0;
-    return comPedido(comFeito({id:"R"+it.cod, rev:it.nome, fone:it.celular||"", bairro:it.cidade||"", vendas:vs, cond:Math.round(md/500)*500, hora:null, hoje:false, data:dmISO(String(it.prevDevol||"").slice(0,10)), cod:it.cod})); });
+    return comPedido(comFeito({vendaApp:it.vendaApp||0, id:"R"+it.cod, rev:it.nome, fone:it.celular||"", bairro:it.cidade||"", vendas:vs, cond:Math.round(md/500)*500, hora:null, hoje:false, data:dmISO(String(it.prevDevol||"").slice(0,10)), cod:it.cod})); });
   return hojeK.map(comFeito).concat(reaisC).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
     var ag = (perfis[c.rev]||{}).agendado;
     return comPedido(comFeito(Object.assign({id:"C"+i, hoje:false, data: ag && ag.data ? dmISO(ag.data) : dm(dt), hora: ag ? (ag.hora||null) : c.hora}, c))); }));
@@ -204,7 +206,9 @@ function AppRepresentante(p){
   var LINHA_CARD = "border-[#E9DDBB]";
   var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };
   var cartao = function(r){
-    var vd = vendMes(r), acerto = Math.round(vd*(1-((comissaoRev(vd, s.cfg)||{pct:0}).pct/100))), comissaoRep = Math.round(acerto*PCT_COMISSAO_REP_CARD);
+    // mês atual, ainda sem acerto: vale o que ela vendeu no APP desde o último acerto (é o que vai virar o acerto); sem venda no app, a última venda da DevMaster
+    var doApp = mes===0 && !r.realizado && r.vendaApp>0;
+    var vd = doApp ? r.vendaApp : vendMes(r), acerto = Math.round(vd*(1-((comissaoRev(vd, s.cfg)||{pct:0}).pct/100))), comissaoRep = Math.round(acerto*PCT_COMISSAO_REP_CARD);
     // identificador do tipo do atendimento de hoje (Marcus, 03/11/2026): kit novo e saída NÃO são acerto, então não mostram "Acerto hoje" nem vendido/acerto/comissão zerados; a reposição é de quem já tem kit, então mostra as vendas. O identificador é só a escrita colorida
     var tk = r.tipoKit || "", tipoHoje = r.realizado || !r.hoje ? null : tk.indexOf("kit_novo")===0 ? {sigla:"KIT NOVO", lb:"Kit novo hoje", cor:"#6D28D9"} : tk==="reposicao" ? {sigla:"REPOSIÇÃO", lb:"Reposição hoje", cor:"#0E7490"} : tk==="saiu" || tk==="condicional" ? {sigla:"SAÍDA", lb:tk==="saiu" ? "Saída hoje · retirar condicional" : "Retirar condicional hoje", cor:"#B91C1C"} : null;
     var estado = tipoHoje ? {lb:tipoHoje.lb, cor:tipoHoje.cor} : r.realizado ? {lb:"✓ Acerto realizado · "+r.realizado.mes, cor:"#15803D"} : r.hoje ? {lb:"Acerto hoje", cor:"#B45309"} : r.hora ? {lb:"Acerto previsto", cor:"#1D4ED8"} : {lb:"Acerto previsto", cor:"#9CA3AF"};
@@ -216,13 +220,13 @@ function AppRepresentante(p){
         style:{background:"#F6EBCB"}},
       e("div",{className:"flex items-center justify-between gap-2 px-2.5 py-2"},
         e("div",{className:"flex min-w-0 items-center gap-1.5"},
-          e("b",{className:"min-w-0 truncate text-[14px] text-[#111827]"}, r.rev),
+          e("b",{className:"min-w-0 text-[13px] leading-tight text-[#111827]"}, r.rev),   // nome inteiro, em até 2 linhas (nada abreviado, 23/11/2026)
           modalidadeDe(s, r.rev)==="prata" && e("span",{className:"shrink-0 rounded-full bg-slate-700 px-1.5 py-px text-[9px] font-black tracking-wider "+BR}, "100% PRATA")),
         e("div",{className:"flex shrink-0 items-center gap-1.5"},
           e("span",{className:"text-[13px] font-medium text-[#4B5563]"}, r.fone||"—"),
           r.fone && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abrirChat(r.rev); }, "aria-label":"Conversar com "+r.rev+" no chat", title:"Conversar no chat", className:"grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:12})))),
       !(tipoHoje && tk!=="reposicao") && e("div",{className:"grid grid-cols-3 divide-x divide-[#E9DDBB] border-t "+LINHA_CARD+" py-2 text-center"},
-        col("VENDIDO", BK(vd), "#15803D"), col("ACERTO", BK(acerto), "#2563EB"), col("COMISSÃO", BK(comissaoRep), "#A67C12")),
+        col(doApp ? "VENDIDO NO APP" : "VENDIDO", BK(vd), "#15803D"), col("ACERTO", BK(acerto), "#2563EB"), col("COMISSÃO", BK(comissaoRep), "#A67C12")),
       e("div",{className:"flex items-start justify-between gap-2 border-t "+LINHA_CARD+" px-2.5 py-1.5"},
         e("p",{className:"min-w-0 flex-1 text-[11px] leading-snug text-[#6B7280]"},
           fav && e("span",{className:"mr-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-px align-middle text-[9.5px] font-bold text-amber-800"},
@@ -461,7 +465,7 @@ function AppRepresentante(p){
   var headerCalc = kitSel && e("div",{id:"hdr-calc", className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-1.5 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
     e("div",{className:"flex items-center gap-2"},
       e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),   // sem borda nem fundo (Marcus, 04/11/2026)
-      e("b",{className:douradoTitulo+" min-w-0 flex-1 truncate"}, "Calculadora de Acertos"),
+      e("b",{className:douradoTitulo+" min-w-0 flex-1 leading-tight"}, "Calculadora de Acertos"),
       e("button",{onClick:function(){ setTelaAntes("calcacerto"); setTela("regras"); }, "aria-label":"Ver as regras", title:"Regras",
         className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"book", s:16}))),
     // Bloco compacto (Marcus, 04/11/2026): Vendas e Comissão lado a lado e o Valor do acerto na linha de baixo; fontes menores
@@ -727,7 +731,7 @@ function AppRepresentante(p){
                     e("p",null,"1. Qualquer valor pendente tem multa de "+((versaoSel && versaoSel.novas) || {}).multaPendentePct+"% sobre o pendente. "+(versaoSel && versaoSel.novas ? textoNegociacao(versaoSel.novas)+" Parcela atrasada soma "+versaoSel.novas.atrasoQuitacaoPctDia+"% ao dia, até "+versaoSel.novas.atrasoQuitacaoTetoPct+"%." : "")),
                     e("p",null,"2. Sem negociar o valor que falta, os brindes não são liberados."),
                     e("p",null,"3. As parcelas negociadas precisam fechar exatamente o valor em aberto."),
-                    e("p",null,"4. Se a revendedora não quiser negociar, o jurídico entra em contato. Sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente.")),
+                    e("p",null,"4. Se a revendedora não quiser negociar, o jurídico entra em contato. Sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente.")),
                   acertoForm.acordoParcelas.map(function(p,i){ return e("div",{key:i, className:"grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-center gap-x-2 gap-y-1"},
                     e("span",{className:"col-span-2 text-[11px] font-semibold"}, "Parcela "+(i+1)),
                     e("input",{type:"date", value:p.data, "aria-label":"Data da parcela", onChange:function(ev){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {data:ev.target.value}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoSel+" w-full min-w-0 [color-scheme:dark]"}),
@@ -739,7 +743,7 @@ function AppRepresentante(p){
                         setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:validas, acordoSalvo:validas.length>0, recusouNegociar:false}));
                         if(validas.length && Math.abs(soma-restanteTotal)<=0.01){ setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); } }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Salvar acordo"),
                     e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true, acordoParcelas:[], acordoSalvo:false})); setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Não quis negociar")),
-                  acertoForm.acordoSalvo && e("p",{className:"text-[13px] font-semibold"}, Math.abs(acordoSoma-restanteTotal)<=0.01 ? "Acordo fecha o valor: brinde liberado." : "As parcelas ainda não fecham o valor em aberto.")),
+                  acertoForm.acordoSalvo && e("p",{className:"text-[13px] font-semibold"}, Math.abs(acordoSoma-restanteTotal)<=0.01 ? "Acordo fecha o valor: libera o kit novo, não o brinde." : "As parcelas ainda não fecham o valor em aberto.")),
                 fm && fm!=="acerto_loja" ? e("div",{className:"flex items-center gap-2"},
                   formaDe(fm).parcelas && e("select",{value:lancForm.parcelas, "aria-label":"Parcelas", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); }, className:campoSel+" w-[5.2rem]! shrink-0"},
                     PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
@@ -772,7 +776,7 @@ function AppRepresentante(p){
                 className:"h-8 flex-1 rounded-lg text-[12px] font-semibold ring-1 ring-[#C9A13B]/60", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Não quis negociar")),
           acertoForm.recusouNegociar && e("div",{key:"recusou", className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5 ring-1 ring-white/10"},
             e("p",{className:"text-[13px] font-bold text-amber-200"},"Brinde bloqueado. Revendedora não quis negociar o valor em aberto."),
-            e("p",{className:"text-[12px] text-amber-200"},"Sem brinde. O jurídico entra em contato; sem negociação em 24 h, a nota promissória vai para execução no valor pendente."),
+            e("p",{className:"text-[12px] text-amber-200"},"Sem brinde. O jurídico entra em contato; sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente."),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:false})); },
               className:"h-7 w-full rounded-lg text-[11.5px] font-semibold text-[#8E8E93]"}, "Desfazer")),
           (negociarAberto || acordoExistente) && e("div",{key:"neg1", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
@@ -803,7 +807,7 @@ function AppRepresentante(p){
               className:"h-8 w-full rounded-lg text-[11.5px] font-semibold text-amber-200"}, "Remover acordo")),
           quitado && acordoExistente && e("p",{key:"avisoQuitado", className:"text-[12.5px] font-semibold text-amber-200"},
             "O acerto já está quitado, mas ainda existe um acordo salvo. Remova o acordo para não gerar cobrança indevida."),
-          acordoValido && e("p",{key:"acordoOk", className:"text-[12px] text-amber-200"}, "Acordo cobre o valor que falta: brinde liberado."))]),
+          acordoValido && e("p",{key:"acordoOk", className:"text-[12px] text-amber-200"}, "Acordo cobre o valor que falta: libera o kit novo, não o brinde."))]),
     blocoAcordeao(4, "presente", "#DB2777", "Brindes",
       !previaAcerto ? "Disponível a partir de "+BK(faixaMinBrinde===Infinity?500:faixaMinBrinde)
         : brindeBloqueio ? brindeBloqueio.curto
@@ -1288,7 +1292,7 @@ function AppRepresentante(p){
         .concat([linhaRegra("pz", "Faltou mais de "+((vr.pagamentoBrinde||[]).slice(-1)[0]||{max:10}).max+"%", "sem brindes", "#B91C1C"),
           e("p",{key:"pn1"},"O pagamento tem que ser integral e o brinde só é entregue depois do pagamento. Negociar o que falta com parcelas que fechem o valor exato também libera o brinde."),
           vr.novas ? e("p",{key:"pn2"},"Qualquer valor pendente tem multa de "+vr.novas.multaPendentePct+"% sobre o pendente. "+textoNegociacao(vr.novas)+" Parcela atrasada soma "+vr.novas.atrasoQuitacaoPctDia+"% ao dia, até "+vr.novas.atrasoQuitacaoTetoPct+"%. O próximo kit só sai depois de quitar.")
-            : e("p",{key:"pn2"},"Se a revendedora não quiser negociar o que falta: sem brinde. O jurídico entra em contato; sem negociação em 24 h, a nota promissória vai para execução no valor pendente.")])),
+            : e("p",{key:"pn2"},"Se a revendedora não quiser negociar o que falta: sem brinde. O jurídico entra em contato; sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente.")])),
     vr.novas && cartaoRegra("atraso","Acerto atrasado","#DC2626","calendario",
       linhasAtraso(vr.novas).map(function(l,i){ return linhaRegra("ar"+i, l[0], l[1], i===0 ? "#15803D" : "#B91C1C"); })
         .concat([e("p",{key:"arn"},"O desconto vale sobre o total da venda. Acerto no dia não perde nada.")])),
@@ -1313,7 +1317,7 @@ function AppRepresentante(p){
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
   var telaPropria = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","assinarrepos","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
-  return e(IPhone17ProMax,{semMoldura:!!p.semMoldura},
+  return e(IPhone17ProMax,{semMoldura:p.semMoldura || false},
     tela==="preacerto" && kitSel && e(PreAcertoRep,{key:"pre"+kitSel.id, kit:kitSel, versao:versaoSel || versaoVigente(s), rev:sel.rev, prevista:previstaTxt, d:d,
       onVoltar:function(){ setTela("rev"); }, onSalvar:function(){ abrirAcertoNovo(); }, textoSalvar:"Salvar e ir para o acerto"}),
     tela==="calcacerto" && headerCalc,

@@ -104,6 +104,25 @@ reposição, kit novo com expositor, comissões, km, entrega na empresa,
 sincronização dos kits novos e aviso de kit pronto). Rodar:
 `node docs/app-representante/teste-prototipo/rodar.mjs` (ajuste os caminhos do topo).
 
+## 5b. Conta de representante no Admin (23/11/2026)
+
+A representante também usa o app DENTRO do Admin (conta com `rep_cod`, só o app na tela). O navegador dela grava as mesmas chaves de dono **app**:
+
+```
+Tela (mobile/representante.js) → reducer → espelharRep (domain/app-rep.js) → s.rpo / s.rpf
+   → lib/sync-modulos.js → PUT /api/estado/rpo|rpf → src/server/rep-gravar.js (confere se é dela) → sorelly.estado_item
+```
+
+| Chave | Regra do servidor |
+|---|---|
+| `l_` | nova ou dela; carimba `repCod`, `rep` (nome do Agendamento); `fechada` e `retiradas` são da equipe |
+| `k_` | só kit NOVO em listagem dela e aberta; nasce sem valor, sem montadora, sem bipagem. Lápide só antes de a montagem começar |
+| `ke_`, `en_` | só de kit dela; `ke_` nunca muda campo da equipe e só aceita o status `acertado` |
+| `a_` | novo ou dele; travado depois que o agendamento conferiu; créditos de garantia usados são baixados |
+| `ar_`, `km_`, `gv_` | só os dela; a hora do km é a do servidor |
+
+A resposta traz `devolver` (o que vale no servidor para cada chave recusada ou carimbada) e `avisos`; a tela aplica na hora. A leitura dela (`respostaItensRep`) desce também as lápides (só a marca).
+
 ## 6. O que ainda não está ligado
 
 - Quadro (kanban) dos kits novos da Michele: desde 05/11/2026 o cartão mostra a resposta do app ("Agendado no app · dd/mm · período", "Na listagem do app", "Recusou no app · rep"), lida do módulo `kn` (`kits-novos/lib/bridge-montagem.js` → `respostasDoApp`, atualiza a cada 20 s). Entregue, cancelar, voltar para Liberado ou excluir no quadro tira o kit do app (`situacaoNoApp`). As etapas do quadro continuam só no navegador (`kits-novos/App.js`): só aparece no cartão o kit que passou pelo servidor (modo servidor ligado).
