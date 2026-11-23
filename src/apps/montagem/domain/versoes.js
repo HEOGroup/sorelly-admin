@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.144", data:"2026-11-23", titulo:"Direcionar: cada forma de pagamento com o seu valor", itens:[
+  {tipo:"melhoria", area:"Financeiro → Direcionar Pix", txt:"Nos Direcionados, quando o pagamento tem mais de uma forma, a coluna Forma mostra cada uma com o seu valor (ex.: Link de pagamento R$ 188,00 + Pix R$ 112,90). Com uma forma só, continua só o nome."}
+ ]},
  {v:"0.21.143", data:"2026-11-23", titulo:"App da representante dentro do Admin: só o app e gravando de verdade", itens:[
   {tipo:"novo", area:"Conta de representante", txt:"A representante vê só o app, na tela inteira do celular. Cada uma carrega a própria carteira de revendedoras pelo código do vendedor."},
   {tipo:"novo", area:"Conta de representante", txt:"Listagem, revendedora na listagem, pré-acerto, acerto, kit novo entregue, entrega na empresa e km gravam no servidor e aparecem na Montagem, no Consolidado e nas Comissões."},

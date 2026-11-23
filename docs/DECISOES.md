@@ -29,6 +29,10 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Decidi sem resposta:** Dinheiro não pede conta (uma só); o aguardando recebimento vale para qualquer forma.
 - Código: `NOME_FORMA`, `arvoreForma`, `alvoDe` e a mensagem dos sócios em `pages/ContasReceberLista.js`; `forma` em `server/recebimentos-antecipados.js` e no domínio. Teste: seção 12 de `scripts/testar-recebimento-antecipado-servidor.mjs` (114 verificações).
 
+## 23/11/2026 (Direcionar: forma com valor e cartão da Pontual)
+- Pedido do Lucas: "caso tenha mais de uma forma de pagamento, fique discriminado quais foram". Direcionados: com mais de uma forma, a coluna Forma soma por forma e mostra cada uma com o valor (`formasDir` em `pages/DirecionarPix.js`); uma forma só continua só o nome.
+- "Por que os lançamentos no cartão não estão caindo automaticamente": o código que manda cartão/link da Pontual para a Maquininha Banho (v0.21.136) subiu às 13:49; a Samira (R$ 56,00) foi direcionada às 13:51, ainda com a tela antiga aberta, e a Tatiane (R$ 184,00, link) em 19/11. A Dayane (R$ 24,00, 17:34) já caiu sozinha. As que ficaram de fora só entram com o OK do Lucas (a Tatiane já tem uma passada à mão de R$ 2.195,60 no mesmo dia: conferir antes).
+
 ## 23/11/2026 (lançamentos marcados como Automático ou Manual)
 - Pedido do Lucas: "apenas seja marcado se o lançamento foi manual ou automático; simples, nada elaborado", SÓ em /financeiro/pf-lancamento, /financeiro/ff-pix-revendedoras e /financeiro/pf-maquininha ("não mexer em Contas a receber").
 - pf-lancamento: coluna Origem, Automático = `origemPix` (Direcionar) ou `auto` (sistema). ff-pix-revendedoras: "· Automático" (campo `auto`) ou "· Manual" ao lado do nome; hoje nada chega sozinho nessa lista, então tudo aparece Manual. pf-maquininha: "· Automático" (`origemPix`) ou "· Manual" ao lado do nome.

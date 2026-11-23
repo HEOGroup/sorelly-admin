@@ -487,7 +487,10 @@ function AbaDirecionar(){
         return dd ? rotuloDestino(dd, ct) : ct; };
       var unicos = function(l){ l = l.filter(Boolean); return l.length ? l.filter(function(v, i){ return l.indexOf(v)===i; }).join(" + ") : "—"; };   // " + " separa duas contas (" · " já é usado dentro do nome)
       var contasDir = function(x){ return unicos((x.divisoes||[]).map(contaDiv)); };
-      var formasDir = function(x){ return unicos((x.divisoes||[]).map(function(d){ return formaDiv(x, d); })); };
+      // mais de uma forma (Lucas, 23/11/2026): cada forma com o seu valor, ex.: "Link de pagamento R$ 188,00 + Pix R$ 112,90"
+      var formasDir = function(x){ var ord = [], soma = {}; (x.divisoes||[]).forEach(function(d){ var f = formaDiv(x, d); if(!f) return; if(!(f in soma)){ ord.push(f); soma[f] = 0; } soma[f] += Number(d.valor)||0; });
+        if(!ord.length) return "—"; if(ord.length===1) return ord[0];
+        return ord.map(function(f){ return f+" "+BKC(soma[f]); }).join(" + "); };
       var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), forma:formasDir(x), conta:contasDir(x), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
       // as linhas ficam sempre no mesmo lugar (mais novo em cima): conferir não muda a linha de posição (Marcus, 12/11/2026: "clicou e sumiu")
       var desfazerAqui = function(x){ var l = lfDe(x); if(!l) return;   // volta a conferência para pendente (o comprovante e as etapas da atendente ficam)
