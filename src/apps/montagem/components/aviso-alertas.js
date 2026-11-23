@@ -1,6 +1,7 @@
 // Sorelly Admin — components/aviso-alertas.js
 // Alertas do sistema (ex.: média de vendas acima do limite) para quem estiver na lista do Configurador de avisos.
 // Aparecem no canto de cima à direita, com som, e ficam até a pessoa clicar (abre o atendimento) ou dar "Entendi".
+import { chamar } from "@/apps/montagem/lib/api";
 import { useNotif } from "@/apps/montagem/lib/notificacoes";
 import { use } from "@/apps/montagem/state/context";
 import * as sons from "@/apps/montagem/lib/sons";
@@ -36,7 +37,7 @@ function AvisoAlertas(p){
   var vis = pend.filter(function(a){ return !ocultos[a.id] && (nt.admin || a.critico); });
   if(!vis.length) return null;
   return e("div",{className:"fixed bottom-32 left-5 z-50 flex w-80 flex-col gap-2"}, vis.slice(0,3).map(function(a){
-    var lido = function(){ lembrarLido(a.chave); d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); };
+    var lido = function(){ lembrarLido(a.chave); d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); if(a.tipo==="denuncia_nova") chamar("POST", "/denuncias/visto").catch(function(){}); };   // denúncia: "Entendi" marca como vista no servidor (23/11/2026: voltava a cada abertura, em outro aparelho)
     return e("div",{key:a.id, role:"alert", className:"flex items-start gap-3 rounded-xl border border-destructive/60 bg-popover p-3.5 shadow-2xl ring-1 ring-black/40", style:a.cor ? {borderColor:a.cor, boxShadow:"0 0 0 2px "+a.cor+"66"} : undefined},
       e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-destructive text-white", style:a.cor ? {background:a.cor} : undefined}, e(Icon,{n:"warning", s:17})),
       e("span",{className:"min-w-0 flex-1"},

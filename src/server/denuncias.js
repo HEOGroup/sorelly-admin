@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { consulta } from "./db.js";
 
 // quem LÊ e responde as denúncias (pessoaId): por ora SÓ o Marcus (16), decisão de 18/11/2026. Para liberar outra pessoa, acrescente o pessoaId aqui E em PESSOAS_DENUNCIAS (domain/nr1.js). Perfil ADMIN sozinho NÃO basta.
-export const LEITORES_DENUNCIAS = [16];
+export const LEITORES_DENUNCIAS = [16, 38];   // Maria (38) lê TODAS (o RH trata todas, Marcus e Maria, 19/11/2026); Marcus (16) lê as que não envolvem a direção (ver LEITORES_RESERVADAS)
 const idDe = (eu) => (eu && eu.pessoaId != null ? Number(eu.pessoaId) : null);
 // Denúncias que envolvem sócio ou a direção (pergunta do formulário): Marcus, 18/11/2026: quem lê essas é a Maria (RH), pessoaId 38.
 // Enquanto LEITORES_RESERVADAS tiver alguém, os leitores gerais NÃO veem as marcadas "Sim" e quem só está nesta lista vê SÓ essas. Quem estiver nas duas listas vê tudo. Lista vazia = os leitores gerais veem tudo.
@@ -40,6 +40,7 @@ export function garantirTabelaDenuncia() {
     .then(() => consulta("alter table sorelly.denuncia add column if not exists envolve_direcao text not null default ''"))
     .then(() => consulta("alter table sorelly.denuncia add column if not exists resposta text not null default ''"))
     .then(() => consulta("alter table sorelly.denuncia add column if not exists resposta_em timestamptz"))
+    .then(() => consulta("alter table sorelly.denuncia add column if not exists vista_por jsonb not null default '[]'::jsonb"))   // quem já viu (pessoaId): o alerta é por pessoa
     .then(() => consulta("alter table sorelly.denuncia add column if not exists vista_em timestamptz"))   // quando um leitor abriu a lista pela primeira vez: depois disso a denúncia não gera mais alerta
     .catch((e) => { pronta = null; throw e; });
   return pronta;
@@ -90,18 +91,25 @@ export async function gravarDenuncia(d) {
 
 const COLUNAS = "id, protocolo, criado_em, categoria, setor, relacao, frequencia, periodo, envolvidos, relato, testemunhas, evidencia, risco, identificado, contato, situacao, nota, atualizado_em, atualizado_por, envolve_direcao, resposta, resposta_em";
 
+// marca como vista, para ESTA pessoa, tudo o que ela pode ler (em qualquer aparelho). Chamada ao abrir a lista e ao dar "Entendi" no alerta.
+export async function marcarVistas(eu) {
+  await garantirTabelaDenuncia();
+  const eu1 = JSON.stringify([idDe(eu)]);
+  await consulta(`update sorelly.denuncia set vista_em = coalesce(vista_em, now()), vista_por = vista_por || $1::jsonb where not (vista_por @> $1::jsonb)${filtroReservadas(eu)}`, [eu1]);
+}
+
 export async function listarDenuncias(eu) {
   await garantirTabelaDenuncia();
   const r = await consulta(`select ${COLUNAS} from sorelly.denuncia where true${filtroReservadas(eu)} order by criado_em desc limit 1000`);
   // abriu a lista = viu: as denúncias que esta pessoa pode ler deixam de gerar alerta (em qualquer aparelho)
-  await consulta(`update sorelly.denuncia set vista_em = now() where vista_em is null${filtroReservadas(eu)}`);
+  await marcarVistas(eu);
   return r.rows;
 }
 
 // só os números das denúncias ainda não tratadas (situação "nova"): o navegador de quem lê pergunta de tempos em tempos e mostra o alerta
 export async function novasDenuncias(eu) {
   await garantirTabelaDenuncia();
-  const r = await consulta(`select id from sorelly.denuncia where situacao = 'nova' and vista_em is null${filtroReservadas(eu)} order by id`);
+  const r = await consulta(`select id from sorelly.denuncia where situacao = 'nova' and not (vista_por @> $1::jsonb)${filtroReservadas(eu)} order by id`, [JSON.stringify([idDe(eu)])]);
   return r.rows.map((x) => x.id);
 }
 
