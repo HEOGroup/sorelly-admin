@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lançar pedido e enviar proposta · 4 versões do formato 3</title>
+<style>
+  :root{--fundo:#0f1729;--azul:#2d5190;--azul2:#1b2a4a;--azul3:#16223d;--linha:rgba(255,255,255,.35);--ok:#4ade80;--aviso:#fbbf24;--ruim:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1220;color:#fff;font:10px/1.3 Inter,Arial,sans-serif;padding:12px}
+  h1{font-size:14px;text-align:center;margin:0 0 3px}
+  p.sub{text-align:center;margin:0 auto 10px;color:#cbd5e1;font-size:11px;max-width:900px}
+  .fmt{margin:0 0 24px;border:1px solid var(--linha)}
+  .fmt>.nome{background:#fff;color:#0b1220;font-weight:800;padding:4px 8px;text-transform:uppercase;font-size:11px}
+  .fmt>.dica{background:var(--azul3);padding:4px 8px;font-size:10px;color:#dbe4f5;border-bottom:1px solid var(--linha)}
+  .jan{background:var(--fundo);max-width:1040px;margin:0 auto;border:1px solid var(--linha)}
+  .tit{background:var(--azul);text-align:center;font-weight:800;text-transform:uppercase;font-size:12px;padding:5px 8px;position:relative;border-bottom:1px solid var(--linha)}
+  .tit i{position:absolute;right:8px;top:4px;font-style:normal}
+  .bar{background:var(--azul);text-align:center;font-weight:700;text-transform:uppercase;font-size:10px;padding:2px 6px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+  .fluxo{display:flex;justify-content:center;gap:0;background:var(--azul3);border-bottom:1px solid var(--linha)}
+  .fluxo span{padding:3px 12px;font-size:10px;font-weight:700;border-right:1px solid var(--linha)}
+  .fluxo span:last-child{border-right:0}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--linha);padding:1px 4px;text-align:center;font-size:10px;white-space:nowrap;height:21px}
+  th{background:var(--azul2);text-transform:uppercase;font-weight:700}
+  td.k{background:var(--azul3);font-weight:700;text-transform:uppercase;width:34%}
+  tfoot td,tr.tot td{background:var(--azul2);font-weight:800}
+  tr.sel td{background:rgba(251,191,36,.18)}
+  tr.clic{cursor:pointer}
+  input.in,select.in{display:block;width:100%;height:17px;line-height:15px;background:var(--azul2);border:1px solid rgba(255,255,255,.3);border-radius:3px;text-align:center;font:10px Inter,Arial,sans-serif;color:#fff;padding:0 3px;color-scheme:dark}
+  select.in option{background:#1b2a4a}
+  .msgbox{display:block;width:100%;background:var(--azul3);border:0;color:#fff;font:10px/1.35 ui-monospace,Consolas,monospace;padding:5px 8px;resize:none;outline:0}
+  .botoes{display:flex;justify-content:center;flex-wrap:wrap;gap:5px;padding:5px;background:var(--azul2);border-top:1px solid var(--linha)}
+  .bt{height:20px;line-height:18px;padding:0 10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:700 10px Inter,Arial,sans-serif;border-radius:3px;cursor:pointer}
+  .bt.p{border-color:#fbbf24;color:#fbbf24;background:rgba(251,191,36,.18)}
+  .lk{color:#fbbf24;text-decoration:underline;cursor:pointer;font-weight:700}
+  .g12{display:grid;grid-template-columns:1fr 1.05fr} .g12>div+div{border-left:1px solid var(--linha)}
+  .abas{display:flex;justify-content:center;gap:2px;background:var(--azul2);padding:3px;border-bottom:1px solid var(--linha)}
+  .abas button{background:transparent;color:#fff;border:1px solid var(--linha);font:700 10px Inter,Arial;padding:2px 12px;cursor:pointer}
+  .abas button.on{background:rgba(255,255,255,.28)}
+  .painel{display:none}.painel.on{display:block}
+  .ok{color:var(--ok)} .av{color:var(--aviso)} .ruim{color:var(--ruim)}
+  .st{padding:3px 6px;text-align:center;font-size:10px;background:var(--azul3);border-top:1px solid var(--linha);min-height:18px}
+  .ap{max-width:1040px;margin:0 auto 14px;background:var(--fundo);border:1px solid var(--linha)}
+  .ap h2{margin:0;background:var(--azul);font-size:11px;text-transform:uppercase;text-align:center;padding:3px}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+<h1>Lançar pedido e enviar proposta · 4 versões do formato 3</h1>
+<p class="sub">Você preenche o principal (fornecedor, valor, % com nota, CNPJ nosso, nº do pedido, nota). O sistema <b>monta a proposta sozinho</b> com as regras daquele fornecedor, e você <b>muda o que quiser</b> antes de enviar. Tudo abaixo funciona: mude o valor, o % ou o fornecedor e veja a proposta mudar.</p>
+
+<div class="ap">
+  <h2>O que aprendi olhando os pedidos já lançados (regra padrão de cada fornecedor)</h2>
+  <table>
+    <thead><tr><th>Fornecedor</th><th>Pedidos</th><th>% com nota</th><th>Parcelas com nota</th><th>Parcelas sem nota</th><th>1º vencimento</th><th>Intervalo</th><th>Forma com nota</th><th>Forma sem nota</th></tr></thead>
+    <tbody>
+      <tr><td>Pontual</td><td>30</td><td>25% a 30%</td><td>6</td><td>6</td><td>30 dias</td><td>mensal</td><td>Boleto</td><td>Pix revendedora</td></tr>
+      <tr><td>Ellos Galvânica</td><td>27</td><td>30%</td><td>5</td><td>5</td><td>na data</td><td>mensal</td><td>Boleto</td><td>Pix revendedora</td></tr>
+      <tr><td>Mega Sul</td><td>14</td><td>30% (ou 100%)</td><td>6</td><td>6</td><td>na data</td><td>mensal</td><td>Cheque</td><td>Pix revendedora</td></tr>
+      <tr><td>Art Ello</td><td>10</td><td>30%</td><td>3</td><td>3</td><td>na data</td><td>mensal</td><td>Boleto</td><td>Pix revendedora</td></tr>
+      <tr><td>Office Graf</td><td>8</td><td>20%</td><td>5</td><td>5</td><td>30 dias</td><td>mensal</td><td>Boleto</td><td>Pix revendedora</td></tr>
+      <tr><td>Point</td><td>16</td><td>0% (sem nota)</td><td>—</td><td>1</td><td>30 dias</td><td>à vista</td><td>—</td><td>Pix revendedora</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div id="app"></div>
+
+<script>
+var REGRAS = {
+  "Pontual":        {pct:30, nCom:6, nSem:6, primeiro:30, intervalo:30, fCom:"Boleto", fSem:"Pix revendedora"},
+  "Ellos Galvânica":{pct:30, nCom:5, nSem:5, primeiro:0,  intervalo:30, fCom:"Boleto", fSem:"Pix revendedora"},
+  "Mega Sul":       {pct:30, nCom:6, nSem:6, primeiro:0,  intervalo:30, fCom:"Cheque", fSem:"Pix revendedora"},
+  "Art Ello":       {pct:30, nCom:3, nSem:3, primeiro:0,  intervalo:30, fCom:"Boleto", fSem:"Pix revendedora"},
+  "Office Graf":    {pct:20, nCom:5, nSem:5, primeiro:30, intervalo:30, fCom:"Boleto", fSem:"Pix revendedora"},
+  "Point":          {pct:0,  nCom:0, nSem:1, primeiro:30, intervalo:30, fCom:"Boleto", fSem:"Pix revendedora"}
+};
+var CN = {"34":["Sorelly Atacadista","34.753.252/0001-03"],"46":["Sorelly Comércio","46.873.285/0001-76"],"59":["Serenity Porta Joias","59.146.403/0001-96"],"67":["Axis Joias","67.702.461/0001-87"]};
+var FCNPJ = {"Pontual":"32.206.541/0001-67"};
+var FORMAS = ["Boleto","Cheque","Pix empresa","Cartão","Pix revendedora"];
+
+function fmt(v){ return "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pbr(t){ var n = parseFloat(String(t).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".")); return isNaN(n)?0:n; }
+function iso(d){ return d.toISOString().slice(0,10); }
+function addDias(s,n){ var d=new Date(s+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return iso(d); }
+function addMes(s,n){ var d=new Date(s+"T12:00:00Z"), dia=d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+n); var ult=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate(); d.setUTCDate(Math.min(dia,ult)); return iso(d); }
+function br(s){ return s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4); }
+function fds(s){ var w=new Date(s+"T12:00:00Z").getUTCDay(); return w===0?"domingo":w===6?"sábado":""; }
+function dividir(v,n){ if(n<=0||v<=0) return []; var u=Math.floor(v/n*100)/100, r=Math.round((v-u*n)*100)/100, o=[]; for(var i=0;i<n;i++) o.push(i===n-1?Math.round((u+r)*100)/100:u); return o; }
+
+function gerar(S){
+  var r = S.ov || S.r, tot = pbr(S.total), com = Math.round(tot*(+S.pct||0))/100, sem = Math.round((tot-com)*100)/100;
+  var base = addDias(S.data, +r.primeiro||0);
+  function datas(n){ var o=[]; for(var i=0;i<n;i++) o.push((+r.intervalo===30)?addMes(base,i):addDias(base,i*(+r.intervalo||30))); return o; }
+  var vc = dividir(com,+r.nCom||0), vs = dividir(sem,+r.nSem||0), dc = datas(vc.length), ds = datas(vs.length);
+  return { com: vc.map(function(v,i){ return {venc:dc[i],valor:v}; }), sem: vs.map(function(v,i){ return {venc:ds[i],valor:v}; }), tot:tot, comV:com, semV:sem };
+}
+function soma(a){ return Math.round(a.reduce(function(s,x){return s+x.valor;},0)*100)/100; }
+var NUM = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
+function msg(S){
+  var P=S.P, r=S.ov||S.r, c=CN[S.cnpj], bn=FCNPJ[S.forn], L=[];
+  L.push("🧾 PEDIDO "+S.forn.toUpperCase()+" — NF "+(S.nped||"---"),"","🏢 Pagador: CNPJ "+c[0]+" "+c[1]);
+  L.push("🏭 Beneficiário: "+S.forn+(bn?" ("+bn+")":""),"📅 Doc.: "+br(S.data),"","💰 VALOR TOTAL: "+fmt(P.tot),"");
+  function bloco(tit,a,ic){ if(!a.length) return; L.push("━━━━━━━━━━━━━━━",ic+" "+tit+" — "+fmt(soma(a))); a.forEach(function(x,i){ L.push((NUM[i]||(i+1)+".")+" "+br(x.venc)+" — "+fmt(x.valor)+(fds(x.venc)?" ⚠️ ("+fds(x.venc)+")":"")); }); L.push("✅ Total: "+fmt(soma(a))); }
+  bloco(r.fCom.toUpperCase()+" ("+(+S.pct)+"% com nota)",P.com,"📄");
+  bloco(r.fSem.toUpperCase()+" ("+(100-(+S.pct))+"%)",P.sem,"💸");
+  L.push("━━━━━━━━━━━━━━━","💰 TOTAL GERAL: "+fmt(soma(P.com)+soma(P.sem)));
+  return L.join("\n");
+}
+
+/* ---------- peças ---------- */
+function inp(k,v,ex){ return '<input class="in" data-k="'+k+'" value="'+(v==null?"":v)+'" '+(ex||"")+'>'; }
+function sel(k,v,opts){ return '<select class="in" data-k="'+k+'">'+opts.map(function(o){ var val=Array.isArray(o)?o[0]:o, tx=Array.isArray(o)?o[1]:o; return '<option value="'+val+'"'+(String(val)===String(v)?" selected":"")+'>'+tx+'</option>'; }).join("")+'</select>'; }
+function rin(k,v,ex){ return '<input class="in" data-r="'+k+'" value="'+v+'" '+(ex||"")+'>'; }
+function rsel(k,v){ return '<select class="in" data-r="'+k+'">'+FORMAS.map(function(o){ return '<option'+(o===v?" selected":"")+'>'+o+'</option>'; }).join("")+'</select>'; }
+function row(l,h){ return '<tr><td class="k">'+l+'</td><td>'+h+'</td></tr>'; }
+function pedido(S){
+  return '<div class="bar">Pedido · o que você preenche</div><table>'+
+   row("Fornecedor", sel("forn",S.forn,Object.keys(REGRAS)))+
+   row("Nº do pedido / nota", inp("nped",S.nped))+
+   row("Data da nota", inp("data",S.data,'type="date"'))+
+   row("CNPJ nosso", sel("cnpj",S.cnpj,Object.keys(CN).map(function(k){return [k,k+" · "+CN[k][0]];})))+
+   row("Valor total", inp("total",S.total))+
+   row("% com nota", inp("pct",S.pct,'type="number" min="0" max="100"'))+
+   row("Arquivo da nota", '<label class="lk">'+(S.nf?S.nf+" · trocar":"Anexar")+'<input type="file" data-file="nf"></label>')+
+   '</table>';
+}
+function regras(S,compacto){
+  var r=S.r;
+  if(compacto) return '<div class="bar">Regra de '+S.forn+' (já aplicada · pode mudar)</div><table><thead><tr><th>Boletos</th><th>Pix</th><th>1º venc. (dias)</th><th>Intervalo (dias)</th><th>Forma com nota</th><th>Forma sem nota</th></tr></thead><tbody><tr><td>'+rin("nCom",r.nCom,'type="number" min="0"')+'</td><td>'+rin("nSem",r.nSem,'type="number" min="0"')+'</td><td>'+rin("primeiro",r.primeiro,'type="number" min="0"')+'</td><td>'+rin("intervalo",r.intervalo,'type="number" min="1"')+'</td><td>'+rsel("fCom",r.fCom)+'</td><td>'+rsel("fSem",r.fSem)+'</td></tr></tbody></table>'+anexoRegra(S);
+  return '<div class="bar">Regras de negociação de '+S.forn+'</div><table>'+
+    row("Parcelas com nota", rin("nCom",r.nCom,'type="number" min="0"'))+row("Parcelas sem nota", rin("nSem",r.nSem,'type="number" min="0"'))+
+    row("1º vencimento (dias)", rin("primeiro",r.primeiro,'type="number" min="0"'))+row("Intervalo (dias, 30 = mensal)", rin("intervalo",r.intervalo,'type="number" min="1"'))+
+    row("Forma com nota", rsel("fCom",r.fCom))+row("Forma sem nota", rsel("fSem",r.fSem))+'</table>'+anexoRegra(S);
+}
+function anexoRegra(S){ return '<table><tr><td class="k">Arquivo das regras</td><td><label class="lk" data-out="regraNome">'+(S.regraArq?S.regraArq+" · trocar":"Anexar regras (PDF, foto ou texto)")+'<input type="file" data-file="regraArq"></label></td><td style="width:1%"><span class="lk" data-act="padrao">Salvar como padrão</span></td></tr></table>'; }
+function resumo(){ return '<div data-out="resumo"></div>'; }
+function msgBloco(S,h){ return '<div class="bar">Proposta · gerada pelo sistema <span class="lk" data-act="refazer" data-out="badge" style="margin-left:6px"></span></div><textarea class="msgbox" data-out="msg" style="height:'+(h||280)+'px"></textarea>'; }
+function parcTab(S,edit){
+  function ln(a,tipo,forma){ return a.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td>'+forma+'</td><td>'+(edit?'<input class="in" type="date" data-p="'+tipo+':'+i+':venc" value="'+x.venc+'">':br(x.venc))+'</td><td>'+(edit?'<input class="in" data-p="'+tipo+':'+i+':valor" value="'+x.valor.toLocaleString("pt-BR",{minimumFractionDigits:2})+'">':fmt(x.valor))+'</td></tr>'; }).join(""); }
+  var r=S.ov||S.r;
+  return '<table><thead><tr><th>#</th><th>Forma</th><th>Vencimento</th><th>Valor</th></tr></thead><tbody>'+ln(S.P.com,"com",r.fCom)+ln(S.P.sem,"sem",r.fSem)+'</tbody><tfoot><tr><td colspan="3">Total · '+(Math.abs(soma(S.P.com)+soma(S.P.sem)-S.P.tot)<0.01?'<span class="ok">fecha certo ✓</span>':'<span class="ruim">não fecha: diferença de '+fmt(S.P.tot-soma(S.P.com)-soma(S.P.sem))+'</span>')+'</td><td>'+fmt(soma(S.P.com)+soma(S.P.sem))+'</td></tr></tfoot></table>';
+}
+function resumoTab(S){
+  var ok=Math.abs(soma(S.P.com)+soma(S.P.sem)-S.P.tot)<0.01;
+  return '<table><thead><tr><th>Com nota</th><th>Sem nota</th><th>Parcelas</th><th>Fecha</th></tr></thead><tbody><tr><td>'+fmt(S.P.comV)+'</td><td>'+fmt(S.P.semV)+'</td><td>'+(S.P.com.length+S.P.sem.length)+'</td><td>'+(ok?'<span class="ok">✓</span>':'<span class="ruim">não</span>')+'</td></tr></tbody></table>';
+}
+function botoes(){ return '<div class="botoes"><button class="bt" data-act="cancelar">Cancelar</button><button class="bt" data-act="copiar">Copiar proposta</button><button class="bt" data-act="so">Só lançar o pedido</button><button class="bt p" data-act="enviar">Enviar proposta e lançar pedido</button></div><div class="st" data-out="st">Mude qualquer campo: a proposta se refaz sozinha.</div>'; }
+function janela(corpo){ return '<div class="jan"><div class="tit">Lançar pedido e enviar proposta<i>✕</i></div><div class="fluxo"><span>1 · Você preenche o principal</span><span>2 · O sistema monta a proposta</span><span>3 · Você muda se quiser e envia</span></div>'+corpo+botoes()+'</div>'; }
+
+/* ---------- 4 versões ---------- */
+var V = [
+ { nome:"Versão A · Formulário, regras embaixo, proposta ao vivo",
+   dica:"O formato 3 como está: à esquerda o pedido e logo embaixo as regras do fornecedor (já preenchidas, editáveis, com anexo). À direita a proposta pronta e editável à mão.",
+   tpl:function(S){ return janela('<div class="g12"><div>'+pedido(S)+regras(S,false)+resumo()+'</div><div>'+msgBloco(S,420)+'<div class="bar">Parcelas</div><div data-out="parc"></div></div></div>'); } },
+ { nome:"Versão B · Parcelas editáveis (muda data e valor de cada parcela)",
+   dica:"Pedido e regras compactas à esquerda. À direita, as parcelas viram campos: mude uma data ou um valor e a mensagem se refaz. Se a soma não fechar, avisa.",
+   tpl:function(S){ return janela('<div class="g12"><div>'+pedido(S)+regras(S,true)+resumo()+'</div><div><div class="bar">Parcelas · clique e mude</div><div data-out="parcEdit"></div>'+msgBloco(S,230)+'</div></div>'); } },
+ { nome:"Versão C · Esquerda só o pedido, direita em abas (Proposta, Parcelas, Regras)",
+   dica:"A esquerda fica limpa, só com o que você preenche. A direita tem 3 abas: a proposta, as parcelas e as regras com o anexo. É a mais baixa e a mais organizada.",
+   tpl:function(S){ return janela('<div class="g12"><div>'+pedido(S)+resumo()+'</div><div><div class="abas"><button class="on" data-aba="0">Proposta</button><button data-aba="1">Parcelas</button><button data-aba="2">Regras e anexo</button></div>'+
+     '<div class="painel on" data-pn="0">'+msgBloco(S,330)+'</div><div class="painel" data-pn="1"><div data-out="parcEdit"></div></div><div class="painel" data-pn="2">'+regras(S,false)+'</div></div></div>'); } },
+ { nome:"Versão D · O sistema oferece 3 propostas e você escolhe",
+   dica:"Em vez de uma só, o sistema monta 3 propostas (regra do fornecedor, mais curta e mais longa). Você toca numa, vê a mensagem dela e muda se quiser. Mais rápido para negociar.",
+   tpl:function(S){ return janela('<div class="g12"><div>'+pedido(S)+regras(S,true)+resumo()+'</div><div><div class="bar">3 propostas · toque para escolher</div><div data-out="sug"></div>'+msgBloco(S,270)+'</div></div>'); } }
+];
+
+/* ---------- motor ---------- */
+function mount(root, v){
+  var S = {forn:"Pontual", nped:"11881", data:"2026-11-12", cnpj:"46", total:"28.767,81", pct:30, nf:"NF-11881.pdf", regraArq:"", manual:false, ov:null, sug:0};
+  S.r = JSON.parse(JSON.stringify(REGRAS[S.forn]));
+  root.innerHTML = '<div class="fmt"><div class="nome">'+v.nome+'</div><div class="dica">'+v.dica+'</div>'+v.tpl(S)+'</div>';
+  var box = root.querySelector(".fmt");
+  function q(n){ return box.querySelectorAll('[data-out="'+n+'"]'); }
+  function saida(src){
+    if(src!=="parc"){ S.P = gerar(S); }
+    q("resumo").forEach(function(e){ e.innerHTML = resumoTab(S); });
+    if(src!=="parc"){ q("parc").forEach(function(e){ e.innerHTML = parcTab(S,false); }); q("parcEdit").forEach(function(e){ e.innerHTML = parcTab(S,true); }); }
+    else { q("parcEdit").forEach(function(e){ var t=e.querySelector("tfoot"); var n=document.createElement("div"); n.innerHTML=parcTab(S,true); e.querySelector("tfoot").innerHTML=n.querySelector("tfoot").innerHTML; }); }
+    q("sug").forEach(function(e){ e.innerHTML = sugTab(); });
+    q("msg").forEach(function(e){ if(!S.manual) e.value = msg(S); });
+    q("badge").forEach(function(e){ e.textContent = S.manual ? "· editada à mão · ↻ refazer pelas regras" : ""; });
+    q("regraNome").forEach(function(e){ e.firstChild.nodeValue = S.regraArq ? S.regraArq+" · trocar" : "Anexar regras (PDF, foto ou texto)"; });
+  }
+  function sugTab(){
+    var r=S.r, op=[["Regra do fornecedor",{nCom:r.nCom,nSem:r.nSem}],["Mais curta",{nCom:Math.min(3,r.nCom),nSem:Math.min(3,r.nSem||3)}],["Mais longa",{nCom:r.nCom?12:0,nSem:12}]];
+    var h='<table><thead><tr><th>Proposta</th><th>Com nota</th><th>Sem nota</th><th>Parcela com</th><th>Parcela sem</th><th>Último venc.</th></tr></thead><tbody>';
+    op.forEach(function(o,i){ var old=S.ov; S.ov=Object.assign({},S.r,o[1]); var P=gerar(S); S.ov=old;
+      var u=(P.sem.length?P.sem:P.com); u=u[u.length-1];
+      h+='<tr class="clic'+(S.sug===i?' sel':'')+'" data-sug="'+i+'"><td>'+(S.sug===i?'● ':'○ ')+o[0]+'</td><td>'+o[1].nCom+'x</td><td>'+o[1].nSem+'x</td><td>'+(P.com[0]?fmt(P.com[0].valor):'—')+'</td><td>'+(P.sem[0]?fmt(P.sem[0].valor):'—')+'</td><td>'+(u?br(u.venc):'—')+'</td></tr>'; });
+    S._op=op; return h+'</tbody></table>';
+  }
+  function aplicaSug(){ if(S._op && box.querySelector('[data-out="sug"]')){ S.ov=Object.assign({},S.r,S._op[S.sug][1]); } }
+  box.addEventListener("input", function(ev){
+    var t=ev.target;
+    if(t.dataset.k){
+      var k=t.dataset.k; S[k]=t.value;
+      if(k==="forn"){ S.r=JSON.parse(JSON.stringify(REGRAS[S.forn])); S.pct=S.r.pct; box.querySelector('[data-k="pct"]').value=S.pct; refazRegras(); }
+      S.manual=false; sugInit(); saida();
+    } else if(t.dataset.r){ S.r[t.dataset.r]=t.value; S.manual=false; sugInit(); saida(); }
+    else if(t.dataset.p){ var a=t.dataset.p.split(":"), arr=S.P[a[0]]; arr[+a[1]][a[2]] = a[2]==="valor" ? pbr(t.value) : t.value; S.manual=false; saida("parc"); }
+    else if(t.dataset.out==="msg"){ S.manual=true; q("badge").forEach(function(e){ e.textContent="· editada à mão · ↻ refazer pelas regras"; }); }
+  });
+  function refazRegras(){ box.querySelectorAll("[data-r]").forEach(function(e){ e.value=S.r[e.dataset.r]; }); }
+  function sugInit(){ if(box.querySelector('[data-out="sug"]')){ sugTab(); aplicaSug(); } }
+  box.addEventListener("change", function(ev){
+    var t=ev.target; if(t.dataset.file){ var n=t.files[0]?t.files[0].name:""; S[t.dataset.file]=n; if(t.dataset.file==="nf"){ t.parentNode.firstChild.nodeValue=(n||"Anexar")+(n?" · trocar":""); } saida("parc"); }
+  });
+  box.addEventListener("click", function(ev){
+    var t=ev.target.closest("[data-act],[data-aba],[data-sug]"); if(!t) return;
+    var st=q("st")[0];
+    if(t.dataset.aba!=null){ box.querySelectorAll(".abas button").forEach(function(b){ b.classList.toggle("on",b===t); }); box.querySelectorAll(".painel").forEach(function(p){ p.classList.toggle("on",p.dataset.pn===t.dataset.aba); }); return; }
+    if(t.dataset.sug!=null){ S.sug=+t.dataset.sug; S.manual=false; aplicaSug(); saida(); return; }
+    var a=t.dataset.act;
+    if(a==="refazer"){ S.manual=false; saida(); st.textContent="Proposta refeita pelas regras."; }
+    if(a==="copiar"){ var tx=q("msg")[0].value; try{ navigator.clipboard.writeText(tx); st.textContent="Proposta copiada."; }catch(e){ st.textContent="Selecione o texto e copie."; } }
+    if(a==="padrao"){ REGRAS[S.forn]=Object.assign({},S.r,{pct:+S.pct}); st.textContent="Salvo: a regra de "+S.forn+" agora vale para os próximos pedidos."; }
+    if(a==="so"){ st.textContent="No sistema real: lança o pedido sem enviar a proposta."; }
+    if(a==="enviar"){ st.textContent="No sistema real: copia a proposta, abre o WhatsApp e já lança o pedido "+S.nped+" ("+fmt(S.P.tot)+")."; }
+    if(a==="cancelar"){ st.textContent="Janela fechada sem salvar."; }
+  });
+  S.P = gerar(S); sugInit(); saida();
+}
+var app = document.getElementById("app");
+V.forEach(function(v,i){ var d=document.createElement("div"); d.id="v"+i; app.appendChild(d); mount(d,v); });
+</script>
+</body>
+</html>

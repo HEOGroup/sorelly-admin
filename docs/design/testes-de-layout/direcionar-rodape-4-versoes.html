@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direcionar: rodapé em 4 versões</title>
+<style>
+  :root{--bg:#0e0f11;--card:#16171a;--cab:#1c1d21;--borda:#2b2d33;--texto:#fff;--ouro:#d9a63a;--btn:#E8B84B;--verde:#4ade80;--verm:#f87171;--amar:#f5c14b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--texto);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif}
+  .pagina{max-width:1240px;margin:0 auto;padding:16px}
+  h1{font-size:20px;margin:0 0 4px;text-align:center}
+  .sub{text-align:center;margin:0 0 12px}
+  .barra{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:0 auto 12px;align-items:center}
+  .seg{display:flex;border:1px solid var(--borda);border-radius:8px;overflow:hidden}
+  .seg button{height:32px;padding:0 16px;background:var(--card);color:var(--texto);border:0;border-right:1px solid var(--borda);font:inherit;cursor:pointer}
+  .seg button:last-child{border-right:0}.seg button.on{background:var(--btn);color:#1a1306;font-weight:700}
+  .nota{border:1px solid var(--borda);border-radius:8px;background:var(--card);padding:8px 12px;margin:0 0 12px;text-align:center}
+  /* o bloco: borda dourada como na tela de hoje; em cima, só um pedaço da grade, para dar o contexto */
+  .painel{border:3px solid var(--ouro);border-radius:10px;background:var(--card);overflow:hidden}
+  .ctx{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--borda);opacity:.55}
+  .ctx div{background:var(--card);height:32px;display:flex;align-items:center;justify-content:center;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .ctx div.cb{background:var(--cab);height:30px;font-weight:600}
+  .verde{color:var(--verde)}.verm{color:var(--verm)}.amar{color:var(--amar)}
+  .grade{display:grid;gap:1px;background:var(--borda)}
+  .c{background:var(--card);display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:4px 10px}
+  .c.rot{background:var(--cab);min-height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .emp{flex-direction:column;gap:2px}
+  .emp small{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .emp b{font-size:16px;font-variant-numeric:tabular-nums}
+  button.bt{height:32px;border:1px solid var(--borda);border-radius:6px;background:var(--cab);color:var(--texto);font:inherit;padding:0 14px;cursor:pointer;white-space:nowrap}
+  button.ok{background:#E8B84B33;border-color:var(--btn);color:var(--btn);font-weight:700}
+  button.ok[disabled]{opacity:.5;cursor:not-allowed;background:var(--cab);border-color:var(--borda);color:var(--texto)}
+  .prog{width:100%;height:10px;border-radius:5px;background:#ffffff1a;overflow:hidden}
+  .prog i{display:block;height:100%}
+  .titulo{margin:16px 0 6px;text-align:center;font-weight:700}
+  .rolagem{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="pagina">
+  <h1>Direcionar: rodapé em 4 versões</h1>
+  <p class="sub">Só a parte de baixo do bloco. Toda a base com UMA cor de fundo e linhas finas; a cor só aparece no número que importa. Mude o estado para ver cada caso.</p>
+  <div class="barra"><span>Estado do pedido:</span><div class="seg" id="estados"></div></div>
+  <div id="area"></div>
+</div>
+<script>
+var R = function(v){ return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var TOTAL = 1505.94;
+var ESTADOS = {
+  pend:{nome:"Falta indicar", env:0, pag:1, aviso:"—", avCor:"", ok:false, sug:true},
+  ok:{nome:"Tudo indicado", env:TOTAL, pag:1, aviso:"—", avCor:"", ok:true, sug:false},
+  av:{nome:"Com aviso", env:TOTAL, pag:1, aviso:"Atenção: mistura conta que fatura (CNPJ) com conta que não fatura.", avCor:"amar", ok:true, sug:false},
+  err:{nome:"Com erro", env:600, pag:1, aviso:"Falta definir Pix: falta R$ 905,94.", avCor:"verm", ok:false, sug:true}
+};
+var EST = "ok";
+var falta = function(s){ return Math.round((TOTAL-s.env)*100)/100; };
+var corFalta = function(s){ return falta(s)>0.005 ? "amar" : "verde"; };
+var btnSug = function(s){ return s.sug ? '<button class="bt">Usar todas as sugestões</button>' : ''; };
+var btnOk = function(s){ return '<button class="bt ok"'+(s.ok?'':' disabled')+'>OK · enviar</button>'; };
+var contexto = function(){ return '<div class="ctx"><div class="cb">Pagamento</div><div class="cb">Modo</div><div class="cb">Conta</div><div class="cb">Valor</div><div class="cb">Sugestão</div><div class="cb">Ação</div><div>Pix</div><div>Inteiro</div><div>CNPJ 34 · Safra 34</div><div>'+R(TOTAL)+'</div><div>Pontual</div><div>✓</div></div>'; };
+
+// V1: uma faixa, uma cor. Cada número com o título em cima (empilhado), tudo no mesmo fundo
+function v1(s){
+  return '<div class="grade" style="grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.6fr) auto auto">'+
+    '<div class="c emp"><small>Falta enviar</small><b class="'+corFalta(s)+'">'+R(Math.max(falta(s),0))+'</b></div>'+
+    '<div class="c emp"><small>Pagamentos</small><b>'+s.pag+'</b></div>'+
+    '<div class="c emp"><small>Enviado</small><b>'+R(s.env)+'</b></div>'+
+    '<div class="c emp"><small>Total</small><b>'+R(TOTAL)+'</b></div>'+
+    '<div class="c emp"><small>Aviso</small><span class="'+s.avCor+'">'+s.aviso+'</span></div>'+
+    '<div class="c">'+(s.sug?btnSug(s):'<span>—</span>')+'</div><div class="c">'+btnOk(s)+'</div></div>';
+}
+// V2: tabela de uma linha: faixa de títulos escura em cima e uma linha de valores embaixo, como as outras tabelas da tela
+function v2(s){
+  return '<div class="rolagem"><div class="grade" style="grid-template-columns:repeat(3,minmax(110px,1fr)) minmax(0,2fr) 210px 130px;min-width:960px">'+
+    '<div class="c rot">Falta enviar</div><div class="c rot">Pagamentos</div><div class="c rot">Enviado</div><div class="c rot">Aviso</div><div class="c rot">Sugestões</div><div class="c rot">Enviar</div>'+
+    '<div class="c"><b class="'+corFalta(s)+'">'+R(Math.max(falta(s),0))+'</b></div><div class="c">'+s.pag+'</div><div class="c">'+R(s.env)+'</div><div class="c"><span class="'+s.avCor+'">'+s.aviso+'</span></div>'+
+    '<div class="c">'+(s.sug?btnSug(s):'—')+'</div><div class="c">'+btnOk(s)+'</div></div></div>';
+}
+// V3: dois blocos. Esquerda: os 3 números; direita: aviso e os botões. A cor de estado só na linha de cima do "Falta enviar"
+function v3(s){
+  var cor = falta(s)>0.005 ? "var(--amar)" : "var(--verde)";
+  return '<div class="grade" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">'+
+    '<div class="grade" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+
+      '<div class="c rot">Falta enviar</div><div class="c rot">Pagamentos</div><div class="c rot">Enviado</div>'+
+      '<div class="c" style="box-shadow:inset 0 3px 0 '+cor+'"><b class="'+corFalta(s)+'" style="font-size:16px">'+R(Math.max(falta(s),0))+'</b></div><div class="c" style="font-size:16px"><b>'+s.pag+'</b></div><div class="c"><b style="font-size:16px">'+R(s.env)+'</b></div></div>'+
+    '<div class="grade" style="grid-template-columns:minmax(0,1fr) auto auto">'+
+      '<div class="c rot">Aviso</div><div class="c rot">Sugestões</div><div class="c rot">Enviar</div>'+
+      '<div class="c"><span class="'+s.avCor+'">'+s.aviso+'</span></div><div class="c">'+(s.sug?btnSug(s):'—')+'</div><div class="c">'+btnOk(s)+'</div></div></div>';
+}
+// V4: barra de progresso. Uma célula larga mostra quanto já foi indicado; números e botões nas células ao lado
+function v4(s){
+  var pct = Math.min(100, Math.round(s.env/TOTAL*100)), cor = falta(s)>0.005 ? "var(--amar)" : "var(--verde)";
+  return '<div class="grade" style="grid-template-columns:minmax(0,2.4fr) repeat(2,minmax(0,.8fr)) minmax(0,1.6fr) auto auto">'+
+    '<div class="c emp" style="align-items:stretch;padding:8px 14px"><small style="text-align:center">Indicado: '+R(s.env)+' de '+R(TOTAL)+' ('+pct+'%)</small><div class="prog"><i style="width:'+pct+'%;background:'+cor+'"></i></div></div>'+
+    '<div class="c emp"><small>Falta enviar</small><b class="'+corFalta(s)+'">'+R(Math.max(falta(s),0))+'</b></div>'+
+    '<div class="c emp"><small>Pagamentos</small><b>'+s.pag+'</b></div>'+
+    '<div class="c emp"><small>Aviso</small><span class="'+s.avCor+'">'+s.aviso+'</span></div>'+
+    '<div class="c">'+(s.sug?btnSug(s):'—')+'</div><div class="c">'+btnOk(s)+'</div></div>';
+}
+var VERSOES = [["1","Uma faixa, uma cor","Cada número com o título em cima, todos no mesmo fundo. Cabem quatro números e os dois botões.",v1],
+  ["2","Tabela de uma linha","Igual às outras tabelas da tela: faixa escura de títulos em cima e uma linha de valores embaixo.",v2],
+  ["3","Dois blocos","Esquerda: os 3 números. Direita: aviso e botões. A cor do estado fica só numa linha fina em cima de Falta enviar.",v3],
+  ["4","Barra de progresso","Uma barra mostra quanto já foi indicado do total. Verde quando fecha, amarelo quando falta.",v4]];
+function desenha(){
+  document.getElementById("estados").innerHTML = Object.keys(ESTADOS).map(function(k){ return '<button data-e="'+k+'" class="'+(EST===k?'on':'')+'">'+ESTADOS[k].nome+'</button>'; }).join("");
+  var s = ESTADOS[EST];
+  document.getElementById("area").innerHTML = VERSOES.map(function(v){ return '<div class="titulo">Versão '+v[0]+' · '+v[1]+'</div><div class="nota" style="margin:0 0 6px">'+v[2]+'</div><div class="painel">'+contexto()+v[3](s)+'</div>'; }).join("");
+}
+document.addEventListener("click", function(ev){ var b = ev.target.closest("[data-e]"); if(b){ EST = b.getAttribute("data-e"); desenha(); } });
+desenha();
+</script>
+</body>
+</html>

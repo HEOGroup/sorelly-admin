@@ -17,7 +17,7 @@ var MENU_FINANCEIRO = [
   M("Contas bancárias","caixa"),
   M("Faturas","fffaturas"),   // só de faturas do cartão (Marcus, 19/11/2026); só os sócios abrem   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
-    M("Pagas","pagaspordia"), M("A pagar","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
+    M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Comissão interna","comisstodos"), M("Agendamento","agbonus"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
     {nome:"Fornecedores", itens:[M("Conferência de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
@@ -25,7 +25,7 @@ var MENU_FINANCEIRO = [
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
     {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
     ]},
-  {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), {nome:"Contas", itens:[M("A pagar / Pagas","ctafam")]}, M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
+  {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), {nome:"Contas", itens:[M("A pagar","ffcontas"), M("Pagas","ffpagas")]}, M("Gasto por casa","ffcasas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
   {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]},
   {nome:"Cadastro", itens:[M("Bancos","finbancos"), M("Formas de pagamento","finformas")]},   // copia da DevMaster (Marcus, 20/11/2026): bancos e tipos de numerário, com dono e uso em 90 dias
@@ -62,6 +62,7 @@ var MENU_CADPECAS = [
 var MENU_ENCOMENDAS = [
   M("Funil de pedidos","encomendas"),
   M("Top 100","enctop50"),
+  M("Ranking","encranking"),
   M("Representantes","encrep"),
   M("Expositores","expositores"),
   M("Regras e mensagens","encregras")
@@ -79,14 +80,14 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 ];
 
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
-var MENU_PRODUCAO = [M("Produção","producao"), M("Premiação","prodpremio"), M("Produção externa","prodcasa"), M("Cadastro","prodfunc")];   // setor próprio desde 16/11/2026: Produção (grade do mês), Premiação, Produção externa (Dávila) e Cadastro
+var MENU_PRODUCAO = [M("Produção","producao"), M("Premiação","prodpremio"), M("Produção externa","prodcasa"), M("Pagamento por produção","prodpagproducao"), M("Cadastro","prodfunc")];   // setor próprio desde 16/11/2026: Produção (grade do mês), Premiação, Produção externa (Dávila) e Cadastro
 var MENU_REPRESENTANTES = [
   // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
-  {nome:"Montagem", itens:[M("Listagens","painel"), M("Fila de montagem","filamont"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
+  {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
-  {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
-  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
-  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto")]}   // 12/11/2026 (Marcus): a tela Configurações saiu do menu (as regras seguem o PDF e não se editam aqui)
+  {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
+  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]}
+  // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
 // Menu do RH (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o dia → pessoas → contratos → acessos → configurar. Nenhuma tela saiu: só mudou de lugar. Contratos ganhou Crédito bancário, Aluguéis e Consórcios.
@@ -163,9 +164,9 @@ var SETORES = [
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
-      ["Contas a pagar", [T("ctalista","A pagar"), T("pagaspordia","Contas pagas"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
-      ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras"), T("ffgrupo","Resumo do grupo")]],
-      ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
+      ["Contas a pagar", [T("ctalista","A pagar / Pagas"), T("pagaspordia","Contas pagas"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
+      ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ctafam","Contas a pagar da família"), T("ctafamp","Contas pagas da família"), T("ffpix","PIX revendedoras"), T("ffgrupo","Resumo do grupo")]],
+      ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores")]]]),
     G("Pagamentos a\nfornecedores", [
       ["Principal", [T("pfresumo","Geral"), T("pflanc","Conferência de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
       ["Cadastros", [T("pfcadastro","Cadastro"), T("pfforn","Fornecedores"), T("pfprest","Prestadores de serviço")]]]),
@@ -223,7 +224,7 @@ var SETORES = [
   ]},
   // Produção de peças: setor próprio (16/11/2026, pedido do Marcus). Saiu de Representantes & Kits › Montagem; a tela e os dados são os mesmos (`pages/Producao.js`, `domain/producao.js`).
   {id:"producao", nome:"Produção", ic:"montadora", cor:"#EC4899", menu:MENU_PRODUCAO, semAbas:true, areas:[
-    {nome:"Produção", telas:[T("producao","Produção"), T("prodpremio","Premiação"), T("prodcasa","Produção externa"), T("prodfunc","Cadastro")]}]},
+    {nome:"Produção", telas:[T("producao","Produção"), T("prodpremio","Premiação"), T("prodcasa","Produção externa"), T("prodpagproducao","Pagamento por produção"), T("prodfunc","Cadastro")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
   // 12/11/2026 (Marcus): o relatório de links de pagamento mora AQUI, no setor Link de pagamento (saiu do Financeiro).
   {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, areas:[
@@ -247,6 +248,7 @@ var SETORES = [
   {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
     {nome:"Top 100", telas:[T("enctop50","Top 100")]},
+    {nome:"Ranking", telas:[T("encranking","Ranking")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
     {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},

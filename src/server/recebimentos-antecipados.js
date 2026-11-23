@@ -78,7 +78,7 @@ export async function lancar(eu, b, deps) {
     let cp = null; if (item.compKey) cp = await copiarAnexo(item.compKey, "ff", por);
     let falha = null, pixId = "";
     await gravarModulo("ff", {}, "patch", por, (guardado, novo) => {
-      const r = espelharNaFamilia(guardado, { personaId: item.personaId, contaId: item.contaId, data: item.data, valor: item.valor, origem: item.rev, por, divida: String(b.divida || "").slice(0, 120), semAcerto: item.tipo === "outro", compKey: cp && cp.key, compNome: cp && cp.nome, compTipo: cp && cp.tipo });
+      const r = espelharNaFamilia(guardado, { personaId: item.personaId, contaId: item.contaId, data: item.data, valor: item.valor, origem: item.rev, por, divida: String(b.divida || "").slice(0, 120), semAcerto: item.tipo === "outro", casa: item.casa, compKey: cp && cp.key, compNome: cp && cp.nome, compTipo: cp && cp.tipo });
       if (r.erro) { falha = r.erro; return novo; }
       pixId = r.pixId;
       return Object.assign({}, novo, r.dividaId ? { pix: r.ff.pix, repasses: r.ff.repasses, dividas: r.ff.dividas, hist: r.ff.hist } : { pix: r.ff.pix, repasses: r.ff.repasses, hist: r.ff.hist });   // só as listas que o Pix mexe (com dívida junto, também a das dívidas)

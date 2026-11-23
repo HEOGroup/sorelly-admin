@@ -199,8 +199,8 @@ function avisoRemarcacao(r, c, hojeIso){
   if(c && (c.tipo==="desmarcado" || c.tipo==="nao_veio")){
     var vez = res.cobraveis, mm = res.atual, pp = res.proxima, fato = c.tipo==="nao_veio" ? "Você não veio no horário combinado do seu acerto." : "Seu acerto foi desmarcado.";
     var ini = "Olá, "+nome+"! "+fato+" Na Sorelly Joias os horários são muito apertados, e cada horário é reservado só para você. ";
-    if(c.isenta) return ini+"Este caso foi autorizado"+(c.autorizado ? " por "+c.autorizado : "")+" e não tem multa. Para marcar um novo horário, é só me chamar!";
-    return ini+"Pelas regras do consignado, esta é a "+vez+"ª ocorrência (remarcação, falta ou cancelamento) e tem multa de "+mm.comissaoPct+"% na comissão e "+mm.brindePct+"% no brinde. A próxima terá multa de "+pp.comissaoPct+"% na comissão e "+pp.brindePct+"% no brinde. Motivo de saúde ou emergência com comprovante não tem multa: é só enviar o comprovante. Para marcar um novo horário, é só me chamar!";
+    if(c.isenta) return ini+"Este caso foi autorizado"+(c.autorizado ? " por "+c.autorizado : "")+" e não tem multa. Vamos combinar agora a sua nova data?";
+    return ini+"Pelas regras do consignado, esta é a "+vez+"ª ocorrência (remarcação, falta ou cancelamento) e tem multa de "+mm.comissaoPct+"% na comissão e "+mm.brindePct+"% no brinde. A próxima terá multa de "+pp.comissaoPct+"% na comissão e "+pp.brindePct+"% no brinde. Motivo de saúde ou emergência com comprovante não tem multa: é só enviar o comprovante. Vamos combinar agora a sua nova data?";
   }
   var base = "Olá, "+nome+"! Seu acerto foi remarcado para "+quando+", aqui na Sorelly Joias. ";
   if(c && c.isenta) return base+"Esta remarcação foi autorizada"+(c.autorizado ? " por "+c.autorizado : "")+" e não tem multa. Combinado? Te esperamos!";

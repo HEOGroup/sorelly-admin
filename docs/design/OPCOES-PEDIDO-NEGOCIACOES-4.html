@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negociações · 4 versões com o Resumo por forma e um mini bloco em cima</title>
+<style>
+  :root{--fundo:#0f1729;--azul:#2d5190;--azul2:#1b2a4a;--azul3:#16223d;--linha:rgba(255,255,255,.35);--ok:#4ade80;--aviso:#fbbf24}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1220;color:#fff;font:13px/1.35 Inter,Arial,sans-serif;padding:14px}
+  h1{font-size:16px;text-align:center;margin:0 0 4px}
+  p.sub{text-align:center;margin:0 0 16px;color:#cbd5e1}
+  .est{margin:0 0 28px;background:var(--fundo);border:1px solid var(--linha)}
+  .est>.nome{background:var(--azul);font-weight:800;padding:6px 10px;text-transform:uppercase;font-size:12px}
+  .est>.dica{background:var(--azul3);padding:6px 10px;font-size:12px;color:#dbe4f5;border-bottom:1px solid var(--linha)}
+  .topo{background:var(--azul);padding:5px 10px;border-bottom:1px solid var(--linha);font-weight:800;font-size:16px;text-align:center}
+  .divide{display:grid;grid-template-columns:minmax(300px,34%) 1fr}
+  .divide>.esq{border-right:1px solid var(--linha)}
+  .barra{background:var(--azul);text-align:center;font-weight:700;text-transform:uppercase;font-size:11px;padding:3px 6px;border-bottom:1px solid var(--linha);border-top:1px solid var(--linha)}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--linha);padding:3px 7px;text-align:center;font-size:12px;white-space:nowrap}
+  th{background:var(--azul2);text-transform:uppercase;font-size:11px}
+  td.k{background:var(--azul3);font-weight:700;text-align:left}
+  tfoot td,tr.tot td{font-weight:800;background:var(--azul2)}
+  .ok{color:var(--ok)} .av{color:var(--aviso)}
+  .big td{font-size:14px;height:28px}
+  .pixc{background:rgba(56,189,248,.10)} .bolc{background:rgba(167,139,250,.10)}
+  .exemplo{color:#fde68a;font-size:11px}
+  .vazio{color:#64748b}
+  .mini th,.mini td{font-size:11px;padding:2px 6px}
+  .nota{padding:8px 12px;color:#cbd5e1;font-size:12px}
+  @media (max-width:760px){.divide{grid-template-columns:1fr}.divide>.esq{border-right:0;border-bottom:1px solid var(--linha)}}
+</style>
+</head>
+<body>
+<h1>Tela Negociações · 4 versões com o "Resumo por forma"</h1>
+<p class="sub">Caso do exemplo: o Nickolas negociou <b>Pix nos primeiros meses e boleto nos meses de depois</b>. Pedido <b>1450</b> da Ellos Galvânica, CNPJ 34 · Sorelly Atacadista, total R$ 40.000,00: Pix de dez/2026 a mar/2027 e boleto de abr a jul/2027. <span class="exemplo">Tudo aqui é exemplo, inclusive os 2 Pix pagos (R$ 4.500,00 e R$ 1.200,00).</span></p>
+<div id="app"></div>
+<script>
+var PIX = [["10/12/2026","Dezembro/2026"],["10/01/2027","Janeiro/2027"],["10/02/2027","Fevereiro/2027"],["10/03/2027","Março/2027"]];
+var BOL = [["10/04/2027","Abril/2027"],["10/05/2027","Maio/2027"],["10/06/2027","Junho/2027"],["10/07/2027","Julho/2027"]];
+var MINI = '<div class="barra" style="border-top:0">Pedido</div><table class="mini"><thead><tr><th>CNPJ nosso</th><th>Nº do pedido</th></tr></thead><tbody><tr><td>34 · Sorelly Atacadista</td><td><b>1450</b></td></tr></tbody>'+
+  '<thead><tr><th>Fornecedor</th><th>Data</th></tr></thead><tbody><tr><td>Ellos Galvânica</td><td>16/11/2026</td></tr></tbody></table>';
+var FORMA = '<div class="barra">Resumo por forma</div><table><thead><tr><th>Forma</th><th>%</th><th>Total</th><th>Pago</th><th>Falta</th></tr></thead><tbody>'+
+  '<tr><td class="k">Pix</td><td>60%</td><td>R$ 24.000,00</td><td class="ok">R$ 5.700,00</td><td>R$ 18.300,00</td></tr>'+
+  '<tr><td class="k">Boleto</td><td>40%</td><td>R$ 16.000,00</td><td class="ok">—</td><td>R$ 16.000,00</td></tr></tbody>'+
+  '<tfoot><tr><td>Total</td><td>100%</td><td>R$ 40.000,00</td><td class="ok">R$ 5.700,00</td><td>R$ 34.300,00</td></tr></tfoot></table>';
+function est(n, nome, dica, esq, dir){ return '<div class="est"><div class="nome">Versão '+n+' · '+nome+'</div><div class="dica">'+dica+'</div><div class="topo">Pedido 1450 · Ellos Galvânica</div><div class="divide"><div class="esq">'+esq+'</div><div class="dir">'+dir+'</div></div></div>'; }
+var h = "";
+
+// 1 · uma tabela em ordem de data, com coluna Forma
+h += est(1, "Uma tabela em ordem de data", "Direita: todas as parcelas numa lista só, em ordem de data. A coluna Forma mostra que os 4 primeiros meses são Pix e os 4 últimos são boleto.",
+  MINI+FORMA,
+  '<div class="barra" style="border-top:0">Parcelas</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Forma</th><th>Valor</th><th>Pago</th><th>Falta</th><th>Situação</th></tr></thead><tbody>'+
+  PIX.map(function(p, i){ return '<tr class="pixc"><td>'+(i+1)+'</td><td>'+p[0]+'</td><td>Pix</td><td>R$ 6.000,00</td><td class="ok">'+(i===0?'R$ 5.700,00':'—')+'</td><td>'+(i===0?'R$ 300,00':'R$ 6.000,00')+'</td><td>'+(i===0?'<span class="av">Parcial</span>':'Aberta')+'</td></tr>'; }).join("")+
+  BOL.map(function(p, i){ return '<tr class="bolc"><td>'+(i+5)+'</td><td>'+p[0]+'</td><td>Boleto</td><td>R$ 4.000,00</td><td class="ok">—</td><td>R$ 4.000,00</td><td>Pendente</td></tr>'; }).join("")+
+  '</tbody><tfoot><tr><td>Total</td><td></td><td></td><td>R$ 40.000,00</td><td class="ok">R$ 5.700,00</td><td>R$ 34.300,00</td><td></td></tr></tfoot></table>');
+
+// 2 · calendário por mês: Pix e Boleto em colunas (um deles vazio em cada mês)
+h += est(2, "Calendário por mês, com Pix e Boleto em colunas", "Direita: uma linha por mês. Em cada mês só uma das colunas tem valor, o que deixa claro a virada de Pix para boleto.",
+  MINI+FORMA,
+  '<div class="barra" style="border-top:0">Calendário</div><table><thead><tr><th>Mês</th><th>Vencimento</th><th>Pix</th><th>Boleto</th><th>Total do mês</th><th>Pago</th><th>Falta</th></tr></thead><tbody>'+
+  PIX.map(function(p, i){ return '<tr><td>'+p[1]+'</td><td>'+p[0]+'</td><td class="pixc">R$ 6.000,00</td><td class="vazio">—</td><td>R$ 6.000,00</td><td class="ok">'+(i===0?'R$ 5.700,00':'—')+'</td><td>'+(i===0?'R$ 300,00':'R$ 6.000,00')+'</td></tr>'; }).join("")+
+  BOL.map(function(p){ return '<tr><td>'+p[1]+'</td><td>'+p[0]+'</td><td class="vazio">—</td><td class="bolc">R$ 4.000,00</td><td>R$ 4.000,00</td><td class="ok">—</td><td>R$ 4.000,00</td></tr>'; }).join("")+
+  '</tbody><tfoot><tr><td>Total</td><td></td><td>R$ 24.000,00</td><td>R$ 16.000,00</td><td>R$ 40.000,00</td><td class="ok">R$ 5.700,00</td><td>R$ 34.300,00</td></tr></tfoot></table>');
+
+// 3 · duas fases empilhadas
+h += est(3, "Duas fases, uma tabela para cada", "Direita: Fase 1 (Pix, dez a mar) em cima e Fase 2 (boleto, abr a jul) embaixo, coladas. Cada fase tem o seu subtotal.",
+  MINI+FORMA,
+  '<div class="barra" style="border-top:0">Fase 1 · Pix · dez/2026 a mar/2027</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Previsto</th><th>Pago na data</th><th>Falta na data</th><th>Situação</th></tr></thead><tbody>'+
+  PIX.map(function(p, i){ return '<tr><td>'+(i+1)+'</td><td>'+p[0]+'</td><td>R$ 6.000,00</td><td class="ok">'+(i===0?'R$ 5.700,00':'—')+'</td><td>'+(i===0?'R$ 300,00':'R$ 6.000,00')+'</td><td>'+(i===0?'<span class="av">Parcial</span>':'Aberta')+'</td></tr>'; }).join("")+
+  '</tbody><tfoot><tr><td>Subtotal Pix</td><td></td><td>R$ 24.000,00</td><td class="ok">R$ 5.700,00</td><td>R$ 18.300,00</td><td></td></tr></tfoot></table>'+
+  '<div class="barra">Fase 2 · Boleto · abr a jul/2027</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Falta</th><th>Situação</th></tr></thead><tbody>'+
+  BOL.map(function(p, i){ return '<tr><td>'+(i+5)+'</td><td>'+p[0]+'</td><td>R$ 4.000,00</td><td class="ok">—</td><td>R$ 4.000,00</td><td>Pendente</td></tr>'; }).join("")+
+  '</tbody><tfoot><tr><td>Subtotal boleto</td><td></td><td>R$ 16.000,00</td><td class="ok">—</td><td>R$ 16.000,00</td><td></td></tr></tfoot></table>');
+
+// 4 · parcelas + pagamentos no mesmo bloco
+h += est(4, "Parcelas e pagamentos juntos", "Direita: as parcelas em cima e, colada embaixo, a tabela dos Pix que já foram pagos (valores que não batem com a parcela). Tudo em um bloco só.",
+  MINI+FORMA,
+  '<div class="barra" style="border-top:0">Parcelas</div><table><thead><tr><th>#</th><th>Vencimento</th><th>Forma</th><th>Valor</th><th>Situação</th></tr></thead><tbody>'+
+  PIX.map(function(p, i){ return '<tr class="pixc"><td>'+(i+1)+'</td><td>'+p[0]+'</td><td>Pix</td><td>R$ 6.000,00</td><td>'+(i===0?'<span class="av">Parcial</span>':'Aberta')+'</td></tr>'; }).join("")+
+  BOL.map(function(p, i){ return '<tr class="bolc"><td>'+(i+5)+'</td><td>'+p[0]+'</td><td>Boleto</td><td>R$ 4.000,00</td><td>Pendente</td></tr>'; }).join("")+
+  '</tbody><tfoot><tr><td>Total</td><td></td><td></td><td>R$ 40.000,00</td><td></td></tr></tfoot></table>'+
+  '<div class="barra">Pagamentos feitos</div><table><thead><tr><th>Data</th><th>Revendedora</th><th>Conta</th><th>Entrou na parcela</th><th>Valor</th><th>Comprovante</th></tr></thead><tbody>'+
+  '<tr><td>05/12/2026</td><td>Revendedora A <span class="exemplo">(exemplo)</span></td><td>Nisis Joias Ltda</td><td>10/12/2026</td><td class="ok">R$ 4.500,00</td><td>Sim</td></tr>'+
+  '<tr><td>09/12/2026</td><td>Revendedora B <span class="exemplo">(exemplo)</span></td><td>Nisis Joias Ltda</td><td>10/12/2026</td><td class="ok">R$ 1.200,00</td><td>Sim</td></tr></tbody>'+
+  '<tfoot><tr><td colspan="4">Total pago</td><td>R$ 5.700,00</td><td></td></tr></tfoot></table>');
+
+document.getElementById("app").innerHTML = h;
+</script>
+</body>
+</html>

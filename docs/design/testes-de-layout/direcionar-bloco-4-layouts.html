@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direcionar pagamento: 4 layouts do bloco</title>
+<style>
+  :root{--bg:#0e0f11;--card:#16171a;--card2:#1c1d21;--borda:#2b2d33;--texto:#fff;--ouro:#d9a63a;--btn:#E8B84B;--verde:#4ade80;--verm:#f87171;--amar:#f5c14b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--texto);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif}
+  .pagina{max-width:1240px;margin:0 auto;padding:16px}
+  h1{font-size:20px;margin:0 0 4px;text-align:center}
+  .sub{text-align:center;margin:0 0 12px}
+  .abas{display:flex;justify-content:center;margin:0 auto 12px;width:fit-content;border:1px solid var(--borda);border-radius:8px;overflow:hidden}
+  .abas button{height:32px;padding:0 18px;background:var(--card);color:var(--texto);border:0;border-right:1px solid var(--borda);font:inherit;cursor:pointer}
+  .abas button:last-child{border-right:0}.abas button.on{background:var(--btn);color:#1a1306;font-weight:700}
+  .nota{border:1px solid var(--borda);border-radius:8px;background:var(--card);padding:8px 12px;margin:0 0 12px;text-align:center}
+  /* o bloco: borda dourada como na tela de hoje */
+  .painel{border:3px solid var(--ouro);border-radius:10px;background:var(--card);overflow:hidden}
+  .painel>h2{margin:0;min-height:40px;display:flex;align-items:center;justify-content:center;font-size:16px;border-bottom:1px solid var(--borda);background:#ffffff0d}
+  .cab{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:center;padding:8px 12px;border-bottom:1px solid var(--borda)}
+  .selo{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#c084fc26;color:#c084fc;border:1px solid #c084fc66}
+  .corpo{padding:10px 12px}
+  .linha{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .resumo{display:grid;grid-template-columns:1fr auto;gap:2px 14px;min-width:230px;align-content:start}
+  .resumo span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .resumo .sub2{padding-left:14px}
+  .verde{color:var(--verde)}.verm{color:var(--verm)}.amar{color:var(--amar)}
+  table{width:100%;border-collapse:collapse}
+  th{height:30px;background:var(--card2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--borda);padding:0 10px;white-space:nowrap;text-align:center}
+  td{height:32px;border:1px solid var(--borda);padding:2px 10px;text-align:center}
+  input,select,button.bt{height:32px;border:1px solid var(--borda);border-radius:6px;background:var(--card2);color:var(--texto);font:inherit;padding:0 10px}
+  button.bt{cursor:pointer;white-space:nowrap}
+  button.pri{background:var(--btn);color:#1a1306;font-weight:700;border-color:#B8862B}
+  .rodape{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--borda);background:#ffffff08}
+  .ponto{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .abaixo{margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;opacity:.55}
+  .abaixo div{border:1px dashed var(--borda);border-radius:8px;height:70px;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px}
+  /* seletor com TODOS os destinos */
+  .todos{display:grid;gap:8px}
+  .todos.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .grp{border:1px solid var(--borda);border-radius:8px;overflow:hidden;background:var(--card)}
+  .grp h4{margin:0;height:28px;display:flex;align-items:center;justify-content:center;background:var(--card2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--borda)}
+  .op{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:2px 10px;border-bottom:1px solid var(--borda);cursor:pointer}
+  .op:last-child{border-bottom:0}.op:hover{background:#ffffff14}.op.sel{background:#E8B84B26;box-shadow:inset 3px 0 0 var(--btn)}
+  .op .n{text-align:left;font-weight:600}.op .s{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pop{position:absolute;z-index:5;left:0;top:100%;margin-top:6px;width:min(1000px,92vw);border:2px solid var(--ouro);border-radius:10px;background:var(--card);box-shadow:0 12px 30px #000a;padding:8px}
+  .rel{position:relative}
+  .barra{height:8px;border-radius:4px;background:#ffffff1a;overflow:hidden;min-width:140px}
+  .barra i{display:block;height:100%;background:var(--verde)}
+  .cartao{border:1px solid var(--borda);border-radius:8px;background:var(--card2);padding:8px 10px}
+  .g2{display:grid;grid-template-columns:250px minmax(0,1fr);gap:12px}
+  .g3{display:grid;grid-template-columns:250px 330px minmax(0,1fr);gap:12px}
+  @media(max-width:1000px){.g2,.g3,.todos.c5,.abaixo{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="pagina">
+  <h1>Direcionar pagamento: 4 layouts do bloco</h1>
+  <p class="sub">Muda só o bloco de cima, onde o Lucas indica o pagamento. Os painéis de baixo (Vendas, Contas negativas, Contas a pagar) e as abas continuam como estão. Nomes e valores são de exemplo.</p>
+  <div class="abas" id="abas"></div>
+  <div class="nota" id="nota"></div>
+  <div id="area"></div>
+  <div class="abaixo"><div>Vendas · aguardando direcionar<br>(não muda)</div><div>Contas negativas<br>(não muda)</div><div>Contas a pagar<br>(não muda)</div></div>
+</div>
+
+<script>
+var R = function(v){ return (v<0?"−":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var PED = {origem:"Representante", quem:"Representante Exemplo · Revendedora Exemplo", chegou:"16h48", espera:"115 h 26", obs:"Pix · pedido pelo app da representante", vendas:8278, aPagar:5096.8, pagos:[["Link de pagamento",1505.94],["Crédito em 3x",1254.95],["Dinheiro",752.97]], jaPago:3513.86, falta:1505.94};
+var SUG = {id:"f_pontual", n:"Pontual", motivo:"Paga parte de Pontual · 11 a 20 (falta R$ 10.658,69)"};
+// TODOS os destinos (as contas que o seletor de hoje esconde aparecem com marca amarela)
+var GRUPOS = [
+ {id:"34", t:"CNPJ 34 · Atacadista", it:[["itau34","Itaú Empresas 34",-8420.55],["cx34","Caixa Econômica 34",973.6],["sic34","Sicredi Sorelly 34",-24858.6],["saf34","Safra 34",-44196.54],["uni34","Unicred 34",-10986.31],["rot34","Sicredi Rotativo 34",-3100,"Rotativo"],["apl34","Aplicação Sicredi",52000,"Aplicação"],["apl34b","Aplicação Caixa Econômica",2000,"Aplicação"]]},
+ {id:"46", t:"CNPJ 46 · Comércio", it:[["sic46","Sicredi Shopping 46",-5138.96],["sto46","Stone 46",284.1],["saf46","Safra 46",-24502.96],["bra46","Bradesco 46",1200],["cx46","Caixa 46",349.71],["uni46","Unicred 46",-14492.9]]},
+ {id:"59", t:"CNPJ 59 · Serenity", it:[["sic59","Sicredi Serenity",-6127.9],["saf59","Safra Serenity",-10956.04],["saf59cg","Safra Serenity Conta Garantida",0],["ita59","Itaú Empresas 59",76.95],["ita59cg","Itaú Empresas 59 Conta Garantida",0],["bra59","Bradesco Serenity",410],["cx59","Caixa 59",90],["apl59","Aplicação Sicredi Serenity",8000,"Aplicação"]]},
+ {id:"67", t:"CNPJ 67 · Axis", it:[["sic67","Sicredi Axis 67",-1900],["ita67","Itaú Empresas Axis 67",320]]},
+ {id:"ou", t:"Outras contas", it:[["hoapp","Sicredi H&O App",2300],["itmarco","Itaú Marco PJ",-26379.17],["dinsor","Dinheiro Sorelly",4200,"Dinheiro"],["dincx","Dinheiro Caixa Seguro",15000,"Dinheiro"]]},
+ {id:"fam", t:"Família / sócios", it:[["fam1","Sócio 1 · Conta pessoal"],["fam2","Sócio 2 · Conta pessoal"],["fam3","Sócio 3 · Conta pessoal"]]},
+ {id:"for", t:"Fornecedores e prestadores", it:[["f_pontual","Pontual",null,"Falta R$ 10.658,69"],["f_point","Point",null,"Falta R$ 4.200,00"],["f_artello","Art Ello",null,"Falta R$ 2.100,00"],["p_prest1","Prestador 1",null,"Falta R$ 900,00"]]}
+];
+var TODOS = {}; GRUPOS.forEach(function(g){ g.it.forEach(function(x){ TODOS[x[0]] = {id:x[0], n:x[1], s:x[2], nota:x[3], g:g.t}; }); });
+var DEST = [], ABERTO = false, BUSCA = "", TIPO = "emp";
+var restante = function(){ return Math.round((PED.falta-DEST.reduce(function(t, x){ return t+x.v; }, 0))*100)/100; };
+var nomeDe = function(id){ var x = TODOS[id]; return x.g.indexOf("CNPJ")===0 ? x.g.split(" · ")[0]+" · "+x.n : x.n; };
+var add = function(id){ var f = restante(); if(f<=0) return; if(DEST.some(function(d){ return d.id===id; })) return; DEST.push({id:id, v:f}); };
+var tira = function(id){ DEST = DEST.filter(function(d){ return d.id!==id; }); if(DEST.length===1) DEST[0].v = PED.falta; };
+var passa = function(x){ return !BUSCA || (x[1]+" "+(x[3]||"")).toLowerCase().indexOf(BUSCA.toLowerCase())>=0; };
+var corSaldo = function(x){ return x[2]==null ? "amar" : x[2]<0 ? "verm" : "verde"; };
+var txtSaldo = function(x){ return x[2]==null ? (x[3]||"") : R(x[2]); };
+
+// ---------- pedaços iguais aos da tela de hoje ----------
+function cabecalho(){ return '<div class="cab"><span class="selo">'+PED.origem+'</span><b>'+PED.quem+'</b><span>· chegou às '+PED.chegou+' · pagamento aguardando há <b class="verm">'+PED.espera+'</b></span></div>'; }
+function resumo(){ return '<div class="resumo"><span>Vendas</span><span>'+R(PED.vendas)+'</span><span>A pagar</span><span>'+R(PED.aPagar)+'</span><span>Já pago</span><span class="verde">'+R(PED.jaPago)+'</span>'+PED.pagos.map(function(p){ return '<span class="sub2">'+p[0]+'</span><span>'+R(p[1])+'</span>'; }).join("")+'<span>Falta pagar</span><span class="amar">'+R(PED.falta)+'</span></div>'; }
+function rodape(){ var r = restante(); return '<div class="rodape"><span>Falta enviar <b class="'+(r>0.005?'amar':'verde')+'">'+R(r)+'</b> · '+DEST.length+' destino(s) · Enviado R$ 0,00</span><span class="linha"><button class="bt" data-sug>Usar todas as sugestões</button><button class="bt pri"'+(r>0.005?' style="opacity:.6"':'')+'>OK · enviar</button></span></div>'; }
+function sugestaoTxt(){ return '<span class="amar">● Sugestão:</span> <b>'+SUG.n+'</b> — '+SUG.motivo; }
+function item(x, sel){ return '<div class="op'+(sel?' sel':'')+'" data-id="'+x[0]+'"><span class="n">'+(x[3] && x[2]!=null ? '<span class="ponto" style="background:var(--amar)"></span>' : '')+x[1]+(x[3] && x[2]!=null ? ' · '+x[3] : '')+'</span><span class="s '+corSaldo(x)+'">'+txtSaldo(x)+'</span></div>'; }
+function listaTodos(cls){ return '<div class="todos '+(cls||"")+'">'+GRUPOS.map(function(g){ var its = g.it.filter(passa); if(!its.length) return ''; return '<div class="grp"><h4>'+g.t+'</h4>'+its.map(function(x){ return item(x, DEST.some(function(d){ return d.id===x[0]; })); }).join("")+'</div>'; }).join("")+'</div>'; }
+
+// ---------- A: o campo Conta abre uma lista com TODOS os destinos ----------
+function layoutA(){
+  var linhas = DEST.length ? DEST.map(function(d){ return '<tr><td>Pix</td><td>'+(DEST.length>1?'Dividido':'Inteiro')+'</td><td><b>'+nomeDe(d.id)+'</b></td><td>'+R(d.v)+'</td><td><button class="bt" data-tira="'+d.id+'">Tirar</button></td></tr>'; }).join("") : '<tr><td>Pix</td><td>Inteiro</td><td class="amar">Escolha o destino</td><td>'+R(PED.falta)+'</td><td></td></tr>';
+  return '<div class="painel"><h2>Direcionar pagamento</h2>'+cabecalho()+'<div class="corpo"><div class="g2">'+resumo()+'<div class="rel">'+
+    '<table><thead><tr><th>Pagamento</th><th>Modo</th><th>Destino e conta</th><th>Valor</th><th></th></tr></thead><tbody>'+linhas+'</tbody></table>'+
+    '<div class="linha" style="margin-top:8px"><button class="bt pri" data-abre>'+(ABERTO?'Fechar a lista':'Escolher destino ▾')+'</button><button class="bt" data-sug>Usar sugestão: '+SUG.n+'</button><span>'+sugestaoTxt()+'</span></div>'+
+    (ABERTO ? '<div class="pop"><div class="linha" style="margin-bottom:8px"><input placeholder="Buscar conta, banco ou fornecedor" value="'+BUSCA+'" data-busca style="min-width:340px"><span>Todas as contas aparecem aqui. Clique para adicionar; clique em outra para dividir o valor.</span></div>'+listaTodos("c5")+'</div>' : '')+
+    '</div></div></div>'+rodape()+'</div>';
+}
+// ---------- B: três colunas (pedido | destino escolhido | todas as contas) ----------
+function layoutB(){
+  var dest = DEST.length ? DEST.map(function(d){ return '<div class="cartao" style="margin-bottom:6px"><div class="linha" style="justify-content:space-between"><b>'+nomeDe(d.id)+'</b><button class="bt" data-tira="'+d.id+'">Tirar</button></div><div class="linha" style="justify-content:space-between;margin-top:6px"><span>Valor</span><b>'+R(d.v)+'</b></div></div>'; }).join("") : '<div class="cartao amar" style="text-align:center">● Escolha o destino na lista ao lado</div>';
+  return '<div class="painel"><h2>Direcionar pagamento</h2>'+cabecalho()+'<div class="corpo"><div class="g3">'+resumo()+
+    '<div><div class="cartao" style="margin-bottom:8px;text-align:center"><b>Pix · '+R(PED.falta)+'</b><div>'+sugestaoTxt()+'</div><div style="margin-top:6px"><button class="bt" data-sug>Usar sugestão</button></div></div>'+dest+'</div>'+
+    '<div><div class="linha" style="margin-bottom:8px"><input placeholder="Buscar conta, banco ou fornecedor" value="'+BUSCA+'" data-busca style="min-width:300px"></div>'+listaTodos("")+'</div></div></div>'+rodape()+'</div>';
+}
+// ---------- C: dividir com barra de progresso, destino em lista nativa ----------
+function layoutC(){
+  var opts = '<option value="">Escolha o destino</option>'+GRUPOS.map(function(g){ return '<optgroup label="'+g.t+'">'+g.it.map(function(x){ return '<option value="'+x[0]+'">'+x[1]+(x[3] ? ' · '+x[3] : '')+(x[2]!=null ? ' · '+R(x[2]) : '')+'</option>'; }).join("")+'</optgroup>'; }).join("");
+  var pct = Math.min(100, Math.round((PED.falta-restante())/PED.falta*100));
+  var linhas = DEST.map(function(d){ return '<tr><td><b>'+nomeDe(d.id)+'</b></td><td><input data-v="'+d.id+'" value="'+d.v.toFixed(2).replace(".",",")+'" style="width:130px;text-align:center"></td><td><button class="bt" data-tira="'+d.id+'">Tirar</button></td></tr>'; }).join("");
+  return '<div class="painel"><h2>Direcionar pagamento</h2>'+cabecalho()+'<div class="corpo"><div class="g2">'+resumo()+'<div>'+
+    '<div class="linha" style="margin-bottom:8px"><b>Pix · '+R(PED.falta)+'</b><div class="barra"><i style="width:'+pct+'%"></i></div><span>'+pct+'% indicado</span></div>'+
+    '<table><thead><tr><th>Destino e conta</th><th>Valor</th><th></th></tr></thead><tbody>'+linhas+
+    '<tr><td><select data-novo style="min-width:340px">'+opts+'</select></td><td class="amar">Falta '+R(restante())+'</td><td><button class="bt" data-sug>Usar sugestão</button></td></tr></tbody></table>'+
+    '<div class="linha" style="margin-top:8px">'+sugestaoTxt()+'</div></div></div></div>'+rodape()+'</div>';
+}
+// ---------- D: tipo de destino em abas e a lista só do tipo ----------
+function layoutD(){
+  var tipos = [["emp","Empresa (contas)"],["fam","Família / sócios"],["for","Fornecedores e prestadores"]];
+  var mapa = {emp:["34","46","59","67","ou"], fam:["fam"], for:["for"]};
+  var gs = GRUPOS.filter(function(g){ return mapa[TIPO].indexOf(g.id)>=0; });
+  var corpo = '<div class="todos" style="grid-template-columns:repeat('+Math.min(gs.length,5)+',minmax(0,1fr))">'+gs.map(function(g){ return '<div class="grp"><h4>'+g.t+'</h4>'+g.it.filter(passa).map(function(x){ return item(x, DEST.some(function(d){ return d.id===x[0]; })); }).join("")+'</div>'; }).join("")+'</div>';
+  var esc = DEST.length ? DEST.map(function(d){ return '<span class="linha"><b>'+nomeDe(d.id)+'</b> '+R(d.v)+' <button class="bt" data-tira="'+d.id+'">Tirar</button></span>'; }).join("") : '<span class="amar">● Nenhum destino escolhido</span>';
+  return '<div class="painel"><h2>Direcionar pagamento</h2>'+cabecalho()+'<div class="corpo"><div class="g2">'+resumo()+'<div>'+
+    '<div class="linha" style="margin-bottom:8px"><b>Pix · '+R(PED.falta)+'</b>'+tipos.map(function(t){ return '<button class="bt'+(TIPO===t[0]?' pri':'')+'" data-tipo="'+t[0]+'">'+t[1]+'</button>'; }).join("")+'<input placeholder="Buscar" value="'+BUSCA+'" data-busca></div>'+corpo+
+    '<div class="linha" style="margin-top:8px"><span>Escolhido:</span>'+esc+'<button class="bt" data-sug>Usar sugestão: '+SUG.n+'</button></div></div></div></div>'+rodape()+'</div>';
+}
+
+var LAY = [["A","A · Conta abre uma lista com tudo","Mantém a tabela de hoje (Pagamento, Modo, Conta, Valor). O campo Conta abre uma lista grande com TODOS os destinos, por CNPJ, com saldo e busca. Menos cliques, tudo numa tela só."],
+ ["B","B · Três colunas","Pedido, destino escolhido e a lista de todas as contas lado a lado. Nada abre e fecha. Clica na conta e ela entra ao lado."],
+ ["C","C · Dividir com barra","Foco em dividir o valor: lista com todos os destinos, valor de cada um e uma barra que mostra quanto já foi indicado."],
+ ["D","D · Por tipo de destino","Três abas: Empresa, Família, Fornecedores. Cada aba mostra a lista inteira daquele tipo."]];
+var atual = "A";
+function desenha(){
+  document.getElementById("abas").innerHTML = LAY.map(function(l){ return '<button data-lay="'+l[0]+'" class="'+(atual===l[0]?'on':'')+'">'+l[0]+'</button>'; }).join("");
+  var l = LAY.filter(function(x){ return x[0]===atual; })[0];
+  document.getElementById("nota").innerHTML = "<b>"+l[1]+"</b> — "+l[2];
+  document.getElementById("area").innerHTML = ({A:layoutA,B:layoutB,C:layoutC,D:layoutD})[atual]();
+  var b = document.querySelector("[data-busca]"); if(b && BUSCA){ b.focus(); b.setSelectionRange(BUSCA.length, BUSCA.length); }
+}
+document.addEventListener("click", function(ev){
+  var t = ev.target;
+  var a = t.closest("[data-lay]"); if(a){ atual = a.getAttribute("data-lay"); DEST = []; ABERTO = false; BUSCA = ""; desenha(); return; }
+  var o = t.closest("[data-id]"); if(o){ var id = o.getAttribute("data-id"); if(DEST.some(function(d){ return d.id===id; })) tira(id); else add(id); desenha(); return; }
+  var x = t.closest("[data-tira]"); if(x){ tira(x.getAttribute("data-tira")); desenha(); return; }
+  if(t.closest("[data-abre]")){ ABERTO = !ABERTO; desenha(); return; }
+  if(t.closest("[data-sug]")){ DEST = [{id:SUG.id, v:PED.falta}]; ABERTO = false; desenha(); return; }
+  var ti = t.closest("[data-tipo]"); if(ti){ TIPO = ti.getAttribute("data-tipo"); desenha(); return; }
+});
+document.addEventListener("input", function(ev){ if(ev.target.hasAttribute && ev.target.hasAttribute("data-busca")){ BUSCA = ev.target.value; desenha(); } });
+document.addEventListener("change", function(ev){
+  var el = ev.target; if(el.hasAttribute && el.hasAttribute("data-novo") && el.value){ add(el.value); desenha(); return; }
+  var v = el.getAttribute && el.getAttribute("data-v"); if(v){ var d = DEST.filter(function(q){ return q.id===v; })[0]; if(d){ d.v = parseFloat(String(el.value).replace(/\./g,"").replace(",","."))||0; desenha(); } }
+});
+desenha();
+</script>
+</body>
+</html>

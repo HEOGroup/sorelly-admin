@@ -3,6 +3,51 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.113", data:"2026-11-22", titulo:"Pix da Casa: marcar a casa de vários de uma vez", itens:[
+  {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Botão Marcar os sem casa como Alphaville: marca de uma vez todos os Pix da Casa que ainda estão sem casa."}]},
+ {v:"0.21.112", data:"2026-11-22", titulo:"Janela Pagar da Família mais fácil", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → janela Pagar", txt:"Janela compacta, num card só e sem blocos com borda: duas linhas de campos (valor, data, forma e conta pagadora; para quem entra e observação), a observação da conta em uma linha, o aviso se a conta fica paga ou parcial ao lado do botão Registrar pagamento com o valor dentro, e Editar, Corrigir valor, Encerrar e Excluir escondidos em Mais ações. A forma já vem como a da conta (antes era sempre PIX)."}]},
+ {v:"0.21.111", data:"2026-11-22", titulo:"Conta pagadora da Família na escrita padrão das contas", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas", txt:"A lista de Conta pagadora (janelas Pagar, Editar conta e pagamento) usa a escrita padrão das contas: PF · Marcus · Nubank, Casa · Itaú, Casa · Cartão · Itaú. Só aparecem as contas da família, ativas e uma vez cada. As contas de prestadores saíram da lista."}]},
+ {v:"0.21.110", data:"2026-11-22", titulo:"Contas a pagar da Família: coluna Obs no lugar de Ações", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas → A pagar", txt:"A coluna Ações saiu. Entrou a coluna Obs, que só marca com ✓ quando a conta tem observação. Corrigir valor, Encerrar e Excluir passaram para a janela da conta (clique na linha)."}]},
+ {v:"0.21.109", data:"2026-11-22", titulo:"Contas a pagar da Família: coluna Forma, sem ÷, observações dentro da janela", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas → A pagar", txt:"Nova coluna Forma (Boleto, PIX, Débito em conta...). O ÷2 e o ÷4 saíram da coluna Pessoa (também em Pagas). A coluna Observação saiu da tabela."},
+  {tipo:"novo", area:"Financeiro → Família → janela Pagar", txt:"As observações da conta ficam dentro da janela: a antiga em cima, as novas com data e quem anotou, e um campo para anotar outra."}]},
+ {v:"0.21.108", data:"2026-11-22", titulo:"Lista Para quem entra abre inteira e com borda mais grossa", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → janelas Lançar conta e Pagar", txt:"A lista Para quem entra (nome e quem está dentro) abre inteira, até Sorelly, sem rolar, e com a borda mais grossa."}]},
+ {v:"0.21.107", data:"2026-11-22", titulo:"Pix da Casa: para qual casa foi (Alphaville, Praia, Jardine, Família)", itens:[
+  {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Cada Pix da Casa ganha o campo Para qual casa (Alphaville, Praia, Jardine ou Família geral), só no nosso sistema: o DevMaster e as funcionárias não veem. Dá para trocar a casa na própria linha e mover o Pix para um sócio quando ele não é da Casa."},
+  {tipo:"novo", area:"Financeiro → Receber → Contas a receber (lançar Pix)", txt:"Ao lançar um Pix em conta de sócio ou da Casa, o campo Para qual casa grava a casa junto."},
+  {tipo:"melhoria", area:"Financeiro → Família → Gasto por casa", txt:"Duas colunas novas: Pix recebido e Saldo do Pix (Pix recebido menos o que já foi pago), por casa."}]},
+ {v:"0.21.106", data:"2026-11-22", titulo:"Família › Contas: telas próprias, títulos e botão Lançar conta", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A pagar e Pagas abrem as telas próprias da Família (sem CNPJ), não a lista da Sorelly. Títulos: Contas a pagar - Família, Contas pagas - Família e Contas pagas / A pagar - Sorelly."},
+  {tipo:"melhoria", area:"Contas a pagar da família", txt:"O botão Lançar conta fica no início da barra, em tamanho médio."},
+  {tipo:"correção", area:"Contas a pagar", txt:"Cada lista abre com o seu filtro Contas (a Sorelly não aparece mais dentro da Família). Natureza: Comissão consignado."}]},
+ {v:"0.21.105", data:"2026-11-23", titulo:"Zerada a pasta principal: documentação das conversas salva", itens:[
+  {tipo:"melhoria", area:"Sistema → Organização", txt:"Os últimos commits das conversas (menu Família, Home da família, Negociações, Material gráfico, Produção) e 11 documentos soltos (pendências por conversa, formas de pagamento do PDV, scripts de uso único) foram juntados com a master. A pasta principal ficou sem arquivo solto."}
+ ]},
+ {v:"0.21.104", data:"2026-11-23", titulo:"Encomendas: tela Ranking e textos do Top 100", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Ranking", txt:"Tela nova com a classificação das revendedoras pelo total de vendas dos últimos 3 meses (posição, total, média, acertos, último acerto, posição de 1 mês atrás, se está na lista e a situação: Ativa, Entrar, Protegida, Sem acesso ou Em saída). Só leitura; botão Atualizar ranking. Mostra o Top 150 e quem ainda está na lista depois dele."},
+  {tipo:"correção", area:"Encomendas e reposições", txt:"Os textos que ainda diziam Top 50 (janelas de pedir entrada e retirar, Quadro, Regras e Funil) agora dizem Top 100."},
+ ]},
+ {v:"0.21.103", data:"2026-11-23", titulo:"Junção geral: tudo que estava na pasta principal foi para a master", itens:[
+  {tipo:"melhoria", area:"Sistema → Organização", txt:"Os commits salvos pelas conversas na pasta principal (menu Família, Gasto por casa, Negociações, Produção, pendências por conversa e outros) foram juntados com a master numa subida só. O Bônus da montagem antigo (de 12/11, fora do padrão visual e sem dono) ficou de fora e continua guardado no ramo uniao-23-11; a tela Comissões › Montagem de kits segue a da master."}
+ ]},
+ {v:"0.21.102", data:"2026-11-22", titulo:"Financeiro familiar: janela Pagar maior e organizada", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas a pagar → Pagar", txt:"A janela Pagar ficou maior (de 768 para 896 px) e virou uma ficha em grade com linha entre todos os campos. Conta pagadora e Observação ocupam a linha inteira, então o nome longo da conta (ex.: Caixa financeiro Sorelly — Caixa financeiro Sorelly) cabe inteiro. Valor, Data, Forma e Para quem entra ficam em duas colunas. O modo Dividir entre formas segue a mesma grade."},
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"Contas a pagar da família e Contas pagas da família abrem já em Contas = Família e SEPARADAS: cada uma mostra só a sua situação, sem o seletor Situação (A pagar / Pagas). O menu do Financeiro tinha sumido nessas duas telas porque elas não estavam na lista de telas do setor; agora aparece, com Família marcada. A lista geral voltou à versão da master: clicar numa conta da família abre a janela Mudar a pessoa."},
+  {tipo:"correção", area:"Financeiro → Família", txt:"O trabalho do dia (Para quem entra, janela Pagar azul, Conta pagadora nas colunas, Contas pagas em planilha, Pró-labores só cadastro) tinha sido apagado por uma junção com a master e foi restaurado. A janela Editar pagamento ganhou o bloco Pessoa da conta (Mudar só a pessoa), e o menu da Família voltou a ficar sem Gasto por casa, Relatório, Histórico e Configurações."}
+ ]},
+ {v:"0.21.84", data:"2026-11-22", titulo:"Negociações: Pontual, Point e detalhe do pedido no padrão azul", itens:[
+  {tipo:"melhoria", area:"Financeiro → Pagamentos → Negociações", txt:"Pontual (Maquininha, O que pagar × o que foi pago, Pedidos por mês, Meses e dezenas, Cronograma), Point (Conta corrente, Pedidos lançados, Acerto mensal) e o detalhe do pedido refeitos em blocos azuis com TabelaPlanilha, letra de 11 px e a linha branca de 3 px entre os blocos. Sem fundo preto, sem botões em pílula e sem textos explicativos."},
+ ]},
+ {v:"0.21.101", data:"2026-11-22", titulo:"Natureza das contas da família em letra normal", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A coluna Natureza mostrava o código da categoria (PRO_LABORE, SERVICO, CONDOMINIO). Agora mostra o nome (Pró-labore, Serviço, Condomínio)."}]},
+ {v:"0.21.100", data:"2026-11-22", titulo:"Menu Família › Contas: nomes A pagar e Pagas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"As duas telas do item Contas passam a se chamar A pagar e Pagas."}]},
+ {v:"0.21.99", data:"2026-11-22", titulo:"Menu Família: Contas com duas telas", itens:[
+  {tipo:"correção", area:"Financeiro → Família → Contas", txt:"O item Contas do menu Família abre duas telas: Contas a pagar da família e Contas pagas da família. Cada uma abre a lista de Contas já em Contas = Família, na situação certa."}]},
  {v:"0.21.98", data:"2026-11-23", titulo:"Entrada do setor igual em todos os setores", itens:[
   {tipo:"melhoria", area:"Menu lateral (todos os setores)", txt:"A Entrada do setor usa o desenho do Financeiro em todo setor com mais de uma tela: fundo escuro na cor do setor, uma coluna por grupo do menu, telas sempre uma embaixo da outra, colunas centralizadas quando são poucas. Título do setor em caixa alta (exceção liberada pelo Marcus). Setor com uma tela só abre a tela direto."}
  ]},

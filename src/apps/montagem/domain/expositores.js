@@ -66,7 +66,7 @@ function rotuloNumero(c){ return c.codigoDevmaster!=null ? String(c.codigoDevmas
 function textoBuscaNumero(c){ var p = [String(c.numero), rotuloNumero(c)]; if(c.codigoDevmaster!=null) p.push(String(c.codigoDevmaster)); return p.join(" "); }
 
 // ---------- estado ----------
-function exVazio(){ return {v:1, seq:0, seqNumero:0, config:clone(CONFIG_PADRAO), estoque:[], fila:[], clientes:[], condicionais:[], obsCampo:{}, log:[]}; }   // obsCampo = observação por revendedora na aba Com revendedoras: {código da DevMaster: {txt, por, em}}
+function exVazio(){ return {v:1, seq:0, seqNumero:0, config:clone(CONFIG_PADRAO), estoque:[], fila:[], clientes:[], condicionais:[], log:[]}; }   // obsCampo = observação por revendedora na aba Com revendedoras: {código da DevMaster: {txt, por, em}}
 function proximoId(ex, prefixo, dado){ var id = dado && dado.id ? String(dado.id) : (prefixo+(++ex.seq)); var n = Number(String(id).replace(/\D/g, "")); if(n>ex.seq && String(id).indexOf(prefixo)===0) ex.seq = n; return id; }
 function novoEstoque(ex, d, agora, por){
   return {id:proximoId(ex, "ei", d), codigo:trim(d.codigo), nome:trim(d.nome), valorUnitario:Math.max(0, r2(num(d.valorUnitario))), quantidade:Math.max(0, Math.floor(num(d.quantidade))),
@@ -423,12 +423,14 @@ function exReduz(s, a){
       cx.fotos[a.slot] = null; cx.atualizadoEm = agora; cx.atualizadoPor = por; return ok("Foto removida do expositor nº "+rotuloNumero(cx)+".");
     }
 
-    // ----- observação da aba Com revendedoras (09/11/2026): texto livre por revendedora (código da DevMaster); texto vazio apaga -----
+    // ----- observação da aba Com revendedoras (09/11/2026; 11/11/2026 passou a UMA CHAVE POR REVENDEDORA: ex["obs_"+código] = {txt, por, em}) -----
+    // Motivo: o módulo sincroniza por chave. Com um mapa único (obsCampo), o navegador de outra pessoa (ex.: Elen) mandava o mapa vazio e apagava as observações dos outros (perdidas em 10/11/2026).
+    // Uma chave por revendedora só troca o que a própria pessoa mudou. Texto vazio limpa (a chave continua, com txt vazio). obsCampo antigo continua sendo lido pela tela.
     case "obs_rev": {
-      var codObs = trim(a.cod); if(!codObs) return recusa("Informe a revendedora."); var txtObs = trim(a.txt);
-      if(!ex.obsCampo) ex.obsCampo = {};
-      if(!txtObs){ if(!ex.obsCampo[codObs]) return recusa("Nada para apagar."); delete ex.obsCampo[codObs]; return ok("Observação da revendedora "+codObs+" apagada."); }
-      ex.obsCampo[codObs] = {txt:txtObs, por:por, em:agora}; return ok("Observação da revendedora "+codObs+" salva.");
+      var codObs = trim(a.cod); if(!/^[0-9A-Za-z]{1,12}$/.test(codObs)) return recusa("Informe a revendedora."); var txtObs = trim(a.txt).slice(0, 300), chObs = "obs_"+codObs;
+      var antesObs = ex[chObs] ? ex[chObs].txt : (ex.obsCampo && ex.obsCampo[codObs] ? ex.obsCampo[codObs].txt : "");
+      if(!txtObs && !antesObs) return recusa("Nada para apagar.");
+      ex[chObs] = {txt:txtObs, por:por, em:agora}; return ok(txtObs ? "Observação da revendedora "+codObs+" salva." : "Observação da revendedora "+codObs+" apagada.");
     }
 
     // ----- base de clientes -----

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pagar conta: 6 opções</title>
+<style>
+  :root{ --fundo:#1b3463; --az:#27508f; --claro:#3f6bb8; --linha:rgba(255,255,255,.18); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; padding:16px; background:#0e1a33; color:#fff; font:13px/1.35 Inter, system-ui, Arial, sans-serif; }
+  h1{ font-size:16px; margin:0 0 4px; } .sub{ margin:0 0 14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:16px; align-items:start; }
+  .nome{ font-weight:700; margin-bottom:4px; } .nota{ font-size:11px; margin-top:4px; opacity:.95; }
+  .j{ background:var(--fundo); border:2px solid var(--az); border-radius:8px; overflow:hidden; font-size:11px; }
+  .t{ background:var(--az); text-align:center; font-weight:700; padding:4px 8px; position:relative; }
+  .t u{ position:absolute; right:8px; font-weight:600; cursor:pointer; }
+  .s{ text-align:center; padding:4px 8px 0; }
+  .c{ padding:8px; }
+  .in{ height:22px; background:var(--az); border-radius:4px; display:flex; align-items:center; justify-content:center; padding:0 6px; white-space:nowrap; }   /* campo SEM borda: só o fundo */
+  .in.ln{ background:transparent; border-bottom:1px solid var(--linha); border-radius:0; }
+  .rot{ font-size:11px; font-weight:600; text-align:center; margin-bottom:2px; }
+  .g2{ display:grid; grid-template-columns:1fr 1fr; gap:6px; } .g3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  .bt{ height:22px; padding:0 10px; border-radius:4px; background:var(--az); font-weight:600; display:inline-flex; align-items:center; }
+  .bt.p{ background:var(--claro); }
+  .rod{ display:flex; gap:6px; align-items:center; padding:6px 8px 8px; } .rod .e{ margin-right:auto; }
+  .ck{ display:flex; gap:5px; align-items:center; justify-content:center; margin:4px 0; }
+  .ck i{ width:11px; height:11px; border:1px solid #fff; border-radius:2px; display:inline-block; }
+  .lin{ display:grid; grid-template-columns:38% 62%; align-items:center; min-height:26px; border-bottom:1px solid var(--linha); } .lin:last-child{ border-bottom:0; }
+  .lin > :first-child{ text-align:left; font-weight:600; padding-left:4px; }
+  .grande{ font-size:20px; font-weight:700; text-align:center; } .peq{ font-size:11px; text-align:center; }
+  .fr{ display:inline-flex; background:var(--az); border-radius:4px; padding:1px 8px; margin:0 2px; }
+</style>
+</head>
+<body>
+<h1>Pagar conta: 6 jeitos com menos linhas</h1>
+<p class="sub">Todos sem campos com borda (só um fundo azul), sem blocos numerados e com a data estreita. Mesmos dados: Valor, Data, Forma, Conta, Observação, Dividir, Para quem entra, Editar conta.</p>
+<div class="grade">
+
+<div><div class="nome">1 · Uma ficha, rótulo ao lado</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="c">
+   <div class="lin"><span>Valor</span><div class="in">R$ 2.263,63</div></div>
+   <div class="lin"><span>Data</span><div class="in" style="width:110px">22/11/2026</div></div>
+   <div class="lin"><span>Forma</span><div class="in">PIX ▾</div></div>
+   <div class="lin"><span>Conta</span><div class="in">Itaú black — Conta Itaú Black ▾</div></div>
+   <div class="lin"><span>Para quem entra</span><div class="in">Casa/Família ▾</div></div>
+   <div class="lin"><span>Observação</span><div class="in ln"></div></div>
+   <div class="ck"><i></i> Dividir entre formas de pagamento</div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">Uma linha por informação, rótulo à esquerda. Sem blocos. Fica alto, mas fácil de ler de cima para baixo.</div></div>
+
+<div><div class="nome">2 · Grade 2 × 3, sem blocos</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="c">
+   <div class="g3"><div><div class="rot">Valor</div><div class="in">R$ 2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+   <div class="g2" style="margin-top:6px"><div><div class="rot">Conta</div><div class="in">Itaú black — Conta Itaú Black ▾</div></div><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+   <div class="rot" style="margin-top:6px">Observação</div><div class="in ln"></div>
+   <div class="ck"><i></i> Dividir entre formas de pagamento</div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">Só 3 linhas de campos. Valor, data e forma lado a lado; é a mais baixa.</div></div>
+
+<div><div class="nome">3 · Frase que se completa</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026</div>
+  <div class="c">
+   <div class="peq">Falta pagar</div><div class="grande">R$ 2.263,63</div>
+   <div class="peq" style="line-height:30px;margin-top:6px">Pagar <span class="fr">R$ 2.263,63</span> no dia <span class="fr">22/11</span> por <span class="fr">PIX ▾</span></div>
+   <div class="peq" style="line-height:30px">da conta <span class="fr">Itaú black — Conta Itaú Black ▾</span></div>
+   <div class="peq" style="line-height:30px">para <span class="fr">Casa/Família ▾</span></div>
+   <div class="rot" style="margin-top:6px">Observação</div><div class="in ln"></div>
+   <div class="ck"><i></i> Dividir entre formas de pagamento</div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">Lê como uma frase e mostra o valor que falta em destaque. Muito intuitiva; foge um pouco do padrão de campos.</div></div>
+
+<div><div class="nome">4 · Duas colunas: "quanto" e "de onde"</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="c"><div class="g2">
+   <div><div class="rot">Valor</div><div class="in">R$ 2.263,63</div><div class="rot" style="margin-top:6px">Data</div><div class="in">22/11/2026</div><div class="rot" style="margin-top:6px">Observação</div><div class="in ln"></div></div>
+   <div><div class="rot">Forma</div><div class="in">PIX ▾</div><div class="rot" style="margin-top:6px">Conta</div><div class="in">Itaú black — Conta Itaú Black ▾</div><div class="rot" style="margin-top:6px">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+   <div class="ck"><i></i> Dividir entre formas de pagamento</div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">Esquerda: quanto e quando. Direita: de onde sai e para quem. Observação na esquerda.</div></div>
+
+<div><div class="nome">5 · Só o essencial, o resto recolhido</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="c">
+   <div class="g3"><div><div class="rot">Valor</div><div class="in">R$ 2.263,63</div></div><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Forma</div><div class="in">PIX ▾</div></div></div>
+   <div class="rot" style="margin-top:6px">Conta</div><div class="in">Itaú black — Conta Itaú Black ▾</div>
+   <div class="peq" style="margin-top:8px;text-decoration:underline">Mais opções ▸ observação, dividir entre formas, para quem entra</div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">O comum são 4 campos. "Para quem entra" já vem da conta (Casa/Família) e só aparece em "Mais opções". Menor de todas.</div></div>
+
+<div><div class="nome">6 · Linha única por forma (já aceita dividir)</div>
+ <div class="j"><div class="t">Pagar · Empréstimo Itaú<u>Fechar</u></div><div class="s">Novembro/2026 · vence 05/11/2026 · falta R$ 2.263,63</div>
+  <div class="c">
+   <div class="g3" style="grid-template-columns:1fr 1.2fr 2fr"><div class="rot">Valor</div><div class="rot">Forma</div><div class="rot">Conta</div>
+    <div class="in">R$ 1.263,63</div><div class="in">PIX ▾</div><div class="in">Itaú black — Conta Itaú Black ▾</div>
+    <div class="in">R$ 1.000,00</div><div class="in">Dinheiro ▾</div><div class="in">Caixa financeiro Sorelly ▾</div></div>
+   <div class="peq" style="margin-top:4px;text-align:left">+ Outra forma · <b style="color:#9fe0b0">✓ Soma certa</b></div>
+   <div class="g2" style="margin-top:6px"><div><div class="rot">Data</div><div class="in">22/11/2026</div></div><div><div class="rot">Para quem entra</div><div class="in">Casa/Família ▾</div></div></div>
+   <div class="rot" style="margin-top:6px">Observação</div><div class="in ln"></div>
+  </div>
+  <div class="rod"><span class="bt e">Editar conta</span><span class="bt">Cancelar</span><span class="bt p">Registrar pagamento</span></div></div>
+ <div class="nota">Sem caixa "Dividir". Cada linha é uma forma de pagar; "+ Outra forma" acrescenta e a soma avisa se fecha. Boa quando se paga em duas formas.</div></div>
+
+</div>
+</body>
+</html>

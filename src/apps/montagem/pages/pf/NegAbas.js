@@ -26,7 +26,7 @@ function AbaPfNegAbas(){
       className:"inline-flex h-[18px] items-center whitespace-nowrap rounded border px-3 text-[10px] font-semibold leading-none "+(on ? "border-white/60 bg-white/30 text-white" : "border-white/25 bg-white/10 text-white hover:bg-white/20")}, x[1]); }));   // padrao-ok: abas de 10 px na barra de filtros
   return e("div",{className:"flex flex-col gap-0"},
     e("div",{className:PADRAO_BLOCOS+" -mx-4 -mt-4 md:-mx-6 md:-mt-6 [&_section]:!rounded-none [&_section]:!border-x-[4px] [&_section]:!border-y-0"},
-      e(BlocoPainel,{titulo:"Negociações", compacto:true, cls:"[&_h2]:!py-1.5"}, e("div",{className:"h-[3px] bg-white"}))),
+      e(BlocoPainel,{titulo:"Negociações", compacto:true, cls:"[&_h2]:!py-1"}, e("div",{className:"h-[3px] bg-white"}))),
     aba==="neg" ? e(AbaPfNeg, {abasEl:abasEl}) : aba==="mes" ? e(AbaPfNeg, {visao:"mes", abasEl:abasEl}) : e("div",null,
       e("div",{className:"-mx-4 flex flex-wrap items-center border-b-2 border-white/30 bg-[#2d5190] px-2 py-1 md:-mx-6"}, abasEl),
       e("div",{className:"pt-2"}, aba==="meses" ? e(Geral, null) : e(LimiteECalendario, null))));

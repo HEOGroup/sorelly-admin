@@ -12,6 +12,9 @@ import { todasAsPaginas } from "@/server/devmaster2";
 import { listaRevendedoras, vendedores } from "@/server/revendedoras";
 
 const LIMITE_KIT_ATIVO = 70;
+// EQUIPAMENTO NÃO É EXPOSITOR (Marcus, 11/11/2026: "o da Rayssa é um leitor"): leitor, notebook, celular, kit de apoio da representante etc. ficam com a representante para trabalhar e vêm na mesma condicional do vendedor 04.
+const somaEq = (eq, re) => [...eq.entries()].reduce((t, [m, q]) => t + (re.test(m) ? q : 0), 0);
+const EQUIPAMENTO = /LEITOR|NOTEBOOK|IPHONE|MEDIDOR DE DEDO|KIT APOIO|BOLSA MOSTRU|MALETA/i;
 const joiasDe = (c) => (c.it || []).reduce((t, x) => t + (x.g === "Peças de joia" ? x.q : 0), 0);
 const ehExpositor = (c) => c.t === "Expositor" && joiasDe(c) < 10;
 const ehKit = (c) => !ehExpositor(c) && c.t !== "Encomenda";
@@ -74,14 +77,24 @@ export const GET = rota(async () => {
     const datasKit = kits.map((c) => c.e).filter(Boolean).concat(vencidos.has(i.cod) ? [vencidos.get(i.cod)] : []).sort();
     const kitDesde = datasKit[0] || "", kitDias = dias(kitDesde, agora);
     const desde = exp.map((c) => c.e).filter(Boolean).sort()[0] || "";
-    const por = new Map(), grupos = new Map();
-    exp.forEach((c) => (c.it || []).forEach((x) => { if (x.g === "Peças de joia") return; por.set(x.m, (por.get(x.m) || 0) + x.q); grupos.set(x.g, (grupos.get(x.g) || 0) + x.q); }));
+    const por = new Map(), grupos = new Map(), eq = new Map();
+    let pecasExp = 0, valorExp = 0, valorEq = 0;
+    exp.forEach((c) => (c.it || []).forEach((x) => {
+      if (x.g === "Peças de joia") return;
+      if (EQUIPAMENTO.test(x.m)) { eq.set(x.m, (eq.get(x.m) || 0) + x.q); valorEq += x.q * x.v; return; }
+      por.set(x.m, (por.get(x.m) || 0) + x.q); grupos.set(x.g, (grupos.get(x.g) || 0) + x.q); pecasExp += x.q; valorExp += x.q * x.v;
+    }));
     const categoria = kitDias === null ? "semkit" : kitDias > LIMITE_KIT_ATIVO ? "kitvelho" : "comkit";
     return {
       cod: i.cod, nome: i.nome, celular: i.celular || "", cidade: i.cidade || "", uf: i.uf || "",
       representante: categoria === "semkit" ? ((ultima.get(i.cod) || {}).nome || "") : (i.representante === "Sem representante" ? "" : i.representante),
       dias: dias(desde, agora), desde, ultimaVenda: vendas.get(i.cod) || "",
-      modelos: [...por.entries()].map(([m, q]) => ({ m, q })), resumo: [...grupos.entries()].map(([g, q]) => q + " " + g).join(", "), pecas: exp.reduce((t, c) => t + c.p, 0), valor: exp.reduce((t, c) => t + c.v, 0),
+      modelos: [...por.entries()].map(([m, q]) => ({ m, q })), resumo: [...grupos.entries()].map(([g, q]) => q + " " + g).join(", "), pecas: pecasExp, valor: Math.round(valorExp * 100) / 100,
+      equipamento: [...eq.entries()].map(([m, q]) => q + " " + m).join(", "), valorEquipamento: Math.round(valorEq * 100) / 100,
+      // equipamento separado por tipo (Marcus, 11/11/2026): leitor, notebook, telefone e os outros (kit de apoio, medidor de dedo, bolsa, maleta)
+      leitores: somaEq(eq, /LEITOR/i), notebooks: somaEq(eq, /NOTEBOOK/i), telefones: somaEq(eq, /IPHONE|CELULAR|TELEFONE|SMARTPHONE/i),
+      outrosEquip: [...eq.entries()].filter(([m]) => !/LEITOR|NOTEBOOK|IPHONE|CELULAR|TELEFONE|SMARTPHONE/i.test(m)).map(([m, q]) => q + " " + m).join(", "),
+      contem: eq.size && por.size ? "Expositor e equipamento" : eq.size ? "Só equipamento" : "Expositor",
       kitDias, kitDesde, categoria,
     };
   }).sort((a, b) => (b.dias ?? -1) - (a.dias ?? -1));

@@ -442,13 +442,13 @@ function AbaDirecionar(){
         ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Confirmar"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC+(i===5 ? " sticky right-0 z-10" : "")}, t); }),
         partes.map(renderParte)))),
     ));
-  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] [--color-card:#15213a] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
+  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] [--color-card:#15213a] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_*]:!text-[11px] [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
     e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
-    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:50, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
+    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:4, semContagem:true, semLimpar:true, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
-    veFam && e("div",{className:"grid grid-cols-1 items-stretch gap-1.5"}, Painel("Pagamentos da Família", "", "", "#f5c14b", e("div",{className:"flex flex-1 flex-col"}, tabelaFam))),   // bloco da Família (12/11/2026): os botões Falta/Todos do mês/Família saíram do bloco dos fornecedores, então a Família ganhou bloco próprio, só para quem abre o Financeiro familiar
+    // 19/11/2026 (Marcus): o bloco "Pagamentos da Família" saiu do Direcionar da Sorelly (Financeiro familiar e empresa ficam separados; a família fica só no Financeiro familiar)
     // ── feitos
     feitos.length>0 && (function(){
       // DIRECIONADOS no padrão (Marcus, 12/11/2026): só o título, uma linha por destino, revendedora (4 primeiros nomes), conta escrita pela regra única e Reabrir pequeno, só até o pagamento ser conferido

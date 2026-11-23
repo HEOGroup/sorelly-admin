@@ -95,9 +95,9 @@ function AbaProdPecasCasa(props){
   return casca(props && props.semRaiz,
     e("div",{className:GRADE_LIMPA+" grid grid-cols-1 items-stretch gap-2 lg:grid-cols-2"},
       e(BlocoPainel,{titulo:"Estoque com "+(func ? func.split(" ")[0] : "elas"), dir:"Saldo "+n0(sit.tot.comEla), alta:true, compacto:true, acao:e(BtFaixa,{onClick:novo, disabled:!editaNum || !func, titulo:"Anotar o estoque que a Sorelly enviou para "+(func || "ela")}, "+ Estoque enviado")},
-        e(TabelaPlanilha,{key:"pc", cols:colsC, linhas:saldo, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeC, vazio:"Nenhuma peça enviada a ela desde 16/11."})),
+        e(TabelaPlanilha,{key:"pc", fina:true, cols:colsC, linhas:saldo, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeC, vazio:"Nenhuma peça enviada a ela desde 16/11."})),
       e(BlocoPainel,{titulo:"Movimentações", dir:movs.length || "", alta:true, compacto:true},
-        e(TabelaPlanilha,{key:"pe", cols:colsE, linhas:movs, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeE, aoClicar:editaNum ? function(r){ if(r.mov) abrir(r.mov); } : undefined, vazio:"Nenhuma movimentação."}))),
+        e(TabelaPlanilha,{key:"pe", fina:true, cols:colsE, linhas:movs, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeE, aoClicar:editaNum ? function(r){ if(r.mov) abrir(r.mov); } : undefined, vazio:"Nenhuma movimentação."}))),
     janela);
 }
 export { AbaProdPecasCasa };

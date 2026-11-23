@@ -32,7 +32,7 @@ function ehExterna(nome){ return !!EXTERNAS[trim(nome)]; }
 var PADRAO_EXTERNA = "Davila Aline";   // envios antigos (sem nome) são dela
 /** quem faz produção em casa: as três de sempre mais qualquer nome com linha Externa ou envio anotado */
 function listaExternas(pr){
-  var out = ["Davila Aline", "Leci", "Didi"], tem = function(n){ return out.some(function(o){ return trim(o).toLowerCase()===trim(n).toLowerCase(); }); };
+  var out = ["Davila Aline", "Leci Rosa", "Didi"], tem = function(n){ return out.some(function(o){ return trim(o).toLowerCase()===trim(n).toLowerCase(); }); };
   (pr.movCasa||[]).forEach(function(m){ var n = trim(m.func) || PADRAO_EXTERNA; if(!tem(n)) out.push(n); });
   Object.keys(pr.lancamentos||{}).forEach(function(d){ (pr.lancamentos[d]||[]).forEach(function(l){ if(l.unidade==="CASA" && trim(l.func) && !tem(l.func)) out.push(trim(l.func)); }); });
   return out;

@@ -32,6 +32,7 @@ Bipagem → Financeiro; Garantia/Trocas (peças de garantia); Inadimplência
 | 2 | Kit novo não pega condicionais; acerto + kit sempre pega antes de montar. |
 | 3 | Anel tem tamanho (nunca "aro"). |
 | 4 | Leilão, Encomendas (91) e Expositor (04) não são acerto. |
+| 5 | Bônus da montadora (12/11/2026): conta por dia. 8 kits normais = R$ 15,00 + R$ 2,00 por kit a mais; 6 kits especiais (acima de R$ 12.000,00) = R$ 15,00 + R$ 3,00 por kit a mais. A nota do kit vem da revendedora e corta o bônus. Supervisão normal: Maria Vitória. |
 
 ## 4. Onde ficam as coisas
 | O quê | Onde |
@@ -54,6 +55,7 @@ Bipagem → Financeiro; Garantia/Trocas (peças de garantia); Inadimplência
 | Controle de kits | `/representantes-kits/controle-de-kits` |
 | Placar | `/representantes-kits/placar-representantes` |
 | Comissões | `/financeiro/comissoes` |
+| Bônus da montagem (meta por dia + nota da revendedora) | `/financeiro/comissoes-montagem` |
 | Pix representantes | `/representantes-kits/pix-representantes` |
 | Inadimplência | `/financeiro/inadimplencia` |
 | Compras de joias | `/representantes-kits/compras-joias-representantes` |

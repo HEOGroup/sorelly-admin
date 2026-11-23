@@ -28,7 +28,7 @@ function validarLancamento(b, hoje, jaLancados){
   if(destino==="socio" && !limpa(x.personaId)) return {erro:"Escolha a conta que recebeu."};
   var dup = (jaLancados || []).some(function(y){ return y.data===data && r2(y.valor)===valor && nomeParecido(y.rev, rev); });
   if(dup) return {erro:"Esse Pix já está lançado (mesma revendedora, data e valor)."};
-  return {item:{id:novoId(), data:data, valor:valor, rev:rev, destino:destino, tipo:tipo, destinoId:limpa(x.destinoId), destinoNome:limpa(x.destinoNome).slice(0, 120), personaId:destino==="socio" ? limpa(x.personaId) : "", contaId:destino==="socio" ? limpa(x.contaId) : "", contaTxt:destino==="empresa" ? limpa(x.contaTxt).slice(0, 60) : "",
+  return {item:{id:novoId(), data:data, valor:valor, rev:rev, destino:destino, tipo:tipo, destinoId:limpa(x.destinoId), destinoNome:limpa(x.destinoNome).slice(0, 120), personaId:destino==="socio" ? limpa(x.personaId) : "", contaId:destino==="socio" ? limpa(x.contaId) : "", casa:destino==="socio" && CASAS_OK.indexOf(limpa(x.casa))>=0 ? limpa(x.casa) : "", contaTxt:destino==="empresa" ? limpa(x.contaTxt).slice(0, 60) : "",
     compKey:"", compNome:"", compTipo:"", ffPixId:"", por:"", em:""}};
 }
 
@@ -84,6 +84,7 @@ function linhasAntecipados(rcb0, ff, opcoes){
 // CÓPIA na Família: faz o MESMO que a ação pix_add de domain/financeiro-familiar.js (o Pix entra em ff.pix como "Aguardando" e, se a conta é de prestador, gera UM repasse) e a pix_comp (comprovante).
 // Fica aqui, e não importando o reducer da Família, para o servidor não carregar os dados reais da Família. scripts/testar-recebimento-antecipado.mjs compara os dois resultados.
 // Devolve {ff (cópia nova), pixId} ou {erro}.
+var CASAS_OK = ["casaalphaville", "juan", "casajardine", "familia"];   // mesmas casas de CASAS_PIX em financeiro-familiar.js (aqui separado para o servidor não carregar o reducer da Família)
 function espelharNaFamilia(ff0, a){
   var ff = JSON.parse(JSON.stringify(ff0 || {})), v = r2(a.valor);
   if(!Array.isArray(ff.pix) || !Array.isArray(ff.repasses) || !Array.isArray(ff.contasBanc) || !Array.isArray(ff.personas)) return {erro:"O Financeiro familiar ainda não está no servidor."};
@@ -92,6 +93,7 @@ function espelharNaFamilia(ff0, a){
   if(a.contaId && !cb) return {erro:"Conta não encontrada no Financeiro familiar."};   // sem conta (Pix para o sócio) também vale
   var id = "px"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36);
   var l = {id:id, personaId:a.personaId, data:a.data, valor:v, origem:limpa(a.origem), contaId:a.contaId, forma:"PIX", auditoria:"PENDENTE", auditadoPor:""};
+  if(CASAS_OK.indexOf(limpa(a.casa))>=0) l.casa = limpa(a.casa);   // para qual casa foi o Pix da Casa (campo interno)
   if(a.semAcerto) l.semAcerto = true;   // outro recebimento: o acerto nunca usa este Pix
   if(a.compKey){ l.compKey = a.compKey; l.compNome = String(a.compNome || "").slice(0, 120); l.compTipo = String(a.compTipo || "").slice(0, 60); }
   ff.pix.push(l);
@@ -167,7 +169,7 @@ function resolverDestino(d, ff, rotulo, contaId){
   if(d.tipo==="FAMILIA" && persona) return {destino:"socio", personaId:persona, contaId:"", contaTxt:"", nome:nome};
   if(d.tipo==="PRESTADOR"){
     var pf = d.prestFamId && (F.prest || []).find(function(p){ return p.id===d.prestFamId; });
-    if(!pf && d.personaId){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // só destino MARCADO como da família (tem personaId) procura o prestador da Família pelo nome; destino da Sorelly (sem personaId) NUNCA cai no Familiar por nome igual (Marcus, 21/11/2026: o R$ 150,00 do Lucas Castilho era bônus da Sorelly e foi para o Familiar)
+    if(!pf){ var nn = semAc2(d.nome); pf = (F.prest || []).find(function(p){ return semAc2(p.nome)===nn; }); }   // Direcionar sem vínculo: procura o prestador da Família com o mesmo nome
     if(pf){
       var cs = (F.contasBanc || []).filter(function(c){ return c.prestadorId===pf.id && c.ativo!==false; });
       var cb = cs.find(function(c){ return persona && c.personaId===persona; }) || cs[0];

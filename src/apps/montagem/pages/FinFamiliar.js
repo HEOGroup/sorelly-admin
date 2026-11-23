@@ -2,10 +2,10 @@
 // Financeiro Familiar trazido do SorellyAdmin: Home, Alertas, Contas a pagar, Contas pagas, PIX revendedoras, Prestadores, Pró-labores, Relatório, Histórico e Configurações.
 // As regras e as contas ficam em domain/financeiro-familiar.js; aqui só as telas. Só os sócios (ACESSO_FF) abrem. Dados só neste navegador.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
+import { bancoDeConta, junta, nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
+import { CASAS_PIX, CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
 import { abrirAnexo, buscarAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -17,7 +17,8 @@ import { Bloco, BlocoFiltros, Botao, CAMPO, CampoSel, Rotulo, TabelaP, Td, Tr } 
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { CampoMini } from "@/apps/montagem/components/planilha-cheia";
+import { CaixaEscolha } from "@/apps/montagem/components/caixa-escolha";
+import { PAGINA_CHEIA, CLS_FINA_ESPACO, BarraTabela, CelulaBarra, CampoMini, BuscaMini, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { chavesParaGravar } from "@/apps/montagem/lib/chave-do-destino";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { e, useState } from "@/shared/react";
@@ -45,7 +46,16 @@ function Modal(p){
 }
 function MesSel(p){ var l = janela(); return e(Sel,{value:p.ym, label:"Mês", className:"w-52", onChange:p.set}, p.todos && e("option",{value:""}, "Todos os meses"), l.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })); }
 var pessoaNome = function(ff, id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.nome : "—"; };
-var contaLabel = function(ff, id){ var c = ff.contasBanc.find(function(x){ return x.id===id; }); return c ? (c.banco ? c.banco+" — " : "")+c.nome : ""; };
+// ESCRITA PADRÃO DA CONTA (Marcus, 22/11/2026: "alinhar conforme o negócio das contas"; regra em lib/nome-conta.js): sócio = PF · Marcus · Nubank; Casa = Casa · Itaú; cartão leva a palavra Cartão; prestador = Marcus · Higor · Santander; conta da Sorelly sem dono fica só com o nome
+var contaLabel = function(ff, id){ var c = ff.contasBanc.find(function(x){ return x.id===id; }); if(!c) return "";
+  var dono = (ff.personas || []).find(function(q){ return q.id===c.personaId; }), banco = bancoDeConta(c.banco+" "+c.nome) || nomePropio(String(c.banco || "").replace(/^Conta\s+/i, "")), cartao = /cart[aã]o/i.test(c.nome) ? "Cartão" : "";
+  if(c.prestadorId){ var pr = (ff.prest || []).find(function(q){ return q.id===c.prestadorId; }); return rotuloPrestadorFamilia(dono ? dono.nome : "", pr ? pr.nome : "", c.banco+" "+c.nome); }
+  if(/^a definir$/i.test(banco)) banco = "";
+  if(!dono){ if(/itaú black|itau black/i.test(c.banco+" "+c.nome)) return junta(["Casa", cartao, banco]); if(cartao) return junta(["Cartão", banco, (String(c.nome).match(/\b(\d{2})\b/) || [])[1]]); return nomePropio(String(c.nome).replace(/^Conta\s+/i, "")); }
+  var prefixo = ehCasa(dono.id) || dono.id==="familia" ? "Casa" : dono.id==="sorelly" ? "Sorelly" : "PF";
+  return junta([prefixo, prefixo==="PF" ? nomePropio(dono.nome) : "", cartao, banco]) || nomePropio(c.nome); };
+// LISTA DE CONTA PAGADORA (Marcus, 22/11/2026): só as contas da família (sócios e Casa), ativas, cada conta UMA vez; as contas de prestadores ficam no cadastro de prestadores
+var contasPagadoras = function(ff){ var vistos = {}, out = []; ff.contasBanc.forEach(function(b){ if(!b.ativo || b.prestadorId) return; var n = contaLabel(ff, b.id); if(!n || vistos[n]) return; vistos[n] = 1; out.push(b); }); return out; };
 var corPessoa = function(ff, id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.cor : "#EC4899"; };
 var catNome = function(ff, k){ var c = ff.categorias.find(function(x){ return x.chave===k; }); return c ? c.nome : k; };
 var statusChip = function(x){ var cor = x.status==="PAGO" ? "#22C55E" : x.atrasada ? "#EF4444" : x.status==="PARCIAL" ? "#F59E0B" : "#94A3B8", lb = x.status==="PAGO" ? "Pago" : x.atrasada ? "Atrasado" : x.status==="PARCIAL" ? "Parcial" : "Pendente";
@@ -62,40 +72,71 @@ function totaisAno(ff, pid, ano){
     pro:{total:s(function(x){ return x.pro.total; }), recebido:s(function(x){ return x.pro.recebido; }), restante:s(function(x){ return x.pro.restante; })},
     pix:{meta:s(function(x){ return x.pix.meta; }), recebido:s(function(x){ return x.pix.recebido; }), restante:s(function(x){ return x.pix.restante; })}};
 }
-// HOME = EXTRATO COMPLETO (Marcus, 22/11/2026, modelo A): linhas dizem O QUE É (entrou, saiu, falta pagar, categorias) e colunas dizem QUEM (uma por pessoa + total da família).
-// Clicar numa linha abre embaixo a lista que explica o número (prestadores, Pix, contas atrasadas...). Substitui Resumo do grupo, Sócios (consolidado) e Relatório. Cor só para estado: verde = entrou/pago, vermelho = atrasado.
+// HOME = RESUMO QUE ABRE (Marcus, 23/11/2026): linhas dizem O QUE É e colunas dizem QUEM, em 3 grupos (Pessoas, Compartilhado, Casas). Só o essencial fica à vista (Pró-labore, Pix, Pago, Falta pagar, A pagar no mês);
+// o resto abre ao clicar (para onde foi o Pix, prestadores, transferências, categorias). Atrasado e vence-em-7-dias NÃO ficam aqui: é da tela Contas a pagar. O Lucas fica numa linha no fim, FORA do total da família.
 var diaBr = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(2,4) : "—"; };
 var LIM_DET = 80;   // linhas de cada lista aberta (a lista completa fica na tela de lançar)
+var FORA_DO_TOTAL = ["lucas"];   // quem não entra no total da família: aparece numa linha no fim
 function DetTab(p){
   var l = p.linhas || [], corte = l.length>LIM_DET;
   return e("div",{className:"flex flex-col gap-1.5 p-1.5", onClick:function(ev){ ev.stopPropagation(); }},
     l.length===0 ? e("p",{className:"py-2 text-center text-[11px]"}, p.vazio || "Nada neste período.") :
-      e(TabelaPlanilha,{cols:p.cols, linhas:corte ? l.slice(0, LIM_DET) : l, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nada."}),
+      e(TabelaPlanilha,{fina:true, cols:p.cols, linhas:corte ? l.slice(0, LIM_DET) : l, chave:"id", grade:true, semMao:true, centro:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nada."}),
     corte && e("p",{className:"text-center text-[11px]"}, "Mostrando as "+LIM_DET+" primeiras de "+l.length+". A lista completa fica em "+(p.onde || "outra tela")+"."),
     p.ir && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ p.ir(p.ir2); }}, p.rotuloIr)));
 }
+// ESCALA DE COR DOS BLOCOS QUE ABREM (Marcus, 23/11/2026): a linha que abre fica no azul escuro normal; o que aparece dentro dela é só 20% mais claro; e o que abre dentro disso, mais 20%, e assim por diante. As bordas e as linhas NÃO mudam de cor: ficam na cor da linha da tabela.
+var AZUL_BASE = [31, 51, 88], PASSO_ABERTO = 1.2, PASSO_DENTRO = 1.32;   // azul escuro da tabela; 1º nível = 20% mais claro; do 2º em diante, mais 32% a cada nível
+var ESCALA_ABERTO = [1, 2, 3, 4].map(function(n){ var k = PASSO_ABERTO*Math.pow(PASSO_DENTRO, n-1); return "rgb("+AZUL_BASE.map(function(v){ return Math.min(255, Math.round(v*k)); }).join(",")+")"; });   // nível 1 → nível 4
+var CSS_ABERTO = ESCALA_ABERTO.map(function(cor, i){ return "table tbody tr.ffa-n"+(i+1)+">td{background:"+cor+" !important}"; }).concat([
+  "table tbody tr.ffa-aberta>td{font-weight:700 !important}",
+  "section.compacto table tbody td{border-color:rgba(255,255,255,.45) !important}",
+  "section.compacto table thead th{border-color:rgba(255,255,255,.45) !important}",
+  "section.compacto table td,section.compacto table td *{color:#fff !important}",   // Marcus, 23/11/2026: todas as letras brancas, sem verde nem vermelho
+  ".ff-par{display:grid;gap:0;margin-top:-10px;overflow:hidden;border-radius:0;border:2px solid #2d5190 !important;border-top:5px solid rgba(255,255,255,.9) !important}",
+  ".ff-par>section{height:100%;border:0 !important;border-radius:0 !important}",
+  "@media (min-width:1024px){.ff-par2{grid-template-columns:1fr 1fr}.ff-par2>section+section{border-left:5px solid rgba(255,255,255,.9) !important}}"
+]).join(" ");
+CSS_ABERTO = "@layer utilities{ "+CSS_ABERTO+" }";   // dentro da camada utilities: sem isso o Tailwind (importante em camada) vence o estilo solto
 function AbaFfHome(){
   var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ANO = /^ANO:/.test(ym) ? ym.slice(4) : "";
+  var gs = useState({}), ab = gs[0], setAb = gs[1], alterna = function(g){ var o = Object.assign({}, ab); o[g] = !ab[g]; setAb(o); };   // grupos de linhas abertos (tudo nasce fechado)
+  var qs = useState("todos"), quem = qs[0], setQuem = qs[1];   // "Quem": todos (uma coluna por pessoa) ou uma pessoa (colunas Total · Já pago · Falta)
+  // BLOCO ABERTO COM LINHA QUE FECHA (Marcus, 23/11/2026): as linhas de dentro ficam num tom um pouco mais claro, com uma barra azul fina à esquerda, e a última de cada bloco ganha uma linha mais forte embaixo
+  var marcaFim = function(arr){ arr.forEach(function(l, i){ var nx = arr[i+1], nv = l.nivel||0; if(nv>0 && (!nx || (nx.nivel||0)<nv)) l.fim = (!nx || (nx.nivel||0)===0) ? 1 : 2; }); return arr; };
+  // Quando um bloco abre (Marcus, 23/11/2026: "melhora um bloco quando vai abrindo"): a linha que abriu fica mais clara e em negrito; o que está dentro fica MAIS ESCURO, com uma barra azul grossa à esquerda (mais clara a cada nível); a última linha do bloco fecha com uma linha branca mais forte
+  var tinta = function(l){ var nv = Math.min(l.nivel||0, ESCALA_ABERTO.length), cl = "";
+    if(nv>0) cl += "ffa-n"+nv;
+    if(l.tg && ab[l.tg]) cl += " ffa-aberta";
+    return cl; };
   var mesesOp = janela().filter(function(k){ return k<=hojeYm(); }), anosOp = mesesOp.map(function(k){ return k.slice(0,4); }).filter(function(a, i, l){ return l.indexOf(a)===i; });
   var ir = function(aba){ c.d({type:"ABA", aba:aba}); };
-  var yms = ANO ? mesesOp.filter(function(k){ return k.slice(0,4)===ANO; }) : [ym], hoje = hojeIso();
-  var emSete = (function(){ var d = new Date(hoje+"T12:00:00"); d.setDate(d.getDate()+7); return d.toISOString().slice(0,10); })();
+  var yms = ANO ? mesesOp.filter(function(k){ return k.slice(0,4)===ANO; }) : [ym];
   var todasParc = parcelasDe(ff, {yms:yms});
   var contaPessoa = {}; (ff.contasBanc||[]).forEach(function(b){ contaPessoa[b.id] = b.personaId; });
   // 1) dados de cada pessoa (as colunas)
-  var D = ff.personas.filter(function(p){ return p.ativo && (p.mostrarContas || p.mostrarPix || p.mostrarProlabore); }).map(function(p){
+  var dados = ff.personas.filter(function(p){ return p.ativo && (p.mostrarContas || p.mostrarPix || p.mostrarProlabore); }).map(function(p){
     var t = ANO ? totaisAno(ff, p.id, ANO) : totaisPersona(ff, p.id, ym);
-    var itens = todasParc.filter(function(x){ return daPessoa(x.conta, p.id); }).map(function(x){ var q = x.conta.rateio && x.conta.rateio.length ? 1/x.conta.rateio.length : 1;
-      return {id:x.chave+"|"+p.id, pessoa:p.nome, pid:p.id, desc:x.conta.descricao, cat:catNome(ff, x.conta.categoria), venc:x.venc, valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, status:x.status, pagamentos:(x.pagamentos||[]).map(function(g){ return Object.assign({}, g, {valor:r2(g.valor*q)}); })}; });
-    var soma = function(l, k){ return r2(l.reduce(function(a, x){ return a+x[k]; }, 0)); };
+    var itens = todasParc.filter(function(x){ return daPessoa(x.conta, p.id); }).map(function(x){ var q = parteDe(x.conta);
+      return {id:x.chave+"|"+p.id, pessoa:p.nome, pid:p.id, catChave:x.conta.categoria, pro:x.conta.categoria==="PRO_LABORE", desc:x.conta.descricao, cat:catNome(ff, x.conta.categoria), venc:x.venc, valor:r2(x.valor*q), pago:r2(x.pago*q), restante:r2(x.restante*q), atrasada:x.atrasada, status:x.status, pagamentos:(x.pagamentos||[]).map(function(g){ return Object.assign({}, g, {valor:r2(g.valor*q)}); })}; });
+    // PIX REVENDEDORA NA FAMÍLIA É META, NÃO CONTA A PAGAR (Marcus, 23/11/2026): a conta de categoria Pix revendedora sai das Contas a pagar da Home (a meta já aparece no bloco Pix revendedoras); na Contas a pagar da empresa ela continua valendo
+    var pxr = itens.filter(function(x){ return x.catChave==="PIX_REVENDEDORA"; });
+    if(pxr.length>0){ itens = itens.filter(function(x){ return x.catChave!=="PIX_REVENDEDORA"; });
+      var sm = function(k, fil){ return r2(pxr.filter(fil || function(){ return true; }).reduce(function(a, x){ return a+x[k]; }, 0)); };
+      t = Object.assign({}, t, {contas:Object.assign({}, t.contas, {total:r2(t.contas.total-sm("valor")), pago:r2(t.contas.pago-sm("pago")), restante:r2(t.contas.restante-sm("restante")), pendentes:Math.max(0, t.contas.pendentes-pxr.filter(function(x){ return x.status!=="PAGO"; }).length), atrasado:r2(t.contas.atrasado-sm("restante", function(x){ return x.atrasada; }))})}); }
     var prestMes = r2(yms.reduce(function(a, k){ return a+pixDivisao(ff, p.id, k).prestadores; }, 0));
     var trEnv = 0, trRec = 0; (ff.transf||[]).forEach(function(x){ if(yms.indexOf(String(x.data).slice(0,7))<0) return; if(contaPessoa[x.origem]===p.id) trEnv += x.valor; if(contaPessoa[x.destino]===p.id) trRec += x.valor; });
     var cats = {}; itens.forEach(function(x){ cats[x.cat] = r2((cats[x.cat]||0)+x.valor); });
     var saldoPrest = r2(ff.prest.filter(function(x){ return x.ativo && x.responsavelId===p.id; }).reduce(function(a, x){ return a+saldoPrestador(ff, x.id); }, 0));
-    return {p:p, t:t, itens:itens, cats:cats, trEnv:r2(trEnv), trRec:r2(trRec), prestMes:prestMes, saldoPrest:saldoPrest,
-      atras:soma(itens.filter(function(x){ return x.atrasada; }), "restante"), prox:soma(itens.filter(function(x){ return !x.atrasada && x.restante>0.005 && x.venc>=hoje && x.venc<=emSete; }), "restante"),
-      pix:t.pix.recebido, meta:t.pix.meta, direto:r2(Math.max(0, t.pix.recebido-prestMes))};
-  }).filter(function(d){ return d.p.tipo==="SOCIO" || d.t.pro.total>0 || d.t.contas.total>0 || d.pix>0 || d.meta>0; });
+    return {p:p, t:t, itens:itens, cats:cats, trEnv:r2(trEnv), trRec:r2(trRec), prestMes:prestMes, saldoPrest:saldoPrest, pix:t.pix.recebido, meta:t.pix.meta, direto:r2(Math.max(0, t.pix.recebido-prestMes))};
+  });
+  var grupoDe = function(p){ return p.tipo==="SOCIO" ? "Pessoas" : (p.id==="familia" || p.id==="marco_ana") ? "Compartilhado" : "Casas"; };
+  var ORDEM = ["Pessoas", "Compartilhado", "Casas"];
+  var foraTodos = dados.filter(function(d){ return FORA_DO_TOTAL.indexOf(d.p.id)>=0; });
+  var Dtodos = dados.filter(function(d){ return FORA_DO_TOTAL.indexOf(d.p.id)<0 && (d.p.tipo==="SOCIO" || d.t.pro.total>0 || d.t.contas.total>0 || d.pix>0 || d.meta>0); })
+    .sort(function(a, b){ return ORDEM.indexOf(grupoDe(a.p))-ORDEM.indexOf(grupoDe(b.p)); });
+  var D = Dtodos;
+  var fora = foraTodos;
   var todosItens = [].concat.apply([], D.map(function(d){ return d.itens; }));
   // 2) listas que abrem ao clicar
   var C = function(k, t, extra){ return Object.assign({k:k, t:t}, extra||{}); };
@@ -105,199 +146,357 @@ function AbaFfHome(){
   var viraConta = function(x){ return Object.assign({}, x, {vencBr:diaBr(x.venc), sit:sit(x)}); };
   var porVenc = function(a, b){ return a.venc.localeCompare(b.venc); };
   var abertas = todosItens.filter(function(x){ return x.restante>0.005; }).sort(porVenc).map(viraConta);
-  var listaAtras = abertas.filter(function(x){ return x.atrasada; }).sort(function(a, b){ return b.restante-a.restante; }), listaProx = abertas.filter(function(x){ return !x.atrasada && x.venc>=hoje && x.venc<=emSete; });
   var listaPagas = [].concat.apply([], todosItens.map(function(x){ return x.pagamentos.map(function(g, j){ return {id:x.id+"#"+j, em:g.em, emBr:diaBr(g.em), pessoa:x.pessoa, desc:x.desc, cat:x.cat, forma:g.forma||"—", conta:g.conta||"—", valor:g.valor}; }); })).sort(function(a, b){ return String(b.em).localeCompare(String(a.em)); });
   var pixLista = ff.pix.filter(function(x){ return yms.indexOf(x.data.slice(0,7))>=0 && !pixCasa(ff, x) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && D.some(function(d){ return d.p.id===x.personaId; }); })
     .sort(function(a, b){ return b.data.localeCompare(a.data); }).map(function(x){ return {id:x.id, dataBr:diaBr(x.data), pessoa:pessoaNome(ff, x.personaId), origem:x.origem||"—", valor:x.valor, conta:contaLabel(ff, x.contaId)||"—", aud:x.auditoria==="CONFIRMADO" ? "Confirmado" : "Pendente"}; });
   var repMes = ff.repasses.filter(function(r){ return yms.indexOf(String(r.data).slice(0,7))>=0; });
   var prestLista = ff.prest.filter(function(x){ return x.ativo || repMes.some(function(r){ return r.prestId===x.id; }); }).map(function(x){ var dv = ff.dividas.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0), rp = ff.repasses.filter(function(y){ return y.prestId===x.id; }).reduce(function(a, y){ return a+y.valor; }, 0);
-    return {id:x.id, prest:nomePropio(x.nome), serv:x.servico||"—", dono:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", noPeriodo:r2(repMes.filter(function(r){ return r.prestId===x.id; }).reduce(function(a, r){ return a+r.valor; }, 0)), dividas:r2(dv), pagoTotal:r2(rp), saldo:saldoPrestador(ff, x.id)}; }).sort(function(a, b){ return b.saldo-a.saldo; });
+    return {id:x.id, respId:x.responsavelId, prest:nomePropio(x.nome), serv:x.servico||"—", dono:x.responsavelId ? pessoaNome(ff, x.responsavelId) : "Sem responsável", noPeriodo:r2(repMes.filter(function(r){ return r.prestId===x.id; }).reduce(function(a, r){ return a+r.valor; }, 0)), dividas:r2(dv), pagoTotal:r2(rp), saldo:saldoPrestador(ff, x.id)}; }).sort(function(a, b){ return b.saldo-a.saldo; });
   var ultimoYm = yms[yms.length-1] || ym;
   var proLista = D.filter(function(d){ return d.p.mostrarProlabore; }).map(function(d){ var v = vigenciaEm(ff, d.p.id, ultimoYm); return {id:d.p.id, pessoa:d.p.nome, bruto:v ? v.bruto : 0, inss:v ? v.inss : 0, irrf:v ? v.irrf : 0, liquido:v ? v.liquido : 0, datas:v && v.valor1 ? "dia "+v.dia1+": "+BK(v.valor1)+" · dia "+v.dia2+": "+BK(v.valor2) : "—"}; }).filter(function(x){ return x.bruto>0; });
   var detCat = function(cat){ return e(DetTab,{cols:colsConta, linhas:todosItens.filter(function(x){ return x.cat===cat; }).sort(porVenc).map(viraConta), onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); };
   var fmtSaldo = function(v){ return v<-0.005 ? "Pago a mais "+BK(-v) : BK(v); }, corSaldo = function(l){ return l.saldo<-0.005 ? "text-warning" : l.saldo>0.005 ? "text-destructive" : "text-success"; };
-  var detPrest = function(cols, linhas){ return function(){ return e(DetTab,{cols:cols, linhas:linhas, vazio:"Nenhum prestador.", onde:"Cadastro de prestadores", ir:ir, ir2:"ffprest", rotuloIr:"Abrir cadastro de prestadores"}); }; };
   var colsPrest = [C("prest","Prestador"), C("serv","Serviço"), C("dono","Dono"), C("noPeriodo","Repassado no período",{fmt:BK}), C("dividas","Dívidas",{fmt:BK}), C("pagoTotal","Pago (todos os tempos)",{fmt:BK, cor:function(){ return "text-success"; }}), C("saldo","Saldo",{fmt:fmtSaldo, cor:corSaldo})];
-  var detConta = function(lista, vazio){ return function(){ return e(DetTab,{cols:colsConta, linhas:lista, vazio:vazio, onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); }; };
-  // 3) as linhas do extrato
+  var detPrest = function(linhas){ return function(){ return e(DetTab,{cols:colsPrest, linhas:linhas, vazio:"Nenhum prestador.", onde:"Cadastro de prestadores", ir:ir, ir2:"ffprest", rotuloIr:"Abrir cadastro de prestadores"}); }; };
+  // 3) as linhas do resumo
   var num = function(ok, v){ return ok ? v : null; };
-  var linhas = [], L = function(id, rot, f, o){ linhas.push(Object.assign({id:id, rot:rot, f:f}, o||{})); }, SEC = function(t){ linhas.push({id:"s-"+t, rot:t, tipo:"secao"}); };
-  SEC("ENTROU");
-  L("proLiq", "Pró-labore líquido recebido", function(d){ return num(d.p.mostrarProlabore, d.t.pro.recebido); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("pessoa","Pessoa"), C("bruto","Bruto",{fmt:BK}), C("inss","INSS",{fmt:BK}), C("irrf","IRRF",{fmt:BK}), C("liquido","Líquido",{fmt:BK}), C("datas","Datas")], linhas:proLista, vazio:"Nenhum pró-labore cadastrado.", onde:"Pró-labores", ir:ir, ir2:"ffprolab", rotuloIr:"Abrir pró-labores"}); }});
-  L("pix", "Pix de revendedora recebido", function(d){ return num(d.p.mostrarPix, d.pix); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("dataBr","Data"), C("pessoa","Pessoa"), C("origem","Revendedora"), C("valor","Valor",{fmt:BK}), C("conta","Conta"), C("aud","Conferência",{cor:function(l){ return l.aud==="Pendente" ? "text-warning" : "text-success"; }})], linhas:pixLista, vazio:"Nenhum Pix neste período.", onde:"PIX revendedoras", ir:ir, ir2:"ffpix", rotuloIr:"Abrir Pix revendedoras"}); }});
-  L("direto", "dos quais: ficou na conta da pessoa", function(d){ return num(d.p.mostrarPix, d.direto); }, {sub:1});
-  L("prestPix", "dos quais: foi para prestadores", function(d){ return num(d.p.mostrarPix, d.prestMes); }, {sub:1, det:detPrest(colsPrest, prestLista)});
-  L("meta", "meta do Pix", function(d){ return num(d.p.mostrarPix, d.meta); }, {sub:1, vz:1});
-  L("pcMeta", "% da meta", function(d){ return d.p.mostrarPix && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {sub:1, pc:1});
-  L("trRec", "Transferências entre sócios recebidas", function(d){ return d.trRec; }, {vz:1});
-  SEC("SAIU");
-  L("pagas", "Contas pagas", function(d){ return num(d.p.mostrarContas, d.t.contas.pago); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("emBr","Pago em"), C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("forma","Forma"), C("conta","Conta utilizada"), C("valor","Valor",{fmt:BK, cor:function(){ return "text-success"; }})], linhas:listaPagas, vazio:"Nenhum pagamento neste período.", onde:"Contas pagas da família", ir:ir, ir2:"ffpagas", rotuloIr:"Abrir contas pagas"}); }});
-  L("prestSaiu", "Prestadores de serviço (Pix repassado)", function(d){ return d.prestMes; }, {vz:1, det:detPrest(colsPrest, prestLista.filter(function(x){ return x.noPeriodo>0.005; }))});
-  L("trEnv", "Transferências entre sócios enviadas", function(d){ return d.trEnv; }, {vz:1});
-  SEC("FALTA PAGAR");
-  L("aPagar", "Contas a pagar", function(d){ return num(d.p.mostrarContas, d.t.contas.restante); }, {det:detConta(abertas, "Nenhuma conta em aberto.")});
-  L("proRest", "Pró-labore restante", function(d){ return num(d.p.mostrarProlabore, d.t.pro.restante); });
-  L("atras", "atrasado (contas e pró-labore)", function(d){ return d.atras; }, {sub:1, cor:"ruim", det:detConta(listaAtras, "Nada atrasado.")});
-  L("prox", "vence nos próximos 7 dias", function(d){ return d.prox; }, {sub:1, vz:1, det:detConta(listaProx, "Nada vence nos próximos 7 dias.")});
-  L("saldoPrest", "Saldo devido a prestadores (todos os tempos)", function(d){ return d.saldoPrest; }, {vz:1, det:detPrest(colsPrest, prestLista)});
+  var linhas = [], L = function(id, rot, fn, o){ linhas.push(Object.assign({id:id, rot:rot, f:fn}, o||{})); };
+  var GRUPO = function(g, rot){ linhas.push({id:"g-"+g, rot:rot, tipo:"grupo", g:g}); };
+  L("proLiq", "Pró-labore · Pago", function(d){ return num(d.p.mostrarProlabore, d.t.pro.recebido); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("pessoa","Pessoa"), C("bruto","Bruto",{fmt:BK}), C("inss","INSS",{fmt:BK}), C("irrf","IRRF",{fmt:BK}), C("liquido","Líquido",{fmt:BK}), C("datas","Datas")], linhas:proLista, vazio:"Nenhum pró-labore cadastrado.", onde:"Pró-labores", ir:ir, ir2:"ffprolab", rotuloIr:"Abrir pró-labores"}); }});
+  L("meta", "Pix revendedoras · Meta", function(d){ return num(d.p.mostrarPix, d.meta); });   // a meta de cada pessoa fica sempre à vista, mesmo com Recebido zerado
+  L("pix", "Pix revendedoras · Recebido", function(d){ return num(d.p.mostrarPix, d.pix); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("dataBr","Data"), C("pessoa","Pessoa"), C("origem","Revendedora"), C("valor","Valor",{fmt:BK}), C("conta","Conta"), C("aud","Conferência",{cor:function(l){ return l.aud==="Pendente" ? "text-warning" : "text-success"; }})], linhas:pixLista, vazio:"Nenhum Pix neste período.", onde:"PIX revendedoras", ir:ir, ir2:"ffpix", rotuloIr:"Abrir Pix revendedoras"}); }});
+  L("pagas", "Contas a pagar · Pago", function(d){ return num(d.p.mostrarContas, d.t.contas.pago); }, {cor:"ok", det:function(){ return e(DetTab,{cols:[C("emBr","Pago em"), C("pessoa","Pessoa"), C("desc","Conta"), C("cat","Categoria"), C("forma","Forma"), C("conta","Conta utilizada"), C("valor","Valor",{fmt:BK, cor:function(){ return "text-success"; }})], linhas:listaPagas, vazio:"Nenhum pagamento neste período.", onde:"Contas pagas da família", ir:ir, ir2:"ffpagas", rotuloIr:"Abrir contas pagas"}); }});
+  L("falta", "Falta (contas + pró-labore)", function(d){ return r2((d.p.mostrarContas ? d.t.contas.restante : 0)+(d.p.mostrarProlabore ? d.t.pro.restante : 0)); }, {det:function(){ return e(DetTab,{cols:colsConta, linhas:abertas, vazio:"Nada em aberto.", onde:"Contas a pagar da família", ir:ir, ir2:"ffcontas", rotuloIr:"Abrir contas a pagar"}); }});
   L("total", ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)", function(d){ return r2((d.p.mostrarContas ? d.t.contas.total : 0)+(d.p.mostrarProlabore ? d.t.pro.total : 0)); }, {tipo:"total"});
+  GRUPO("pix", "Pix revendedoras");
+  L("direto", "Conta pessoal", function(d){ return num(d.p.mostrarPix, d.direto); }, {g:"pix", sub:1});
+  L("prestPix", "Prestadores de Serviços", function(d){ return num(d.p.mostrarPix, d.prestMes); }, {g:"pix", sub:1, det:detPrest(prestLista)});
+  L("pcMeta", "% da meta", function(d){ return d.p.mostrarPix && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {g:"pix", sub:1, pc:1});
+  GRUPO("prest", "Prestadores de Serviços");
+  L("prestSaiu", "Pago no período", function(d){ return d.prestMes; }, {g:"prest", sub:1, vz:1, det:detPrest(prestLista.filter(function(x){ return x.noPeriodo>0.005; }))});
+  L("saldoPrest", "Saldo devido", function(d){ return d.saldoPrest; }, {g:"prest", sub:1, vz:1, det:detPrest(prestLista)});
+  GRUPO("transf", "Transferências entre sócios");
+  L("trRec", "Recebidas", function(d){ return d.trRec; }, {g:"transf", sub:1, vz:1});
+  L("trEnv", "Enviadas", function(d){ return d.trEnv; }, {g:"transf", sub:1, vz:1});
+  GRUPO("cat", "Contas a pagar · por categoria");
   var totCat = function(k){ return D.reduce(function(a, d){ return a+(d.cats[k]||0); }, 0); };
-  var catNomes = Object.keys(D.reduce(function(o, d){ Object.keys(d.cats).forEach(function(k){ o[k] = 1; }); return o; }, {})).sort(function(a, b){ return totCat(b)-totCat(a); });
-  SEC("COMPROMISSOS "+(ANO ? "DO ANO" : "DO MÊS")+" POR CATEGORIA (valor total de cada categoria)");
-  catNomes.forEach(function(k){ if(totCat(k)<0.005) return; L("cat-"+k, k, function(d){ return d.cats[k] || 0; }, {sub:1, vz:1, det:function(){ return detCat(k); }}); });
-  // 4) vira linhas da tabela (uma coluna por pessoa + total)
-  var corpo = linhas.map(function(l){ if(l.tipo==="secao") return l; var o = {id:l.id, rot:l.rot, sub:l.sub, cor:l.cor, vz:l.vz, pc:l.pc, tipo:l.tipo, det:l.det}, tot = 0, algum = false;
+  Object.keys(D.reduce(function(o, d){ Object.keys(d.cats).forEach(function(k){ o[k] = 1; }); return o; }, {})).sort(function(a, b){ return totCat(b)-totCat(a); })
+    .forEach(function(k){ if(totCat(k)<0.005) return; L("cat-"+k, k, function(d){ return d.cats[k] || 0; }, {g:"cat", sub:1, vz:1, det:function(){ return detCat(k); }}); });
+  // 4) linhas da tabela: uma coluna por pessoa + total (quem está fora do total vai numa linha no fim)
+  var corpo = [];
+  linhas.forEach(function(l){
+    if(l.tipo==="grupo"){ corpo.push(l); return; }
+    if(l.g && !ab[l.g]) return;
+    var o = {id:l.id, rot:l.rot, sub:l.sub, cor:l.cor, vz:l.vz, pc:l.pc, tipo:l.tipo, det:l.det, nivel:(l.g ? 1 : 0)}, tot = 0, algum = false;
     D.forEach(function(d){ var v = l.f(d); o["p_"+d.p.id] = v; if(typeof v==="number"){ tot += v; algum = true; } });
-    o.total = l.pc ? (function(){ var px = D.reduce(function(a, d){ return a+d.pix; }, 0), mt = D.reduce(function(a, d){ return a+d.meta; }, 0); return mt>0 ? Math.round(px/mt*100) : null; })() : (algum ? r2(tot) : null); return o; });
-  var celula = function(v, l){ if(l.tipo==="secao") return ""; if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); var txt = l.pc ? v+"%" : (l.vz && v===0 ? "—" : BK(v)), cl = l.cor && v>0.005 ? (l.cor==="ruim" ? "text-destructive" : "text-success") : ""; return e("span",{className:cl+(l.tipo==="total" ? " font-bold" : "")}, txt); };
-  var cols = [{k:"rot", t:(ANO ? "Total "+ANO : nomeMes(ym)), render:function(v, l, aberta){ return e("span",{className:"block text-left "+(l.tipo==="secao" || l.tipo==="total" ? "font-bold" : "")+(l.sub ? " pl-4" : "")}, (l.det ? (aberta ? "▾ " : "▸ ") : "")+v); }}]
-    .concat(D.map(function(d){ return {k:"p_"+d.p.id, t:d.p.nome, render:celula}; }), [{k:"total", t:"Total da família", render:function(v, l){ return l.tipo==="secao" ? "" : e("b",null, celula(v, l)); }}]);
-  var fech = ff.fechamentos[ym];
-  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540]";
-  var COMPACTA = FUNDO+" [&_td]:!h-[22px] [&_td]:!px-2 [&_td]:!py-0 [&_td]:!leading-[14px] [&_td]:!text-[11px] [&_th]:!h-6 [&_td[colspan]]:!p-0";   // padrao-ok: linhas de 22 px e letra de 11 px, igual ao Prestadores
-  var seletor = e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:mesesOp.map(function(k){ return [k, nomeMes(k)]; }).concat(anosOp.map(function(a){ return ["ANO:"+a, "Total "+a]; }))});
-  return e(Guarda,{c:c}, e("div",{className:PADRAO_BLOCOS+" -mb-2 -ml-3 -mr-2 -mt-5 flex flex-col gap-1.5 pl-0 md:-mb-3 md:-ml-5 md:-mr-3 md:pl-0"},
-    !ANO && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#5b74ad] bg-[#1b2a4a] px-2 py-1 text-[11px]"},
-      e("span",null, fech ? "Mês fechado em "+new Date(fech.em).toLocaleDateString("pt-BR")+" por "+fech.por+". Os números ficaram guardados." : "Mês aberto. Fechar guarda uma foto destes números para consultar depois."),
-      fech ? e(Botao,{onClick:function(){ if(window.confirm("Reabrir "+nomeMes(ym)+"? A foto guardada será apagada.")) acao(c, "reabrir", {ym:ym}); }}, "Reabrir") : e(Botao,{onClick:function(){ if(window.confirm("Fechar "+nomeMes(ym)+" e guardar os números?")) acao(c, "fechar", {ym:ym}); }}, "Fechar o mês")),
-    D.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
-      e(BlocoPainel,{titulo:"Financeiro familiar", acao:seletor, compacto:false, cls:COMPACTA},
-        e(TabelaPlanilha,{cols:cols, linhas:corpo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada neste período.",
-          detalhe:function(l){ return l.det ? l.det() : null; },
-          linhaCls:function(l){ return l.tipo==="secao" ? "!bg-[#2d5190] !cursor-default" : l.tipo==="total" ? "!bg-[#1a2540] !cursor-default" : l.det ? "" : "!cursor-default"; }}))));
+    o.total = l.pc ? (function(){ var px = D.reduce(function(a, d){ return a+d.pix; }, 0), mt = D.reduce(function(a, d){ return a+d.meta; }, 0); return mt>0 ? Math.round(px/mt*100) : null; })() : (algum ? r2(tot) : null);
+    corpo.push(o); });
+  marcaFim(corpo);
+  if(fora.length>0){ corpo.push({id:"s-fora", rot:"Fora do total da família", tipo:"secao"});
+    fora.forEach(function(d){ corpo.push({id:"fora-"+d.p.id, rot:d.p.nome+" · Pix revendedoras", tipo:"solo", total:d.pix, cor:"ok"}); }); }
+  var celula = function(v, l){ if(l.tipo==="secao" || l.tipo==="grupo" || l.tipo==="solo") return ""; if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); var txt = l.pc ? v+"%" : (l.vz && v===0 ? "—" : BK(v)), cl = l.cor && v>0.005 ? "text-success" : ""; return e("span",{className:cl+(l.tipo==="total" ? " font-bold" : "")}, txt); };
+  var cols = [{k:"rot", t:"Todas · "+(ANO ? "Total "+ANO : nomeMes(ym)), render:function(v, l, aberta){
+      if(l.tipo==="grupo") return e("span",{role:"button", tabIndex:0, className:"block cursor-pointer text-left font-bold", onClick:function(ev){ ev.stopPropagation(); alterna(l.g); }, onKeyDown:function(ev){ if(ev.key==="Enter") alterna(l.g); }}, (ab[l.g] ? "▾ " : "▸ ")+v);
+      return e("span",{className:"block text-left "+(l.tipo==="secao" || l.tipo==="total" ? "font-bold" : "")+(l.sub ? " pl-4" : "")}, (l.det ? (aberta ? "▾ " : "▸ ") : "")+v); }}]
+    .concat(D.map(function(d){ return {k:"p_"+d.p.id, t:d.p.nome, render:celula}; }), [{k:"total", t:"Total da família", render:function(v, l){ if(l.tipo==="secao" || l.tipo==="grupo") return ""; if(l.tipo==="solo") return e("span",{className:"text-success"}, BK(v)); return e("b",null, celula(v, l)); }}]);
+  var cabAcima = [[{t:"", span:1}].concat(ORDEM.map(function(g){ return {t:g, span:D.filter(function(d){ return grupoDe(d.p)===g; }).length}; }).filter(function(x){ return x.span>0; }), [{t:"", span:1}])];
+  // VISÃO DE UMA PESSOA (Marcus, 23/11/2026): colunas Total · Pago · Falta. Tudo que abre (pró-labore, contas por categoria, prestadores) abre NA MESMA TABELA, com as mesmas 3 colunas e só nome, total, pago e falta.
+  // O Pix fica num bloco à parte (é dinheiro que entra, não conta a pagar). Esta tela é só um resumo: o detalhe fica nas telas de lançar.
+  var corpoPix = null, colsPix = null, corpoPago = null, colsPago = null, detPixC = null, detPixP = null;
+  if(quem!=="todos"){
+    var dq = dados.filter(function(d){ return d.p.id===quem; })[0];
+    if(dq){
+      var pp = dq.p, itsP = dq.itens, tP = dq.t;
+      var R3 = function(id, rot, total, feito, falta, o){ return Object.assign({id:id, rot:rot, total:total, feito:feito, falta:falta}, o||{}); };
+      var porVencP = function(a, b){ return a.venc.localeCompare(b.venc); };
+      var folhaP = function(x, nivel){ return R3("i-"+x.id, x.desc, x.valor, x.pago, x.restante, {nivel:nivel}); };
+      var linP = [];
+      if(pp.mostrarProlabore && tP.pro.total>0){ linP.push(R3("p-pro", "Pró-labore", tP.pro.total, tP.pro.recebido, tP.pro.restante, {tg:"pro"})); if(ab.pro) itsP.filter(function(x){ return x.pro; }).sort(porVencP).forEach(function(x){ linP.push(folhaP(x, 1)); }); }
+      if(pp.mostrarContas && tP.contas.total>0){
+        linP.push(R3("p-ct", "Contas a pagar", tP.contas.total, tP.contas.pago, tP.contas.restante, {tg:"ct"}));
+        if(ab.ct){
+          var porCatP = {}; itsP.filter(function(x){ return !x.pro; }).forEach(function(x){ var o = porCatP[x.cat] = porCatP[x.cat] || {valor:0, pago:0, restante:0, itens:[]}; o.valor = r2(o.valor+x.valor); o.pago = r2(o.pago+x.pago); o.restante = r2(o.restante+x.restante); o.itens.push(x); });
+          Object.keys(porCatP).sort(function(a, b){ return porCatP[b].valor-porCatP[a].valor; }).forEach(function(k){ linP.push(R3("p-cat-"+k, k, porCatP[k].valor, porCatP[k].pago, porCatP[k].restante, {tg:"cat:"+k, nivel:1})); if(ab["cat:"+k]) porCatP[k].itens.sort(porVencP).forEach(function(x){ linP.push(folhaP(x, 2)); }); });
+        }
+      }
+      var prestP = prestLista.filter(function(x){ return x.respId===pp.id && x.noPeriodo>0.005; });
+      if(prestP.length>0){ var totDevP = r2(prestP.reduce(function(a, x){ return a+(x.dividas>0.005 ? x.dividas : 0); }, 0)); linP.push(R3("p-prest", "Prestadores de Serviços", totDevP>0.005 ? totDevP : null, r2(prestP.reduce(function(a, x){ return a+x.noPeriodo; }, 0)), null, {tg:"prest"})); if(ab.prest) prestP.forEach(function(x){ linP.push(R3("p-pr-"+x.id, x.prest+(x.serv && x.serv!=="—" ? " · "+x.serv : ""), x.dividas>0.005 ? x.dividas : null, x.noPeriodo, null, {nivel:1})); }); }
+      if(dq.trRec>0 || dq.trEnv>0){ linP.push(R3("p-trrec", "Transferências recebidas", null, dq.trRec, null)); linP.push(R3("p-trenv", "Transferências enviadas", null, dq.trEnv, null)); }
+      linP.push(R3("p-total", ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)", r2((pp.mostrarContas ? tP.contas.total : 0)+(pp.mostrarProlabore ? tP.pro.total : 0)), r2((pp.mostrarContas ? tP.contas.pago : 0)+(pp.mostrarProlabore ? tP.pro.recebido : 0)), r2((pp.mostrarContas ? tP.contas.restante : 0)+(pp.mostrarProlabore ? tP.pro.restante : 0)), {tipo:"total"}));
+      corpo = marcaFim(linP);
+      var rotP = function(v, l){ var pad = (l.nivel||0)*16;
+        if(l.tg) return e("span",{role:"button", tabIndex:0, className:"block cursor-pointer text-left "+(l.nivel ? "" : "font-bold"), style:{paddingLeft:pad}, onClick:function(ev){ ev.stopPropagation(); alterna(l.tg); }, onKeyDown:function(ev){ if(ev.key==="Enter") alterna(l.tg); }}, (ab[l.tg] ? "▾ " : "▸ ")+v);
+        return e("span",{className:"block text-left "+(l.tipo==="total" ? "font-bold" : ""), style:{paddingLeft:pad}}, v); };
+      var celP = function(v, l){ if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); return e("span",{className:(l.tipo==="total" ? "font-bold" : "")}, BK(v)); };
+      var celFeito = function(v, l){ if(v===null || v===undefined) return e("span",{className:"opacity-50"}, "—"); return e("span",{className:(v>0.005 ? "text-success " : "")+(l.tipo==="total" ? "font-bold" : "")}, BK(v)); };
+      cols = [{k:"rot", t:pp.nome+" · "+(ANO ? "Total "+ANO : nomeMes(ym)), render:rotP}, {k:"total", t:"Total", render:celP}, {k:"feito", t:"Pago", render:celFeito}, {k:"falta", t:"Falta", render:celP}];
+      cabAcima = null;
+      if(pp.mostrarPix && (dq.pix>0 || dq.meta>0)){
+        // PIX REVENDEDORAS (Marcus, 23/11/2026): as duas linhas sempre à vista e o TOTAL embaixo, grudado no fim do bloco, na mesma altura do total de "Como foi pago"
+        // CADA PIX QUE ENTROU (Marcus, 23/11/2026): clicar em Conta pessoal ou em Prestadores de Serviços abre uma TABELA embaixo do bloco (revendedora, data, conta e valor), da data mais nova para a mais antiga
+        var pxPeriodo = ff.pix.filter(function(x){ return x.personaId===pp.id && yms.indexOf(String(x.data).slice(0,7))>=0 && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); });
+        var contaDoPix = function(id){ return (ff.contasBanc||[]).filter(function(c){ return c.id===id; })[0]; };
+        var nomeDoPrest = function(id){ var q = ff.prest.filter(function(k){ return k.id===id; })[0]; return q ? nomePropio(q.nome) : "—"; };
+        var maisNovo = function(x, y){ return String(y.data).localeCompare(String(x.data)); };
+        var nomeConta = function(c){ return c ? String(c.nome).replace(/^Conta\s+/i, "") : "Sem conta informada"; };
+        detPixC = pxPeriodo.filter(function(x){ var c = contaDoPix(x.contaId); return !(c && c.prestadorId); }).map(function(x, i){ return {id:"dc"+i, data:x.data, rev:x.origem||"—", conta:nomeConta(contaDoPix(x.contaId)), valor:x.valor}; }).sort(maisNovo);
+        detPixP = pxPeriodo.filter(function(x){ var c = contaDoPix(x.contaId); return c && c.prestadorId; }).map(function(x, i){ var c = contaDoPix(x.contaId); return {id:"dp"+i, data:x.data, rev:x.origem||"—", prest:nomeDoPrest(c.prestadorId), conta:nomeConta(c), valor:x.valor}; })
+          .concat(ff.repasses.filter(function(x){ return x.origemPixPersonaId===pp.id && !x.origemPixLancId && yms.indexOf(String(x.data).slice(0,7))>=0; }).map(function(x, i){ return {id:"dr"+i, data:x.data, rev:"—", prest:nomeDoPrest(x.prestId), conta:x.origem||"—", valor:x.valor}; })).sort(maisNovo);
+        corpoPix = [R3("x-direto", "Conta pessoal", null, dq.direto, null, {tg:"pixc"}), R3("x-prest", "Prestadores de Serviços", null, dq.prestMes, null, {tg:"pixp"}),
+          R3("x-total", "Total", dq.meta>0 ? dq.meta : null, dq.pix, dq.meta>0 ? r2(Math.max(0, dq.meta-dq.pix)) : null, {tipo:"total"})];
+        var vaz = function(fn){ return function(v, l){ return l.vazia ? "" : fn(v, l); }; };
+        colsPix = [{k:"rot", t:pp.nome+" · Pix", render:vaz(rotP)}, {k:"total", t:"Meta", render:vaz(celP)}, {k:"feito", t:"Recebido", render:vaz(celFeito)}, {k:"falta", t:"Falta", render:vaz(celP)}];
+      }
+      // COMO FOI PAGO (Marcus, 23/11/2026): as contas pagas da pessoa (o mesmo "Pago" de Contas a pagar), uma linha por conta pagadora
+      if(pp.mostrarContas){
+        var porContaP = {}, totContaP = 0;
+        itsP.filter(function(x){ return !x.pro; }).forEach(function(x){ (x.pagamentos||[]).forEach(function(g){ var k = String(g.conta||"").replace(/^Conta\s+/i, "").trim(); if(!k || k==="—") k = "Sem conta informada"; porContaP[k] = r2((porContaP[k]||0)+g.valor); totContaP = r2(totContaP+g.valor); }); });
+        var chavesP = Object.keys(porContaP).sort(function(a, b){ if(a==="Sem conta informada") return 1; if(b==="Sem conta informada") return -1; return porContaP[b]-porContaP[a]; });
+        if(chavesP.length>0){
+          corpoPago = chavesP.map(function(k){ return R3("c-"+k, k, null, porContaP[k], null, {pct:totContaP>0 ? Math.round(porContaP[k]/totContaP*100)+"%" : "—"}); });
+          corpoPago.push(R3("c-total", "Total pago em contas", null, totContaP, null, {tipo:"total", pct:"100%"}));
+          colsPago = [{k:"rot", t:pp.nome+" · Como foi pago", render:rotP}, {k:"feito", t:"Pago", render:celFeito}, {k:"pct", t:"% do pago", render:function(v){ return e("span",null, v); }}];
+        }
+      }
+      if(corpoPix && corpoPago && corpoPago.length>corpoPix.length){ var tt = corpoPix.pop(); for(var iv = corpoPix.length; iv<corpoPago.length-1; iv++) corpoPix.push(R3("x-v"+iv, "", null, null, null, {vazia:true})); corpoPix.push(tt); }
+    }
+  }
+  var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c] [&_tbody_tr[aria-expanded=true]]:!bg-[#26385c] [&_tbody_tr:not([aria-expanded])>td[colspan]]:!bg-[#1a2540] [&_td[colspan]]:!p-0";   // fundo azul-marinho do Prestadores
+  // LINHA AZUL EMBAIXO DO TÍTULO (Marcus, 23/11/2026): só dois filtros, Mês e Pessoa
+  var barra = e(BarraTabela,null,
+    e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:ym, aoMudar:setYm, rotulo:"Mês", ops:mesesOp.map(function(k){ return [k, nomeMes(k)]; }).concat(anosOp.map(function(a){ return ["ANO:"+a, "Total "+a]; }))})),
+    e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:quem, aoMudar:setQuem, rotulo:"Pessoa", ops:[["todos", "Todas"]].concat(Dtodos.map(function(d){ return [d.p.id, d.p.nome]; }), foraTodos.map(function(d){ return [d.p.id, d.p.nome+" (fora do total)"]; }))})));
+  // VISUAL FINO IGUAL À CONTAS A PAGAR: página colada nas bordas, letra de 10 px e linhas de 18 px
+  return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA}, e("style",null, CSS_ABERTO),
+    D.length===0 ? e("p",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 px-3 py-4 text-center text-[13px]"}, "Nenhuma pessoa ativa. Crie em Configurações.") : (quem!=="todos" && corpo.length===0) ? null :
+      e(BlocoPainel,{titulo:"Resumo familiar", compacto:true, cls:FUNDO}, barra,
+        e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},   // padrao-ok: letra de 11 px e linhas de 20 px (um pouco maior que o fino de 10 px, pedido do Marcus em 23/11/2026)
+          e(TabelaPlanilha,{fina:true, cols:cols, linhas:corpo, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, alturaMax:quem==="todos" ? "calc(100vh - 6.6rem)" : undefined, vazio:"Nada neste período.", cabAcima:cabAcima,
+            detalhe:quem==="todos" ? function(l){ return l.det ? l.det() : null; } : undefined,
+            linhaCls:function(l){ return tinta(l)+" "+(l.tg ? "!cursor-pointer" : l.tipo==="secao" ? "!bg-[#2d5190] !cursor-default" : l.tipo==="grupo" ? "!bg-[#1f3358] !cursor-pointer" : l.tipo==="total" ? "!bg-[#1a2540] !cursor-default" : l.tipo==="solo" ? "!cursor-default" : l.det ? "" : "!cursor-default"); }}))),
+    (corpoPix || corpoPago) && e("div",{className:"ff-par"+(corpoPix && corpoPago ? " ff-par2" : "")},
+    corpoPix && e(BlocoPainel,{titulo:"Pix revendedoras", compacto:true, cls:FUNDO}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:colsPix, linhas:corpoPix, linhaCls:tinta, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada."}))),
+    corpoPago && e(BlocoPainel,{titulo:"Como foi pago", compacto:true, cls:FUNDO}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:colsPago, linhas:corpoPago, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Nada."})))),
+    detPixC && ab.pixc && e(BlocoPainel,{titulo:"Conta pessoal · Pix recebidos", compacto:true, cls:FUNDO, dir:BK(r2(detPixC.reduce(function(a, x){ return a+x.valor; }, 0)))}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:[{k:"data", t:"Data", render:function(v){ return diaBr(v); }}, {k:"rev", t:"Revendedora"}, {k:"conta", t:"Conta"}, {k:"valor", t:"Valor", render:function(v){ return BK(v); }}], linhas:detPixC, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, vazio:"Nenhum Pix neste período.", alturaMax:"26rem"}))),
+    detPixP && ab.pixp && e(BlocoPainel,{titulo:"Prestadores de Serviços · Pix repassados", compacto:true, cls:FUNDO, dir:BK(r2(detPixP.reduce(function(a, x){ return a+x.valor; }, 0)))}, e("div",{className:CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]", style:{"--lh":"20px"}},
+      e(TabelaPlanilha,{fina:true, cols:[{k:"data", t:"Data", render:function(v){ return diaBr(v); }}, {k:"rev", t:"Revendedora"}, {k:"prest", t:"Prestador"}, {k:"conta", t:"Conta"}, {k:"valor", t:"Valor", render:function(v){ return BK(v); }}], linhas:detPixP, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, vazio:"Nenhum Pix neste período.", alturaMax:"26rem"})))));
 }
 
 // ───────────────── Alertas ─────────────────
 function ModalPagar(p){
-  var c = p.c, x = p.x, st = useState({paraQuem:(x.conta.rateio && x.conta.rateio.length ? FAMILIA4 : x.conta.personaId), valor:fmtN(x.restante), em:hojeIso(), forma:"PIX", contaTxt:contaLabel(c.ff, x.conta.contaBancId), obs:"", dividir:false, linhas:[{valor:"", forma:"PIX", contaTxt:""}, {valor:"", forma:"Dinheiro", contaTxt:""}]}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  var c = p.c, x = p.x, st = useState({paraQuem:paraQuemDe(x.conta), valor:fmtN(x.restante), em:hojeIso(), forma:(FORMAS.indexOf(x.conta.forma)>=0 ? x.conta.forma : "PIX"), contaTxt:contaLabel(c.ff, x.conta.contaBancId), obs:"", dividir:false, linhas:[{valor:"", forma:"PIX", contaTxt:""}, {valor:"", forma:"Dinheiro", contaTxt:""}]}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var somaL = r2(f.linhas.reduce(function(t, l){ return t+num(l.valor); }, 0)), falta = r2(x.restante-somaL);
   var setL = function(i, o){ set({linhas:f.linhas.map(function(l, j){ return j===i ? Object.assign({}, l, o) : l; })}); };
-  var pagar = function(){ var atual = x.conta.rateio && x.conta.rateio.length ? FAMILIA4 : x.conta.personaId; if(f.paraQuem && f.paraQuem!==atual) acao(c, "conta_set", {id:x.conta.id, patch:{personaId:f.paraQuem}});
+  var opContas = [["", "Não definida"]].concat(contasPagadoras(c.ff).map(function(b){ var n = contaLabel(c.ff, b.id); return [n, n]; }));
+  var pagar = function(){ var atual = paraQuemDe(x.conta); if(f.paraQuem && f.paraQuem!==atual) acao(c, "conta_set", {id:x.conta.id, patch:{personaId:f.paraQuem}});
     if(f.dividir) acao(c, "parc_baixa_multipla", {id:x.conta.id, ym:x.ym, em:f.em, linhas:f.linhas.map(function(l){ return {valor:num(l.valor), forma:l.forma, contaTxt:l.contaTxt}; })});
     else acao(c, "parc_baixa", {id:x.conta.id, ym:x.ym, valor:num(f.valor), em:f.em, forma:f.forma, contaTxt:f.contaTxt, obs:f.obs}); p.fechar(); };
-  return e(Modal,{t:"Pagar · "+x.conta.descricao, sub:nomeMes(x.ym)+" · vence "+br(x.venc)+" · falta "+BK(x.restante)+(x.pago>0 ? " (já pago "+BK(x.pago)+")" : ""), fechar:p.fechar},
-    e("datalist",{id:"ff-contas"}, c.ff.contasBanc.map(function(b){ return e("option",{key:b.id, value:contaLabel(c.ff, b.id)}); })),
-    e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:f.dividir, className:"size-4", onChange:function(ev){ set({dividir:ev.target.checked}); }}), "Dividir entre formas de pagamento"),
-    !f.dividir ? e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-      e(Campo,{rot:"Valor pago (R$)"}, e(Txt,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})), e(Campo,{rot:"Data do pagamento"}, e(Txt,{value:f.em, type:"date", label:"Data", onChange:function(v){ set({em:v}); }})),
-      e(Campo,{rot:"Forma"}, e(Sel,{value:f.forma, label:"Forma", className:"w-full", onChange:function(v){ set({forma:v}); }}, FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); }))), e(Campo,{rot:"Conta utilizada"}, e(Txt,{value:f.contaTxt, list:"ff-contas", label:"Conta", onChange:function(v){ set({contaTxt:v}); }})),
-      e(Campo,{rot:"Observação", className:"sm:col-span-2"}, e(Txt,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))) :
-    e("div",{className:"flex flex-col gap-2"}, f.linhas.map(function(l, i){ return e("div",{key:i, className:"grid grid-cols-[7rem_1fr_1fr] gap-2"}, e(Txt,{value:l.valor, ph:"Valor", label:"Valor "+(i+1), onChange:function(v){ setL(i, {valor:v.replace(/[^\d,.]/g,"")}); }}),
-        e(Sel,{value:l.forma, label:"Forma", className:"w-full", onChange:function(v){ setL(i, {forma:v}); }}, FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); })), e(Txt,{value:l.contaTxt, list:"ff-contas", ph:"Conta", label:"Conta", onChange:function(v){ setL(i, {contaTxt:v}); }})); }),
-      e("div",{className:"flex items-center justify-between"}, e(Btn,{v:"ghost", sm:true, onClick:function(){ set({linhas:f.linhas.concat([{valor:"", forma:"PIX", contaTxt:""}])}); }}, "+ Outra forma"),
-        e("span",{className:"text-[13px] "+(Math.abs(falta)<0.005 ? "text-success" : "text-warning")}, Math.abs(falta)<0.005 ? "✓ Soma certa" : "Falta distribuir "+BK(falta)))),
-    e(Campo,{rot:"Para quem entra este pagamento"}, e(Sel,{value:f.paraQuem, label:"Para quem entra", className:"w-full", onChange:function(v){ set({paraQuem:v}); }}, e("option",{value:FAMILIA4}, "Família (divide igual entre os "+membrosFamilia(c.ff).length+")"), c.ff.personas.map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
-    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", onClick:pagar}, "Registrar pagamento")));
+  // Ficha em grade de 4 colunas (rótulo | campo | rótulo | campo), com linha entre todas as células. Conta pagadora e Observação ocupam a linha toda para o nome longo da conta caber inteiro (Marcus, 22/11/2026).
+  var L = function(rot, extra){ return e("b",{className:"flex min-h-[32px] items-center border-b border-r border-white/15 bg-[#223f74] px-2.5 text-left text-[11px] font-semibold "+(extra || "")}, rot); };
+  var F = function(filho, span){ return e("div",{className:"flex min-h-[32px] items-center border-b border-white/15 px-2.5 py-1", style:span ? {gridColumn:"span "+span} : undefined}, e("div",{className:"w-full"}, filho)); };
+  var Cab = function(rot, val, ultimo){ return e("div",{className:"px-2 text-center "+(ultimo ? "" : "border-r border-white/15")}, e("span",{className:"block text-[11px] font-semibold"}, rot), e("b",{className:"mt-0.5 block text-[13px]"}, val)); };
+  var peso = x.pago>0, nm = useState(false), mais = nm[0], setMais = nm[1];
+  // RESUMO do que vai acontecer (Marcus, 22/11/2026: "mais intuitivo para pagar a conta")
+  var vPag = f.dividir ? somaL : num(f.valor);
+  var resumo = !(vPag>0) ? "Digite o valor pago." : vPag>=x.restante-0.005 ? "Quita esta conta: ela fica PAGA." : "Pagamento parcial: continua faltando "+BK(r2(x.restante-vPag))+".";
+  // OBSERVAÇÕES DA CONTA dentro da janela (Marcus, 22/11/2026): a antiga (obs) em cima, depois as anotadas, da mais nova para a mais velha; campo para anotar outra
+  var contaV = c.ff.contas.find(function(k){ return k.id===x.conta.id; }) || x.conta, ns = useState(""), nota = ns[0], setNota = ns[1];
+  var notasV = (contaV.notas || []).slice().reverse();
+  var anotarNota = function(){ if(!nota.trim()) return; acao(c, "conta_nota", {id:x.conta.id, txt:nota}); setNota(""); };
+  var campoValor = e(TxtJ,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }});
+  var campoData = e(TxtJ,{value:f.em, type:"date", label:"Data", onChange:function(v){ set({em:v}); }});
+  var campoForma = e(SelJ,{value:f.forma, label:"Forma", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }});
+  var campoConta = e(SelJ,{value:f.contaTxt, label:"Conta pagadora", opcoes:opContas, onChange:function(v){ set({contaTxt:v}); }});
+  var campoPara = e(SelJ,{value:f.paraQuem, label:"Para quem entra", opcoes:opcoesPessoa(c.ff).filter(function(o){ return o[0]!=="__viagem"; }), onChange:function(v){ set({paraQuem:v}); }});
+  var campoObs = e(TxtJ,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }});
+  var cels = [];
+  if(!f.dividir) cels.push(L("Valor pago"), F(campoValor), L("Data", "border-l"), F(campoData), L("Forma"), F(campoForma), L("Para quem entra", "border-l"), F(campoPara), L("Conta pagadora"), F(campoConta, 3), L("Observação"), F(campoObs, 3));
+  else {
+    cels.push(L("Data"), F(campoData), L("Para quem entra", "border-l"), F(campoPara));
+    f.linhas.forEach(function(l, i){ cels.push(L((i+1)+"ª forma"), F(e("div",{className:"grid grid-cols-[7rem_9rem_1fr] gap-1.5"}, e(TxtJ,{value:l.valor, ph:"Valor", label:"Valor "+(i+1), onChange:function(v){ setL(i, {valor:v.replace(/[^\d,.]/g,"")}); }}), e(SelJ,{value:l.forma, label:"Forma", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ setL(i, {forma:v}); }}), e(SelJ,{value:l.contaTxt, label:"Conta pagadora", opcoes:opContas, onChange:function(v){ setL(i, {contaTxt:v}); }})), 3)); });
+    cels.push(L("Soma"), F(e("div",{className:"flex items-center justify-between text-[11px] font-semibold"}, e("button",{type:"button", className:"underline", onClick:function(){ set({linhas:f.linhas.concat([{valor:"", forma:"PIX", contaTxt:""}])}); }}, "+ Outra forma"), e("span",{className:Math.abs(falta)<0.005 ? "text-success" : "text-warning"}, Math.abs(falta)<0.005 ? "✓ Soma certa" : "Falta distribuir "+BK(falta))), 3), L("Observação"), F(campoObs, 3));
+  }
+  return e(JanelaJ,{t:"Pagar · "+x.conta.descricao, larga:"g", fechar:p.fechar},
+    e("div",{className:"grid border-b border-white/15 bg-[#223f74] py-1 "+(peso ? "grid-cols-4" : "grid-cols-3")}, Cab("Mês", nomeMes(x.ym)), Cab("Vence", br(x.venc)), peso && Cab("Já pago", BK(x.pago)), Cab("Falta", BK(x.restante), true)),
+    f.dividir ? e.apply(null, ["div", {className:"grid", style:{gridTemplateColumns:"16% 34% 16% 34%"}}].concat(cels)) : e("div",{className:"grid gap-x-2 gap-y-1 px-3 pb-1 pt-2", style:{gridTemplateColumns:"1fr 1fr 1fr 1.7fr"}},
+      e(CampoJ,{rot:"Valor pago (R$)", cls:"w-full"}, campoValor), e(CampoJ,{rot:"Data", cls:"w-full"}, campoData), e(CampoJ,{rot:"Forma", cls:"w-full"}, campoForma), e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, campoConta),
+      e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, campoPara), e("div",{style:{gridColumn:"span 3"}}, e(CampoJ,{rot:"Observação deste pagamento", cls:"w-full"}, campoObs))),
+    e("div",{className:"mx-3 mt-1 border-t border-white/20 pt-1"},
+      (contaV.obs || notasV.length>0) && e("div",{className:"mb-1 max-h-24 overflow-y-auto text-left text-[11px]"},
+        contaV.obs && e("div",{className:"py-0.5"}, e("b",null, "Anotada antes: "), contaV.obs),
+        notasV.map(function(n){ return e("div",{key:n.id, className:"py-0.5"}, e("b",null, br(String(n.em).slice(0, 10))+" · "+(n.por || "—")+": "), n.txt); })),
+      e("div",{className:"flex w-full items-center gap-1.5"}, e(TxtJ,{value:nota, label:"Nova observação da conta", ph:"Observação da conta (fica guardada): escreva e clique em Anotar", onChange:function(v){ setNota(v); }}), e("button",{type:"button", style:ALTO_J, className:BTN_J+" shrink-0", disabled:!nota.trim(), onClick:anotarNota}, "Anotar"))),
+    e("div",{className:"flex flex-wrap items-center gap-1.5 px-3 pb-1.5 pt-1.5"},
+      e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Pagar com mais de uma forma, por exemplo parte em Pix e parte em dinheiro", onClick:function(){ set({dividir:!f.dividir}); }}, f.dividir ? "Voltar para uma forma só" : "Dividir entre formas"),
+      e("button",{type:"button", style:ALTO_J, className:BTN_J, "aria-expanded":mais, onClick:function(){ setMais(!mais); }}, mais ? "Mais ações ▴" : "Mais ações ▾"),
+      e("span",{className:"min-w-0 flex-1 px-2 text-center text-[11px] font-semibold "+(vPag>0 && vPag>=x.restante-0.005 ? "text-success" : "text-warning")}, resumo),
+      e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"),
+      e("button",{type:"button", style:{height:"28px", lineHeight:"26px"}, className:BTN_J+" !bg-[#3f6bb8] !px-5 !text-[13px]", disabled:!(vPag>0), onClick:pagar}, "Registrar pagamento"+(vPag>0 ? " · "+BK(vPag) : ""))),
+    mais && e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-2.5 pb-1.5 pt-1.5"},
+      p.editar && e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.editar}, "Editar conta"),
+      p.valor && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Corrigir o valor deste mês", onClick:p.valor}, "Corrigir valor"),
+      p.encerrar && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Tira as parcelas em aberto e guarda o histórico pago", onClick:p.encerrar}, "Encerrar conta"),
+      p.excluir && e("button",{type:"button", style:ALTO_J, className:BTN_J+" !border-red-300", title:"Exclui a conta inteira, com todas as parcelas", onClick:p.excluir}, "Excluir conta")));
+}
+// JANELA AZUL (Marcus, 22/11/2026: "copia o bloco de lançamento de contas, cores, tudo mais alinhado"): a mesma moldura da janela Lançar recebimento da Contas a receber: título azul, blocos numerados com borda, campos de 22 px, letra de 11 px, tudo centralizado.
+var AZ_J = "var(--bloco-titulo)", FUNDO_J = "#1b3463", CLARO_J = "#3f6bb8";
+var CAMPO_J = "w-full rounded border border-white/30 bg-[var(--bloco-titulo)] px-1.5 text-center text-[11px] text-white outline-none placeholder:text-white/70 focus-visible:ring-1 focus-visible:ring-white [color-scheme:dark]";   // padrao-ok: janela compacta de 11 px, igual à Lançar recebimento
+var BTN_J = "rounded border border-white/40 bg-[var(--bloco-titulo)] px-3 text-center text-[11px] font-semibold text-white hover:brightness-125 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60";   // padrao-ok: botão da janela azul
+var ALTO_J = {height:"22px", lineHeight:"20px"};   // padrao-ok: campo de 22 px, igual à Lançar recebimento
+function CampoJ(p){ return e("label",{className:"flex flex-col items-center gap-0.5 text-center "+(p.cls || "")}, e("span",{className:"text-[11px] font-semibold leading-none text-white"}, p.rot), p.children); }   // padrao-ok: rótulo de 11 px
+function BlocoJ(p){ return e("div",{className:"mx-1.5 mt-1.5 rounded-md border-2 border-white/40"}, e("div",{className:"flex items-center justify-center rounded-t-[4px] px-2 text-[11px] font-semibold text-white", style:{height:"18px", background:AZ_J}}, p.t), e("div",{className:"flex flex-col items-center gap-1 p-2"}, p.children)); }   // padrao-ok: barra de seção de 18 px
+function SelJ(p){ return e(CaixaEscolha,{rot:p.label, valor:p.value, ops:p.opcoes, vazio:"Escolha", aoMudar:p.onChange, cls:CAMPO_J, estilo:ALTO_J, fundo:FUNDO_J, campoCls:CAMPO_J}); }   // lista azul no lugar do menu nativo (que abre preto)
+function TxtJ(p){ return e("input",{value:p.value, type:p.type || "text", placeholder:p.ph || "", "aria-label":p.label, style:ALTO_J, className:CAMPO_J, onChange:function(ev){ p.onChange(ev.target.value); }}); }
+function JanelaJ(p){
+  return e("div",{role:"dialog", "aria-modal":"true", "aria-label":p.t, onMouseDown:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }, className:"fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"},
+    e("div",{className:"flex max-h-[92vh] w-full "+(p.larga==="g" ? "max-w-4xl" : p.larga ? "max-w-3xl" : "max-w-md")+" flex-col rounded-lg border-2 pb-1.5 text-center text-white shadow-xl", style:{background:FUNDO_J, borderColor:AZ_J}},
+      e("div",{className:"relative flex items-center justify-center rounded-t-md px-2 py-1 text-white", style:{background:AZ_J}}, e("b",{className:"text-[11px]"}, p.t), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"absolute right-1 rounded px-1 text-[11px] font-semibold underline hover:bg-white/20 active:bg-white/30"}, "Fechar")),   // padrao-ok: título de 11 px e botão de 11 px
+      p.sub && e("div",{className:"px-2 pt-1 text-center text-[11px] text-white"}, p.sub),   // padrao-ok: subtítulo de 11 px
+      p.children));
+}
+function opcoesPessoa(ff){   // lista de "Para quem entra" (nome | quem está dentro), usada nas janelas Lançar conta e Pagar
+  // 22/11/2026 (Marcus): primeiro as pessoas (Marcus até Lucas, sem linha antes do Lucas), depois as casas, depois Família geral e Viagem EUA
+  var GRUPOS_PESSOA = [["Pessoas", ["marcus", "anamaria", "marco", "anabeatriz", "lucas"]], ["Casas", ["casaalphaville", "juan", "casajardine"]], ["Família", [FAMILIA4, "__viagem"]], ["Saindo da lista", ["familia", "marco_ana", "sorelly"]]];
+  var temViagem = ff.categorias.some(function(k){ return k.chave==="VIAGEM_EUA"; });
+  var usadas = {}, opPessoa = [];
+  var nomeDe = function(id){ var q = ff.personas.filter(function(z){ return z.id===id; })[0]; return q ? q.nome : id; };
+  var dentro = function(ids){ return ids.map(nomeDe).join(", "); };   // 4º item da opção = quem está dentro (a lista mostra nome | quem está dentro)
+  GRUPOS_PESSOA.forEach(function(g){ g[1].forEach(function(id){ if(id==="__viagem"){ if(temViagem) opPessoa.push(["__viagem", "Viagem EUA", g[0], dentro(membrosFamilia(ff))]); return; } if(id===FAMILIA4){ opPessoa.push([FAMILIA4, "Família geral", g[0], dentro(membrosFamilia(ff))]); usadas[id] = 1; return; } var q = ff.personas.filter(function(z){ return z.id===id; })[0]; if(q){ opPessoa.push([q.id, q.nome, g[0], dentro(ehCasa(id) ? CASAS_DONOS[id] : [id])]); usadas[id] = 1; } }); });
+  ff.personas.forEach(function(q){ if(!usadas[q.id]) opPessoa.push([q.id, q.nome, "Outros", q.nome]); });
+  return opPessoa;
 }
 function FormConta(p){   // lançar ou editar conta
   var c = p.c, ff = c.ff, x = p.x, nova = !x;
-  var st = useState({personaId:x ? (x.rateio && x.rateio.length ? FAMILIA4 : x.personaId) : (ff.personas[0]||{}).id||"", descricao:x ? x.descricao : "", categoria:x ? x.categoria : "OUTROS", contaBancId:x ? x.contaBancId : "", dia:x ? String(x.dia) : "10", forma:x ? x.forma : "PIX", beneficiario:x ? x.beneficiario : "", obs:x ? x.obs : "",
+  var st = useState({personaId:x ? paraQuemDe(x) : (ff.personas[0]||{}).id||"", descricao:x ? x.descricao : "", categoria:x ? x.categoria : "OUTROS", contaBancId:x ? x.contaBancId : "", dia:x ? String(x.dia) : "10", forma:x ? x.forma : "PIX", beneficiario:x ? x.beneficiario : "", obs:x ? x.obs : "",
     recorrencia:"unica", mesInicio:hojeYm(), mesFim:somaMes(hojeYm(), 5), valor:"", estAte:"", estValor:""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var salvar = function(){ if(nova) acao(c, "conta_add", {personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:Number(f.dia), forma:f.forma, beneficiario:f.beneficiario, obs:f.obs, recorrencia:f.recorrencia, mesInicio:f.mesInicio, mesFim:f.mesFim, valor:num(f.valor)});
     else acao(c, "conta_set", {id:x.id, patch:{personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:Number(f.dia)||1, forma:f.forma, beneficiario:f.beneficiario, obs:f.obs}}); p.fechar(); };
-  var ctas = ff.contasBanc.filter(function(b){ return b.ativo; });
-  return e(Modal,{t:nova ? "Lançar conta" : "Editar conta", sub:nova ? "Cria as parcelas dos meses na hora." : "Vale para todas as parcelas. Para mudar o valor de um mês, use o lápis da linha.", fechar:p.fechar},
-    e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-      e(Campo,{rot:"Para quem entra"}, e(Sel,{value:f.personaId, label:"Para quem entra", className:"w-full", onChange:function(v){ set({personaId:v}); }}, e("option",{value:FAMILIA4}, "Família (divide entre os "+membrosFamilia(ff).length+")"), ff.personas.map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
-      e(Campo,{rot:"Categoria"}, e(Sel,{value:f.categoria, label:"Categoria", className:"w-full", onChange:function(v){ set({categoria:v}); }}, ff.categorias.map(function(k){ return e("option",{key:k.chave, value:k.chave}, k.nome); }))),
-      e(Campo,{rot:"Descrição", className:"sm:col-span-2"}, e(Txt,{value:f.descricao, label:"Descrição", onChange:function(v){ set({descricao:v}); }})),
-      e(Campo,{rot:"Conta pagadora"}, e(Sel,{value:f.contaBancId, label:"Conta pagadora", className:"w-full", onChange:function(v){ set({contaBancId:v}); }}, e("option",{value:""}, "Não definida"), ctas.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
-      e(Campo,{rot:"Dia do vencimento"}, e(Txt,{value:f.dia, label:"Dia", className:"w-28 text-center", onChange:function(v){ set({dia:v.replace(/\D/g,"").slice(0,2)}); }})),
-      e(Campo,{rot:"Forma de pagamento"}, e(Sel,{value:f.forma, label:"Forma", className:"w-full", onChange:function(v){ set({forma:v}); }}, FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); }))),
-      e(Campo,{rot:"Beneficiário"}, e(Txt,{value:f.beneficiario, label:"Beneficiário", onChange:function(v){ set({beneficiario:v}); }})),
-      e(Campo,{rot:"Observação", className:"sm:col-span-2"}, e(Txt,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }})),
-      nova && e(React.Fragment,null,
-        e(Campo,{rot:"Recorrência"}, e(Sel,{value:f.recorrencia, label:"Recorrência", className:"w-full", onChange:function(v){ set({recorrencia:v}); }}, e("option",{value:"unica"}, "Única (1 mês)"), e("option",{value:"parcelada"}, "Parcelada (vários meses)"), e("option",{value:"fixa"}, "Fixa (24 meses, dá para estender)"))),
-        e(Campo,{rot:"Valor de cada mês (R$)"}, e(Txt,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})),
-        e(Campo,{rot:"Começa em"}, e(Txt,{value:f.mesInicio, type:"month", label:"Início", onChange:function(v){ set({mesInicio:v}); }})), f.recorrencia==="parcelada" && e(Campo,{rot:"Termina em"}, e(Txt,{value:f.mesFim, type:"month", label:"Fim", onChange:function(v){ set({mesFim:v}); }})))),
-    !nova && e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/25 p-3"}, e("b",{className:"text-[13px]"}, "Estender a conta"), e("div",{className:"flex flex-wrap items-end gap-2"},
-      e(Campo,{rot:"Até (vazio = mais 24 meses)"}, e(Txt,{value:f.estAte, type:"month", label:"Até", className:"w-44", onChange:function(v){ set({estAte:v}); }})), e(Campo,{rot:"Valor das novas parcelas"}, e(Txt,{value:f.estValor, label:"Valor", className:"w-36", onChange:function(v){ set({estValor:v.replace(/[^\d,.]/g,"")}); }})),
-      e(Btn,{v:"secondary", sm:true, disabled:!(num(f.estValor)>0), onClick:function(){ acao(c, "conta_estender", {id:x.id, ateMes:f.estAte||null, valor:num(f.estValor)}); p.fechar(); }}, "Estender"))),
-    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", disabled:!f.descricao.trim() || (nova && !(num(f.valor)>0)), onClick:salvar}, nova ? "Lançar" : "Salvar")));
+  var ctas = contasPagadoras(ff).concat(x && x.contaBancId && !contasPagadoras(ff).some(function(b){ return b.id===x.contaBancId; }) ? ff.contasBanc.filter(function(b){ return b.id===x.contaBancId; }) : []);   // a conta que a conta já usa fica na lista mesmo se for repetida ou de prestador
+  var desligado = !f.descricao.trim() || (nova && !(num(f.valor)>0));
+  // ORDEM COMBINADA com o Marcus (22/11/2026): Família ÷4, os sócios, o Lucas, as casas e, no fim, o que está saindo da lista (Casa/Família, Marco / Anamaria, Sorelly)
+  var opPessoa = opcoesPessoa(ff), temViagem = ff.categorias.some(function(k){ return k.chave==="VIAGEM_EUA"; }), ehViagem = f.personaId===FAMILIA4 && f.categoria==="VIAGEM_EUA";
+  return e(JanelaJ,{t:nova ? "Lançar conta" : "Editar conta", fechar:p.fechar},
+    e(BlocoJ,{t:"1 · Para quem"},
+      e("div",{className:"grid w-full grid-cols-2 gap-1"},
+        e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, e(SelJ,{value:ehViagem ? "__viagem" : f.personaId, label:"Para quem entra", opcoes:opPessoa, onChange:function(v){ if(v==="__viagem") set({personaId:FAMILIA4, categoria:"VIAGEM_EUA"}); else if(ehViagem) set({personaId:v, categoria:(ff.categorias.filter(function(k){ return k.chave!=="VIAGEM_EUA"; })[0] || {}).chave || f.categoria}); else set({personaId:v}); }})),
+        e(CampoJ,{rot:"Categoria", cls:"w-full"}, e(SelJ,{value:f.categoria, label:"Categoria", opcoes:ff.categorias.map(function(k){ return [k.chave, k.nome]; }), onChange:function(v){ set({categoria:v}); }})))),
+    e(BlocoJ,{t:"2 · A conta"},
+      e(CampoJ,{rot:"Nome da conta", cls:"w-full"}, e(TxtJ,{value:f.descricao, label:"Nome da conta", ph:"Ex.: Condomínio Praia", onChange:function(v){ set({descricao:v}); }})),
+      e("div",{className:"grid w-full grid-cols-2 gap-1"},
+        e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, e(SelJ,{value:f.contaBancId, label:"Conta pagadora", opcoes:[["", "Não definida"]].concat(ctas.map(function(b){ return [b.id, contaLabel(ff, b.id)]; })), onChange:function(v){ set({contaBancId:v}); }})),
+        e(CampoJ,{rot:"Forma de pagamento", cls:"w-full"}, e(SelJ,{value:f.forma, label:"Forma de pagamento", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }})),
+        e(CampoJ,{rot:"Beneficiário", cls:"w-full"}, e(TxtJ,{value:f.beneficiario, label:"Beneficiário", onChange:function(v){ set({beneficiario:v}); }})),
+        e(CampoJ,{rot:"Dia do vencimento", cls:"w-full"}, e(TxtJ,{value:f.dia, label:"Dia do vencimento", onChange:function(v){ set({dia:v.replace(/\D/g,"").slice(0,2)}); }}))),
+      e(CampoJ,{rot:"Observação", cls:"w-full"}, e(TxtJ,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))),
+    nova && e(BlocoJ,{t:"3 · Valor e meses"},
+      e("div",{className:"grid w-full grid-cols-2 gap-1"},
+        e(CampoJ,{rot:"Recorrência", cls:"w-full"}, e(SelJ,{value:f.recorrencia, label:"Recorrência", opcoes:[["unica", "Única (1 mês)"], ["parcelada", "Parcelada (vários meses)"], ["fixa", "Fixa (24 meses)"]], onChange:function(v){ set({recorrencia:v}); }})),
+        e(CampoJ,{rot:"Valor de cada mês (R$)", cls:"w-full"}, e(TxtJ,{value:f.valor, label:"Valor de cada mês", ph:"0,00", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})),
+        e(CampoJ,{rot:"Começa em", cls:"w-full"}, e(TxtJ,{value:f.mesInicio, type:"month", label:"Começa em", onChange:function(v){ set({mesInicio:v}); }})),
+        f.recorrencia==="parcelada" ? e(CampoJ,{rot:"Termina em", cls:"w-full"}, e(TxtJ,{value:f.mesFim, type:"month", label:"Termina em", onChange:function(v){ set({mesFim:v}); }})) : e("div",null))),
+    !nova && e(BlocoJ,{t:"3 · Estender a conta"},
+      e("div",{className:"grid w-full grid-cols-2 gap-1"},
+        e(CampoJ,{rot:"Até (vazio = mais 24 meses)", cls:"w-full"}, e(TxtJ,{value:f.estAte, type:"month", label:"Até", onChange:function(v){ set({estAte:v}); }})),
+        e(CampoJ,{rot:"Valor das novas parcelas", cls:"w-full"}, e(TxtJ,{value:f.estValor, label:"Valor das novas parcelas", ph:"0,00", onChange:function(v){ set({estValor:v.replace(/[^\d,.]/g,"")}); }}))),
+      e("button",{type:"button", disabled:!(num(f.estValor)>0), onClick:function(){ acao(c, "conta_estender", {id:x.id, ateMes:f.estAte||null, valor:num(f.estValor)}); p.fechar(); }, style:ALTO_J, className:BTN_J}, "Estender")),
+    e("div",{className:"mt-1.5 flex items-center justify-center gap-2 px-1.5"},
+      e("button",{type:"button", onClick:p.fechar, style:ALTO_J, className:BTN_J+" min-w-[88px]"}, "Cancelar"),
+      e("button",{type:"button", disabled:desligado, onClick:salvar, style:{height:"22px", lineHeight:"20px", background:CLARO_J}, className:"min-w-[88px] rounded border border-white/60 px-3 text-center text-[11px] font-semibold text-white hover:brightness-125 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60"}, nova ? "Lançar" : "Salvar")));   // padrao-ok: botão principal da janela azul
 }
+
+// CONTAS A PAGAR DA FAMÍLIA no MESMO desenho da Contas a pagar da Sorelly (Marcus, 22/11/2026: "igual à tela da Sorelly, cores, fontes, tudo organizado"):
+// página cheia, barra em forma de tabela (Buscar, Situação, Mês, Pessoa, Categoria), tabela fina com fundo azul-marinho, rodapé com o total e o botão Lançar conta no canto direito. Peças de components/planilha-cheia.js.
+// Clicar na linha abre o pagamento; as ações da linha são links de texto (Pagar, Valor, Editar, Encerrar, Excluir). As regras e os dados continuam os mesmos (domain/financeiro-familiar.js).
 function AbaFfContas(){
   var c = useFF(), ff = c.ff, es = useState({ym:hojeYm(), pessoa:"", cat:"", status:"", busca:""}), f = es[0], set = function(o){ es[1](Object.assign({}, f, o)); };
   var md = useState(null), modal = md[0], setModal = md[1], nt = useState({origem:"", destino:"", valor:"", data:hojeIso()}), tr = nt[0], setTr = nt[1];
-  var q = f.busca.trim().toLowerCase();
+  var q = f.busca.trim().toLowerCase(), hj = hojeIso();
   var lista = parcelasDe(ff, f.ym ? {ym:f.ym} : {yms:janela()}).filter(function(x){ return x.status!=="PAGO" && (!f.pessoa || daPessoa(x.conta, f.pessoa)) && (!f.cat || x.conta.categoria===f.cat) &&
-    (!f.status || (f.status==="atrasado" ? x.atrasada : f.status==="parcial" ? x.status==="PARCIAL" : (!x.atrasada))) && (!q || (x.conta.descricao+" "+x.conta.beneficiario+" "+x.conta.obs).toLowerCase().indexOf(q)>=0 || casaValor(f.busca.trim(), x.valor) || casaValor(f.busca.trim(), x.restante)); });
-  var totR = r2(lista.reduce(function(t, x){ return t+x.restante; }, 0)), atr = r2(lista.filter(function(x){ return x.atrasada; }).reduce(function(t, x){ return t+x.restante; }, 0));
+    (!f.status || (f.status==="atrasado" ? x.atrasada : f.status==="parcial" ? x.status==="PARCIAL" : (!x.atrasada))) && (!q || (x.conta.descricao+" "+x.conta.beneficiario+" "+x.conta.obs+" "+(x.conta.notas||[]).map(function(n){ return n.txt; }).join(" ")).toLowerCase().indexOf(q)>=0 || casaValor(f.busca.trim(), x.valor) || casaValor(f.busca.trim(), x.restante)); });
   var trans = ff.transf.filter(function(t){ return !f.ym || t.data.slice(0,7)===f.ym; }).sort(function(a, b){ return b.data.localeCompare(a.data); });
   var cbs = ff.contasBanc.filter(function(b){ return b.ativo; });
-  var pend = lista.filter(function(x){ return x.status==="PENDENTE"; }), parc = lista.filter(function(x){ return x.status==="PARCIAL"; }), atrL = lista.filter(function(x){ return x.atrasada; });
-  var somaR = function(l){ return r2(l.reduce(function(s, x){ return s+x.restante; }, 0)); };
-  var filtrando = !!(f.pessoa || f.cat || f.status || f.busca.trim() || f.ym!==hojeYm());
+  var dias = function(x){ return Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(x.venc+"T00:00:00"))/86400000)); };
+  var linhas = lista.map(function(x){ return {id:x.chave, x:x, sit:x.atrasada ? "Atrasada · "+dias(x)+" dias" : x.status==="PARCIAL" ? "Parcial" : "A pagar", venc:br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4)),
+    pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, cat:catNome(ff, x.conta.categoria), forma:x.conta.forma || "—", pagadora:x.conta.contaBancId ? contaLabel(ff, x.conta.contaBancId) : "Não definida", benef:x.conta.beneficiario || "—", valor:x.valor, falta:x.restante, obs:(x.conta.obs || (x.conta.notas || []).length) ? "✓" : "—"}; });
+  var cols = [{k:"sit", t:"Situação", cor:function(l){ return l.sit.indexOf("Atrasada")===0 ? "text-warning" : l.sit==="Parcial" ? "text-warning" : ""; }}, {k:"venc", t:"Vence"}, {k:"pessoa", t:"Pessoa"}, {k:"nome", t:"Conta"}, {k:"cat", t:"Categoria"}, {k:"forma", t:"Forma"}, {k:"pagadora", t:"Conta pagadora"}, {k:"benef", t:"Beneficiário"},
+    {k:"valor", t:"Valor", fmt:BK}, {k:"falta", t:"Falta", fmt:BK}, {k:"obs", t:"Obs"}];
+  var somaCampo = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(Number(l[k]) || 0); }, 0)); };
+  var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="nome" ? ls.length+(ls.length===1 ? " conta" : " contas") : col.k==="valor" || col.k==="falta" ? BK(somaCampo(ls, col.k)) : ""; }); };
   var op = function(l, todos){ return [["", todos]].concat(l); };
-  return e(Guarda,{c:c}, e(Pagina,null,
-    e(PageHead,{t:"Contas a pagar da família"}, e(Botao,{principal:true, onClick:function(){ setModal({tipo:"conta"}); }}, "+ Lançar conta")),
-    e("div",{className:"grid grid-cols-1 items-start gap-2.5 lg:grid-cols-[340px_minmax(0,1fr)]"},
-      e(BlocoResumo,{t:"Resumo · "+(f.ym ? nomeMes(f.ym) : "todos os meses"), compacto:true, cab:["Situação", "Falta pagar", "Parcelas"], rodape:{r:"Total", v:BK(totR), p:String(lista.length)}, linhas:[
-        {r:"Pendentes", v:BK(somaR(pend)), p:String(pend.length)}, {r:"Parciais", v:BK(somaR(parc)), p:String(parc.length)}, {r:"Atrasadas", v:BK(atr), p:String(atrL.length), cor:atr>0 ? "ruim" : "ok", pcor:atr>0 ? "ruim" : undefined}]}),
-      e(BlocoFiltros,{onLimpar:filtrando ? function(){ set({ym:hojeYm(), pessoa:"", cat:"", status:"", busca:""}); } : undefined},
-        e(CampoSel,{t:"Mês", id:"ff-mes", value:f.ym, onChange:function(v){ set({ym:v}); }, opcoes:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")}),
-        e(CampoSel,{t:"Pessoa", id:"ff-pessoa", value:f.pessoa, onChange:function(v){ set({pessoa:v}); }, opcoes:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")}),
-        e(CampoSel,{t:"Categoria", id:"ff-cat", value:f.cat, onChange:function(v){ set({cat:v}); }, opcoes:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}),
-        e(CampoSel,{t:"Situação", id:"ff-sit", value:f.status, onChange:function(v){ set({status:v}); }, opcoes:[["", "Qualquer situação"], ["pendente", "Pendente"], ["parcial", "Parcial"], ["atrasado", "Atrasado"]]}),
-        e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Buscar", id:"ff-busca"}), e("input",{id:"ff-busca", type:"search", value:f.busca, placeholder:"Descrição, beneficiário ou valor", className:CAMPO, onChange:function(ev){ set({busca:ev.target.value}); }})))),
-    e(Bloco,{t:"A pagar", dir:e("span",{className:"tabular-nums"}, (f.ym ? nomeMes(f.ym) : "Todos os meses")+" · "+BK(totR))},
-      lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Nada para pagar neste filtro.") :
-      e(TabelaP,{minW:1640, cols:[{t:"Vence", w:90, c:true}, {t:"Pessoa", w:190, c:true}, {t:"Descrição", w:320, c:true}, {t:"Categoria", w:120, c:true}, {t:"Beneficiário", w:160, c:true}, {t:"Valor", w:120, c:true}, {t:"Falta", w:120, c:true}, {t:"Situação", w:110, c:true}, {t:"Observação", w:230, c:true}, {t:"Ações", w:220, c:true}]},
-        lista.map(function(x){ return e(Tr,{key:x.chave},
-          e(Td,{c:true}, br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4))),
-          e(Td,{c:true, title:pessoaNome(ff, x.conta.personaId)}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, e("span",{className:"size-2.5 rounded-full", style:{background:corPessoa(ff, x.conta.personaId)}}), pessoaNome(ff, x.conta.personaId)+(x.conta.rateio && x.conta.rateio.length ? " ÷"+x.conta.rateio.length : ""))),
-          e(Td,{c:true, forte:true}, x.conta.descricao), e(Td,{c:true}, catNome(ff, x.conta.categoria)), e(Td,{c:true}, x.conta.beneficiario||"—"),
-          e(Td,{c:true}, BK(x.valor)), e(Td,{c:true, forte:true, title:x.pago>0 ? "Já pago "+BK(x.pago) : undefined}, BK(x.restante)), e(Td,{c:true}, statusChip(x)),
-          e(Td,{c:true}, x.conta.obs||"—"),
-          e(Td,{c:true}, e("div",{className:"flex items-center justify-center gap-1.5"}, e(Botao,{principal:true, onClick:function(){ setModal({tipo:"pagar", x:x}); }}, "Pagar"), iconBtn("pencil-simple", "Corrigir o valor deste mês", function(){ var v = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v!==null && num(v)>0) acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v)}); }),
-            iconBtn("gear-six", "Editar a conta", function(){ setModal({tipo:"conta", x:x.conta}); }), iconBtn("prohibit", "Encerrar a conta: tira as parcelas em aberto e guarda o histórico pago", function(){ if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")) acao(c, "conta_encerrar", {id:x.conta.id}); }), iconBtn("trash", "Excluir a conta inteira", function(){ if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")) acao(c, "conta_del", {id:x.conta.id}); }, true)))); }))),
-    e(BlocoBarra,{cor:"azul", t:"Transferências entre contas", sub:"só um registro: não entra nos totais"}, e("div",{className:"flex flex-col gap-3 p-4"},
+  return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
+    modal && modal.tipo==="pagar" && e(ModalPagar,{key:modal.x.chave, c:c, x:modal.x, editar:function(){ setModal({tipo:"conta", x:modal.x.conta}); },
+      valor:function(){ var x = modal.x, v2 = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v2!==null && num(v2)>0){ acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v2)}); setModal(null); } },
+      encerrar:function(){ var x = modal.x; if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")){ acao(c, "conta_encerrar", {id:x.conta.id}); setModal(null); } },
+      excluir:function(){ var x = modal.x; if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")){ acao(c, "conta_del", {id:x.conta.id}); setModal(null); } },
+      fechar:function(){ setModal(null); }}),
+    modal && modal.tipo==="conta" && e(FormConta,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
+    e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
+      e(BarraTabela,null,
+        e("div",{role:"button", tabIndex:0, title:"Lançar uma conta da família", onClick:function(){ setModal({tipo:"conta"}); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setModal({tipo:"conta"}); } }, className:"flex w-[124px] shrink-0 cursor-pointer whitespace-nowrap items-center justify-center border-r border-white/25 bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar conta"),   // padrao-ok: botão no INÍCIO da barra, tamanho médio (Marcus, 22/11/2026)
+        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas"})),
+        e(CelulaBarra,{rotulo:"Situação"}, e(CampoMini,{valor:f.status, aoMudar:function(v){ set({status:v}); }, rotulo:"Situação", ops:[["", "Todas abertas"], ["pendente", "A pagar"], ["parcial", "Parciais"], ["atrasado", "Atrasadas"]]})),
+        e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),
+        e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:f.pessoa, aoMudar:function(v){ set({pessoa:v}); }, rotulo:"Pessoa", ops:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")})),
+        e(CelulaBarra,{rotulo:"Categoria"}, e(CampoMini,{valor:f.cat, aoMudar:function(v){ set({cat:v}); }, rotulo:"Categoria", ops:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}))),
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffcontas", fina:true, cols:cols, aoClicar:function(l){ setModal({tipo:"pagar", x:l.x}); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodape, vazio:"Nada para pagar neste filtro."}))),
+    e(BlocoPainel,{titulo:"Transferências entre contas", compacto:true}, e("div",{className:"flex flex-col gap-3 p-4"},
       e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"De"}, e(Sel,{value:tr.origem, label:"Origem", className:"w-56", onChange:function(v){ setTr(Object.assign({}, tr, {origem:v})); }}, e("option",{value:""}, "Escolha…"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
         e(Campo,{rot:"Para"}, e(Sel,{value:tr.destino, label:"Destino", className:"w-56", onChange:function(v){ setTr(Object.assign({}, tr, {destino:v})); }}, e("option",{value:""}, "Escolha…"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
         e(Campo,{rot:"Valor (R$)"}, e(Txt,{value:tr.valor, label:"Valor", className:"w-32", onChange:function(v){ setTr(Object.assign({}, tr, {valor:v.replace(/[^\d,.]/g,"")})); }})), e(Campo,{rot:"Data"}, e(Txt,{value:tr.data, type:"date", label:"Data", className:"w-44", onChange:function(v){ setTr(Object.assign({}, tr, {data:v})); }})),
         e(Btn,{v:"secondary", disabled:!tr.origem || !tr.destino || !(num(tr.valor)>0), onClick:function(){ acao(c, "transf_add", {origem:tr.origem, destino:tr.destino, valor:num(tr.valor), data:tr.data}); setTr(Object.assign({}, tr, {valor:""})); }}, "Anotar")),
       cbs.length<2 && e("p",{className:"text-[12.5px] text-muted-foreground"}, "Cadastre ao menos duas contas bancárias em Configurações para anotar transferências."),
       trans.length>0 && e("div",{className:"flex flex-col divide-y divide-white/10"}, trans.map(function(t){ return e("div",{key:t.id, className:"flex flex-wrap items-center justify-between gap-2 py-2 text-[13.5px]"}, e("span",null, br(t.data)+" · "+contaLabel(ff, t.origem)+" → "+contaLabel(ff, t.destino)+" · ", e("b",{className:MONO}, BK(t.valor))),
-        e("span",{className:"flex items-center gap-2"}, t.status==="PAGO" ? e("span",{className:"rounded-full bg-success/20 px-2.5 py-0.5 text-[11.5px] font-bold text-success"}, "Feita em "+br(t.pagoEm)) : e(Btn,{v:"secondary", sm:true, onClick:function(){ acao(c, "transf_baixa", {id:t.id}); }}, "Dar baixa"), iconBtn("trash", "Excluir", function(){ acao(c, "transf_del", {id:t.id}); }, true))); })))),
-    modal && modal.tipo==="pagar" && e(ModalPagar,{key:modal.x.chave, c:c, x:modal.x, fechar:function(){ setModal(null); }}),
-    modal && modal.tipo==="conta" && e(FormConta,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }})));
+          e("span",{className:"flex items-center gap-2"}, t.status==="PAGO" ? e("span",{className:"text-[11px] font-bold text-success"}, "Feita em "+br(t.pagoEm)) : e(Btn,{v:"secondary", sm:true, onClick:function(){ acao(c, "transf_baixa", {id:t.id}); }}, "Dar baixa"), iconBtn("trash", "Excluir", function(){ acao(c, "transf_del", {id:t.id}); }, true))); }))))));
 }
 
 // ───────────────── Contas pagas ─────────────────
 function AbaFfPagas(){
-  var c = useFF(), ff = c.ff, es = useState({ym:hojeYm(), pessoa:"", cat:"", forma:"", conta:"", busca:""}), f = es[0], set = function(o){ es[1](Object.assign({}, f, o)); }, ed = useState(null), edit = ed[0], setEdit = ed[1];
-  var q = f.busca.trim().toLowerCase(), qc = f.conta.trim().toLowerCase();
-  var lista = parcelasDe(ff, f.ym ? {ym:f.ym} : {yms:janela()}).filter(function(x){ return x.pago>0 && (!f.pessoa || daPessoa(x.conta, f.pessoa)) && (!f.cat || x.conta.categoria===f.cat) && (!f.forma || x.pagamentos.some(function(g){ return g.forma===f.forma; })) &&
-    (!qc || x.pagamentos.some(function(g){ return String(g.conta||"").toLowerCase().indexOf(qc)>=0; })) && (!q || (x.conta.descricao+" "+x.conta.beneficiario).toLowerCase().indexOf(q)>=0 || casaValor(f.busca.trim(), x.valor) || casaValor(f.busca.trim(), x.pago)); });
-  var tot = r2(lista.reduce(function(t, x){ return t+x.pago; }, 0)), por = function(fn){ var o = {}; lista.forEach(function(x){ var k = fn(x); o[k] = r2((o[k]||0)+x.pago); }); return Object.keys(o).map(function(k){ return [k, o[k]]; }).sort(function(a, b){ return b[1]-a[1]; }); };
-  var barras = function(t, dados, cor){ var max = Math.max.apply(null, dados.map(function(d){ return d[1]; }).concat([1])); return e(BlocoBarra,{cor:"azul", t:t}, e("div",{className:"flex flex-col gap-2 p-4"}, dados.length===0 ? e("p",{className:"text-[13px] text-muted-foreground"}, "Sem pagamentos.") : dados.map(function(d){ return e("div",{key:d[0], className:"grid grid-cols-[10rem_1fr_7rem] items-center gap-2 text-[13px]"}, e("span",{className:"truncate"}, d[0]), e("span",{className:"h-3 overflow-hidden rounded-full bg-white/15"}, e("span",{className:"block h-full rounded-full", style:{width:Math.max(3, d[1]/max*100)+"%", background:"linear-gradient(90deg,#be185d,#f472b6)"}})), e("b",{className:MONO+" text-right"}, BK(d[1]))); }))); };
-  return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Contas pagas", sub:"O que já foi pago (inclusive o que foi pago em parte). Para corrigir um pagamento ou desfazer, use os botões da linha. Mês passado travado só se libera em Configurações."}),
-    e("div",{className:"grid grid-cols-2 gap-3"}, e(Tile,{t:"Total pago", v:BK(tot), cor:"#4ADE80", sub:lista.length+" parcelas"}), e(Tile,{t:"Maior categoria", v:por(function(x){ return catNome(ff, x.conta.categoria); })[0] ? por(function(x){ return catNome(ff, x.conta.categoria); })[0][0] : "—", cor:"#F472B6"})),
-    e("div",{className:"flex flex-wrap items-end gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-[#EC4899]/30"}, e(MesSel,{ym:f.ym, set:function(v){ set({ym:v}); }, todos:true}),
-      e(Sel,{value:f.pessoa, label:"Pessoa", className:"w-44", onChange:function(v){ set({pessoa:v}); }}, e("option",{value:""}, "Todas as pessoas"), ff.personas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); })),
-      e(Sel,{value:f.cat, label:"Categoria", className:"w-48", onChange:function(v){ set({cat:v}); }}, e("option",{value:""}, "Todas as categorias"), ff.categorias.map(function(k){ return e("option",{key:k.chave, value:k.chave}, k.nome); })),
-      e(Sel,{value:f.forma, label:"Forma", className:"w-44", onChange:function(v){ set({forma:v}); }}, e("option",{value:""}, "Todas as formas"), FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); })),
-      e(Txt,{value:f.conta, ph:"Conta utilizada", label:"Conta", className:"w-44", onChange:function(v){ set({conta:v}); }}), e(Txt,{value:f.busca, ph:"Buscar descrição ou valor", label:"Buscar", className:"w-56", onChange:function(v){ set({busca:v}); }})),
-    e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-2"}, barras("Por categoria", por(function(x){ return catNome(ff, x.conta.categoria); })), barras("Por pessoa", por(function(x){ return pessoaNome(ff, x.conta.personaId); }))),
-    e(BlocoBarra,{cor:"azul", t:"Pagamentos", sub:f.ym ? nomeMes(f.ym) : "todos os meses", dir:BK(tot)}, lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13.5px] text-muted-foreground"}, "Nenhum pagamento neste filtro.") :
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Pago em"), th("Pessoa"), th("Descrição"), th("Categoria"), th("Forma"), th("Conta utilizada"), th("Pago"), th("")])),
-        e("tbody",null, lista.map(function(x){ var g = x.pagamentos[x.pagamentos.length-1]||{};
-          return e("tr",{key:x.chave, className:"border-b border-border/60"}, e("td",{className:TD}, br(g.em)), e("td",{className:TD}, pessoaNome(ff, x.conta.personaId)+(x.conta.rateio && x.conta.rateio.length ? " ÷"+x.conta.rateio.length : "")), e("td",{className:TD+" font-semibold"}, x.conta.descricao, e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, nomeMes(x.ym)+(x.status==="PARCIAL" ? " · Parcial: de "+BK(x.valor) : ""))),
-            e("td",{className:TD}, catNome(ff, x.conta.categoria)), e("td",{className:TD}, g.forma||"—"), e("td",{className:TD+" text-[12.5px]"}, g.conta||"—"), e("td",{className:TD+" font-bold "+MONO}, BK(x.pago)),
-            e("td",{className:TD}, e("div",{className:"flex gap-1.5"}, x.status==="PAGO" && iconBtn("pencil-simple", "Editar o pagamento", function(){ setEdit(x); }), iconBtn("trash", "Excluir o pagamento (volta para Contas a pagar)", function(){ if(window.confirm("Excluir TODOS os pagamentos de \""+x.conta.descricao+"\" ("+nomeMes(x.ym)+")? A parcela volta para Contas a pagar.")) acao(c, "parc_reverter", {id:x.conta.id, ym:x.ym}); }, true)))); }))))),
+  var c = useFF(), ff = c.ff, es = useState({ym:hojeYm(), pessoa:"", cat:"", busca:""}), f = es[0], set = function(o){ es[1](Object.assign({}, f, o)); }, ed = useState(null), edit = ed[0], setEdit = ed[1];
+  var q = f.busca.trim().toLowerCase();
+  var lista = parcelasDe(ff, f.ym ? {ym:f.ym} : {yms:janela()}).filter(function(x){ return x.pago>0 && (!f.pessoa || daPessoa(x.conta, f.pessoa)) && (!f.cat || x.conta.categoria===f.cat) &&
+    (!q || (x.conta.descricao+" "+x.conta.beneficiario).toLowerCase().indexOf(q)>=0 || casaValor(f.busca.trim(), x.valor) || casaValor(f.busca.trim(), x.pago)); });
+  var linhas = lista.map(function(x){ var g = x.pagamentos[x.pagamentos.length-1]||{};
+    return {id:x.chave, x:x, em:br(g.em), pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, mes:nomeMes(x.ym)+(x.status==="PARCIAL" ? " · Parcial de "+BK(x.valor) : ""), cat:catNome(ff, x.conta.categoria), forma:g.forma || "—", pagadora:g.conta || "—", pago:x.pago}; });
+  var link = function(txt, fn, titulo){ return e("button",{key:txt, type:"button", title:titulo, onClick:function(ev){ ev.stopPropagation(); fn(); }, className:"cursor-pointer underline hover:text-primary"}, txt); };
+  var acoes = function(v, l){ var x = l.x; return e("span",{className:"inline-flex items-center justify-center gap-2"},
+    x.status==="PAGO" && link("Editar", function(){ setEdit(x); }, "Editar o pagamento"),
+    link("Excluir", function(){ if(window.confirm("Excluir TODOS os pagamentos de \""+x.conta.descricao+"\" ("+nomeMes(x.ym)+")? A parcela volta para Contas a pagar.")) acao(c, "parc_reverter", {id:x.conta.id, ym:x.ym}); }, "Excluir o pagamento (volta para Contas a pagar)")); };
+  var cols = [{k:"em", t:"Pago em"}, {k:"pessoa", t:"Pessoa"}, {k:"nome", t:"Conta"}, {k:"mes", t:"Mês"}, {k:"cat", t:"Categoria"}, {k:"forma", t:"Forma"}, {k:"pagadora", t:"Conta pagadora"}, {k:"pago", t:"Pago", fmt:BK, cor:function(){ return "text-success"; }}, {k:"acoes", t:"Ações", render:acoes}];
+  var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="nome" ? ls.length+(ls.length===1 ? " conta" : " contas") : col.k==="pago" ? BK(r2(ls.reduce(function(t, l){ return t+(Number(l.pago) || 0); }, 0))) : ""; }); };
+  var op = function(l, todos){ return [["", todos]].concat(l); };
+  return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
+    e(BlocoPainel,{titulo:"Contas pagas - Família", compacto:true},
+      e(BarraTabela,null,
+        e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{larg:"w-44", valor:f.busca, aoMudar:function(v){ set({busca:v}); }, ph:"Conta, beneficiário, valor...", rotulo:"Buscar nas contas pagas"})),
+        e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:f.ym, aoMudar:function(v){ set({ym:v}); }, rotulo:"Mês", ops:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")})),
+        e(CelulaBarra,{rotulo:"Pessoa"}, e(CampoMini,{valor:f.pessoa, aoMudar:function(v){ set({pessoa:v}); }, rotulo:"Pessoa", ops:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")})),
+        e(CelulaBarra,{rotulo:"Categoria"}, e(CampoMini,{valor:f.cat, aoMudar:function(v){ set({cat:v}); }, rotulo:"Categoria", ops:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}))),
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffpagas", fina:true, cols:cols, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodape, vazio:"Nenhum pagamento neste filtro."}))),
     edit && e(EditarPago,{key:edit.chave, c:c, x:edit, fechar:function(){ setEdit(null); }})));
 }
 function EditarPago(p){
   var g = p.x.pagamentos[p.x.pagamentos.length-1]||{}, st = useState({valor:fmtN(p.x.pago), em:g.em||hojeIso(), forma:g.forma||"PIX", contaTxt:g.conta||"", obs:g.obs||""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
-  // Pessoa da conta já baixada (Anamaria, 22/11/2026): muda a pessoa SEM mexer no pagamento, sem estornar e baixar de novo. Vale para a conta inteira (todos os meses), igual ao "Para quem entra" do Pagar.
-  var pessoaAtual = p.x.conta.rateio && p.x.conta.rateio.length ? FAMILIA4 : p.x.conta.personaId, ps = useState(pessoaAtual), pessoa = ps[0];
-  return e(Modal,{t:"Editar pagamento · "+p.x.conta.descricao, sub:nomeMes(p.x.ym)+" · a divisão anterior (se houve) se perde", fechar:p.fechar},
-    e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"}, e(Campo,{rot:"Valor (R$)"}, e(Txt,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})), e(Campo,{rot:"Data"}, e(Txt,{value:f.em, type:"date", label:"Data", onChange:function(v){ set({em:v}); }})),
-      e(Campo,{rot:"Forma"}, e(Sel,{value:f.forma, label:"Forma", className:"w-full", onChange:function(v){ set({forma:v}); }}, FORMAS.map(function(k){ return e("option",{key:k, value:k}, k); }))), e(Campo,{rot:"Conta utilizada"}, e(Txt,{value:f.contaTxt, label:"Conta", onChange:function(v){ set({contaTxt:v}); }})),
-      e(Campo,{rot:"Observação", className:"sm:col-span-2"}, e(Txt,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }}))),
-    e("div",{className:"flex flex-wrap items-end gap-2 rounded-xl bg-card px-3 py-2 ring-1 ring-[#EC4899]/30"}, e(Campo,{rot:"Pessoa da conta (vale para todos os meses)", className:"min-w-60 flex-1"}, e(Sel,{value:pessoa, label:"Pessoa da conta", className:"w-full", onChange:function(v){ ps[1](v); }}, e("option",{value:FAMILIA4}, "Família (divide igual entre os "+membrosFamilia(p.c.ff).length+")"), p.c.ff.personas.map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
-      e(Btn,{v:"ghost", onClick:function(){ if(pessoa!==pessoaAtual) acao(p.c, "conta_set", {id:p.x.conta.id, patch:{personaId:pessoa}}); p.fechar(); }}, "Mudar só a pessoa")),
-    e("div",{className:"flex justify-end gap-2"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", onClick:function(){ acao(p.c, "parc_pago_edit", {id:p.x.conta.id, ym:p.x.ym, valor:num(f.valor), em:f.em, forma:f.forma, contaTxt:f.contaTxt, obs:f.obs}); p.fechar(); }}, "Salvar")));
+  var opContas = [["", "Não definida"]].concat(contasPagadoras(p.c.ff).map(function(b){ var n = contaLabel(p.c.ff, b.id); return [n, n]; }));
+  if(f.contaTxt && !opContas.some(function(o){ return o[0]===f.contaTxt; })) opContas.push([f.contaTxt, f.contaTxt]);   // conta antiga escrita à mão continua na lista
+  // Pessoa da conta já baixada (Anamaria, 22/11/2026): muda a pessoa SEM estornar e baixar de novo. Vale para a conta inteira (todos os meses), igual ao "Para quem entra" do Pagar. "Salvar" grava o pagamento E a pessoa; "Mudar só a pessoa" não mexe no pagamento (a divisão em várias formas continua).
+  var pessoaAtual = paraQuemDe(p.x.conta), ps = useState(pessoaAtual), pessoa = ps[0], opPessoa = opcoesPessoa(p.c.ff).filter(function(o){ return o[0]!=="__viagem"; });
+  var gravaPessoa = function(){ if(pessoa!==pessoaAtual) acao(p.c, "conta_set", {id:p.x.conta.id, patch:{personaId:pessoa}}); };
+  return e(JanelaJ,{t:"Editar pagamento · "+p.x.conta.descricao, sub:nomeMes(p.x.ym)+" · a divisão anterior (se houve) se perde", fechar:p.fechar},
+    e(BlocoJ,{t:"Pagamento"},
+      e("div",{className:"grid w-full grid-cols-2 gap-1"},
+        e(CampoJ,{rot:"Valor (R$)", cls:"w-full"}, e(TxtJ,{value:f.valor, label:"Valor", onChange:function(v){ set({valor:v.replace(/[^\d,.]/g,"")}); }})),
+        e(CampoJ,{rot:"Data", cls:"w-full"}, e(TxtJ,{value:f.em, type:"date", label:"Data", onChange:function(v){ set({em:v}); }})),
+        e(CampoJ,{rot:"Forma", cls:"w-full"}, e(SelJ,{value:f.forma, label:"Forma", opcoes:FORMAS.map(function(k){ return [k, k]; }), onChange:function(v){ set({forma:v}); }})),
+        e(CampoJ,{rot:"Conta pagadora", cls:"w-full"}, e(SelJ,{value:f.contaTxt, label:"Conta pagadora", opcoes:opContas, onChange:function(v){ set({contaTxt:v}); }})),
+        e(CampoJ,{rot:"Observação", cls:"col-span-2"}, e(TxtJ,{value:f.obs, label:"Observação", onChange:function(v){ set({obs:v}); }})))),
+    e(BlocoJ,{t:"Pessoa da conta (vale para todos os meses)"},
+      e("div",{className:"grid w-full grid-cols-[1fr_auto] items-end gap-1"},
+        e(CampoJ,{rot:"Para quem entra", cls:"w-full"}, e(SelJ,{value:pessoa, label:"Para quem entra", opcoes:opPessoa, onChange:function(v){ ps[1](v); }})),
+        e("button",{type:"button", disabled:pessoa===pessoaAtual, style:ALTO_J, className:BTN_J, title:"Troca só a pessoa. O pagamento não muda.", onClick:function(){ gravaPessoa(); p.fechar(); }}, "Mudar só a pessoa"))),
+    e("div",{className:"flex justify-end gap-1.5 px-2 pt-1.5"}, e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"), e("button",{type:"button", style:ALTO_J, className:BTN_J+" !bg-[#3f6bb8]", onClick:function(){ gravaPessoa(); acao(p.c, "parc_pago_edit", {id:p.x.conta.id, ym:p.x.ym, valor:num(f.valor), em:f.em, forma:f.forma, contaTxt:f.contaTxt, obs:f.obs}); p.fechar(); }}, "Salvar")));
 }
 
 // ───────────────── PIX revendedoras ─────────────────
@@ -346,7 +545,7 @@ function CartaoPix(p){
     cont++;
     if(stDe(x)!=="NAOIDENT") soma = r2(soma+x.valor);
     linhas.push(e("tr",{key:x.id},
-      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, casa ? (casaDe(ff, x.contaId) || prestDe(x.contaId)) : prestDe(x.contaId)),
+      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, casa ? e("div",{className:"flex flex-col items-center gap-1"}, e("span",null, casaDe(ff, x.contaId) || prestDe(x.contaId)), e("select",{value:x.casa || "", disabled:c.leitura, "aria-label":"Para qual casa", className:CAMPO+" w-44! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v.indexOf("p:")===0){ if(window.confirm("Mover este Pix para o sócio? Ele sai da Casa e entra nos números dele.")) acao(c, "pix_set", {id:x.id, patch:{personaId:v.slice(2), casa:""}}); } else acao(c, "pix_set", {id:x.id, patch:{casa:v}}); }}, e("option",{value:""}, "Sem casa definida"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); }), ff.personas.filter(function(q){ return q.tipo==="SOCIO" && q.ativo; }).map(function(q){ return e("option",{key:"p:"+q.id, value:"p:"+q.id}, "Mover para "+q.nome); }))) : prestDe(x.contaId)),
       e("td",{className:TC+(stDe(x)==="NAOIDENT" ? " line-through opacity-60" : "")}, BK(x.valor)),
       e("td",{className:TC}, e("span",{className:"inline-flex items-center justify-center gap-2"},
         e("select",{value:valSel(x), disabled:c.leitura, "aria-label":"Conferência", className:CAMPO+" w-40! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else if(v==="DIVD") abrirDiv(x.id, "data", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
@@ -371,6 +570,7 @@ function CartaoPix(p){
       e("div",{className:"w-52"}, e(Rotulo,{t:"Conta"}), e("select",{value:fl.conta, "aria-label":"Filtrar por conta", className:CAMPO, onChange:function(ev){ setFl({conta:ev.target.value}); }}, e("option",{value:""}, "Todas as contas"), contasLista.map(function(id){ return e("option",{key:id, value:id}, nomeConta(id)+(contaDe(id).banco ? " · "+contaDe(id).banco : "")); }))),
       e("div",{className:"w-44"}, e(Rotulo,{t:"Conferência"}), e("select",{value:fl.conf, "aria-label":"Filtrar por conferência", className:CAMPO, onChange:function(ev){ setFl({conf:ev.target.value}); }}, e("option",{value:""}, "Todas"), e("option",{value:"PENDENTE"}, "Aguardando"), e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVERG"}, "Divergência"))),
       filtrando && e(Botao,{onClick:function(){ setFl({q:"", conta:"", conf:""}); }}, "Limpar"),
+      casa && !c.leitura && listaTodas.some(function(x){ return !x.casa; }) && e(Botao,{onClick:function(){ var n0 = ff.pix.filter(function(x){ return pixCasa(ff, x) && !x.casa; }).length; if(window.confirm("Marcar os "+n0+" Pix da Casa que estão sem casa como Casa Alphaville?")) acao(c, "pix_casa_lote", {casa:"casaalphaville"}); }}, "Marcar os sem casa como Alphaville"),
       e("span",{className:"pb-1.5 text-[13px] tabular-nums"}, lista.length+" de "+listaTodas.length+" PIX")),
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, filtrando ? "Nenhum PIX com esse filtro." : ym==="TODOS" ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
     : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:220}, {t:"", w:56}]}, linhas),
@@ -394,7 +594,9 @@ function ResumoPix(p){
   var porFav = {}, porDia = {}, nDia = {};
   vl.forEach(function(x){ var k = x.contaId || "—", d = todos ? x.data.slice(0,7) : x.data; nomesFav[k] = rotuloFav(x.contaId); porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
   var rodTotal = {r:"Recebido", v:BK(casa ? recL : rec), p:vl.length+" PIX"}, rodFav = {r:"Total enviado", v:BK(recL), p:vl.length+" PIX"}, rodDia = {r:"Total", v:BK(recL), p:vl.length+" PIX"};   // o total fica numa linha fixa no fundo de cada bloco
-  var linTotal = casa ? []
+  var porCasaPix = {}; vl.forEach(function(x){ var k = x.casa || "__sem"; porCasaPix[k] = r2((porCasaPix[k] || 0)+x.valor); });
+  var linCasas = CASAS_PIX.concat([["__sem", "Sem casa definida"]]).filter(function(k){ return porCasaPix[k[0]]; }).map(function(k){ return {r:k[1], v:BK(porCasaPix[k[0]]), p:pct(porCasaPix[k[0]], recL)}; });
+  var linTotal = casa ? linCasas
     : [{r:"Direto", v:BK(dir), p:pct(dir, rec)}, {r:"Prestadores", v:BK(pres), p:pct(pres, rec)}]
       .concat(atual && !um ? pes.filter(function(pe){ return ["marco", "anabeatriz", "marcus", "lucas", "anamaria"].indexOf(pe.id)>=0; }).map(function(pe){ var t = totaisPersona(ff, pe.id, ym); return {r:"Meta · "+pe.nome, v:t.pix.meta>0 ? BK(t.pix.meta) : "Sem meta", p:t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta" : ""}; }) : [])   // meta de cada sócio em uma linha (Marcus, 04/11/2026)
       .concat(atual && meta>0 ? [{r:"Meta do mês", v:BK(meta), p:"", total:!um}, {r:"Falta", v:BK(Math.max(0, r2(meta-rec))), p:Math.round(rec/meta*100)+"% da meta"}] : []);
@@ -648,29 +850,53 @@ function AbaFfPrest(){
 }
 
 // ───────────────── Pró-labores ─────────────────
-function CartaoProlab(p){
-  var c = p.c, ff = c.ff, pe = p.p, pr = ff.prolabore[pe.id]||{empresa:"", cnpj:"", vigencias:[]}, ve = useState({empresa:pr.empresa, cnpj:pr.cnpj}), emp = ve[0], setEmp = ve[1];
+// REFEITA em 22/11/2026 (Marcus: "somente uma linha com o pró-labore de cada sócio"): uma tabela, uma linha por sócio, no mesmo desenho das Negociações e da Contas a pagar. "Editar" abre a janela azul com a empresa, a nova vigência e as vigências antigas. O botão do canto gera as contas do mês.
+function EditarProlab(p){
+  var c = p.c, ff = c.ff, pe = p.pe, pr = ff.prolabore[pe.id]||{empresa:"", cnpj:"", vigencias:[]}, ve = useState({empresa:pr.empresa, cnpj:pr.cnpj}), emp = ve[0], setEmp = ve[1];
   var nv = useState({desde:hojeYm(), bruto:"", inss:"", irrf:"", split:false, valor1:"", dia1:"20", dia2:"5"}), v = nv[0], setV = nv[1], liq = liquidoDe(num(v.bruto), num(v.inss), num(v.irrf));
-  var vig = vigenciaEm(ff, pe.id, p.ym);
-  return e(BlocoBarra,{cor:"azul", t:pe.nome+" · pró-labore", sub:vig ? "vigência atual: desde "+nomeMes(vig.desde)+" · líquido "+BK(vig.liquido) : "sem vigência para "+nomeMes(p.ym), dir:vig ? BK(vig.liquido) : ""}, e("div",{className:"flex flex-col gap-3 p-4"},
-    e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"Empresa", className:"min-w-[14rem] flex-1"}, e(Txt,{value:emp.empresa, label:"Empresa", onChange:function(x){ setEmp(Object.assign({}, emp, {empresa:x})); }})), e(Campo,{rot:"CNPJ"}, e(Txt,{value:emp.cnpj, label:"CNPJ", className:"w-52", onChange:function(x){ setEmp(Object.assign({}, emp, {cnpj:x})); }})),
-      e(Btn,{v:"secondary", disabled:!emp.empresa.trim(), onClick:function(){ acao(c, "prolab_set", {personaId:pe.id, empresa:emp.empresa, cnpj:emp.cnpj}); }}, "Salvar empresa")),
-    e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-3"}, e("b",{className:"text-[13.5px]"}, "Nova vigência (muda o valor daqui para a frente; o passado não muda)"),
-      e("div",{className:"flex flex-wrap items-end gap-2"}, e(Campo,{rot:"A partir de"}, e(Txt,{value:v.desde, type:"month", label:"Desde", className:"w-40", onChange:function(x){ setV(Object.assign({}, v, {desde:x})); }})),
-        e(Campo,{rot:"Bruto (R$)"}, e(Txt,{value:v.bruto, label:"Bruto", className:"w-28", onChange:function(x){ setV(Object.assign({}, v, {bruto:x.replace(/[^\d,.]/g,"")})); }})), e(Campo,{rot:"INSS"}, e(Txt,{value:v.inss, label:"INSS", className:"w-24", onChange:function(x){ setV(Object.assign({}, v, {inss:x.replace(/[^\d,.]/g,"")})); }})), e(Campo,{rot:"IRRF"}, e(Txt,{value:v.irrf, label:"IRRF", className:"w-24", onChange:function(x){ setV(Object.assign({}, v, {irrf:x.replace(/[^\d,.]/g,"")})); }})),
-        e("span",{className:"pb-2 text-[13px]"}, "Líquido ", e("b",{className:MONO+" text-primary"}, BK(liq))), e("label",{className:"flex cursor-pointer items-center gap-1.5 pb-2 text-[12.5px]"}, e("input",{type:"checkbox", checked:v.split, className:"size-4", onChange:function(ev){ setV(Object.assign({}, v, {split:ev.target.checked})); }}), "pagar em duas datas")),
-      v.split && e("div",{className:"flex flex-wrap items-end gap-2"}, e(Campo,{rot:"Dia do adiantamento"}, e(Txt,{value:v.dia1, label:"Dia 1", className:"w-24 text-center", onChange:function(x){ setV(Object.assign({}, v, {dia1:x.replace(/\D/g,"")})); }})), e(Campo,{rot:"Valor do adiantamento"}, e(Txt,{value:v.valor1, label:"Valor 1", className:"w-32", onChange:function(x){ setV(Object.assign({}, v, {valor1:x.replace(/[^\d,.]/g,"")})); }})),
-        e(Campo,{rot:"Dia do saldo"}, e(Txt,{value:v.dia2, label:"Dia 2", className:"w-24 text-center", onChange:function(x){ setV(Object.assign({}, v, {dia2:x.replace(/\D/g,"")})); }})), e("span",{className:"pb-2 text-[13px]"}, "Saldo ", e("b",{className:MONO}, BK(Math.max(0, r2(liq-num(v.valor1))))))),
-      e("div",null, e(Btn,{v:"primary", sm:true, disabled:!(liq>0), onClick:function(){ acao(c, "prolab_vig_add", {personaId:pe.id, desde:v.desde, bruto:num(v.bruto), inss:num(v.inss), irrf:num(v.irrf), split:v.split, valor1:num(v.valor1), dia1:v.dia1, dia2:v.dia2}); }}, "Criar vigência"))),
-    pr.vigencias.length>0 && e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Desde"), th("Bruto"), th("INSS"), th("IRRF"), th("Líquido"), th("Datas"), th("")])), e("tbody",null, pr.vigencias.slice().sort(function(a, b){ return b.desde.localeCompare(a.desde); }).map(function(x){ return e("tr",{key:x.id, className:"border-b border-border/60"},
-      e("td",{className:TD+" font-semibold"}, nomeMes(x.desde)), e("td",{className:TD+" "+MONO}, BK(x.bruto)), e("td",{className:TD+" "+MONO}, BK(x.inss)), e("td",{className:TD+" "+MONO}, BK(x.irrf)), e("td",{className:TD+" font-bold "+MONO}, BK(x.liquido)), e("td",{className:TD+" text-[12.5px]"}, x.valor1 ? "dia "+x.dia1+": "+BK(x.valor1)+" · dia "+x.dia2+": "+BK(x.valor2) : "dia 5"), e("td",{className:TD}, iconBtn("trash", "Excluir vigência", function(){ acao(c, "prolab_vig_del", {personaId:pe.id, id:x.id}); }, true))); }))))));
+  var setN = function(o){ setV(Object.assign({}, v, o)); }, so = function(x){ return x.replace(/[^\d,.]/g,""); };
+  var antigas = pr.vigencias.slice().sort(function(a, b){ return b.desde.localeCompare(a.desde); });
+  return e(JanelaJ,{t:"Pró-labore · "+pe.nome, larga:true, fechar:p.fechar},
+    e(BlocoJ,{t:"1 · Empresa"},
+      e("div",{className:"grid w-full grid-cols-[2.4fr_1fr_auto] items-end gap-1"},
+        e(CampoJ,{rot:"Empresa", cls:"w-full"}, e(TxtJ,{value:emp.empresa, label:"Empresa", onChange:function(x){ setEmp(Object.assign({}, emp, {empresa:x})); }})),
+        e(CampoJ,{rot:"CNPJ", cls:"w-full"}, e(TxtJ,{value:emp.cnpj, label:"CNPJ", onChange:function(x){ setEmp(Object.assign({}, emp, {cnpj:x})); }})),
+        e("button",{type:"button", disabled:!emp.empresa.trim(), style:ALTO_J, className:BTN_J, onClick:function(){ acao(c, "prolab_set", {personaId:pe.id, empresa:emp.empresa, cnpj:emp.cnpj}); }}, "Salvar empresa"))),
+    e(BlocoJ,{t:"2 · Nova vigência (muda o valor daqui para a frente; o passado não muda)"},
+      e("div",{className:"grid w-full grid-cols-5 gap-1"},
+        e(CampoJ,{rot:"A partir de", cls:"w-full"}, e(TxtJ,{value:v.desde, type:"month", label:"Desde", onChange:function(x){ setN({desde:x}); }})),
+        e(CampoJ,{rot:"Bruto (R$)", cls:"w-full"}, e(TxtJ,{value:v.bruto, label:"Bruto", onChange:function(x){ setN({bruto:so(x)}); }})),
+        e(CampoJ,{rot:"INSS", cls:"w-full"}, e(TxtJ,{value:v.inss, label:"INSS", onChange:function(x){ setN({inss:so(x)}); }})),
+        e(CampoJ,{rot:"IRRF", cls:"w-full"}, e(TxtJ,{value:v.irrf, label:"IRRF", onChange:function(x){ setN({irrf:so(x)}); }})),
+        e(CampoJ,{rot:"Líquido", cls:"w-full"}, e("div",{className:"flex h-[22px] items-center justify-center text-[11px] font-bold"}, BK(liq)))),
+      e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold"}, e("input",{type:"checkbox", checked:v.split, className:"size-3", onChange:function(ev){ setN({split:ev.target.checked}); }}), "Pagar em duas datas"),   // padrao-ok: caixa de 12 px da janela compacta
+      v.split && e("div",{className:"grid w-full grid-cols-4 items-end gap-1"},
+        e(CampoJ,{rot:"Dia do adiantamento", cls:"w-full"}, e(TxtJ,{value:v.dia1, label:"Dia 1", onChange:function(x){ setN({dia1:x.replace(/\D/g,"")}); }})),
+        e(CampoJ,{rot:"Valor do adiantamento", cls:"w-full"}, e(TxtJ,{value:v.valor1, label:"Valor 1", onChange:function(x){ setN({valor1:so(x)}); }})),
+        e(CampoJ,{rot:"Dia do saldo", cls:"w-full"}, e(TxtJ,{value:v.dia2, label:"Dia 2", onChange:function(x){ setN({dia2:x.replace(/\D/g,"")}); }})),
+        e(CampoJ,{rot:"Saldo", cls:"w-full"}, e("div",{className:"flex h-[22px] items-center justify-center text-[11px] font-bold"}, BK(Math.max(0, r2(liq-num(v.valor1))))))),
+      e("button",{type:"button", disabled:!(liq>0), style:ALTO_J, className:BTN_J+" !bg-[#3f6bb8]", onClick:function(){ acao(c, "prolab_vig_add", {personaId:pe.id, desde:v.desde, bruto:num(v.bruto), inss:num(v.inss), irrf:num(v.irrf), split:v.split, valor1:num(v.valor1), dia1:v.dia1, dia2:v.dia2}); }}, "Criar vigência")),
+    antigas.length>0 && e(BlocoJ,{t:"3 · Vigências"},
+      e("div",{className:"w-full"}, antigas.map(function(x){ return e("div",{key:x.id, className:"grid grid-cols-[1.2fr_1fr_1fr_1fr_1fr_1.6fr_auto] items-center gap-1 border-b border-white/15 py-1 text-center text-[11px] last:border-b-0"},
+        e("b",null, nomeMes(x.desde)), e("span",null, BK(x.bruto)), e("span",null, BK(x.inss)), e("span",null, BK(x.irrf)), e("b",null, BK(x.liquido)), e("span",null, x.valor1 ? "dia "+x.dia1+": "+BK(x.valor1)+" · dia "+x.dia2+": "+BK(x.valor2) : "dia 5"),
+        e("button",{type:"button", className:"px-1 underline", title:"Excluir vigência", onClick:function(){ if(window.confirm("Excluir a vigência de "+nomeMes(x.desde)+"?")) acao(c, "prolab_vig_del", {personaId:pe.id, id:x.id}); }}, "Excluir")); }))),
+    e("div",{className:"flex justify-end px-2 pt-1.5"}, e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Fechar")));
 }
 function AbaFfProlab(){
-  var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1];
-  return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Pró-labores", sub:"O valor do pró-labore de cada sócio por vigência. Em \"Gerar contas do mês\" ele vira conta a pagar (uma ou duas parcelas). Gerar de novo não repete nem apaga o que já foi pago."}),
-    e("div",{className:"flex flex-wrap items-center gap-3"}, e(MesSel,{ym:ym, set:setYm}), e(Btn,{v:"primary", onClick:function(){ acao(c, "prolab_gerar", {ym:ym}); }}, "Gerar contas de "+MESES[Number(ym.slice(5,7))-1])),
-    ff.personas.filter(function(p){ return p.ativo && p.tipo==="SOCIO"; }).map(function(p){ return e(CartaoProlab,{key:p.id+ym, c:c, p:p, ym:ym}); })));
+  var c = useFF(), ff = c.ff, ym = hojeYm(), md = useState(null), editando = md[0], setEditando = md[1];
+  // 22/11/2026 (Marcus): pró-labore só tem Marcus, Anamaria, Marco Antonio e Lucas; Ana Beatriz e Sorelly saem da tela (os dados delas continuam guardados)
+  var socios = ["marcus", "anamaria", "marco", "lucas"].map(function(id){ return ff.personas.filter(function(p){ return p.id===id && p.ativo; })[0]; }).filter(Boolean);
+  var linhas = socios.map(function(p){ var pr = ff.prolabore[p.id] || {empresa:"", cnpj:"", vigencias:[]}, vig = vigenciaEm(ff, p.id, ym);
+    return {id:p.id, p:p, socio:p.nome, empresa:pr.empresa || "—", cnpj:pr.cnpj || "—", desde:vig ? nomeMes(vig.desde) : "Sem vigência", bruto:vig ? vig.bruto : null, inss:vig ? vig.inss : null, irrf:vig ? vig.irrf : null, liquido:vig ? vig.liquido : null, d1:vig ? (vig.valor1 ? "Dia "+vig.dia1 : "Dia 5") : "—", v1:vig ? (vig.valor1 ? vig.valor1 : vig.liquido) : null, d2:vig && vig.valor1 ? "Dia "+vig.dia2 : "—", v2:vig && vig.valor1 ? vig.valor2 : null}; });
+  var D = function(v){ return typeof v==="number" ? BK(v) : "—"; };
+  var link = function(l){ return e("button",{type:"button", title:"Editar o pró-labore", onClick:function(ev){ ev.stopPropagation(); setEditando(l.p); }, className:"cursor-pointer underline hover:text-primary"}, "Editar"); };
+  var cols = [{k:"socio", t:"Sócio"}, {k:"empresa", t:"Empresa"}, {k:"cnpj", t:"CNPJ"}, {k:"desde", t:"Vigência desde"}, {k:"bruto", t:"Bruto", fmt:D}, {k:"inss", t:"INSS", fmt:D}, {k:"irrf", t:"IRRF", fmt:D}, {k:"liquido", t:"Líquido", fmt:D, cor:function(l){ return typeof l.liquido==="number" ? "text-success" : ""; }}, {k:"d1", t:"1º dia"}, {k:"v1", t:"1º valor", fmt:D}, {k:"d2", t:"2º dia"}, {k:"v2", t:"2º valor", fmt:D}, {k:"acoes", t:"Ações", render:function(v, l){ return link(l); }}];
+  var soma = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(typeof l[k]==="number" ? l[k] : 0); }, 0)); };
+  var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="empresa" ? ls.length+(ls.length===1 ? " sócio" : " sócios") : col.k==="bruto" || col.k==="inss" || col.k==="irrf" || col.k==="liquido" || col.k==="v1" || col.k==="v2" ? BK(soma(ls, col.k)) : ""; }); };
+  return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
+    editando && e(EditarProlab,{key:editando.id, c:c, pe:editando, ym:ym, fechar:function(){ setEditando(null); }}),
+    e(BlocoPainel,{titulo:"Pró-labores", compacto:true},
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{key:"ffprolab", fina:true, cols:cols, aoClicar:function(l){ setEditando(l.p); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:200, totalRodape:rodape, vazio:"Nenhum sócio cadastrado."})))));
 }
 
 // ───────────────── Relatório ─────────────────

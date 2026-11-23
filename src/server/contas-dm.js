@@ -12,7 +12,7 @@ const TTL = 10 * 60 * 1000, G = globalThis;
 const FILIAL = { "01": "34", "02": "46", "03": "59", "04": "fora", "05": "67" };
 const INICIO_ANO = "2026-01-01";
 const r2 = (n) => Math.round(n * 100) / 100;
-const dia = (v) => String(v || "").slice(0, 10);
+const dia = (v) => { const s = String(v || "").slice(0, 10); return /^0\d{3}-/.test(s) ? "20" + s.slice(2) : s; };
 const tudo = (codigo, base) => dm.todasAsPaginas(codigo, base);
 
 export function cnpjDaConta(banco, nomeConta) {

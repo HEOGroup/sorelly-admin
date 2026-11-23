@@ -39,7 +39,7 @@ function AbaProdPremiacao(){
     var bd = r.l.bonusDia[dd] || 0;
     if(r.tipo==="Peças") return e("span",{className:"tabular-nums"+corFaixa(bd)}, v ? n0(v) : (dd<hoje && diaDaSemana(dd)!=="domingo" ? "—" : ""));
     return e("span",{className:"tabular-nums"+corFaixa(v)}, v>0 ? reaisCurto(v) : (r.l.porDia[dd] ? "R$ 0" : "")); }; };
-  var cols = [{k:"nome", t:"Funcionária", w:"9.5rem", fixa:true, render:function(v, r){ return r.tipo==="Peças" ? e("span",{className:"absolute left-0 top-0 z-10 flex h-16 w-full items-center justify-center px-2 font-semibold "+(r.par ? "bg-[#2b3550]" : "bg-[#17181c]")}, v) : ""; }}, {k:"tipo", t:"Linha", w:"4rem"},
+  var cols = [{k:"nome", t:"Funcionária", w:"9.5rem", fixa:true, render:function(v, r){ return r.tipo==="Peças" ? e("span",{className:"absolute left-0 top-0 z-10 flex h-[52px] w-full items-center justify-center px-2 font-semibold "+(r.par ? "bg-[#2b3550]" : "bg-[#17181c]")}, v) : ""; }}, {k:"tipo", t:"Linha", w:"4rem"},
     {k:"total", t:"Total", w:"6rem", render:function(v, r){ return e("span",{className:"font-semibold tabular-nums"+(r.tipo==="Bônus" && v>0 ? " text-success" : "")}, r.tipo==="Bônus" ? formatarReais(v) : n0(v)); }}]
     .concat(dias.map(function(dd){ return {k:"d"+dd, t:dd.slice(8), w:"3.4rem", render:cel(dd), corTopo:dd===hoje ? "#5BB8FF" : undefined}; }));
   var totalRodape = function(ls){ return cols.map(function(c, i){
@@ -71,11 +71,11 @@ function AbaProdPremiacao(){
           e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:sMes[0], "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sMes[1](ev.target.value); }, className:CAMPO_FAIXA})),
           e("span",{className:"flex-1"}),
           e("span",{className:"text-[13px] font-semibold text-white"}, "Pagamento em "+dataBr), x.leitura && e("span",{className:"text-[13px] font-semibold text-white"}, "Somente consulta")),
-        e(TabelaPlanilha,{key:"grade"+mesTxt, cols:cols, linhas:linhas, chave:"id", grade:true, compacta:true, barraFina:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, linhaCls:function(r){ return (r.par ? "[&&>td]:!bg-[#2b3550] " : "")+(r.tipo==="Peças" ? "[&&>td:first-child]:!z-20" : ""); }, vazio:"Nenhuma produção lançada neste mês."})),
+        e(TabelaPlanilha,{key:"grade"+mesTxt, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, compacta:true, barraFina:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, linhaCls:function(r){ return (r.par ? "[&&>td]:!bg-[#2b3550] " : "")+(r.tipo==="Peças" ? "[&&>td:first-child]:!z-20" : ""); }, vazio:"Nenhuma produção lançada neste mês."})),
       e("div",{className:"grid grid-cols-1 items-stretch gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"},
         e(BlocoPainel,{titulo:"Pagamento do bônus", dir:formatarReais(pagar.reduce(function(t, r){ return t+r.bonus; }, 0)), compacto:true},
-          e(TabelaPlanilha,{key:"pag"+mesTxt, cols:colsP, linhas:pagar, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalP, vazio:"Nenhuma produção lançada neste mês."})),
+          e(TabelaPlanilha,{key:"pag"+mesTxt, fina:true, cols:colsP, linhas:pagar, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalP, vazio:"Nenhuma produção lançada neste mês."})),
         e(BlocoPainel,{titulo:"Regras do bônus", compacto:true},
-          e(TabelaPlanilha,{cols:[{k:"r", t:"Regra"}, {k:"v", t:"Valor"}], linhas:regras.map(function(l, i){ return {id:"r"+i, r:l[0], v:l[1]}; }), chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true})))));
+          e(TabelaPlanilha,{fina:true, cols:[{k:"r", t:"Regra"}, {k:"v", t:"Valor"}], linhas:regras.map(function(l, i){ return {id:"r"+i, r:l[0], v:l[1]}; }), chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true})))));
 }
 export { AbaProdPremiacao };

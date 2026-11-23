@@ -60,7 +60,7 @@ function CartaoE(p){
   var x = p.x, rev = p.rev, sep = x.tipo==="separar";
   var min = sep ? (x.mudou ? Math.max(0, Math.round(minutosDe(p.agora)-minutosDe(x.mudou))) : null) : minutosNaEtapa(x, p.agora), prazo = Number(p.prazo)*60;
   var atras = !FINAIS[x.status] && !x.aguardando && prazo>0 && min!=null && min>prazo, ate = x.atendInicio && !x.atendFim ? Math.max(0, Math.round(minutosDe(p.agora)-minutosDe(x.atendInicio))) : null, sem = !sep && x.status!=="novo" && faltaComprovante(x);
-  var dica = [faixaRotulo(x)+(rev && rev.top50 ? " · Top 50" : ""), x.responsavel || "sem responsável"];
+  var dica = [faixaRotulo(x)+(rev && rev.top50 ? " · Top 100" : ""), x.responsavel || "sem responsável"];
   if(!sep){
     if(x.tipo==="encomenda") dica.push(x.descricao || "Sem descrição"); else dica.push("Média "+(x.media3m!=null ? formatarReais(x.media3m) : "—")+" · Máx "+(x.valorMax>0 ? formatarReais(x.valorMax) : "—"));
     if(x.taxa>0) dica.push("Taxa "+formatarReais(x.taxa)+": "+(x.comprovante ? "paga" : "sem comprovante"));
@@ -164,7 +164,7 @@ function AbaEncomendas(){
   // planilha: TabelaPlanilha, filtro e ordem no título de cada coluna (nada de filtro no topo)
   var rotEtapa = function(x){ return x.tipo==="separar" ? (ETAPAS_SEP.filter(function(y){ return y[0]===x.status; })[0] || [0, x.status])[1] : ROTULO_STATUS[x.status]; };
   var linhas = todos.slice().sort(function(a, b){ var fa = FINAIS[a.status] ? 1 : 0, fb = FINAIS[b.status] ? 1 : 0; return fa-fb || String(b.criadoEm).localeCompare(String(a.criadoEm)); }).map(function(x){ var min = minDe(x), sep = x.tipo==="separar", sem = !sep && faltaComprovante(x), r = sep ? revPorNome(er, x.revendedora) : repDe(x);
-    return {id:x.id, _x:x, data:String(x.criadoEm).slice(0, 10), rev:x.revendedora+(r && r.top50 ? " · Top 50" : ""), canal:faixaRotulo(x), resp:x.responsavel || "—", max:!sep && x.valorMax>0 ? formatarReais(x.valorMax) : "—",
+    return {id:x.id, _x:x, data:String(x.criadoEm).slice(0, 10), rev:x.revendedora+(r && r.top50 ? " · Top 100" : ""), canal:faixaRotulo(x), resp:x.responsavel || "—", max:!sep && x.valorMax>0 ? formatarReais(x.valorMax) : "—",
       taxa:!sep && x.taxa>0 ? (x.comprovante ? "Paga " : "Falta ")+formatarReais(x.taxa) : !sep && x.taxaRep>0 ? "Rep. "+formatarReais(x.taxaRep) : "—", taxaRuim:sem, etapa:rotEtapa(x), tempo:!FINAIS[x.status] && min!=null ? textoTempo(min) : "—", atras:atrasado(x)}; });
   var cols = [{k:"data", t:"Pedido", fmt:formatarDia}, {k:"rev", t:"Revendedora"}, {k:"canal", t:"Canal"}, {k:"resp", t:"Responsável"}, {k:"max", t:"Valor máximo"},
     {k:"taxa", t:"Taxa", cor:function(l){ return l.taxa==="—" ? "" : l.taxaRuim ? "text-destructive" : "text-success"; }}, {k:"etapa", t:"Etapa"}, {k:"tempo", t:"Tempo", cor:function(l){ return l.atras ? "text-destructive" : ""; }}];
@@ -187,7 +187,7 @@ function AbaEncomendas(){
       e("select",{"aria-label":"Visão", value:modo, onChange:function(ev){ mo[1](ev.target.value); }, className:SEL_F, style:{textAlignLast:"center"}}, [["quadro", "Quadro"], ["rota", "Rota do João"], ["planilha", "Planilha"], ["revendedoras", "Revendedoras"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
       modo==="quadro" && seletorF("Canal", f.canal, function(v){ set("canal", v); }, CANAIS),
       modo==="quadro" && seletorF("Responsável", f.resp, function(v){ set("resp", v); }, resps.map(function(n){ return [n, n]; })),
-      modo==="quadro" && seletorF("Grupo", f.grupo, function(v){ set("grupo", v); }, [["top50", "Top 50"], ["demais", "Demais"]]),
+      modo==="quadro" && seletorF("Grupo", f.grupo, function(v){ set("grupo", v); }, [["top50", "Top 100"], ["demais", "Demais"]]),
       modo==="quadro" && seletorF("Assunto", f.tipo, function(v){ set("tipo", v); }, [["reposicao", "Reposição"], ["encomenda", "Encomenda"]]),
       modo==="quadro" && e("button",{type:"button", "aria-pressed":ocultar, onClick:trocaOcultar, className:BTN_F+(ocultar ? " !bg-white !text-[#14233f]" : "")}, ocultar ? "Mostrar vazias" : "Ocultar vazias"),
       modo==="quadro" && ativo && e("button",{type:"button", onClick:function(){ ft[1](VAZIO_F); }, className:BTN_F}, "Limpar")),

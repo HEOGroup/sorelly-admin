@@ -15,7 +15,6 @@ import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { useCopiaNavegador } from "@/apps/montagem/lib/copia-navegador";
-import { enviarAcaoInd, indAoVivo } from "@/apps/montagem/lib/indicacoes-servidor";
 import { useCondicionaisKits } from "@/apps/montagem/lib/condicionais-kits";
 import { pendenciasDoAcerto } from "@/apps/montagem/domain/inadimplencia";
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
@@ -115,9 +114,7 @@ function AvisoSemEspaco(p){
 function App(){
   // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
   if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
-  var r = useReducer(reducer, null, inicial), s = r[0], dBase = r[1];
-  // Indicações ao vivo (19/11/2026): com servidor e login, as ações {type:"IND"} vão para o servidor (app + banco) e voltam com o estado novo; o resto segue no reducer
-  var d = React.useMemo(function(){ return function(a){ if(a && a.type==="IND" && indAoVivo()) return enviarAcaoInd(a, dBase); return dBase(a); }; }, [dBase]);
+  var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   if(typeof window!=="undefined") window.__sorellyAtuando = String(s.usuario);   // abas abertas e favoritas são de quem está usando (ou de quem o Marcus está "atuando como")
   var navigate = useNavigate();
   var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou
@@ -265,7 +262,7 @@ function App(){
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
   var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba==="ctafam" && !temAutorizacao("financeiro_familia", s.usuario)) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","fffaturas","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if((t.aba==="ctafam" || t.aba==="ctafamp") && !temAutorizacao("financeiro_familia", s.usuario)) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffcasas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","fffaturas","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
@@ -398,7 +395,7 @@ function App(){
               var t = x.t, on = ativaTela(t);
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
-      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet,{context: aba==="entradasetor" ? {entrada: entradaSt ? {id:entradaSt.id, nome:entradaSt.nome.replace(/\n/g," "), cor:entradaSt.cor, grupos:gruposDaEntrada(entradaSt), abrir:abrirMenu} : null} : undefined}))),
+      e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet,{context: aba==="entradasetor" ? {entrada: entradaSt ? {nome:entradaSt.nome.replace(/\n/g," "), cor:entradaSt.cor, grupos:gruposDaEntrada(entradaSt), abrir:abrirMenu} : null} : undefined}))),
     e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     visao!=="pontual" && chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),

@@ -21,4 +21,4 @@ Bruna Ribeiro dos Santos (já tem Nubank e CNPJ, 04/11/2026); (Leticia Adrielle 
 | 4 | Quem é o Marco Antonio de Sá Malucelli Junior (MEI na planilha)? Fornecedor, prestador ou outro? | Marcus |
 | 5 | ~~Onde mostrar o texto "Escrever na folha"?~~ Resolvido em 10/11/2026: coluna na aba Destinos do Controle de pagamentos. | Marcus |
 | 6 | Linda, Tucano e Charme: criar quando o Marcus mandar os dados. | Marcus |
-| 7 | Levar o arquivo local das chaves para o servidor (o sistema publicado está sem as chaves). | Leonardo |
+| 7 | ~~Levar o arquivo local das chaves para o servidor.~~ Feito em 10/11/2026 (carga única: 1 conta, 39 chaves de fornecedores, sócios e representantes, 70 de funcionárias; backup em `sorelly.bkp_estado_chaves_20261110`). | Leonardo |

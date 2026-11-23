@@ -20,7 +20,7 @@ function AbaProdExterna(){
   var pessoas = listaExternas(x.pr), func = pessoas.indexOf(sP[0])>=0 ? sP[0] : pessoas[0];   // Dávila, Leci, Didi: cada uma com o seu estoque, as suas peças e os seus pagamentos
   var r = resumoExterna(x.pr, ano, mes, func), nome = MESES[mes-1]+" · "+func.split(" ")[0];
   // bloco azul do padrão da Produção (Marcus, 18/11/2026: "tira essa cor dourado"): lista de duas colunas, cor só no estado (verde recebeu, amarelo falta)
-  var bloco = function(chave, titulo, itens){ return e(BlocoPainel,{key:chave, titulo:titulo, compacto:true}, e(TabelaPlanilha,{cols:[{k:"r", t:"Item"}, {k:"v", t:"Valor", cor:function(l){ return l.cor || ""; }}], linhas:itens.map(function(l, i){ return {id:chave+i, r:l[0], v:l[1], cor:l[2]}; }), chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true})); };
+  var bloco = function(chave, titulo, itens){ return e(BlocoPainel,{key:chave, titulo:titulo, compacto:true}, e(TabelaPlanilha,{fina:true, cols:[{k:"r", t:"Item"}, {k:"v", t:"Valor", cor:function(l){ return l.cor || ""; }}], linhas:itens.map(function(l, i){ return {id:chave+i, r:l[0], v:l[1], cor:l[2]}; }), chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true})); };
   return e(Raiz,null,
     e(BlocoPainel,{titulo:"Produção externa", dir:func, compacto:true}, e(FaixaAzul,null,
       e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Pessoa", e("select",{value:func, "aria-label":"Pessoa", onChange:function(ev){ sP[1](ev.target.value); }, className:CAMPO_FAIXA+" w-48 cursor-pointer"}, pessoas.map(function(n){ return e("option",{key:n, value:n}, n); }))))),

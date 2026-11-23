@@ -20,20 +20,21 @@ var cap = function(t){ return t ? t.charAt(0).toUpperCase()+t.slice(1) : t; };
 var igual = function(a, b){ return String(a || "").trim().toLowerCase()===String(b || "").trim().toLowerCase(); };
 // fundo em degradê (Marcus, 18/11/2026): as células da tabela ficam transparentes para o degradê aparecer; letra 11 px e linha de 30 px (compacto)
 var GRADE_DEGRADE = "[--border:rgba(255,255,255,.14)] [--color-border:rgba(255,255,255,.14)] [&_table]:!text-[11px] [&_tbody_td]:!bg-transparent [&_tbody_td]:!py-0 [&_tfoot_td]:!bg-black/30 [&_span.pointer-events-none.absolute.bg-white]:hidden";
-var CEL = "h-[30px] w-full min-w-0 rounded-md border border-border bg-transparent px-2 text-center text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-primary";
+var CEL = "h-[22px] w-full min-w-0 rounded-md border border-border bg-transparent px-2 text-center text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 // linhas do dia para abrir a janela: se pediu linha nova, ou se a pessoa (ou o dia) ainda não tem nada, já vem uma linha vazia no topo para digitar
 function abrirLinhas(pr, dia, func, nova, restrito){
   var ls = comChave(pr.lancamentos[dia]).filter(function(l){ return !restrito || (l.unidade!=="CASA" && !ehExterna(l.func)); }), tem = func ? ls.some(function(l){ return igual(l.func, func); }) : ls.length>0;
   // funcionária (não é da Diretoria): só abre linha nova se escolheu a funcionária e o dia dela ainda não foi lançado; dia lançado fica travado
-  if(restrito) return func && !travadasDoDia(pr, dia)[String(func).trim().toLowerCase()] ? comChave([{func:func, codigo:"", qtd:0, valor:0, unidade:"SORELLY", novo:true}]).concat(ls) : ls;
-  return nova || !tem ? comChave([{func:func || "", codigo:"", qtd:0, valor:0, unidade:"SORELLY", novo:true}]).concat(ls) : ls;
+  if(restrito) return func && !travadasDoDia(pr, dia)[String(func).trim().toLowerCase()] ? ls.concat(comChave([{func:func, codigo:"", qtd:0, valor:0, unidade:"SORELLY", novo:true}])) : ls;
+  return nova ? ls.concat(comChave([{func:func || "", codigo:"", qtd:0, valor:0, unidade:"SORELLY", novo:true}])) : ls;   // Diretoria: nada de linha vazia sozinha; só com + Adicionar linha
 }
 
 function EditorDia(p){
   var x = usePr(), pr = x.pr;
   var restrito = !x.admin;   // funcionária: lança de UMA funcionária (código e quantidade), o preço vem sozinho, "Lançar" trava o dia dela; só a Diretoria corrige (18/11/2026)
   var st = useState(function(){ return {dia:p.dia, func:p.func || "", linhas:abrirLinhas(pr, p.dia, p.func || "", !!p.nova, !x.admin), carregado:true}; }), ed = st[0];
+  var sEd = useState({}), edK = sEd[0];   // linhas gravadas que a Diretoria abriu para editar (botão Editar)
   var sSalvo = useState(""), sCopia = useState(false), sUn = useState(""), unid = sUn[0];   // unidade escolhida UMA vez para todas as linhas do lançamento (funcionária)
   var timer = useRef(null), pend = useRef(null), execRef = useRef(x.exec);
   execRef.current = x.exec;
@@ -72,7 +73,7 @@ function EditorDia(p){
     copia(["⚠️ *Correção de produção*", "", "Dia: "+formatarDia(ed.dia), "Funcionária: "+ed.func, "", "*Lançado:*"].concat(feitas.map(function(l){ return "• "+l.codigo+" — "+formatarInteiro(l.qtd)+" peças"; }), ["", "O que está errado: "]).join("\n"));
   };
   // linha nova NO TOPO, já com o cursor na primeira caixa; repete a unidade da linha de cima
-  var adiciona = function(){ if(restrito && (!ed.func || travado)) return; var u =visiveis.length ? visiveis[0] : null; st[1](Object.assign({}, ed, {linhas:comChave([{func:ed.func || "", codigo:"", qtd:0, valor:0, unidade:u ? u.unidade : "SORELLY", novo:true}]).concat(ed.linhas)})); };
+  var adiciona = function(){ if(restrito && (!ed.func || travado)) return; var u =visiveis.length ? visiveis[0] : null; st[1](Object.assign({}, ed, {linhas:ed.linhas.concat(comChave([{func:ed.func || "", codigo:"", qtd:0, valor:0, unidade:u ? u.unidade : "SORELLY", novo:true}]))})); };
   // trocar de dia grava o que estava pendente e carrega o dia novo
   var ir = function(dia){ if(!dia || dia===ed.dia) return; descarregar(); sSalvo[1](""); st[1]({dia:dia, func:ed.func, linhas:abrirLinhas(pr, dia, ed.func, false, !x.admin), carregado:true}); };
   var fechar = function(){ descarregar(); p.aoFechar(); };
@@ -99,14 +100,22 @@ function EditorDia(p){
     return {k:l.k, l:l, func:l.func, codigo:l.codigo, unidade:ROTULO_UNIDADE[l.unidade] || l.unidade, qtd:l.qtd, valor:l.valor, cat:l.codigo ? (cat.desconhecida ? "Sem categoria" : cat.rotulo) : "—", ruim:!!(l.codigo && cat.desconhecida), total:valorLinha(l)};
   });
   var porNome = !ed.func;   // com uma funcionária escolhida, a coluna do nome some (já se sabe quem é)
-  var cols = (porNome && !restrito ? [{k:"func", t:"Funcionária", render:function(v, r){ return e("input",{list:"prod-nomes", value:r.l.func, placeholder:"Funcionária", "aria-label":"Funcionária", autoFocus:!!r.l.novo, onChange:function(ev){ edita(r.k, {func:ev.target.value}); }, onBlur:function(ev){ var n = padronizarNome(x.s, ev.target.value); if(n!==ev.target.value) edita(r.k, {func:n}); }, className:CEL}); }}] : []).concat([
-    {k:"codigo", t:"Código", render:function(v, r){ return e("input",{list:"prod-codigos", value:r.l.codigo, placeholder:"Código", "aria-label":"Código", autoFocus:!porNome && !!r.l.novo, onChange:function(ev){ var cod = ev.target.value.toUpperCase(), ref = restrito ? precos[cod] : ultimos[cod], campos = {codigo:cod}; if(restrito){ campos.valor = ref ? ref.valor : 0; if(ref) campos.unidade = ref.unidade || r.l.unidade; } else if(ref && !(Number(r.l.valor)>0)){ campos.valor = ref.valor; campos.unidade = ref.unidade || r.l.unidade; } edita(r.k, campos); }, disabled:!r.l.novo && restrito, className:CEL+" tabular-nums"+(!r.l.novo && restrito ? " opacity-70" : "")}); }},
-    {k:"unidade", t:"Unidade", w:"7rem", render:function(v, r){ return e("select",{value:r.l.unidade, "aria-label":"Unidade", onChange:function(ev){ edita(r.k, {unidade:ev.target.value}); }, className:CEL+" cursor-pointer"}, UNIDADES.filter(function(u){ return x.admin || u!=="CASA"; }).map(function(u){ return e("option",{key:u, value:u}, ROTULO_UNIDADE[u]); })); }},
-    {k:"qtd", t:"Quantidade", render:function(v, r){ return e("input",{type:"number", min:0, inputMode:"numeric", value:r.l.qtd || "", placeholder:"Qtd.", "aria-label":"Quantidade", onChange:function(ev){ edita(r.k, {qtd:Math.max(0, parseInt(ev.target.value, 10) || 0)}); }, onKeyDown:function(ev){ if(ev.key==="Enter" && restrito && r.l.codigo && Number(r.l.qtd)>0) adiciona(); }, disabled:!r.l.novo && restrito, className:CEL+" tabular-nums"+(!r.l.novo && restrito ? " opacity-70" : "")}); }},
-    {k:"valor", t:"Valor unitário", render:function(v, r){ if(restrito) return e("span",{className:"tabular-nums"+(r.l.codigo && !(Number(r.l.valor)>0) ? " text-warning" : "")}, r.l.codigo && !(Number(r.l.valor)>0) ? "Sem preço" : formatarReais(r.l.valor || 0)); return e(Dinheiro,{value:r.l.valor || 0, label:"Valor unitário", className:"w-full h-[30px]! text-[11px]!", onChange:function(nv){ edita(r.k, {valor:nv || 0}); }}); }},
-    {k:"cat", t:"Categoria", cor:function(r){ return r.ruim ? "text-warning" : ""; }},
+  // linha gravada = texto; só vira campo quando a Diretoria clica em Editar. Linha nova (+ Adicionar linha) já nasce em campo. Funcionária nunca edita linha gravada: pede ao Marcus.
+  var campo = function(r){ return !!r.l.novo || (!restrito && !!edK[r.l.k]); };
+  var texto = function(t, aviso){ return e("span",{className:"tabular-nums"+(aviso ? " text-warning" : "")}, t); };
+  var cols = (porNome && !restrito ? [{k:"func", t:"Funcionária", render:function(v, r){ if(!campo(r)) return texto(r.l.func); return e("input",{list:"prod-nomes", value:r.l.func, placeholder:"Funcionária", "aria-label":"Funcionária", autoFocus:!!r.l.novo, onChange:function(ev){ edita(r.k, {func:ev.target.value}); }, onBlur:function(ev){ var n = padronizarNome(x.s, ev.target.value); if(n!==ev.target.value) edita(r.k, {func:n}); }, className:CEL}); }}] : []).concat([
+    {k:"codigo", t:"Código", render:function(v, r){ if(!campo(r)) return texto(r.l.codigo); return e("input",{list:"prod-codigos", value:r.l.codigo, placeholder:"Código", "aria-label":"Código", autoFocus:!porNome && !!r.l.novo, onChange:function(ev){ var cod = ev.target.value.toUpperCase(), ref = restrito ? precos[cod] : ultimos[cod], campos = {codigo:cod}; if(restrito){ campos.valor = ref ? ref.valor : 0; if(ref) campos.unidade = ref.unidade || r.l.unidade; } else if(ref && !(Number(r.l.valor)>0)){ campos.valor = ref.valor; campos.unidade = ref.unidade || r.l.unidade; } edita(r.k, campos); }, className:CEL+" tabular-nums"}); }},
+    {k:"unidade", t:"Unidade", w:"7rem", render:function(v, r){ if(!campo(r)) return texto(ROTULO_UNIDADE[r.l.unidade] || r.l.unidade); return e("select",{value:r.l.unidade, "aria-label":"Unidade", onChange:function(ev){ edita(r.k, {unidade:ev.target.value}); }, className:CEL+" cursor-pointer"}, UNIDADES.filter(function(u){ return x.admin || u!=="CASA"; }).map(function(u){ return e("option",{key:u, value:u}, ROTULO_UNIDADE[u]); })); }},
+    {k:"qtd", t:"Quantidade", render:function(v, r){ if(!campo(r)) return texto(formatarInteiro(r.l.qtd || 0)); return e("input",{type:"number", min:0, inputMode:"numeric", value:r.l.qtd || "", placeholder:"Qtd.", "aria-label":"Quantidade", onChange:function(ev){ edita(r.k, {qtd:Math.max(0, parseInt(ev.target.value, 10) || 0)}); }, onKeyDown:function(ev){ if(ev.key==="Enter" && restrito && r.l.codigo && Number(r.l.qtd)>0) adiciona(); }, className:CEL+" tabular-nums"}); }},
+    {k:"valor", t:"Valor unitário", render:function(v, r){ var sem = !!r.l.codigo && !(Number(r.l.valor)>0); if(restrito || !campo(r)) return texto(sem ? "Sem preço" : formatarReais(r.l.valor || 0), sem); return e(Dinheiro,{value:r.l.valor || 0, label:"Valor unitário", className:"w-full h-[22px]! text-[11px]!", onChange:function(nv){ edita(r.k, {valor:nv || 0}); }}); }},
     {k:"total", t:"Valor", fmt:formatarReais},
-    {k:"x", t:"Remover", render:function(v, r){ if(restrito && !r.l.novo) return e("span",{className:"text-[11px]"}, "Lançado"); return e("button",{type:"button", onClick:function(){ remove(r.l); }, "aria-label":"Remover linha", className:"h-[30px] rounded-md border border-border px-3 text-[11px] font-semibold hover:bg-white/10 hover:text-destructive"}, "Remover"); }}
+    {k:"x", t:"Ação", render:function(v, r){
+      var bt = "h-[22px] rounded-md border border-border px-3 text-[11px] font-semibold hover:bg-white/10";
+      if(restrito && !r.l.novo) return e("span",{className:"text-[11px]"}, "Lançado");
+      if(!r.l.novo && !edK[r.l.k]) return e("button",{type:"button", onClick:function(){ var o = Object.assign({}, edK); o[r.l.k] = true; sEd[1](o); }, "aria-label":"Editar linha", className:bt}, "Editar");
+      return e("span",{className:"inline-flex gap-1"},
+        !r.l.novo && e("button",{type:"button", onClick:function(){ var o = Object.assign({}, edK); delete o[r.l.k]; sEd[1](o); }, "aria-label":"Concluir edição", className:bt}, "Pronto"),
+        e("button",{type:"button", onClick:function(){ remove(r.l); }, "aria-label":"Remover linha", className:bt+" hover:text-destructive"}, "Remover")); }}
   ]);
   if(restrito) cols = cols.filter(function(c){ return c.k!=="unidade"; });   // a unidade vem do código (último lançamento); a funcionária só digita código e quantidade
   var iq = cols.findIndex(function(c){ return c.k==="qtd"; }), iv = cols.findIndex(function(c){ return c.k==="total"; });
@@ -131,7 +140,7 @@ function EditorDia(p){
             e("option",{value:""}, restrito ? "Escolha a funcionária" : "Todas as funcionárias"), nomes.map(function(n){ return e("option",{key:n, value:n}, n); })),
           restrito && e("select",{value:unid, "aria-label":"Unidade", disabled:travado, onChange:function(ev){ sUn[1](ev.target.value); }, className:CAMPO_FAIXA+" w-36 cursor-pointer"},
             e("option",{value:""}, "Unidade"), UNIDADES.filter(function(u){ return u!=="CASA"; }).map(function(u){ return e("option",{key:u, value:u}, ROTULO_UNIDADE[u]); })),
-          e(BtFaixa,{className:branco, disabled:restrito && (!ed.func || travado), titulo:"Põe uma linha vazia no topo da lista", onClick:adiciona}, "+ Adicionar linha"),
+          e(BtFaixa,{className:branco, disabled:restrito && (!ed.func || travado), titulo:"Põe uma linha nova no fim da lista", onClick:adiciona}, "+ Adicionar linha"),
           restrito && e(BtFaixa,{className:branco, disabled:!podeLancar, titulo:"Lança o dia dessa funcionária. Depois de lançar, não dá para alterar", onClick:lancar}, "Lançar"),
           restrito && travado && !!ed.func && e(BtFaixa,{titulo:"Copia o pedido de correção para você mandar ao Marcus", onClick:pedirCorrecao}, sCopia[0] ? "Copiado, envie ao Marcus" : "Pedir correção"),
           e("span",{className:"flex-1"}),
@@ -139,6 +148,6 @@ function EditorDia(p){
           e(BtFaixa,{onClick:fechar}, "Fechar")),
         e("datalist",{id:"prod-nomes"}, nomes.map(function(n){ return e("option",{key:n, value:n}); })),
         e("datalist",{id:"prod-codigos"}, codigos.map(function(c){ return e("option",{key:c, value:c}); })),
-        e(TabelaPlanilha,{key:"ed"+(ed.func ? "f" : "t"), cols:cols, linhas:linhasTab, chave:"k", grade:true, compacta:true, barraFina:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:restrito && !ed.func ? "Escolha a funcionária." : "Nenhuma linha neste dia. Clique em + Adicionar linha."})))));
+        e(TabelaPlanilha,{key:"ed"+(ed.func ? "f" : "t"), fina:true, cols:cols, linhas:linhasTab, chave:"k", grade:true, compacta:true, barraFina:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:restrito && !ed.func ? "Escolha a funcionária." : "Nenhum lançamento neste dia. Clique em + Adicionar linha."})))));
 }
 export { EditorDia };
