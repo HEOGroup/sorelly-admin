@@ -6,7 +6,7 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { cartoesLancamento, conferidoDe, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { cartoesLancamento, conferidoDe, temComprovante, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { comprovantesDosRecebidos } from "@/apps/montagem/domain/comprovantes-receber";
 import { apagarArquivo, baixarArquivo, obterArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
@@ -93,7 +93,10 @@ function AcoesLanc(p){
   var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1], si = useState(false), porPed = porPedidoAtivo(c.pf, l.fornId) || (l.alocs || []).length>0;
   return e("span",{className:"inline-flex items-center gap-1"},
     // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
-    !l.auto && e(BtL,{ic:"pencil-simple", disabled:!c.edita, titulo:c.edita ? "Alterar este pagamento" : "Só financeiro e diretoria", onClick:function(){ setEditando(true); }}, "Editar"),
+    !l.auto && e(BtL,{ic:"pencil-simple", disabled:!c.edita || !!l.conferido, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Conferido: desfaça a conferência para alterar" : "Alterar este pagamento", onClick:function(){ setEditando(true); }}, "Editar"),
+    // Conferir voltou (Lucas, 23/11/2026): o financeiro confere à mão se está tudo certo; dá para desfazer
+    !l.auto && e(BtL,{ic:l.conferido ? "arrow-counter-clockwise" : "check", tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Desfazer a conferência deste pagamento" : "Marcar este pagamento como conferido",
+      onClick:function(){ if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return; op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),
     editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
     // Estornar voltou (Lucas, 23/11/2026): apaga o Pix lançado errado, com confirmação; Pix dividido sai com todas as partes
     !l.auto && e(BtL,{ic:"trash", tipo:"perigo", disabled:!c.edita, titulo:c.edita ? "Estornar este pagamento" : "Só financeiro e diretoria", onClick:function(){
@@ -128,7 +131,7 @@ function repartirPix(pf, chave){
 function ListaPagamentos(p){
   var cd = p.cd, c = p.c, res = filtrarLancamentos(cd.lancs, {}), pf = c.pf, minha = repartirPix(pf, cd.chave), cacheOrig = {};
   var base = function(l){ return {l:l, data:dbr(l.data), rev:l.revendedora||"—", conta:l.conta||"—", chave:l.chavePix||"—", por:l.pagoPor||"---",
-    sit:conferidoDe(l) ? "Conferido"+(l.conferidoEm ? " "+dbr(l.conferidoEm) : "") : "Falta o comprovante", comp:l.arqKey || l.arqId || l.arqNome || l.aguardaComp ? "com" : "sem"}; };
+    sit:conferidoDe(l) ? "Conferido"+(l.conferidoEm ? " "+dbr(l.conferidoEm) : "") : temComprovante(l) ? "Aguardando conferência" : "Falta o comprovante", comp:l.arqKey || l.arqId || l.arqNome || l.aguardaComp ? "com" : "sem"}; };
   // "nome · R$ 1.000,00 · 1/2": o Pix inteiro junto do nome e a parte no fim; a coluna Valor traz só o que fecha esta data
   var nomeParte = function(l, k, n){ return (l.revendedora||"—")+(n>=2 ? " · "+brl(l.valor)+" · "+k+"/"+n : ""); };
   var linhas = [];

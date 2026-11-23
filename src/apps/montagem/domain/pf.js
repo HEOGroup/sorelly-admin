@@ -351,7 +351,9 @@ function janelasDoForn(pf, fid){
   return c.jan[fid];
 }
 // CONFERIDO = TEM COMPROVANTE (Marcus, 20/11/2026: "se está com comprovante, já está conferido"). Não existe mais o passo de conferir à mão; o Pix do Direcionar só passa a valer depois de anexar o comprovante.
-function conferidoDe(l){ return !!l.conferido || (!l.aguardaComp && !!(l.arqKey || l.arqId || l.arqNome || String(l.arqData || "").indexOf("data:")===0)); }
+// conferido = o FINANCEIRO conferiu na tela (botão Conferir). Ter o comprovante não basta (Lucas, 23/11/2026: "ali o financeiro vai verificar se está tudo correto")
+function temComprovante(l){ return !l.aguardaComp && !!(l.arqKey || l.arqId || l.arqNome || String(l.arqData || "").indexOf("data:")===0); }
+function conferidoDe(l){ return !!l.conferido; }
 function lancDaJanela(pf, chave){ return pf.lancamentos.filter(function(l){ return l.chave===chave; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
 // Pix do Direcionar (17/11/2026): só conta como pago com o comprovante anexado (aguardaComp). Os lançamentos antigos não têm essa marca e contam como sempre.
 function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
@@ -1628,7 +1630,7 @@ function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
 }
 
 export {
-  conferidoDe, TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
+  conferidoDe, temComprovante, TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,

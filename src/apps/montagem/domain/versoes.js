@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.129", data:"2026-11-23", titulo:"Conferência de pagamentos: volta o Conferir manual", itens:[
+  {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"Cada Pix volta a ter o botão Conferir (e Desfazer conferência), ao lado de Editar e Estornar. Conferido agora é só o que o financeiro conferiu na tela; o Pix com comprovante e ainda não conferido aparece como Aguardando conferência, e sem comprovante como Falta o comprovante. Pix conferido não se edita (desfazer a conferência antes)."}
+ ]},
  {v:"0.21.128", data:"2026-11-23", titulo:"Lançar Pix volta nos fornecedores e na família", itens:[
   {tipo:"correção", area:"Financeiro → Fornecedores → Conferência de pagamentos", txt:"Volta o botão + Lançar pagamento: na barra Pagamentos do mês (ao lado do Mês; escolhe o fornecedor e a data) e na data aberta embaixo (já com a data). Abre a mesma janela Lançar pagamento de antes. Tinha saído na tela refeita de 21/11."},
   {tipo:"correção", area:"Financeiro → Família → PIX revendedoras", txt:"Volta o formulário Anotar PIX (Data, Valor, Revendedora, Conta que recebeu) no bloco de cada sócio e da Casa. Tinha saído em 21/11 (v0.21.77)."}

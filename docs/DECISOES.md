@@ -3321,3 +3321,8 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - Pedido: "adicione o botão de lançar pagamento de Pix na parte de Pag. fornecedores e na parte de Pix do Financeiro familiar; não estou conseguindo lançar". Em 21/11 (v0.21.77 e v0.21.78) os dois tinham saído, com a ideia de o Pix nascer só no Direcionar; os dois caminhos passam a existir juntos.
 - Conferência de pagamentos (pages/pf/Lancamentos.js): "+ Lançar pagamento" na barra Pagamentos do mês (janela completa, escolhe fornecedor e data) e na barra da data aberta (já com a data). Mesma janela `ModalLancar` e operação `lanc_add`.
 - Família › PIX revendedoras (pages/FinFamiliar.js, `CartaoPix`): volta o formulário Anotar PIX igual ao de antes de 21/11 (operação `pix_add`).
+
+## 23/11/2026 · Conferência de pagamentos: conferir é manual de novo (Lucas)
+- Pedido: "retorne a opção de conferir manualmente, pois ali o financeiro vai verificar se está tudo correto". Desde 21/11 o Pix ficava Conferido sozinho quando tinha comprovante (`conferidoDe`).
+- Agora `conferidoDe` = só a marca do financeiro (`l.conferido`, operação `lanc_conferido`); `temComprovante` separa "Aguardando conferência" (tem comprovante) de "Falta o comprovante". Botões Conferir / Desfazer conferência na linha do Pix (pages/pf/Lancamentos.js, `AcoesLanc`). Editar fica travado com o Pix conferido.
+- Efeito no dia: 11 Pix (8 de novembro e 3 de outubro) que tinham comprovante deixaram de aparecer como Conferido e passam a Aguardando conferência.
