@@ -48,10 +48,11 @@ function MesSel(p){ var l = janela(); return e(Sel,{value:p.ym, label:"Mês", cl
 var pessoaNome = function(ff, id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.nome : "—"; };
 // ESCRITA PADRÃO DA CONTA (Marcus, 22/11/2026: "alinhar conforme o negócio das contas"; regra em lib/nome-conta.js): sócio = PF · Marcus · Nubank; Casa = Casa · Itaú; cartão leva a palavra Cartão; prestador = Marcus · Higor · Santander; conta da Sorelly sem dono fica só com o nome
 var contaLabel = function(ff, id){ var c = ff.contasBanc.find(function(x){ return x.id===id; }); if(!c) return "";
-  var dono = (ff.personas || []).find(function(q){ return q.id===c.personaId; }), banco = bancoDeConta(c.banco+" "+c.nome) || nomePropio(String(c.banco || "").replace(/^Contas+/i, "")), cartao = /cart[aã]o/i.test(c.nome) ? "Cartão" : "";
+  var dono = (ff.personas || []).find(function(q){ return q.id===c.personaId; }), banco = bancoDeConta(c.banco+" "+c.nome) || nomePropio(String(c.banco || "").replace(/^Conta\s+/i, "")), cartao = /cart[aã]o/i.test(c.nome) ? "Cartão" : "";
   if(c.prestadorId){ var pr = (ff.prest || []).find(function(q){ return q.id===c.prestadorId; }); return rotuloPrestadorFamilia(dono ? dono.nome : "", pr ? pr.nome : "", c.banco+" "+c.nome); }
-  if(!dono) return nomePropio(String(c.nome).replace(/^Contas+/i, ""));
-  var prefixo = ehCasa(dono.id) || dono.id==="familia" ? "Casa" : "PF";
+  if(/^a definir$/i.test(banco)) banco = "";
+  if(!dono){ if(/itaú black|itau black/i.test(c.banco+" "+c.nome)) return junta(["Casa", cartao, banco]); if(cartao) return junta(["Cartão", banco, (String(c.nome).match(/\b(\d{2})\b/) || [])[1]]); return nomePropio(String(c.nome).replace(/^Conta\s+/i, "")); }
+  var prefixo = ehCasa(dono.id) || dono.id==="familia" ? "Casa" : dono.id==="sorelly" ? "Sorelly" : "PF";
   return junta([prefixo, prefixo==="PF" ? nomePropio(dono.nome) : "", cartao, banco]) || nomePropio(c.nome); };
 // LISTA DE CONTA PAGADORA (Marcus, 22/11/2026): só as contas da família (sócios e Casa), ativas, cada conta UMA vez; as contas de prestadores ficam no cadastro de prestadores
 var contasPagadoras = function(ff){ var vistos = {}, out = []; ff.contasBanc.forEach(function(b){ if(!b.ativo || b.prestadorId) return; var n = contaLabel(ff, b.id); if(!n || vistos[n]) return; vistos[n] = 1; out.push(b); }); return out; };
