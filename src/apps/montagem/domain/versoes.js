@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.147", data:"2026-11-23", titulo:"Conta de representante: abre direto no app", itens:[
+  {tipo:"correção", area:"Representantes → App no Admin", txt:"A conta de representante que abria na tela Entrada do setor ficava numa tela preta com o aviso Escolha o setor no menu, porque ela não tem menu. Agora essa tela leva direto para o app da representante."}]},
  {v:"0.21.146", data:"2026-11-23", titulo:"RH › Acessos: Setor editável para todos", itens:[
   {tipo:"novo", area:"RH → Acessos e autorizações", txt:"A coluna Setor virou um menu suspenso para todas as pessoas (Diretoria, Financeiro, Inadimplência, Secretaria...). O setor é só uma etiqueta de onde a pessoa trabalha: quem libera as telas continua sendo o Acesso. Para quem tem acesso Por setor, escolher um setor que tem grupo também muda o grupo da conta."}]},
  {v:"0.21.145", data:"2026-11-23", titulo:"Comissões: Pix representante conta comissão e tudo fica no servidor", itens:[

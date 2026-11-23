@@ -3,7 +3,9 @@
 // Cada grupo do menu é um bloco com barra de título na cor do setor; botões de 32 px, todos do mesmo tamanho.
 // Financeiro (23/11/2026, Marcus): versão compacta, fundo azul, grupos lado a lado em colunas, tudo numa tela só, sem rolar.
 import { Pagina } from "@/apps/montagem/components/padrao";
+import { repCodDaConta } from "@/apps/montagem/lib/api";
 import { e } from "@/shared/react";
+import { Navigate } from "react-router-dom";
 
 // Todos os setores (23/11/2026, Marcus): tela inteira na cor do setor, em tom escuro (nada preto). Cada grupo do menu é UMA COLUNA (título em cima, botões embaixo, um por linha),
 // todas lado a lado na mesma ordem do menu de cima, SEMPRE na mesma linha: as colunas encolhem para caber (nunca descem). Nome comprido quebra sozinho em 2 linhas (todos os botões têm a mesma altura); só abaixo de ~960 px a tela rola para o lado.
@@ -26,6 +28,8 @@ function EntradaCompacta(p){
 
 export default function EntradaSetor(p){
   var en = p.entrada;
+  // conta de REPRESENTANTE (23/11/2026): não tem menu de setores. Se abrir esta tela (era o endereço da entrada), vai direto para o app dela; antes ficava a tela preta "Escolha o setor no menu".
+  if(!en && repCodDaConta()) return e(Navigate,{to:"/inicio", replace:true});
   if(!en) return e(Pagina, null, e("div",{className:"text-center text-[13px] text-foreground"}, "Escolha o setor no menu."));
   return e(Pagina, null, e(EntradaCompacta,{en:en}));
 }
