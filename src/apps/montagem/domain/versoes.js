@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.118", data:"2026-11-23", titulo:"Tipo da pessoa (Sócio ou Família) editável", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Configurações → Pessoas", txt:"O rótulo Sócio ou Família de cada pessoa virou uma lista para escolher. Antes só dava para definir ao criar a pessoa."}]},
  {v:"0.21.117", data:"2026-11-23", titulo:"Encomendas: confirmar a taxa paga lança nas duas contas", itens:[
   {tipo:"novo", area:"Encomendas e reposições → ficha do pedido → Taxa de entrega", txt:"Botão Confirmar pagamento: depois que a revendedora anexa o comprovante da taxa no link, a equipe confere e confirma. A taxa paga entra no Contas a receber (recebimento sem acerto) e no Contas a pagar já paga ao entregador, com o mesmo comprovante. Taxa não paga não lança nada. Confirmar duas vezes não lança duas vezes."}]},
  {v:"0.21.116", data:"2026-11-23", titulo:"Passar conta da Família para a empresa", itens:[
