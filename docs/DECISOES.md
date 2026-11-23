@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 · Fila de resgates: marca "Em contato" visível no cartão (Michele, pedido do Leonardo)
+- **Problema:** a Michele perguntou "como sei que já entrei em contato? no outro admin ficava aparecendo". As marcas não se perderam (antigo e novo com as mesmas 108 marcas; os 37 pedidos em aberto marcados). No cartão novo, "Em contato" era um texto cinza na última linha e a ação ficava escondida no menu ⋯.
+- **Como ficou:** o cartão tem três partes: nome → prêmio e moedas → situação (contato à esquerda, espera à direita, abaixo de um fio). Marcado = "Em contato desde dd/mm/aaaa" em verde (ESTADO.ok). Sem a marca = botão "Já entrei em contato" no cartão, como no admin antigo. Aguardando retirada mostra o dia e a hora em destaque, no azul da etapa. O valor em reais sai da linha do prêmio quando o título já tem "R$". As cores continuam as mesmas (barra lateral pelo atraso e cor da etapa). Versão 0.21.142.
+
 ## 24/11/2026 (Lançar recebimento por forma de pagamento)
 - **Pedido do Marcus:** "não é pedido de Pix, é lançamento de recebimento; pode ser dinheiro, cartão, débito...; no Para onde foi precisa melhorar e organizar as contas"; e ligar as contas pessoais dos sócios à aba Chaves Pix ("Sim, liga e organiza por forma").
 - **Forma:** Pix, Dinheiro, Crédito, Débito, Link. **Para onde foi por forma:** Pix = Empresa (CNPJ, Fornecedor / Prestador, Representante, Funcionário) e Sócios; Crédito, Débito e Link = contas e maquininhas da lista de formas da DevMaster (`domain/contas-grupos.js`), agrupadas por CNPJ e "Maquininhas · Pontual"; Dinheiro = uma só. A mensagem com a chave só aparece no Pix.

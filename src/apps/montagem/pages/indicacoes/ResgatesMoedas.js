@@ -211,16 +211,23 @@ function CartaoResgate(p){
   if(r.etapa==="aprovado") itens.push({t:"Reagendar", f:function(){ p.abrir("agendar", r); }});
   if(aberto){ itens.push({t:"Balcão (peças e valores)", f:function(){ p.abrir("balcao", r); }}); itens.push({t:op.emContato ? "Tirar a marca Em contato" : "Marcar Em contato", f:function(){ alterna("emContato"); }}); itens.push({t:op.vendidoSistema ? "Tirar a marca Vendido no sistema" : "Marcar Vendido no sistema", f:function(){ alterna("vendidoSistema"); }}); }
   if(zap) itens.push({t:"Abrir o WhatsApp", f:function(){ window.open(zap, "_blank", "noopener"); }});
-  var linha2 = [r.premioTitulo||"Prêmio", formatarMoedas(r.custoMoedas), r.premioValor>0 ? formatarReais(r.premioValor) : ""].filter(Boolean).join(" · ");
-  var marcas = [r.horarioAgendado, op.emContato ? "Em contato" : "", op.vendidoSistema ? "Vendido no sistema" : "", maleta].filter(Boolean).join(" · ");
-  return e("div",{className:"flex flex-col"},
+  // 23/11/2026 (Michele: "como sei que já entrei em contato?"): o cartão fica em 3 partes — quem (nome) · o quê (prêmio) · situação (contato e espera).
+  // "Em contato desde dd/mm/aaaa" em verde, como no admin antigo; sem a marca, o botão "Já entrei em contato" fica no próprio cartão (antes só no menu ⋯).
+  var linha2 = [r.premioTitulo||"Prêmio", formatarMoedas(r.custoMoedas), r.premioValor>0 && !/R\$/.test(r.premioTitulo||"") ? formatarReais(r.premioValor) : ""].filter(Boolean).join(" · ");   // "R$ 400 em semijoias" já diz o valor
+  var extras = [op.vendidoSistema ? "Vendido no sistema" : "", maleta].filter(Boolean).join(" · "), desde = formatarDia(op.emContatoEm);
+  return e("div",{className:"flex flex-col gap-1"},
     e("div",{className:"flex items-start justify-between gap-2"},
       e("b",{className:"min-w-0 break-words text-[13px] leading-tight"}, r.nomeRevendedora),
-      e("span",{className:"flex shrink-0 items-center gap-0.5"}, aberto && e("span",{className:"text-[11px] font-semibold tabular-nums", style:{color:COR_NIVEL[r.nivel]}, title:ROTULO_NIVEL[r.nivel]+" · pedido #"+r.id}, r.esperando), e(MenuAcoesResgate,{itens:itens}))),
-    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Prêmio, moedas e valor"}, linha2),
+      e(MenuAcoesResgate,{itens:itens})),
+    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Prêmio e moedas · pedido #"+r.id}, linha2),
+    r.etapa==="aprovado" && r.horarioAgendado && e("span",{className:"flex items-center gap-1 text-[13px] font-semibold leading-tight", style:{color:COR_ETAPA.aprovado}, title:"Retirada agendada"}, e(Ph,{n:"calendar-blank", s:14}), r.horarioAgendado),
     r.etapa==="entregue" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Retirado em "+formatarDataHora(r.entregueEm)+(op.valorVenda!=null ? " · "+formatarReais(op.valorVenda) : "")),
     r.etapa==="cancelado" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Cancelado"+(r.canceladoMotivo ? ": "+r.canceladoMotivo : "")),
-    marcas && e("span",{className:"text-[11px] leading-tight text-white/70"}, marcas));
+    extras && e("span",{className:"text-[11px] leading-tight text-white/70"}, extras),
+    aberto && e("div",{className:"mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-white/10 pt-1"},
+      op.emContato ? e("span",{className:"flex items-center gap-1 text-[11px] font-semibold", style:{color:ESTADO.ok}, title:"Marcado como em contato"+(op.atualizadoPor ? " · "+op.atualizadoPor : "")}, e(Ph,{n:"check-circle", s:14}), "Em contato"+(desde ? " desde "+desde : ""))
+        : e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); alterna("emContato"); }, className:"flex h-8 items-center gap-1.5 rounded-md bg-white/10 px-2.5 text-[13px] font-semibold ring-1 ring-white/15 hover:bg-white/15"}, e(Ph,{n:"whatsapp-logo", s:14}), "Já entrei em contato"),
+      e("span",{className:"flex items-center gap-1 text-[11px] font-semibold tabular-nums", style:{color:COR_NIVEL[r.nivel]}, title:ROTULO_NIVEL[r.nivel]+" · esperando desde o pedido"}, e(Ph,{n:"clock", s:13}), r.esperando)));
 }
 
 // ───────────── Fila de resgates (Kanban) ─────────────

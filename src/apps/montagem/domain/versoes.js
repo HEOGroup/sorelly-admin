@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.142", data:"2026-11-23", titulo:"Fila de resgates: cartão mostra quem já teve contato", itens:[
+  {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações → Resgates", txt:"O cartão do pedido ficou em três partes: nome, prêmio e situação. Pedido marcado mostra \"Em contato desde\" com a data, em verde, como no admin antigo. Pedido sem a marca mostra o botão \"Já entrei em contato\" no próprio cartão (antes ficava só no menu ⋯). O tempo de espera foi para a linha da situação e o nome ganhou a largura toda. Na coluna Aguardando retirada o dia e a hora aparecem em destaque. O valor repetido (R$ 400 em semijoias · R$ 400,00) saiu."}]},
  {v:"0.21.141", data:"2026-11-23", titulo:"Lançamentos marcados como Automático ou Manual", itens:[
   {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos, PIX revendedoras e Maquininha Banho", txt:"Cada lançamento diz se foi Automático ou Manual: coluna Origem no Lançamento de pagamentos (Automático = veio do Direcionar ou do próprio sistema), e ao lado do nome no PIX revendedoras da Família e na Maquininha Banho (Automático = veio do Direcionar)."}
  ]},
