@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.137", data:"2026-11-23", titulo:"Início da representante: a tela do app dentro do Admin", itens:[
+  {tipo:"novo", area:"Início", txt:"Conta ou acesso de representante abre a primeira tela do app (mês, vendido, acerto, comissão e atalhos), sem moldura de iPhone, no PC e no celular."},
+  {tipo:"novo", area:"Acesso", txt:"Seletor Atuar como ganha Marcus (Sorelly 02), com a lista de revendedoras do vendedor 02, e Vanessa Alves Lapa."},
+  {tipo:"correção", area:"App da representante", txt:"Nome no cabeçalho aparece com primeiro e segundo nome e sem perder a letra S."}]},
  {v:"0.21.136", data:"2026-11-23", titulo:"Direcionar: cartão para a Pontual cai na Maquininha Banho", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix", txt:"Cartão ou link direcionado a um fornecedor não vira mais Pix na Conferência de pagamentos. Se o fornecedor é o da Maquininha Banho (Pontual), entra sozinho como passada na Maquininha Banho (data, revendedora, valor e maquininha; bandeira e parcela ficam A informar). Reabrir no Direcionar tira a passada."}
  ]},

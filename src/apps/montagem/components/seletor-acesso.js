@@ -2,11 +2,13 @@
 // Barra de cima, versão 3 (aprovada pelo Marcus em 27/10/2026): busca, situação (Disponível, Em reunião, Ausente), avisos, SorellyChat e a conta (foto + nome).
 // O menu da conta tem: trocar ou remover a foto, aparência (claro/escuro), tamanho da tela e Sair. NÃO muda nome de exibição (só a Diretoria, na aba Contas).
 // Só a Diretoria vê a lista "Atuar como" para usar o sistema como outra pessoa. Sem servidor (modo antigo) a lista aparece para todos, como era a simulação do login.
-import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LEONARDO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
+import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LEONARDO, LISTAGENS_RESP, MONTADORAS, REPRESENTANTES_VER, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import * as srv from "@/apps/montagem/lib/api";
 import { ORDEM_SIT, SITUACOES, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
 import { RecortarFoto } from "@/apps/montagem/components/recortar-foto";
 import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
+// primeiro e segundo nome ("Vanessa Alves Lapa" vira "Vanessa Alves"); Marcus, 18/11/2026: não escrever "Representantes" nem o nome inteiro
+function doisNomes(n){ return String(n||"").trim().split(/ +/).slice(0, 2).join(" "); }
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import * as sons from "@/apps/montagem/lib/sons";
@@ -38,7 +40,7 @@ function TrocarSenha(){
 var SETORES_LOGIN = function(){
   var todos = DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M], DIRECAO_FAMILIA, FAMILIA, [LEONARDO]), por = function(ids){ return ids.map(function(i){ return todos.find(function(x){ return x.id===i; }); }); };
   return [["supervisao", por([16,17,37,44])], ["familia", por([29,28,38,32,31,30])], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
-    ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]], ["cadastropecas", CADASTRO_PECAS]]; };
+    ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]], ["cadastropecas", CADASTRO_PECAS], ["representante", REPRESENTANTES_VER]]; };
 var BOTAO_MENU = "flex h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-left text-[13px] font-semibold outline-none hover:bg-white/10";
 var comLoginAgora = function(){ return srv.apiAtiva() && !!srv.token(); };
 
@@ -84,7 +86,7 @@ function ContaMenu(p){
     e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
     e("button",{onClick:function(){ setAberto(!aberto); }, "aria-label":"Minha conta", "aria-expanded":aberto,
         className:(p.compacto ? "flex h-8 w-full" : "flex h-8")+" cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold outline-none hover:bg-primary/15"},
-      foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, nomeDe(s.usuario)), s.usuario===16 && e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),   // o nível de acesso (Acesso total) aparece só para o Marcus; os outros veem só o nome (Marcus, 21/11/2026)
+      foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, doisNomes(nomeDe(s.usuario))), s.usuario===16 && e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),   // o nível de acesso (Acesso total) aparece só para o Marcus; os outros veem só o nome (Marcus, 21/11/2026)
       e(Icon,{n: aberto ? "chevrondown" : "chevron", s:12, className:p.compacto ? "ml-auto" : ""})),
     aberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(false); }}),
     // painel mínimo (Marcus, 16/11/2026: "tem que ser muito mais simplificado"): sem cabeçalho (o nome já está na barra), 1 coluna de linhas de 32 px, 14 rem

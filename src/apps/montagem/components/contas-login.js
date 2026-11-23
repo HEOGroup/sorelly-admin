@@ -11,7 +11,7 @@ import { e } from "@/shared/react";
 var COLS = [{k:"setor", t:"Setor"}, {k:"pessoa", t:"Pessoa"}, {k:"usuario", t:"Usuário"}, {k:"senha", t:"Senha"}];
 
 function ContasLogin(p){
-  var grupos = SETORES_LOGIN().filter(function(g){ return g[1].length; }), linhas = [];
+  var grupos = SETORES_LOGIN().filter(function(g){ return g[1].length && g[0]!=="representante"; }), linhas = [];
   grupos.forEach(function(g){ g[1].forEach(function(p){ linhas.push({id:g[0]+"_"+p.id, setor:PAPEL_LB[g[0]], pessoa:p.nome, usuario:usuarioDe(p), senha:SENHA_PADRAO}); }); });
   return e(BlocoPainel,{titulo:"Contas de acesso", compacto:true, fechado:p && p.fechado, aoTitulo:p && p.aoTitulo},
     e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", linhas:linhas, cols:COLS, vazio:"Nenhuma conta"}));

@@ -23,7 +23,7 @@ import { CampoReaisAuto, CampoReais, rotuloPagamento } from "@/apps/montagem/mob
 import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
 import { EntregaKNRep } from "@/apps/montagem/mobile/kn-entrega-rep";
 import { ConfPecas, ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
-import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { nomeDe, REPRESENTANTES_VER } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { inicioSemana } from "@/apps/montagem/domain/encomendas";
@@ -65,11 +65,11 @@ var CARTEIRA_DEMO = {};   // 01/11/2026 (Marcus): carteira fictícia saiu; a car
 // 05/11/2026 (Marcus): referências inventadas (refsDe) saíram. As 3 referências são as que a representante digita na etapa 1 / na ficha.
 // Vendas anteriores vindas do SISTEMA (DevMaster, rota /api/revendedoras: 3 últimas vendas sem brinde, mais nova primeiro). Lista lida uma vez e guardada; a revendedora é achada pelo nome.
 // nome da representante para MOSTRAR (a lista do DevMaster vem em caixa alta: MARCIANE vira Marciane)
-var nomeBonito = function(x){ return String(x||"").toLowerCase().replace(/(^|s|-)([a-zà-ú])/g, function(m, p, b){ return p+b.toUpperCase(); }); };
+var nomeBonito = function(x){ return String(x||"").toLowerCase().replace(/(^|[ -])([a-zà-ú])/g, function(m, p, b){ return p+b.toUpperCase(); }); };
 var LISTA_REVS = {};   // uma lista por representante
 var semAcento = function(x){ return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/s+/g, " ").trim(); };
 // código do vendedor na DevMaster (lista do Agendamento): resolve nomes repetidos como Jessica e Thalita
-function codigoRep(s, rep){ var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
+function codigoRep(s, rep){ var v = REPRESENTANTES_VER.find(function(x){ return x.rep===rep && x.cod; }); if(v) return v.cod; var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
 function listaReal(rep, cod){
   var k = rep+"|"+(cod||"");
   if(!LISTA_REVS[k]) LISTA_REVS[k] = chamar("GET", "/representante/revendedoras?rep="+encodeURIComponent(rep)+(cod ? "&vendedor="+encodeURIComponent(cod) : "")).catch(function(){ LISTA_REVS[k] = null; return null; });
@@ -1212,7 +1212,7 @@ function AppRepresentante(p){
       e("div",{className:"flex min-w-0 items-center gap-2"},
         e(Avatar,{nome:l.rep, i:0, className:"size-10 shrink-0 text-base"}),
         e("span",{className:"flex min-w-0 items-center gap-1"},
-          e("b",{className:"max-w-[6.5rem] truncate text-[15px] font-bold "+BR}, nomeBonito(l.rep)),
+          e("b",{className:"max-w-[8rem] text-[15px] font-bold leading-tight "+BR}, nomeBonito(l.rep)),
           e(Icon,{n:"chevrondown", s:12, className:"shrink-0 text-white/50"}))),
       e("span",{className:"flex shrink-0 items-center gap-1.5"}, flameLogo, e("b",{className:"text-[12.5px] font-black tracking-[.25em] text-amber-200"},"SORELLY")),
       e("button",{className:"relative grid size-9 shrink-0 place-items-center rounded-full bg-white/10"},
@@ -1313,7 +1313,7 @@ function AppRepresentante(p){
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
   var telaPropria = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","assinarrepos","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
-  return e(IPhone17ProMax,null,
+  return e(IPhone17ProMax,{semMoldura:!!p.semMoldura},
     tela==="preacerto" && kitSel && e(PreAcertoRep,{key:"pre"+kitSel.id, kit:kitSel, versao:versaoSel || versaoVigente(s), rev:sel.rev, prevista:previstaTxt, d:d,
       onVoltar:function(){ setTela("rev"); }, onSalvar:function(){ abrirAcertoNovo(); }, textoSalvar:"Salvar e ir para o acerto"}),
     tela==="calcacerto" && headerCalc,

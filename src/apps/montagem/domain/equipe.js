@@ -64,6 +64,9 @@ function podeLiberarExcecao(id){ return PODE_EXCECAO.indexOf(id)>=0; }
 // Contas com grupo de acesso próprio (funcionário que não está na lista de 43 nomes): o App informa o grupo e o nome da conta que entrou.
 var GRUPO_CONTA = {}, NOME_CONTA = {};
 function definirContaEquipe(id, grupo, nome){ if(id==null || isNaN(id)) return; if(grupo) GRUPO_CONTA[id] = grupo; else delete GRUPO_CONTA[id]; if(nome) NOME_CONTA[id] = nome; else delete NOME_CONTA[id]; }
+// Representantes que a Diretoria pode ver pelo seletor "Atuar como" (18/11/2026, Marcus: ver como a Vanessa sem sair da conta dele). Id virtual (a conta delas não tem pessoa); grupo representante = só as telas delas.
+var REPRESENTANTES_VER = [{id:9002, nome:"Marcus (Sorelly 02)", rep:"Marcus", cod:"02"}, {id:9001, nome:"Vanessa Alves Lapa", rep:"Vanessa Alves", cod:""}];   // cod = código do vendedor na DevMaster (Sorelly 02 = Marcus, 18/11/2026)
+REPRESENTANTES_VER.forEach(function(p){ definirContaEquipe(p.id, "representante", p.nome); });
 function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : (NOME_CONTA[id] || "\u2014"); }
 function papelDe(id){
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id]==='supervisora' ? 'supervisao' : GRUPO_CONTA[id];   // grupo definido na conta vale sobre a lista
@@ -126,4 +129,4 @@ var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
 // quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
 var pessoaConhecida = function(id){ return !!GRUPO_CONTA[id] || EQUIPE.some(function(p){ return p.id===id; }); };
-export { veSalarios, abasVetadas, telasDaPessoa, definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, LEONARDO, KITNOVO, EQUIPE, nomeDe, papelDe };
+export { REPRESENTANTES_VER, veSalarios, abasVetadas, telasDaPessoa, definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, LEONARDO, KITNOVO, EQUIPE, nomeDe, papelDe };

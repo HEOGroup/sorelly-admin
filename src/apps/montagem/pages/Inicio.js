@@ -3,9 +3,10 @@
 // os setores que a pessoa pode abrir e, embaixo, o dia dela: rotina de hoje, comunicados da Diretoria, equipe agora (foto e situação) e telas visitadas.
 // A Diretoria ainda vê "Para você decidir hoje". Mensagens em domain/mensagens-fe.js; foto e situação em lib/perfil.js; setores e visitas em lib/inicio-setores.js.
 import { rotDoDia, daPessoa, rotResumo } from "@/apps/montagem/domain/rotina";
-import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
+import { nomeDe, papelDe, grupoDe, REPRESENTANTES_VER } from "@/apps/montagem/domain/equipe";
 import { mensagemDaVez, msAteTrocar } from "@/apps/montagem/domain/mensagens-fe";
 import { apiAtiva, chamar, ehAdmin } from "@/apps/montagem/lib/api";
+import { AppRepresentante } from "@/apps/montagem/mobile/representante";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { ORDEM_SIT, SITUACOES, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
@@ -158,4 +159,14 @@ function AbaInicio(){
       favoritas.length>0 && e("div",null, e("div",{className:"ini-rot"}, "Minhas favoritas"),
         e("div",{className:"ini-chips"}, favoritas.map(function(f){ return e("button",{key:f.k, type:"button", className:"ini-chip", onClick:function(){ abrirAba(f.aba); }}, e("span",{style:{color:"#F5D68A"}}, "★"), f.nome, f.setor && f.setor!==f.nome ? e("small",null, f.setor) : null); })))));
 }
-export { AbaInicio };
+// INÍCIO DA REPRESENTANTE (18/11/2026, Marcus: "puxa a primeira tela que as representantes precisam ver na tela inicial"): conta de representante abre direto a primeira tela do app dela
+// (mês, vendido, acerto, comissão e os atalhos: Revendedoras, Listagens, Kits novos, Comissões, Regras), numa coluna do tamanho do celular, centralizada. O resto do Admin segue no menu.
+function InicioRepresentante(){
+  var cx = use(), s = cx.state, todas = s.listagens || [];
+  var nome = nomeDe(s.usuario), ver = REPRESENTANTES_VER.find(function(x){ return x.id===s.usuario; }), pn = String(nome||"").trim().split(/ +/)[0].toLowerCase();
+  var dela = todas.filter(function(x){ return String(x.rep||"").trim().split(/ +/)[0].toLowerCase()===pn; });
+  var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+s.usuario, rep:ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "), data:"", horario:"", retiradas:[]};
+  return e("div",{className:"mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(AppRepresentante,{key:l.id, l:l, semMoldura:true}));
+}
+function AbaInicioGeral(){ var cx = use(); return grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
+export { AbaInicioGeral as AbaInicio };
