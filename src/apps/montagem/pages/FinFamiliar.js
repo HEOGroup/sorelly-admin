@@ -316,9 +316,12 @@ function ModalPagar(p){
         notasV.map(function(n){ return e("div",{key:n.id, className:"border-b border-white/15 px-1 py-1 text-left text-[11px]"}, e("b",null, br(String(n.em).slice(0, 10))+" · "+(n.por || "—")+": "), n.txt); }),
         !contaV.obs && !notasV.length && e("div",{className:"px-1 py-1 text-center text-[11px]"}, "Nenhuma observação ainda.")),
       e("div",{className:"flex w-full items-center gap-1.5"}, e(TxtJ,{value:nota, label:"Nova observação", ph:"Escreva uma observação nova", onChange:function(v){ setNota(v); }}), e("button",{type:"button", style:ALTO_J, className:BTN_J+" shrink-0", disabled:!nota.trim(), onClick:anotarNota}, "Anotar"))),
-    e("div",{className:"flex items-center gap-1.5 px-2.5 pb-1 pt-2"},
+    e("div",{className:"flex flex-wrap items-center gap-1.5 px-2.5 pb-1 pt-2"},
       e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold"}, e("input",{type:"checkbox", checked:f.dividir, className:"size-3", onChange:function(ev){ set({dividir:ev.target.checked}); }}), "Dividir entre formas"),
       p.editar && e("button",{type:"button", style:ALTO_J, className:BTN_J+" ml-2", onClick:p.editar}, "Editar conta"),
+      p.valor && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Corrigir o valor deste mês", onClick:p.valor}, "Corrigir valor"),
+      p.encerrar && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Tira as parcelas em aberto e guarda o histórico pago", onClick:p.encerrar}, "Encerrar conta"),
+      p.excluir && e("button",{type:"button", style:ALTO_J, className:BTN_J, title:"Exclui a conta inteira, com todas as parcelas", onClick:p.excluir}, "Excluir conta"),
       e("span",{className:"ml-auto"}), e("button",{type:"button", style:ALTO_J, className:BTN_J, onClick:p.fechar}, "Cancelar"), e("button",{type:"button", style:ALTO_J, className:BTN_J+" !bg-[#3f6bb8]", onClick:pagar}, "Registrar pagamento")));
 }
 // JANELA AZUL (Marcus, 22/11/2026: "copia o bloco de lançamento de contas, cores, tudo mais alinhado"): a mesma moldura da janela Lançar recebimento da Contas a receber: título azul, blocos numerados com borda, campos de 22 px, letra de 11 px, tudo centralizado.
@@ -400,21 +403,18 @@ function AbaFfContas(){
   var cbs = ff.contasBanc.filter(function(b){ return b.ativo; });
   var dias = function(x){ return Math.max(1, Math.round((new Date(hj+"T00:00:00") - new Date(x.venc+"T00:00:00"))/86400000)); };
   var linhas = lista.map(function(x){ return {id:x.chave, x:x, sit:x.atrasada ? "Atrasada · "+dias(x)+" dias" : x.status==="PARCIAL" ? "Parcial" : "A pagar", venc:br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4)),
-    pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, cat:catNome(ff, x.conta.categoria), forma:x.conta.forma || "—", pagadora:x.conta.contaBancId ? contaLabel(ff, x.conta.contaBancId) : "Não definida", benef:x.conta.beneficiario || "—", valor:x.valor, falta:x.restante}; });
-  var link = function(txt, fn, titulo){ return e("button",{key:txt, type:"button", title:titulo, onClick:function(ev){ ev.stopPropagation(); fn(); }, className:"cursor-pointer underline hover:text-primary"}, txt); };
-  var acoes = function(v, l){ var x = l.x; return e("span",{className:"inline-flex items-center justify-center gap-2"},
-    link("Pagar", function(){ setModal({tipo:"pagar", x:x}); }, "Registrar o pagamento"),
-    link("Valor", function(){ var v2 = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v2!==null && num(v2)>0) acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v2)}); }, "Corrigir o valor deste mês"),
-    link("Editar", function(){ setModal({tipo:"conta", x:x.conta}); }, "Editar a conta"),
-    link("Encerrar", function(){ if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")) acao(c, "conta_encerrar", {id:x.conta.id}); }, "Encerrar a conta: tira as parcelas em aberto e guarda o histórico pago"),
-    link("Excluir", function(){ if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")) acao(c, "conta_del", {id:x.conta.id}); }, "Excluir a conta inteira")); };
+    pessoa:pessoaNome(ff, x.conta.personaId), nome:x.conta.descricao, cat:catNome(ff, x.conta.categoria), forma:x.conta.forma || "—", pagadora:x.conta.contaBancId ? contaLabel(ff, x.conta.contaBancId) : "Não definida", benef:x.conta.beneficiario || "—", valor:x.valor, falta:x.restante, obs:(x.conta.obs || (x.conta.notas || []).length) ? "✓" : "—"}; });
   var cols = [{k:"sit", t:"Situação", cor:function(l){ return l.sit.indexOf("Atrasada")===0 ? "text-warning" : l.sit==="Parcial" ? "text-warning" : ""; }}, {k:"venc", t:"Vence"}, {k:"pessoa", t:"Pessoa"}, {k:"nome", t:"Conta"}, {k:"cat", t:"Categoria"}, {k:"forma", t:"Forma"}, {k:"pagadora", t:"Conta pagadora"}, {k:"benef", t:"Beneficiário"},
-    {k:"valor", t:"Valor", fmt:BK}, {k:"falta", t:"Falta", fmt:BK}, {k:"acoes", t:"Ações", render:acoes}];
+    {k:"valor", t:"Valor", fmt:BK}, {k:"falta", t:"Falta", fmt:BK}, {k:"obs", t:"Obs"}];
   var somaCampo = function(ls, k){ return r2(ls.reduce(function(t, l){ return t+(Number(l[k]) || 0); }, 0)); };
   var rodape = function(ls){ return cols.map(function(col, j){ return j===0 ? "Total" : col.k==="nome" ? ls.length+(ls.length===1 ? " conta" : " contas") : col.k==="valor" || col.k==="falta" ? BK(somaCampo(ls, col.k)) : ""; }); };
   var op = function(l, todos){ return [["", todos]].concat(l); };
   return e(Guarda,{c:c}, e(Pagina,{className:PAGINA_CHEIA},
-    modal && modal.tipo==="pagar" && e(ModalPagar,{key:modal.x.chave, c:c, x:modal.x, editar:function(){ setModal({tipo:"conta", x:modal.x.conta}); }, fechar:function(){ setModal(null); }}),
+    modal && modal.tipo==="pagar" && e(ModalPagar,{key:modal.x.chave, c:c, x:modal.x, editar:function(){ setModal({tipo:"conta", x:modal.x.conta}); },
+      valor:function(){ var x = modal.x, v2 = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v2!==null && num(v2)>0){ acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v2)}); setModal(null); } },
+      encerrar:function(){ var x = modal.x; if(window.confirm("Encerrar \""+x.conta.descricao+"\"? As parcelas em aberto saem. O que já foi pago continua no histórico.")){ acao(c, "conta_encerrar", {id:x.conta.id}); setModal(null); } },
+      excluir:function(){ var x = modal.x; if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")){ acao(c, "conta_del", {id:x.conta.id}); setModal(null); } },
+      fechar:function(){ setModal(null); }}),
     modal && modal.tipo==="conta" && e(FormConta,{key:modal.x ? modal.x.id : "nova", c:c, x:modal.x, fechar:function(){ setModal(null); }}),
     e(BlocoPainel,{titulo:"Contas a pagar - Família", compacto:true},
       e(BarraTabela,null,
