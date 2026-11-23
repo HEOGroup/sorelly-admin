@@ -261,5 +261,22 @@ t("completar o mesmo pedido de novo é recusado", !!r.erro, JSON.stringify(r));
 await srv.remover(fin, { id: novoPix.id });
 t("no fim não sobra nada do pedido", mod.get("contasreceber").conteudo.antecipados.length === nAntes);
 
+console.log("\n10) conta da aba Chaves Pix que não é destino do Direcionar (funcionária, fornecedor novo...): entra pelo nome");
+const nAntes10 = mod.get("contasreceber").conteudo.antecipados.length;
+r = await lanca(fin, { tipo: "pedido", semDestino: true, destinoNome: "Funcionário · Maria Teste", leaf: "x|func|Maria Teste" });
+t("pedido para conta só da aba Chaves Pix grava pelo nome", r.ok && r.pedido === true, JSON.stringify(r));
+const idSem = r.id, pSem = mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === idSem);
+t("guarda o nome, a folha de origem e não vai para a Família", !!pSem && pSem.destinoNome === "Funcionário · Maria Teste" && pSem.destino === "empresa" && pSem.pedidoDest.semDestino === true && pSem.pedidoDest.leaf === "x|func|Maria Teste" && mod.get("ff").conteudo.pix.length === ffPixAntes, JSON.stringify(pSem));
+r = await lanca(fin, { tipo: "pedido", semDestino: true, destinoNome: "" });
+t("sem nome e sem destino o pedido é recusado", !!r.erro, JSON.stringify(r));
+r = await lanca(fin, { tipo: "pedido", semDestino: false, destinoNome: "Qualquer" });
+t("o nome só vale com a marca semDestino", !!r.erro, JSON.stringify(r));
+r = await srv.completar(fin, { id: idSem, data: "2026-11-20", valor: 12.34, cod: "100", tipo: "antes" }, deps);
+t("completar mantém a conta pelo nome", r.ok, JSON.stringify(r));
+const novoSem = mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === r.id);
+t("o Pix lançado fica na empresa com o nome da conta", !!novoSem && novoSem.valor === 12.34 && novoSem.destino === "empresa" && novoSem.destinoNome === "Funcionário · Maria Teste", JSON.stringify(novoSem));
+await srv.remover(fin, { id: novoSem.id });
+t("no fim não sobra nada", mod.get("contasreceber").conteudo.antecipados.length === nAntes10 - 0 && !mod.get("contasreceber").conteudo.antecipados.some((x) => x.id === idSem));
+
 console.log("\n" + ok + " ok, " + falha + " com falha");
 process.exit(falha ? 1 : 0);

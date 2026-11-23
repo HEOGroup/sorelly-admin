@@ -56,6 +56,8 @@ export async function lancar(eu, b, deps) {
   // a conta que recebeu vem do MESMO menu do Direcionar (cp.destinos): o servidor descobre se fica só aqui (empresa) ou também na Família (sócio ou prestador da família)
   const [cp, ffAtual] = await Promise.all([lerModulo("cp"), lerModulo("ff")]);
   const dCp = ((cp && cp.destinos) || []).find((d) => d.id === String(b.destinoId || "") && d.ativo !== false);
+  // conta que existe na aba Chaves Pix (funcionária, fornecedor, representante...) mas não é um destino do Direcionar: entra como recebimento da EMPRESA com o nome dela (Marcus, 23/11/2026: a lista Conta que recebeu vem da aba Chaves Pix)
+  const nomeSem = !dCp && b.semDestino === true ? String(b.destinoNome || "").replace(/\s+/g, " ").trim().slice(0, 120) : "", semDest = nomeSem.length >= 2;
   // CNPJ da empresa: a conta (banco) escolhida vem dos blocos de saldos (módulo sc), a mesma lista do Direcionar; o rótulo sai igual ao dele (CNPJ · empresa · banco)
   let contaNome = "";
   if (dCp && dCp.tipo === "CNPJ" && b.contaNome) {
@@ -63,14 +65,14 @@ export async function lancar(eu, b, deps) {
     if (!(sd.contas || []).some((c) => c.bloco === dCp.cnpjId && !c.bloqueada && contaRecebePix(c.nome) && c.nome === String(b.contaNome))) return { erro: "Essa conta não é deste CNPJ. Escolha de novo." };
     contaNome = String(b.contaNome);
   }
-  const rd = resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome), String(b.contaId || ""));
+  const rd = semDest ? { destino: "empresa", personaId: "", contaId: "", contaTxt: nomeSem, nome: nomeSem } : resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome), String(b.contaId || ""));
   if (rd.erro) return { erro: rd.erro };
   if (ehPedido) {   // pedido: não entra em acerto (valor 0), não vai para a Família e não cruza com nada até ser completado
-    const ped = { id: "ra" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data: hojeIso(), valor: 0, rev: rv ? rv.nome : "", revCod: rv ? String(rv.cod) : "", repNome: rv ? String(rv.representante || "") : "", destino: rd.destino, tipo: "pedido", destinoId: dCp.id, destinoNome: rd.nome, personaId: "", contaId: "", contaTxt: rd.nome, pagador: "", compKey: "", compNome: "", compTipo: "", ffPixId: "", por, em: new Date().toISOString(), pedidoDest: { destinoId: dCp.id, contaNome, contaId: String(b.contaId || ""), casa: String(b.casa || "") } };
+    const ped = { id: "ra" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data: hojeIso(), valor: 0, rev: rv ? rv.nome : "", revCod: rv ? String(rv.cod) : "", repNome: rv ? String(rv.representante || "") : "", destino: rd.destino, tipo: "pedido", destinoId: dCp ? dCp.id : "", destinoNome: rd.nome, personaId: "", contaId: "", contaTxt: rd.nome, pagador: "", compKey: "", compNome: "", compTipo: "", ffPixId: "", por, em: new Date().toISOString(), pedidoDest: { destinoId: dCp ? dCp.id : "", semDestino: semDest, destinoNome: nomeSem, leaf: String(b.leaf || "").slice(0, 200), contaNome, contaId: String(b.contaId || ""), casa: String(b.casa || "") } };
     await gravarModulo("contasreceber", {}, "patch", por, (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.concat([ped]), usados: g.usados, adotados: g.adotados }); });
     return { ok: true, id: ped.id, pedido: true };
   }
-  const v = validarLancamento(Object.assign({}, b, { rev: rv.nome, destino: rd.destino, personaId: rd.personaId, contaId: rd.contaId, contaTxt: rd.contaTxt, destinoId: dCp.id, destinoNome: rd.nome }), hojeIso(), ((await lerModulo("contasreceber")) || {}).antecipados);
+  const v = validarLancamento(Object.assign({}, b, { rev: rv.nome, destino: rd.destino, personaId: rd.personaId, contaId: rd.contaId, contaTxt: rd.contaTxt, destinoId: dCp ? dCp.id : "", destinoNome: rd.nome }), hojeIso(), ((await lerModulo("contasreceber")) || {}).antecipados);
   if (v.erro) return { erro: v.erro };
   const item = v.item; item.por = por; item.em = new Date().toISOString(); item.revCod = String(rv.cod);
   item.repNome = String(rv.representante || "");   // quem faz o acerto dela: "Sorelly" = atendimento interno; outro nome = representante
@@ -105,7 +107,7 @@ export async function lancar(eu, b, deps) {
 export async function completar(eu, b, deps) {
   const id = String(b.id || ""), rcb = garantir(await lerModulo("contasreceber")), ped = rcb.antecipados.find((x) => x.id === id && x.tipo === "pedido");
   if (!ped || !ped.pedidoDest) return { erro: "Pedido não encontrado (talvez já tenha sido completado)." };
-  const r = await lancar(eu, Object.assign({}, b, { acao: "lancar", tipo: b.tipo === "outro" ? "outro" : "antes", destinoId: ped.pedidoDest.destinoId, contaNome: ped.pedidoDest.contaNome, contaId: ped.pedidoDest.contaId, casa: ped.pedidoDest.casa, key: b.key || ped.compKey || "", nome: b.nome || ped.compNome || "", compTipo: b.compTipo || ped.compTipo || "" }), deps);
+  const r = await lancar(eu, Object.assign({}, b, { acao: "lancar", tipo: b.tipo === "outro" ? "outro" : "antes", destinoId: ped.pedidoDest.destinoId, semDestino: !!ped.pedidoDest.semDestino, destinoNome: ped.pedidoDest.destinoNome || "", leaf: ped.pedidoDest.leaf || "", contaNome: ped.pedidoDest.contaNome, contaId: ped.pedidoDest.contaId, casa: ped.pedidoDest.casa, key: b.key || ped.compKey || "", nome: b.nome || ped.compNome || "", compTipo: b.compTipo || ped.compTipo || "" }), deps);
   if (r.erro) return r;
   await gravarModulo("contasreceber", {}, "patch", nomeDe(eu), (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.filter((x) => x.id !== id), usados: g.usados, adotados: g.adotados }); });
   return { ok: true, id: r.id };

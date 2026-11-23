@@ -3,6 +3,13 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Lançar recebimento: Conta que recebeu = aba Chaves Pix)
+- **Pedido do Marcus:** "o Conta que recebeu você precisa linkar com a aba de Pagamentos › Chaves Pix, porque tem todas as chaves Pix lá alinhadas".
+- **Como ficou:** a lista da janela Lançar recebimento (Empresa › Fornecedor / Prestador, Representante, Funcionário) sai da MESMA montagem da aba Chaves Pix (`blocosChavesPix`, em `pages/ChavesPixBancos.js`); a chave e o Escrever na folha da mensagem são os da linha da aba. CNPJ e Sócios seguem como antes (contas do Direcionar e da Família).
+- **Conta sem destino no Direcionar:** se a linha da aba tem o mesmo nome de um destino do Direcionar, vale o destino (como antes); se não tem (ex.: funcionária), o servidor grava como recebimento da empresa com o nome da conta (`semDestino`, `destinoNome`).
+- Teste: `node scripts/testar-recebimento-antecipado-servidor.mjs` (seção 10, 97 verificações).
+
+
 ## 23/11/2026 (Contas a receber: modo Pedido de Pix)
 - **Pedido do Marcus:** "faz o modo pedido". O Lucas manda a conta pelo WhatsApp ANTES de o Pix existir; ainda não há nome de quem pagou, nem valor. Funciona como o Direcionar, só que no WhatsApp; depois o app da representante deixa tudo dentro do sistema.
 - **Como ficou:** a janela Lançar recebimento tem os modos **Pedido de Pix** e **Pix recebido**. No pedido só a conta é obrigatória (revendedora opcional). A linha entra em Contas a receber como **Aguardando Pix**, com valor 0: não entra em acerto, não vai para a Família e não cruza com a DevMaster. Na ficha, **Completar pedido** abre a janela na MESMA conta; ao completar com revendedora, valor, data e comprovante, o pedido vira o Pix lançado e some.

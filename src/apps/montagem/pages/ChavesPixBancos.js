@@ -49,18 +49,14 @@ var CEL = "h-8 whitespace-nowrap border-b border-border px-2.5 py-1 text-center 
 var PARTICULAS = ["de", "da", "do", "dos", "das", "e"];
 var nome3 = function(t){ var ws = String(t||"").trim().split(/\s+/), n = 0, out = []; for(var i = 0; i<ws.length; i++){ var sig = PARTICULAS.indexOf(ws[i].toLowerCase())<0; if(sig && n===3) break; if(sig) n++; out.push(ws[i]); } while(out.length && PARTICULAS.indexOf(out[out.length-1].toLowerCase())>=0) out.pop(); return out.join(" "); };
 var resumoFav = function(t){ return String(t||"").trim().split(/\s+/).slice(0, 2).join(" "); };
-export function AbaChavesPixBancos(){
-  var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
+// MONTA todas as chaves Pix (CNPJs, Fornecedores e prestadores, Funcionários, Representantes, Sócios) — uma fonte só: a aba Pagamentos › Chaves Pix e a janela Lançar recebimento (Contas a receber) leem daqui (Marcus, 23/11/2026).
+// s = estado; d = dispatch (só para gravar, hoje a tela é só de leitura); eu = quem está logado; viewFam = vê a parte da família.
+export function blocosChavesPix(s, d, eu, viewFam){
+  var sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, edita = false, modoFunc = "cnpj";
   // completa com as chaves do arquivo local quando o estado salvo ainda não as tem (o estado do servidor manda, e pode estar atrás)
   var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; if(/@exemplo\.com$/i.test(String(cur.chave||""))) cur = Object.assign({}, cur, {chave:"", chaveTipo:""});   // sobra de teste: chave de exemplo nunca vale
     cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:x[2] || cur.nome, banco:x[3] || cur.banco, servico:x[4] || cur.servico, favorecido:x[7] || cur.favorecido || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });   // nome, banco, serviço e favorecido do arquivo valem sobre o estado salvo (o Marcus acerta os textos aqui)
   var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
-  var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
-  var st = useState(foco ? (foco.aba==="prest" ? "forn" : foco.aba) : "cnpjs"), aba = st[0], setAba = st[1];
-  var edita = false;   // sem botão Editar (Marcus, 12/11/2026): a tela é só de leitura
-  var modoFunc = "cnpj";   // Funcionários: só por CNPJ, com os 5 CNPJs (Marcus, 12/11/2026)
-  useEffect(function(){ if(foco) d({type:"CHAVESPIX_LIMPA"}); }, []);
-  var viewFam = temAutorizacao("financeiro_familia", s.usuario);
   var gravaFunc = function(nome){ return function(pt){ d({type:"CP", op:"func_set", nome:nome, por:eu, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
   var gravaChave = function(id, base){ return function(pt){ d({type:"CP", op:"chave_set", id:id, por:eu, base:base, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
   var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, banco:k.banco || (base && base.banco) || "", fav:k.favorecido || "", chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
@@ -116,7 +112,19 @@ export function AbaChavesPixBancos(){
   var COM_GREICE = ["marcus", "anamaria", "anabeatriz"];
   if(viewFam){ blocosPes = blocosPes.map(function(b){ var pid = b.id.slice(4); return Object.assign({}, b, {vazio:"Nenhuma chave cadastrada", rows:b.rows.concat(porDono[pid] || [], COM_GREICE.indexOf(pid)>=0 ? universais : [])}); }); }
 
-  var todos = {cnpjs:blocosCnpj, forn:blocosForn.concat(blocosPrest), func:blocosFunc, rep:blocosRep, pes:blocosPes, prest:blocosPrest}, blocos = todos[aba];
+  var todos = {cnpjs:blocosCnpj, forn:blocosForn.concat(blocosPrest), func:blocosFunc, rep:blocosRep, pes:blocosPes, prest:blocosPrest};
+  return todos;
+}
+
+export function AbaChavesPixBancos(){
+  var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
+  var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
+  var st = useState(foco ? (foco.aba==="prest" ? "forn" : foco.aba) : "cnpjs"), aba = st[0], setAba = st[1];
+  var edita = false;   // sem botão Editar (Marcus, 12/11/2026): a tela é só de leitura
+  var modoFunc = "cnpj";   // Funcionários: só por CNPJ, com os 5 CNPJs (Marcus, 12/11/2026)
+  useEffect(function(){ if(foco) d({type:"CHAVESPIX_LIMPA"}); }, []);
+  var viewFam = temAutorizacao("financeiro_familia", s.usuario);
+  var todos = blocosChavesPix(s, d, eu, viewFam), blocos = todos[aba];
   var q = norm(busca);
   var visiveis = blocos.map(function(b){
     var casaB = !q || norm(b.nome).indexOf(q)>=0;

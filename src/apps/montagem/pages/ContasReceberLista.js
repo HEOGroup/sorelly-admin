@@ -8,6 +8,8 @@ import { Pagina, Dinheiro } from "@/apps/montagem/components/padrao";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { rotuloDestino, rotuloPrestadorFamilia, nomePropio, rotuloContaCnpj, contaRecebePix, bancoDeConta } from "@/apps/montagem/lib/nome-conta";
 import { rotuloLeaf, nomeCurtoLeaf } from "@/apps/montagem/domain/recebimentos-antecipados";
+import { blocosChavesPix } from "@/apps/montagem/pages/ChavesPixBancos";
+import { contaDaCaixa } from "@/apps/montagem/domain/pix-regras";
 import { chavesDoDestino } from "@/apps/montagem/lib/chave-do-destino";
 import { mensagemPixDaChave, mensagemPixPessoa } from "@/apps/montagem/lib/mensagem-pix";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
@@ -385,14 +387,18 @@ function LancarPix(p){
   var noCnpj = function(d){ var cs = contasDoCnpj(d); return {t:rotuloDestino(d, ""), itens:cs.length ? cs.map(function(c){ return [d.id+"|"+c.nome, rotuloContaCnpj(c.nome, d.cnpjId), rotuloDestino(d, c.nome)]; }) : [[d.id, rotuloDestino(d, ""), rotuloDestino(d, "")]]}; };
   var ehFam = function(id){ var d0 = cpd.find(function(d){ return d.id===String(id).split("|")[0]; }); return !!d0 && d0.tipo==="FAMILIA"; };   // escolheu uma conta PF de sócio (o texto depois da barra é o id da conta, não o nome)
   var daFamilia = function(d){ return d.tipo==="PRESTADOR" && !!d.personaId; };   // prestador ligado a um sócio no Direcionar = prestador da família
-  var itensDe = function(tps){ var r = []; tps.forEach(function(tp){ cpd.filter(function(d){ return d.ativo!==false && d.tipo===tp && !daFamilia(d); }).forEach(function(d){ r.push([d.id, nomeCurtoLeaf(d, cpd, LIB_NOME), nomeLeaf(d)]); }); }); return r; };   // lista: nome curto; campo: nome inteiro com o dono
-  var itensForn = itensDe(["FORNECEDOR", "PRESTADOR"]), itensRep = itensDe(["REPRESENTANTE"]);
+  // A LISTA "Conta que recebeu" VEM DA ABA PAGAMENTOS › CHAVES PIX (Marcus, 23/11/2026: "tem todas as chaves Pix lá alinhadas"): fornecedores e prestadores, representantes e funcionárias saem da MESMA montagem da aba, e a chave da mensagem é a que está lá.
+  var chv = blocosChavesPix(cx.state, cx.dispatch, "", false), folhas = {}, chvConta = {};
+  chv.cnpjs.forEach(function(b){ b.rows.forEach(function(r){ chvConta[r.id] = r; }); });   // conta bancária de CNPJ → a linha dela na aba Chaves Pix (pelo código da conta, igual à aba)
+  var itensChv = function(blocos, pref, rotulo){ var out = []; blocos.forEach(function(b){ b.rows.forEach(function(r){ var id = "x|"+pref+"|"+r.id, rot = rotulo(r); folhas[id] = {row:r, label:rot, pref:pref}; out.push([id, r.c2, rot]); }); }); return out; };
+  var itensForn = itensChv(chv.forn, "forn", function(r){ return "Sorelly · "+r.c2; }), itensRep = itensChv(chv.rep, "rep", function(r){ return "Representante · "+r.c2; });
+  var nosFunc = chv.func.map(function(b){ return {t:b.nome, itens:itensChv([b], "func", function(r){ return "Funcionário · "+r.c2; })}; });
   // Sócio: PRIMEIRO as contas PF dele (Nubank, Caixa...), cada uma grava a conta e cai na caixa dela na Família; EMBAIXO os prestadores. Sem conta cadastrada (ou sem acesso à Família) fica "Conta pessoal" (Marcus, 21/11/2026)
   var proprias = (p.destinos && p.destinos.proprias) || [];
   var socios = cpd.filter(function(s){ return s.ativo!==false && s.tipo==="FAMILIA"; }).map(function(s){ var cs = proprias.filter(function(c){ return c.personaId===s.personaId; }), its = cs.length ? cs.map(function(c){ return [s.id+"|"+c.id, bancoDeConta(c.banco || c.nome) || nomePropio(c.banco) || c.nome, rotuloLeaf(s, cpd, LIB_NOME, c.banco || c.nome)]; }) : [[s.id, "Conta pessoal", nomeLeaf(s)]]; cpd.filter(function(d){ return d.ativo!==false && daFamilia(d) && d.personaId===s.personaId; }).forEach(function(d){ its.push([d.id, nomeCurtoLeaf(d, cpd, LIB_NOME), nomeLeaf(d)]); }); return {t:nomePropio(s.nome), itens:its}; });
-  var arvore = [{t:"Empresa", filhos:[{t:"CNPJ", filhos:cpd.filter(function(d){ return d.ativo!==false && d.tipo==="CNPJ"; }).map(noCnpj)}, {t:"Fornecedor / Prestador", itens:itensForn}, {t:"Representante", itens:itensRep}]}, {t:"Sócios", filhos:socios}];   // as contas são as do Direcionar (cp.destinos)
+  var arvore = [{t:"Empresa", filhos:[{t:"CNPJ", filhos:cpd.filter(function(d){ return d.ativo!==false && d.tipo==="CNPJ"; }).map(noCnpj)}, {t:"Fornecedor / Prestador", itens:itensForn}, {t:"Representante", itens:itensRep}, {t:"Funcionário", filhos:nosFunc}]}, {t:"Sócios", filhos:socios}];   // as contas são as do Direcionar (cp.destinos)
   // MODO PEDIDO (Marcus, 23/11/2026): o Lucas manda a conta à representante ANTES de o Pix existir; só a conta é obrigatória e o lançamento fica "Aguardando Pix". Depois, na ficha, "Completar pedido" abre esta janela já na conta escolhida, com revendedora, valor, data e comprovante.
-  var ped = p.pedido || null, destInicial = ped && ped.pedidoDest ? ped.pedidoDest.destinoId+(ped.pedidoDest.contaNome ? "|"+ped.pedidoDest.contaNome : ped.pedidoDest.contaId ? "|"+ped.pedidoDest.contaId : "") : "";
+  var ped = p.pedido || null, destInicial = ped && ped.pedidoDest ? (ped.pedidoDest.leaf || ped.pedidoDest.destinoId+(ped.pedidoDest.contaNome ? "|"+ped.pedidoDest.contaNome : ped.pedidoDest.contaId ? "|"+ped.pedidoDest.contaId : "")) : "";
   var smo = useState(ped ? "recebido" : "pedido"), modo = smo[0], setModo = smo[1], pedidoModo = modo==="pedido";
   var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:destInicial, casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
   var sl = useState({itens:null, erro:false}), lista = sl[0], setLista = sl[1], sq = useState(""), q = sq[0], setQ = sq[1];
@@ -427,12 +433,16 @@ function LancarPix(p){
         termos.length>0 && listaAberta && e("div",{role:"listbox", className:"absolute left-0 top-[24px] z-30 max-h-[260px] w-[32rem] max-w-[80vw] overflow-y-auto rounded-md border-2 border-white/60 text-white shadow-lg", style:{background:FUNDO}},
           achadas.length ? [e("div",{key:"cab", className:"sticky top-0 z-10 grid h-5 w-full grid-cols-[3fr_2fr] border-b border-white/40 text-center text-[11px] text-white", style:{background:AZ}}, e("span",{className:"flex items-center justify-center border-r border-white/40"}, "Revendedora"), e("span",{className:"flex items-center justify-center"}, "Representante"))].concat(achadas.map(function(x){ return e("button",{type:"button", key:x.cod, role:"option", onClick:function(){ escolher(x); }, style:{minHeight:"22px"}, className:"grid w-full grid-cols-[3fr_2fr] items-stretch border-b border-white/40 text-center text-[11px] leading-tight last:border-b-0 hover:bg-[var(--bloco-titulo)] active:brightness-125"}, e("span",{className:"flex items-center justify-center border-r border-white/40 px-2 py-1"}, x.nome), e("span",{className:"flex items-center justify-center px-2 py-1 text-white/60"}, x.representante==="Sorelly" ? "Sorelly" : String(x.representante || "").split(/\s+/).filter(function(w){ return w!=="-"; }).slice(0, 2).join(" "))); }))   // padrao-ok: letra de 11 px da janela
             : e("div",{className:"flex items-center justify-start px-1.5 text-[11px]", style:{height:"17px"}}, "Nenhuma revendedora ativa com esse nome")));   // padrao-ok: letra de 11 px da janela
+  // fornecedor, representante e funcionária da aba Chaves Pix: se existe um destino do Direcionar com o mesmo nome, vai o id dele (o servidor trata como antes); se não, vai só o nome (recebimento da empresa)
+  var destinoDeFolha = function(fol0){ var pw = function(x){ return semAc(x).split(/[^a-z0-9]+/).filter(function(w){ return w.length>2; }); }, a = pw(fol0.row.c2); return cpd.find(function(d){ if(d.ativo===false || ["FORNECEDOR", "PRESTADOR", "REPRESENTANTE"].indexOf(d.tipo)<0) return false; var b2 = pw(d.nome); return a.length>0 && b2.length>0 && (a.every(function(w){ return b2.indexOf(w)>=0; }) || b2.every(function(w){ return a.indexOf(w)>=0; })); }) || null; };
+  var alvoDe = function(){ var fol0 = folhas[f.destId]; if(fol0){ var dd = destinoDeFolha(fol0); return {destinoId:dd ? dd.id : "", contaNome:"", contaId:"", semDestino:!dd, destinoNome:fol0.label, leaf:f.destId}; } return {destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", semDestino:false, destinoNome:"", leaf:f.destId}; };
   var enviar = function(){
     if(salvando) return;
+    var alvo = alvoDe();
     if(pedidoModo){
       if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
       setSalvando(true); setMsg("");
-      chamar("POST", "/contas-receber/antecipados", {acao:"lancar", tipo:"pedido", cod:f.rev ? f.rev.cod : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : ""})
+      chamar("POST", "/contas-receber/antecipados", {acao:"lancar", tipo:"pedido", cod:f.rev ? f.rev.cod : "", destinoId:alvo.destinoId, contaNome:alvo.contaNome, contaId:alvo.contaId, semDestino:alvo.semDestino, destinoNome:alvo.destinoNome, leaf:alvo.leaf, casa:ehFam(f.destId) ? f.casa : ""})
         .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev ? f.rev.nome : ""); p.fechar(); })
         .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o pedido."); });
       return;
@@ -443,7 +453,7 @@ function LancarPix(p){
     if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
     setSalvando(true); setMsg("");
     var pre = f.arq ? lerAnexo(f.arq).then(function(a){ return enviarAnexo("contasreceber", a); }) : Promise.resolve(null);
-    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:ped ? "completar" : "lancar", id:ped ? ped.id : "", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
+    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:ped ? "completar" : "lancar", id:ped ? ped.id : "", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:alvo.destinoId, contaNome:alvo.contaNome, contaId:alvo.contaId, semDestino:alvo.semDestino, destinoNome:alvo.destinoNome, leaf:alvo.leaf, casa:ehFam(f.destId) ? f.casa : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
       .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev.nome); p.fechar(); })
       .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o Pix."); });
   };
@@ -452,10 +462,17 @@ function LancarPix(p){
   // o texto "Escrever na folha" (rótulo da conta no Direcionar) e a mensagem pronta com a chave Pix (a mesma do botão Copiar das Chaves Pix). Tudo lido do cadastro na hora; nada é digitado de novo.
   var idDest = String(f.destId || "").split("|")[0], nomeConta = String(f.destId || "").split("|")[1] || "";
   var destSel = f.destId ? cpd.find(function(d){ return d.id===idDest; }) : null, orient = null;
-  if(destSel && destSel.tipo!=="FAMILIA"){
+  var fol = f.destId ? folhas[f.destId] : null;
+  if(fol){   // conta que veio da aba Chaves Pix: a chave é a da linha dela
+    var rr = fol.row, dadosR = {nome:rr.c2, banco:rr.banco, favorecido:rr.fav, tipo:rr.tipo};
+    orient = {folha:fol.label, chave:rr.chave || "", dados:dadosR, msg:rr.chave ? (mensagemPixDaChave(cx.state, rr.chave) || mensagemPixPessoa(Object.assign({}, dadosR, {chave:rr.chave}))) : ""};
+    orient.texto = orient.msg ? "Escrever na folha: *"+orient.folha+"*"+"\n\n"+orient.msg : "";
+  } else if(destSel && destSel.tipo!=="FAMILIA"){
     var ks = chavesDoDestino(cx.state, destSel), pal = function(t){ return semAc(t).split(/[^a-z0-9]+/).filter(Boolean); }, wn = pal(nomeConta);
     // conta de CNPJ: só vale a chave da PRÓPRIA conta escolhida (todas as palavras do nome dela no rótulo da chave); nunca a chave de outra conta
-    var k1 = (destSel.cnpjId && wn.length) ? (ks.filter(function(k){ var wf = pal(k.folha); return wn.every(function(w){ return wf.indexOf(w)>=0; }); })[0] || null) : (destSel.cnpjId && ks.length>1) ? null : ks[0];
+    // conta de CNPJ: a chave é a da linha dessa conta na aba Chaves Pix (achada pelo CÓDIGO da conta, nunca por parte do nome)
+    var ctaSel = destSel.cnpjId && nomeConta ? (((cx.state.saldosContas || {}).contas) || []).find(function(c){ return c.bloco===destSel.cnpjId && c.nome===nomeConta; }) : null, rowC = ctaSel ? chvConta[ctaSel.id] : null;
+    var k1 = (rowC && rowC.chave) ? {folha:((contaDaCaixa(cx.state.px, ctaSel.id) || {}).label) || ("PIX - "+String(ctaSel.nome).toUpperCase()), banco:rowC.c2, fav:rowC.fav, chave:rowC.chave, tipo:rowC.tipo} : (destSel.cnpjId && wn.length) ? (ks.filter(function(k){ var wf = pal(k.folha); return wn.every(function(w){ return wf.indexOf(w)>=0; }); })[0] || null) : (destSel.cnpjId && ks.length>1) ? null : ks[0];
     var dadosK = k1 ? {nome:destSel.nome, banco:k1.banco, favorecido:k1.fav, tipo:k1.tipo} : null;
     orient = {folha:(k1 && k1.folha) || nomeLeaf(destSel), chave:k1 ? k1.chave : "", dados:dadosK, msg:k1 ? (mensagemPixDaChave(cx.state, k1.chave) || mensagemPixPessoa(Object.assign({}, dadosK, {chave:k1.chave}))) : ""};
     orient.texto = orient.msg ? "Escrever na folha: *"+orient.folha+"*\n\n"+orient.msg : "";   // o texto da folha vai no INÍCIO da mensagem que o Lucas copia (Marcus, 23/11/2026)
@@ -491,7 +508,7 @@ function LancarPix(p){
     Lr("Situação", pedidoModo ? "Aguardando Pix" : f.arq ? "Com comprovante" : "Pendente: falta o comprovante"),
     e("div",{className:"pt-2 text-center text-[11px] font-semibold"}, "Mensagem para pagamento"),   // padrao-ok: título de 11 px
     !orient && e("p",{className:"pt-1 text-center text-[11px]"}, "Escolha a conta que recebeu para ver a mensagem com a chave Pix."),   // padrao-ok: aviso de 11 px
-    orient && (orient.texto ? e("textarea",{readOnly:true, rows:12, value:orient.texto, "aria-label":"Mensagem para pagamento", onFocus:function(ev){ ev.target.select(); }, className:CAMPO+" mt-1 resize-none py-1 text-left leading-tight"}) : e("p",{className:"pt-1 text-center text-[11px] font-semibold text-warning"}, (destSel.cnpjId && ks.length>1 && !wn.length) ? "Escolha a conta do banco em Conta que recebeu (Sicredi, Itaú...)." : "Este destino ainda não tem chave Pix cadastrada.")),   // padrao-ok: letra de 11 px da janela
+    orient && (orient.texto ? e("textarea",{readOnly:true, rows:12, value:orient.texto, "aria-label":"Mensagem para pagamento", onFocus:function(ev){ ev.target.select(); }, className:CAMPO+" mt-1 resize-none py-1 text-left leading-tight"}) : e("p",{className:"pt-1 text-center text-[11px] font-semibold text-warning"}, (destSel && destSel.cnpjId && ks && ks.length>1 && !wn.length) ? "Escolha a conta do banco em Conta que recebeu (Sicredi, Itaú...)." : "Este destino ainda não tem chave Pix cadastrada.")),   // padrao-ok: letra de 11 px da janela
     orient && orient.texto && e("div",{className:"flex justify-center pt-1"}, e("button",{type:"button", onClick:copiarMsg, style:ALTO, className:BTN+" min-w-24"}, copiado===1 ? "Copiado ✓" : copiado===2 ? "Não copiou" : "Copiar mensagem")));
   return createPortal(e("div",{role:"dialog", "aria-modal":"true", "aria-label":"Lançar recebimento", onMouseDown:function(ev){ if(ev.target===ev.currentTarget && !salvando) p.fechar(); }, className:"fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"},
     e("div",{className:"flex max-h-[92vh] w-full max-w-5xl flex-col rounded-lg border-2 pb-1.5 text-center text-white shadow-xl", style:{background:FUNDO, borderColor:AZ}},
