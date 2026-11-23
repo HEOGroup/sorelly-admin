@@ -11,7 +11,7 @@ import { podeModulo } from "@/server/permissoes";
 import { donoDaChave, ehModuloItens, gravarItens, versaoItens, respostaItens } from "@/server/estado-itens";
 import { gravarModulo } from "@/server/estado-modulo";
 import { protegerSaldos } from "@/server/trava-saldos";
-import { respostaItensRep } from "@/server/rep-filtro";
+import { respostaComisRep, respostaItensRep } from "@/server/rep-filtro";
 import { gravarItensRep } from "@/server/rep-gravar";
 import { gravarPagRep, respostaPagRep } from "@/server/rep-pag";
 import { entregarAvisos } from "@/server/compras-chat";
@@ -40,7 +40,7 @@ export const GET = rota(async (req, { eu, params, url }) => {
   if (q !== null && !/^-?\d+$/.test(q)) throw invalido("desde");
   const desde = q === null ? undefined : Number(q);
   if (!podeModulo(eu, modulo)) return nega();
-  if (eu.repCod) return json(modulo === "pag" ? await respostaPagRep(desde, eu.repCod) : await respostaItensRep(modulo, desde, eu.repCod));   // conta de representante: só o que é dela
+  if (eu.repCod) return json(modulo === "comis" ? await respostaComisRep(desde, eu.repCod) : modulo === "pag" ? await respostaPagRep(desde, eu.repCod) : await respostaItensRep(modulo, desde, eu.repCod));   // conta de representante: só o que é dela
   if (ehModuloItens(modulo)) return getItens(modulo, desde);
   const v = await consulta("select versao from sorelly.estado_modulo where modulo = $1", [modulo]);
   const versao = v.rows[0] ? v.rows[0].versao : 0;

@@ -178,6 +178,17 @@ function itensComissao(c, s, agora){
         var pixRep = l.p.forma==="pix_representante", nfp = c._nfPrim && c._nfPrim[r.id];
         if(nfp && !pixRep && l.base>0) poe({id:r.id+"#"+l.idx+"n", chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:"1º acerto · Rep. Kit Novo", forma:l.p.forma, conta:l.conta, valorPago:0, valorOrig:l.valorOrig, loja:l.loja, div:l.div,
           comissao:r2(l.base*c.nf.pctKitNovo/100), fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:!conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "", libera:l.libera, pixRep:false, rep:nfp.repKitNovo, repAcerto:r.rep, extra:l.extra, nfKitNovo:true});
+        // PIX REPRESENTANTE (decisão do Marcus de 10/11/2026, aplicada em 23/11/2026): o acerto paga comissão como qualquer acerto, para quem FEZ o acerto;
+        // o Pix que foi direto para a representante é só um pagamento já feito a ela (abate do que a empresa deve). Por isso a linha vira DOIS itens:
+        // a comissão (item normal, de quem fez o acerto) e o pagamento direto (pixRep, sem comissão, de quem recebeu o Pix).
+        if(pixRep){
+          poe({id:r.id+"#"+l.idx, chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:st, forma:l.p.forma, conta:"Pix representante", valorPago:l.valor, valorOrig:l.valorOrig, loja:false, div:l.div, comissao:l.comissao,
+            fin:l.fin ? Object.assign({conta:"Pix para "+(l.fin.rep || "a representante")}, l.fin) : null, conferido:conferido, promOk:a.promOk,
+            motivo:!l.fin ? "Aguardando o OK do Pix representante" : !conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "",
+            libera:l.libera, pixRep:false, pixLinha:true, rep:r.rep, repAcerto:r.rep, extra:l.extra});
+          poe({id:r.id+"#"+l.idx+"x", chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:st, forma:l.p.forma, conta:l.conta, valorPago:l.valor, valorOrig:l.valorOrig, loja:false, div:l.div, comissao:0,
+            fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:"", libera:l.libera, pixRep:true, rep:(l.fin && l.fin.rep) || null, repAcerto:r.rep, extra:l.extra});
+          return; }
         poe({id:r.id+"#"+l.idx, chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:st, forma:l.p.forma, conta:l.conta, valorPago:l.valor, valorOrig:l.valorOrig, loja:l.loja, div:l.div, comissao:l.comissao,
           fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:!conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "",
           libera:l.libera, pixRep:pixRep, rep:pixRep ? (l.fin && l.fin.rep) || null : r.rep, repAcerto:r.rep, extra:l.extra}); });

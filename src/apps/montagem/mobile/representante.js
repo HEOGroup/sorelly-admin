@@ -43,6 +43,7 @@ import { use } from "@/apps/montagem/state/context";
 import { FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { apiAtiva, chamar, repCodDaConta } from "@/apps/montagem/lib/api";
+import { fotoPequena } from "@/apps/montagem/lib/comprovante";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
@@ -689,7 +690,8 @@ function AppRepresentante(p){
               var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
                 setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
                 if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
-              if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }}); };
+              if(fl.type.indexOf("image/")===0){ fotoPequena(fl, function(c){ if(c) salva(c.url); else window.alert("Não consegui abrir essa foto. Tente de novo."); }); return; }   // foto do celular: reduz e guarda (antes, acima de 400 KB ficava sem a imagem)
+              if(fl.size>400000){ window.alert("Arquivo grande demais. Envie uma foto ou um print do comprovante."); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }}); };
             // Pix: o cartão da chave traz, numa linha só, Copiar e Anexar comprovante (um de cada lado, o texto do anexo em duas linhas) (Marcus, 04/11/2026)
             var ladoAnexo = p.anexo ? e("span",{className:"flex min-h-8 flex-1 items-center justify-center text-center text-[11px] font-bold leading-tight"}, "✓ Comprovante anexado")
               : e("label",{className:"flex min-h-8 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg px-2 text-center text-[11px] font-bold leading-tight ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, e("span",null,"Anexar"), e("span",null,"comprovante"), inputAnexo());
@@ -753,7 +755,8 @@ function AppRepresentante(p){
                   e("span",{className:"min-w-0"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante *"),
                   e("span",{className:"shrink-0 font-bold"}, lancForm.anexo ? "Trocar" : "Anexar"),
                   e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante (foto ou documento)", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
-                    if(fl.size>400000){ setLancForm(Object.assign({}, lancForm, {anexo:{nome:fl.name, tipo:fl.type, dados:null, tamanho:fl.size}})); return; }
+                    if(fl.type.indexOf("image/")===0){ fotoPequena(fl, function(c){ if(c) setLancForm(Object.assign({}, lancForm, {anexo:{nome:fl.name, tipo:"image/jpeg", dados:c.url, tamanho:c.url.length}})); else window.alert("Não consegui abrir essa foto. Tente de novo."); }); return; }
+                    if(fl.size>400000){ window.alert("Arquivo grande demais. Envie uma foto ou um print do comprovante."); return; }
                     var rd = new FileReader(); rd.onload = function(){ setLancForm(function(f0){ return Object.assign({}, f0, {anexo:{nome:fl.name, tipo:fl.type, dados:rd.result, tamanho:fl.size}}); }); }; rd.readAsDataURL(fl); }})),
                 fm!=="acerto_loja" && e("button",{disabled:!pronto, onClick:function(){
                     var pid = pedeCta ? "p"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36) : null;

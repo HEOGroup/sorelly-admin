@@ -365,6 +365,24 @@ function reducer(s, a){
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
         return Object.assign({}, s, {faturamentoDiario:fdm});
       }
+      // COMISSÕES NO SERVIDOR (23/11/2026, Marcus: "isso da comissão precisa resolver"): percentuais, gasolina, km e pagamentos lançados passam a ser iguais em todos os computadores e no app da representante.
+      // Na PRIMEIRA vez que este navegador recebe o módulo, o que só existia aqui não se perde: pagamentos e km de cada data, termos, gasolina e a lista de percentuais (se o servidor ainda não tiver nenhuma) são juntados e sobem.
+      if(a.chave==="comis"){
+        var cLoc = s.comis || {}, cSrv = a.conteudo || {}, cNv = Object.assign({}, cLoc, cSrv);
+        if(!cLoc._srv && !repCodDaConta()){
+          try { if(!localStorage.getItem("sorelly_comis_antes_servidor")) localStorage.setItem("sorelly_comis_antes_servidor", JSON.stringify(cLoc)); } catch(x){}   // cópia de segurança do que havia neste navegador
+          var fL = cLoc.fech || {}, fS = cSrv.fech || {}, fM = Object.assign({}, fL, fS);
+          Object.keys(fL).forEach(function(k){ if(!fS[k]) return; var pS = fS[k].pagamentos || [], visto = {}; pS.forEach(function(p){ visto[p.ts+"|"+p.valor] = 1; });
+            fM[k] = Object.assign({}, fL[k], fS[k], {pagamentos:pS.concat((fL[k].pagamentos||[]).filter(function(p){ return !visto[p.ts+"|"+p.valor]; }))}); });
+          cNv.fech = fM;
+          cNv.termos = Object.assign({}, cLoc.termos, cSrv.termos); cNv.gasolina = Object.assign({}, cLoc.gasolina, cSrv.gasolina); cNv.kmDia = Object.assign({}, cLoc.kmDia, cSrv.kmDia);
+          if(!(cSrv.reps||[]).length && (cLoc.reps||[]).length) cNv.reps = cLoc.reps;
+          if(!cSrv.gasolinaPR && cLoc.gasolinaPR) cNv.gasolinaPR = cLoc.gasolinaPR;
+          cNv._srv = true;
+        }
+        var sCm = Object.assign({}, s, {comis:cNv});
+        return s.rpf ? Object.assign(sCm, {comis:(aplicarAppNoEstado(sCm, !!repCodDaConta()).comis) || cNv}) : sCm;   // o km que a representante enviou (km_ do rpf) continua valendo em cima do que veio
+      }
       if(a.chave==="rc") return Object.assign({}, s, {prataRev:Object.assign({}, s.prataRev, a.conteudo && a.conteudo.prataRev)});   // quem é Kit 100% Prata, vindo do servidor (12/11/2026)
       if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor

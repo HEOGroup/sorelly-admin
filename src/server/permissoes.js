@@ -46,6 +46,7 @@ export const SETORES_DO_MODULO = {
   fatdia: ["financeiro"],   // faturamento do dia anterior (automático, DevMaster): só financeiro (e Diretoria, que já abre tudo)
   // App real da representante (05/11/2026, src/server/estado-itens.js): uma linha por item, o app grava pelo servidor e a equipe pelo navegador.
   rpo: ["montagem", "kitsnovos", "cadastro", "agendamento", "encomendas", "financeiro", "producao"],   // operação: listagens e kits das representantes (sem valores de acerto)
+  comis: ["financeiro"],   // comissões das representantes (23/11/2026): percentuais, gasolina, km e pagamentos lançados; Financeiro e Diretoria gravam. A conta de representante lê só a parte dela (rep-filtro.js)
   rpf: ["financeiro", "agendamento"],   // financeiro: acertos, entregas de kit novo e reposições registrados no app (Consolidado, Comissões, Inadimplência)
 };
 

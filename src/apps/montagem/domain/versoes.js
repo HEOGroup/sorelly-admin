@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.145", data:"2026-11-23", titulo:"Comissões: Pix representante conta comissão e tudo fica no servidor", itens:[
+  {tipo:"correção", area:"Financeiro › Comissões", txt:"O acerto pago com Pix direto para a representante paga comissão como qualquer acerto; o Pix entra só como pagamento já feito a ela."},
+  {tipo:"novo", area:"Financeiro › Comissões", txt:"Percentuais, gasolina, km e pagamentos das comissões ficam no servidor: todos os computadores e o app da representante veem igual."},
+  {tipo:"correção", area:"App da representante", txt:"O comprovante tirado pelo celular é reduzido e guardado (antes, foto grande ficava sem a imagem)."}]},
  {v:"0.21.144", data:"2026-11-23", titulo:"Direcionar: cada forma de pagamento com o seu valor", itens:[
   {tipo:"melhoria", area:"Financeiro → Direcionar Pix", txt:"Nos Direcionados, quando o pagamento tem mais de uma forma, a coluna Forma mostra cada uma com o seu valor (ex.: Link de pagamento R$ 188,00 + Pix R$ 112,90). Com uma forma só, continua só o nome."}
  ]},

@@ -3,6 +3,15 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Comissões: Pix representante conta comissão; comissões no servidor)
+- **Marcus: "isso da comissão precisa resolver".** Fluxo que ele descreveu: o Pix cai no Consolidado → cai nas Comissões → com tudo alinhado, o Financeiro dá o check e confirma **para gerar as contas a pagar**. A parte "gerar conta a pagar" ainda NÃO foi feita.
+- **Pix representante (decisão de 10/11 aplicada):** o acerto paga comissão como qualquer acerto, para quem FEZ o acerto; o Pix que foi direto para a representante é só um pagamento já feito a ela. No código a linha virou dois itens em `itensComissao` (`domain/comissoes.js`): a comissão (item normal, fica "Aguardando o OK do Pix representante" até o Financeiro confirmar) e o pagamento direto (`pixRep`, sem comissão). Teste: `node scripts/testar-pix-representante.mjs` (8 verificações).
+- **Comissões no servidor:** `s.comis` (percentuais, datas, gasolina, km e pagamentos lançados) virou o módulo `comis` do servidor (antes ficava só no navegador de quem lançou). Financeiro e Diretoria gravam; a conta de representante lê só a parte dela (`respostaComisRep`). Na primeira vez que cada navegador recebe o módulo, o que só existia nele é juntado (pagamentos, km, termos, gasolina, lista de percentuais se o servidor não tiver) e fica uma cópia em `sorelly_comis_antes_servidor`. Teste: `node scripts/testar-comis-servidor.mjs` (7 verificações).
+- **Percentual de cada representante:** no servidor nasceu tudo em 8% (lista vazia). No cadastro do app da loja: Dayanne 10, Lysie 10, Nayale 10, Vanessa 10, Letícia Moroz 9, as demais 8. O Marcus vai mandar a lista atualizada; até lá o Admin calcula 8% para todas.
+- **Comprovante no app:** foto do celular agora é reduzida (900 px) e guardada; antes, acima de 400 KB, ficava sem a imagem (`lib/comprovante.js`).
+- **Telas do Admin em conversas separadas (grupo APP REPRESENTANTE):** Consolidado dos representantes, Comissões dos representantes, Inadimplência e Placar. Só visual; as regras ficam nesta conversa.
+
+
 ## 23/11/2026 (App da representante dentro do Admin: só o app, gravando de verdade)
 - **Rumo (Marcus):** o app da loja não está em vigor de verdade (fica rodando, elas usam para cobrar). A representante passa a abrir o **Admin no celular** e vê **só o app** (o protótipo de `mobile/representante.js`, que deixa de ser molde para o Leonardo). Sempre com internet. Feito por partes: 1 Revendedoras · 2 Listagens · 3 Acerto · 4 Kits novos.
 - **Só o app:** conta com `rep_cod` não tem menu, barras nem Financeiro/Listagens do Admin; a tela inteira é o app e o "Sair da conta" (`App.js`). `ABAS_PERFIL.representante` ficou vazio. Ele libera outras telas depois.

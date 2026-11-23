@@ -7,7 +7,7 @@
 import { consulta } from "./db.js";
 import { garantirTabela, versaoItens } from "./estado-itens.js";
 
-export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc", "pag"];   // pag = pedidos de conta (Direcionar Pix): só os dos kits dela (src/server/rep-pag.js)
+export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc", "pag", "comis"];   // pag = pedidos de conta (Direcionar Pix): só os dos kits dela (src/server/rep-pag.js)
 export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante"];   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
 export const rotaPermitidaRep = (caminho) => ROTAS_REP.some((p) => caminho === p || caminho.startsWith(p + "/"));
 
@@ -48,4 +48,18 @@ export async function respostaItensRep(modulo, desde, repCod) {
   r.rows.forEach((l) => { conteudo[l.chave] = l.valor; versao = Math.max(versao, Number(l.seq)); });
   if (parcial && !r.rows.length) return { modulo, versao: Math.max(v, desde), igual: true };
   return { modulo, versao: Math.max(versao, v), conteudo, parcial };
+}
+
+// COMISSÕES para a conta de representante (23/11/2026): só a configuração geral (percentual padrão, datas, corte, gasolina, valores fixos) e o que é DELA
+// (o percentual dela, o km e os pagamentos lançados para ela). Nunca o percentual nem o pagamento de outra representante.
+const GERAIS_COMIS = ["pctPadrao", "ciclos", "corteHora", "corteDias", "kitNovo", "kitNovoExpo", "reposicao", "exigirProm", "kmPorLitro", "fixoV", "v2", "gasolinaPR", "gasolina", "termos"];
+export async function respostaComisRep(desde, repCod) {
+  const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'comis'");
+  const l = r.rows[0], versao = l ? Number(l.versao) : 0;
+  if (desde !== undefined && versao > 0 && versao === desde) return { modulo: "comis", versao, igual: true };
+  const c = (l && l.conteudo) || {}, nome = await nomeDaRep(String(repCod)), conteudo = {};
+  GERAIS_COMIS.forEach((k) => { if (c[k] !== undefined) conteudo[k] = c[k]; });
+  conteudo.reps = (Array.isArray(c.reps) ? c.reps : []).filter((x) => x && x.nome === nome);
+  conteudo.fech = {}; Object.keys(c.fech || {}).forEach((k) => { if (nome && k.endsWith("|" + nome)) conteudo.fech[k] = c.fech[k]; });
+  return { modulo: "comis", versao, conteudo };
 }

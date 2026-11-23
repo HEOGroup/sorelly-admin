@@ -6,6 +6,7 @@
 // Fuso: o corte das 13h do dia anterior é calculado em Brasília (UTC−3) aqui, não na hora local do servidor.
 import { gravarItens, lerChaves, lerPrefixos } from "../estado-itens.js";
 import { recusa, ehData, numero } from "../servico.js";
+import { lerModulo } from "./base.js";
 import { montarAcertos, vivo } from "../../apps/montagem/domain/app-rep.js";
 import { COMIS0, comisEfetiva, datasDoGrupo, datasDoMes, grupoDaRep, itensComissao, janelaDe, pctDaRep, remessaPorData } from "../../apps/montagem/domain/comissoes.js";
 
@@ -20,7 +21,8 @@ const ehInterno = (r) => r.origem === "interno";
 // estado mínimo para a régua: acertos do app + configuração espelhada + km da representante
 async function carregar(rep) {
   const [rpf] = await Promise.all([lerPrefixos("rpf", ["a_", "ax_", "ar_", "km_", "gv_", "cf_"])]);
-  const comis = Object.assign({}, COMIS0, vivo(rpf.cf_comis) ? rpf.cf_comis : {});
+  const modComis = await lerModulo("comis").catch(() => ({}));   // comissões no servidor (23/11/2026); o espelho antigo cf_comis fica só como reserva
+  const comis = Object.assign({}, COMIS0, vivo(rpf.cf_comis) ? rpf.cf_comis : {}, modComis && Object.keys(modComis).length ? modComis : {});
   const fech = Object.assign({}, comis.fech || {});
   Object.keys(rpf).forEach((k) => {
     if (!k.startsWith("km_") || !vivo(rpf[k])) return;
