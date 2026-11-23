@@ -40,7 +40,9 @@ test.describe("Fotos de referência do padrão visual", function(){
       await page.waitForTimeout(3000);   // os números correm de zero até o valor (lib/contagem-tela.js); espera terminar
       // avisos do SorellyChat (cartões no canto) cobrem a tela: fecha todos antes da foto
       for(var i = 0; i < 5 && await page.getByText("Fechar todas").count(); i++){ await page.getByText("Fechar todas").first().click(); await page.waitForTimeout(300); }
-      await expect(page).toHaveScreenshot(t[0] + ".png", { fullPage: true });
+      // Só a área da tela (sem menu lateral nem barra do alto, que mudam com os setores) e sem o bloco "Pessoas da Sorelly" (números vêm do código e mudam com o RH).
+      var pessoas = page.getByText("Pessoas da Sorelly").locator("xpath=ancestor::*[2]");
+      await expect(page.locator("main").first()).toHaveScreenshot(t[0] + ".png", { mask: [pessoas] });
     });
   });
 });
