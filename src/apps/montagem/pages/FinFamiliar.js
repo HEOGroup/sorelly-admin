@@ -255,6 +255,8 @@ var ap = useState(null), altPix = ap[0], setAltPix = ap[1];
   L("meta", "Meta", function(d){ return d.casa ? null : num(temPix(d), d.meta); }, {g:"px", sub:1});
   L("pix", "Recebido", function(d){ return num(temPix(d), d.pix); }, {g:"px", sub:1, det:detPix});
   L("pxF", "Falta", function(d){ return temPix(d) && d.meta>0 ? r2(Math.max(0, d.meta-d.pix)) : null; }, {g:"px", sub:1});
+  // SALDO DA CASA (Marcus, 23/11/2026): só as casas têm Pix marcado (hoje a Alphaville); mostra o Pix que entrou para a casa menos o que já foi pago das contas dela no período
+  L("pxS", "Saldo da casa", function(d){ return d.casa && d.pix>0.005 ? r2(d.pix-d.t.contas.pago) : null; }, {g:"px", sub:1});
   L("direto", "Conta pessoal", function(d){ return num(temPix(d), d.direto); }, {g:"px", sub:1});
   L("prestPix", "Prestadores de Serviços", function(d){ return num(temPix(d), d.prestMes); }, {g:"px", sub:1, det:detPrest(prestLista)});
   L("pcMeta", "% da meta", function(d){ return temPix(d) && d.meta>0 ? Math.round(d.pix/d.meta*100) : null; }, {g:"px", sub:1, pc:1});

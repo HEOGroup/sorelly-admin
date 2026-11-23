@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.121", data:"2026-11-23", titulo:"Home da família: saldo da casa", itens:[
+  {tipo:"novo", area:"Financeiro → Família → Home da família", txt:"Nova linha Saldo da casa no bloco Pix revendedoras, nas colunas das casas que recebem Pix (hoje a Alphaville): Pix que entrou para a casa menos o que já foi pago das contas dela no período."}]},
  {v:"0.21.120", data:"2026-11-23", titulo:"Negociações: lista de fornecedores, cruzamento com a DevMaster e boletos da Point", itens:[
   {tipo:"melhoria", area:"Pagamentos a fornecedores → Negociações", txt:"Lista em aberto com Fornecedor primeiro (negrito) e cor por tipo, ordem Pontual, Ellos, Point, Point · Compra de NF, Mega Sul; 4 faixas de 3 colunas (Mês sem NF, Mês com NF, Soma do mês, Total geral a pagar); linhas compactas e o fornecedor escolhido no mesmo tamanho da lista."},
   {tipo:"novo", area:"Pagamentos a fornecedores → Negociações", txt:"Boletos e cheques que a DevMaster já baixou contam como pagos; o que só a DevMaster tem entra como Com NF; o Pix já lançado no Admin conta como pago no mês; cheque vencido aberto na DevMaster continua em aberto. Só leitura."},
