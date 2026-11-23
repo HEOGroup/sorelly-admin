@@ -1197,6 +1197,12 @@ function reducer(s, a){
       return com(s, {internos:(s.internos||[]).filter(function(x){ return !(x.id===rc.internoId && x.status==="agendado"); }),
         revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {agend:null, internoId:null, situacao:"contato"}); })});
     }
+    // Crédito da cliente (Stefany, 23/11/2026): quando a revendedora paga a mais, o que sobra fica guardado na ficha dela; no acerto seguinte a funcionária usa como pagamento "Crédito da cliente". valor > 0 guarda, valor < 0 usa; nunca fica negativo.
+    case "REVINT_CREDITO": {
+      var rcr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rcr || !Number(a.valor)) return s;
+      var credN = Math.max(0, Math.round(((rcr.credito||0)+Number(a.valor))*100)/100);
+      return com(s, {revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {credito:credN, creditoHist:(r.creditoHist||[]).concat([{em:Date.now(), valor:Number(a.valor), motivo:a.motivo||"", por:a.por||"", internoId:a.internoId||""}]).slice(-30)}); })});
+    }
     // histórico de vendas da revendedora: sem limite, sempre do mais novo para o mais antigo
     case "REVINT_VENDA_ADD": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ if(r.id!==a.id) return r;
       var hs = r.hist.filter(function(h){ return h.data || h.venda!=null; }).concat([{data:a.data, venda:a.venda, acerto:a.acerto==null ? null : a.acerto}]).sort(function(x,y){ return (y.data||"").localeCompare(x.data||""); });

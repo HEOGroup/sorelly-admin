@@ -23,7 +23,7 @@ var COR_FIN = {"Conferido":"#22C55E", "Em conferência":"#FBBF24", "Sem lançame
 // só a COR da letra muda: mesma fonte, mesmo tamanho, sem negrito e sem caixa em volta (Marcus, 17/11/2026)
 var selo = function(txt, cor){ return e("span",{className:"whitespace-nowrap", style:{color:cor||"#FFFFFF"}}, txt); };
 // formas de pagamento: uma coluna para cada, com o valor em R$ (igual ao Consolidado das representantes); dinheiro primeiro
-var FORMAS = [["dinheiro","Dinheiro"], ["pix","Pix"], ["link","Link"], ["credito","Crédito"], ["debito","Débito"], ["acerto_loja","Acerto com loja"]];
+var FORMAS = [["dinheiro","Dinheiro"], ["pix","Pix"], ["link","Link"], ["credito","Crédito"], ["debito","Débito"], ["credito_cliente","Crédito da cliente"], ["acerto_loja","Acerto com loja"]];
 var CONTINUA = {sim:"Sim", nao_regras:"Não · regras", nao_quer:"Não · não quis", outro_dia:"Outro dia"};
 
 function AbaConsolidadoInterno(){

@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.124", data:"2026-11-23", titulo:"Atendimento Sorelly: crédito da cliente (usar, guardar a sobra e coluna no Consolidado)", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Pagamentos", txt:"Nova forma de pagamento Crédito da cliente: conta como pago, não vai ao Direcionar (aparece como Isento no Financeiro) e não muda comissão nem brinde. Pedido da Sthefany (cliente com R$ 5,00 de crédito)."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Pagamentos", txt:"Quando a cliente paga a mais, aparece Sobrou R$ X com o botão Guardar como crédito. No acerto seguinte aparece Crédito da cliente: R$ X com o botão Usar. Cancelar ou editar o pagamento de crédito devolve o valor à ficha."},
+  {tipo:"melhoria", area:"Atendimento interno › Consolidado Sorelly", txt:"Nova coluna Crédito da cliente nas formas de pagamento."}
+ ]},
  {v:"0.21.123", data:"2026-11-23", titulo:"Produção: funcionárias não veem a produção externa", itens:[
   {tipo:"regra", area:"Produção › Acesso", txt:"As abas Produção externa, Pagamento por produção e Cadastro só aparecem para quem tem a autorização nova producao_externa (padrão Marcus, Nickolas e Lucas) ou producao_ver (só consulta). As funcionárias da produção veem só a aba Produção, sem as linhas da produção externa (a grade e a janela de lançamento já escondiam), sem a coluna A receber e sem Produção por tipo."}
  ]},

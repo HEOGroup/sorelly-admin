@@ -243,7 +243,7 @@ function AtendimentoInterno(){
 
   // 16/11/2026 (Marcus: "deixa o link de pagamento somente como Link"): nesta tela a forma "link" aparece só como Link
   var rotForma = function(k, rot){ return k==="link" ? "Link" : rot; };
-  var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
+  var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; }).concat([{k:"credito_cliente", label:"Crédito da cliente", parcelas:false, descricoes:[]}]);   // sem representante no atendimento interno; "Crédito da cliente" = saldo a favor dela (Stefany, 23/11/2026): conta como pago, não vai ao financeiro
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
   var modalidade = sel ? modalidadeDe(s, sel.nome) : "padrao", ehPrata = modalidade==="prata";
   var especialRev = sel ? comissaoEspecialDe(s, sel.nome) : null;   // comissão especial da revendedora (ficha em Revendedoras internas; Edna, 09/11/2026): muda só a % de comissão, brindes iguais
@@ -502,9 +502,12 @@ function AtendimentoInterno(){
   // ── 2 · Vendas e pagamentos ──
   var fl = formaDe(lancForm.forma), pm = versao.gerais.parcelaMinimaCredito;
   var lancOk = lancForm.forma && lancForm.valor>0;   // só a forma e o valor exato; a conta quem define é o financeiro (Visão geral)
-  var addPag = function(){ if(!lancOk || jaFeito) return; up({pagamentos:form.pagamentos.concat([lancForm])}); setLancForm(Object.assign({}, LANC_VAZIO, {forma:lancForm.forma})); };
-  var editarPag = function(i){ if(jaFeito) return; var p = form.pagamentos[i]; setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
-  var cancelarPag = function(i){ if(jaFeito) return; up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  // crédito da cliente: guardado na ficha dela (revInternas.credito); usar tira do saldo, cancelar devolve
+  var revCred = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId; }) : null, credDisp = (revCred && revCred.credito) || 0;
+  var mexeCredito = function(valor, motivo){ if(revCred) d({type:"REVINT_CREDITO", id:revCred.id, valor:valor, motivo:motivo, por:nomeDe(s.usuario), internoId:sel.id}); };
+  var addPag = function(){ if(!lancOk || jaFeito) return; if(lancForm.forma==="credito_cliente") mexeCredito(-lancForm.valor, "Usado no acerto de "+hoje.split("-").reverse().join("/")); up({pagamentos:form.pagamentos.concat([lancForm])}); setLancForm(Object.assign({}, LANC_VAZIO, {forma:lancForm.forma})); };
+  var editarPag = function(i){ if(jaFeito) return; var p = form.pagamentos[i]; if(p.forma==="credito_cliente") mexeCredito(p.valor, "Devolvido (pagamento editado)"); setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  var cancelarPag = function(i){ if(jaFeito) return; var pc = form.pagamentos[i]; if(pc && pc.forma==="credito_cliente") mexeCredito(pc.valor, "Devolvido (pagamento cancelado)"); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
   var rot = function(t){ return e("span",{className:"text-[13px] font-semibold text-muted-foreground"}, t); };
   var LINHA_PAG = "grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_5.5rem] items-center gap-2";   // forma e conta têm a mesma largura (as linhas se alinham)
   var campoLado = function(nome, campo){ return e("label",{className:"flex min-w-0 items-center gap-2"}, e("span",{className:"w-12 shrink-0 text-[13px] font-semibold text-muted-foreground"}, nome), e("span",{className:"min-w-0 flex-1"}, campo)); };
@@ -561,6 +564,7 @@ function AtendimentoInterno(){
   var lancFin = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }) || null;
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
   var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
+    if(p.forma==="credito_cliente") return Object.assign(base, {isento:true, enviada:true, partes:[{descricao:"Crédito da cliente", valor:p.valor, comprovante:null, ok:true}]});   // saldo a favor: não é dinheiro novo, não passa pelo Direcionar
     if(p.pixFfId) return Object.assign(base, {pixFfId:p.pixFfId, partes:[{descricao:p.descricao || "PIX DIRETO", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Pix já pago antes do acerto (Financeiro familiar): não volta ao Direcionar"});   // 19/11/2026: já está em ff.pix com o repasse; o acerto só CONSOME o Pix
     return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
   // Brinde de indicação (Marcus, 17/11/2026): o que passar do valor liberado é pago na hora, pela mesma diferença do brinde (financeiro define a conta, a funcionária anexa o comprovante)
@@ -1065,6 +1069,15 @@ function AtendimentoInterno(){
   // Marcus, 16/11/2026: a etapa Pagamentos é UMA coluna: blocos de totais no topo, a escolha da forma em uma barra e depois tudo em linhas indo para baixo (pode haver muitos pagamentos)
   var cartaoPg = function(k, el){ return e("div",{key:k, className:"flex min-w-0 overflow-hidden rounded-lg border-2 border-primary/50 [&>*]:flex-1"}, el); };
   // 16/11/2026 (Marcus: "tem que aparecer que é botão"): cada forma é um botão com borda; o escolhido fica dourado cheio
+  // 23/11/2026 (Stefany): crédito disponível da cliente (para usar) e o que sobrou do pagamento (para guardar)
+  var sobraLivre = Math.max(0, Math.round(((dv.totalPagoAtual||0)-(dv.totalAPagar||0)-(sel.creditoGuardado||0))*100)/100);
+  var usarCredito = function(){ var v = Math.min(credDisp, dv.faltaAtual); if(!(v>0.009) || jaFeito) return; mexeCredito(-v, "Usado no acerto de "+hoje.split("-").reverse().join("/")); up({pagamentos:form.pagamentos.concat([{forma:"credito_cliente", valor:v, parcelas:1, data:hoje, descricao:"Crédito da cliente", anexo:null}])}); };
+  var guardarSobra = function(){ if(!revCred || !(sobraLivre>0.009) || jaFeito) return; mexeCredito(sobraLivre, "Pagou a mais no acerto de "+hoje.split("-").reverse().join("/")); d({type:"INT_ATUALIZAR", id:sel.id, patch:{creditoGuardado:(sel.creditoGuardado||0)+sobraLivre}}); };
+  var linhaCredito = !jaFeito && !!revCred && (credDisp>0.009 || sobraLivre>0.009) && e("div",{className:"flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-foreground/25 bg-primary/[0.07] px-2 py-1.5 text-[13px]"},
+    credDisp>0.009 && e("span",{className:"font-semibold"}, "Crédito da cliente: "+din(credDisp)),
+    credDisp>0.009 && dv.faltaAtual>0.009 && e(Btn,{v:"secondary", sm:true, onClick:usarCredito}, "Usar "+din(Math.min(credDisp, dv.faltaAtual))),
+    sobraLivre>0.009 && e("span",{className:"font-semibold"}, "Sobrou "+din(sobraLivre)),
+    sobraLivre>0.009 && e(Btn,{v:"secondary", sm:true, onClick:guardarSobra}, "Guardar como crédito"));
   var formasBarra = e("div",{className:"grid grid-cols-3 gap-1.5 border-t border-primary/20 p-1.5 @[40rem]:grid-cols-6"}, formas.map(function(f){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex h-8 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[13px] font-medium disabled:opacity-60 "+(on ? "border-primary bg-primary font-semibold text-primary-foreground" : "border-foreground/30 bg-card hover:bg-white/10")}, rotForma(f.k, f.label)); }));
@@ -1072,7 +1085,7 @@ function AtendimentoInterno(){
     return e("div",{key:c[0], className:"flex min-h-8 flex-wrap items-center justify-center gap-x-2 bg-card px-2"}, e("span",{className:CAP+" whitespace-nowrap"}, c[0]), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums "+c[2]}, c[1])); })));
   var est1 = e("div",{className:"flex min-w-0 flex-1 flex-col gap-2 p-2"},
     // 16/11/2026 (Marcus: "compactar, tem que ter linhas de tabela"): totais, forma, entrada, pagamentos lançados e Financeiro num bloco só, linhas de 32 px
-    cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, blocoLinks, blocoPix, tabPag, pPag), "", "p-0")));
+    cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, linhaCredito, blocoLinks, blocoPix, tabPag, pPag), "", "p-0")));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){
