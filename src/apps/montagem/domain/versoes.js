@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.118", data:"2026-11-23", titulo:"Família: Home de uma pessoa refeita (Salário, Gastos, Prestadores, Destino do dinheiro e lista do Pix) e Salário no Todas", itens:[
+  {tipo:"novo", area:"Financeiro → Família → Home da família (uma pessoa)", txt:"A tela de cada sócio tem 5 blocos: Dinheiro recebido da Sorelly (pró-labore, Pix revendedoras, contas pagas pela empresa e pela conta do Marco; o total é o Salário da pessoa), Gastos do período, Prestadores de Serviços (Pago e Falta), Destino do dinheiro (para qual conta foi cada real; abre em contas e em cada pagamento) e a lista do Pix revendedoras um a um, com meta, total e rolagem por linha inteira."},
+  {tipo:"regra", area:"Financeiro → Família → Home da família", txt:"Salário = pró-labore + Pix revendedoras recebido + contas pagas por conta da empresa (PJ) + contas pagas pela conta do Marco Antonio. Conta paga com conta pessoal NÃO soma (já é o uso do dinheiro que entrou). Na visão Todas, o grupo A pagar no mês virou Salário no mês, com o mesmo número da tela de cada pessoa."},
+  {tipo:"melhoria", area:"Financeiro → Família → Home da família", txt:"Filtro de meses com várias caixas de marcar; coluna Marco Antonio como Marco e Ana Beatriz como Ana; Pix da Casa na coluna de Alphaville; escala de azul nos blocos que abrem; linhas brancas de 45%."},
+  {tipo:"correção", area:"Financeiro → Contas a pagar da empresa", txt:"Pix revendedoras dos sócios (Marcus, Anamaria, Marco) passa a valer o Pix recebido do Financeiro familiar; Ana Beatriz idem."}
+ ]},
  {v:"0.21.117", data:"2026-11-23", titulo:"Encomendas: confirmar a taxa paga lança nas duas contas", itens:[
   {tipo:"novo", area:"Encomendas e reposições → ficha do pedido → Taxa de entrega", txt:"Botão Confirmar pagamento: depois que a revendedora anexa o comprovante da taxa no link, a equipe confere e confirma. A taxa paga entra no Contas a receber (recebimento sem acerto) e no Contas a pagar já paga ao entregador, com o mesmo comprovante. Taxa não paga não lança nada. Confirmar duas vezes não lança duas vezes."}]},
  {v:"0.21.116", data:"2026-11-23", titulo:"Passar conta da Família para a empresa", itens:[

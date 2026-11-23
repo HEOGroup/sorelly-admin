@@ -86,7 +86,7 @@ function MenuMulti(p){
     document.addEventListener("mousedown", fora); return function(){ document.removeEventListener("mousedown", fora); };
   }, [aberto]);
   var marcados = p.opcoes.filter(function(o){ return p.valor.indexOf(o[0])>=0; });
-  var rot = !marcados.length ? (p.vazio || "Nenhum") : marcados.length<=3 ? marcados.map(function(o){ return o[1]; }).join(", ") : marcados.length+" "+(p.plural || "marcados");
+  var rot = p.rotFn ? p.rotFn(marcados) : !marcados.length ? (p.vazio || "Nenhum") : marcados.length<=3 ? marcados.map(function(o){ return o[1]; }).join(", ") : marcados.length+" "+(p.plural || "marcados");
   var alterna = function(k){ p.onChange(p.valor.indexOf(k)>=0 ? p.valor.filter(function(x){ return x!==k; }) : p.valor.concat([k])); };
   return e("div",{ref:ref, className:"relative min-w-0 "+(p.cls||"")},
     p.t && e(Rotulo,{t:p.t, id:p.id}),

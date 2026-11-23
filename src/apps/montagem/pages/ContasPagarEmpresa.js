@@ -68,6 +68,21 @@ function GruposTabela(p){
 // dono de cada conta da família: Marcus, Anamaria, Marco Antonio, Ana Beatriz; o resto (casas, viagem...) fica em "Casas, viagem e outros"
 var PESSOAS = [["Marcus", /MARCUS/i, "marcus"], ["Anamaria", /ANAMARIA/i, "anamaria"], ["Marco Antonio", /MARCO ANTONIO|MARCO ANTÔNIO/i, "marco"], ["Ana Beatriz", /ANA BEATRIZ/i, "anabeatriz"]];
 var donoDe = function(i){ var t = PESSOAS.find(function(q){ return q[1].test(i.natNome); }) || PESSOAS.find(function(q){ return q[1].test(i.nome); }); return t ? t[0] : "Casas, viagem e outros"; };
+var SOCIOS_PIX = [["Marcus", "marcus"], ["Anamaria", "anamaria"], ["Marco Antonio", "marco"]];
+function trocaPixSocios(ff, lista, mes, busca, status){
+  if(!ff || !mes) return lista;
+  var out = lista;
+  SOCIOS_PIX.forEach(function(sp){
+    var ehPix = function(i){ return donoDe(i)===sp[0] && /pix revendedoras/i.test(i.natNome||""); };
+    var ant = out.filter(ehPix), tpl = ant[0] || {};
+    out = out.filter(function(i){ return !ehPix(i); });
+    if(busca && !/pix|revend|pr[oó]-?labore/i.test(busca) && !new RegExp(sp[0].split(" ")[0], "i").test(busca)) return;
+    var rec = pixDoMes(ff, sp[1], mes);
+    if(!(rec>0.004) || (status && status!=="pago")) return;
+    out = out.concat([Object.assign({}, tpl, {id:"pixrec|"+sp[1]+"|"+mes, status:"pago", filial:tpl.filial||"", natNome:tpl.natNome || ("Pró-labore "+sp[0]+" (Pix Revendedoras)"), nome:"Pix revendedoras recebido", forn:"", fornCanon:"Pix revendedoras", nota:"sem", mes:mes, atraso:0, valor:r2(rec), baixa:tpl.baixa || (mes+"-28")})]);
+  });
+  return out;
+}
 // Pix revendedoras de um sócio no mês, só em 2 grupos: contas do próprio sócio (Nubank, Caixa...) e enviado direto para terceiros (por fornecedor)
 function pixDestinos(ff, pid, mes){
   var cb = function(id){ return (ff.contasBanc||[]).find(function(c){ return c.id===id; }) || {}; }, pr = function(id){ return ((ff.prest||[]).find(function(x){ return x.id===id; })||{}).nome; };
@@ -414,10 +429,10 @@ function Empresa(p){
   var ehSocioFolha = function(i){ return (i.nat==="3.01.01.02" || i.nat==="3.01.01.11") && /^(MARCUS VINICIUS|ANAMARIA|MARCO ANTONIO|ANA BEATRIZ)/i.test(i.nome); };
   var lista = filtrar(mes, filial, busca, status, "sorelly", nota), fs = porFilial(mes, busca, status, "sorelly", nota);
   if(tira) lista = lista.filter(function(i){ return !ehSocioFolha(i); });
-  var listaFamBruta = filtrar(mes, "", busca, status, "familia").concat(tira ? filtrar(mes, "", busca, status, "sorelly").filter(ehSocioFolha) : []);
+  var listaFamBruta = trocaPixSocios(ff, filtrar(mes, "", busca, status, "familia").concat(tira ? filtrar(mes, "", busca, status, "sorelly").filter(ehSocioFolha) : []), mes, busca, status);
   var metaAna = ff && mes ? ((ff.pixMeta||{})["anabeatriz|"+mes]||0) : 0, recAna = ff && mes ? pixDoMes(ff, "anabeatriz", mes) : 0;
   var listaFam = metaAna>0 ? listaFamBruta.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; }) : listaFamBruta;   // a Ana Beatriz só troca as contas dela pela meta de Pix quando existe meta; sem meta, valem as contas do DevMaster (senão o total não bate com o relatório)
-  var anaT = metaAna>0 && (!busca || /ana|beatriz|pix|revend/i.test(busca)) ? {pago:recAna, apagar:r2(Math.max(0, metaAna-recAna)), total:metaAna, nPago:recAna>0 ? 1 : 0, nApagar:metaAna>recAna ? 1 : 0, n:1} : null;   // a Ana Beatriz só tem Pix revendedoras: vale a meta do mês
+  var anaT = metaAna>0 && recAna>0.004 && (!busca || /ana|beatriz|pix|revend/i.test(busca)) ? {pago:recAna, apagar:0, total:recAna, nPago:1, nApagar:0, n:1} : null;   // a Ana Beatriz só tem Pix revendedoras: vale a meta do mês
   var TE = totais(filtrar(mes, "", busca, status, "sorelly", nota).filter(function(i){ return !(juntar && ehSocioFolha(i)); })), TF = anaT ? somaT(totais(listaFam), anaT) : totais(listaFam), TG = somaT(TE, TF);
   var T = filial==="" && juntar ? somaT(totais(lista), TF) : totais(lista);
   var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 0)); };
@@ -450,8 +465,8 @@ function Empresa(p){
   var totMes = function(m){
     var te = totais(filtrar(m, "", "", "", "sorelly", nota).filter(function(i){ return !(juntar && ehSocioFolha(i)); }));
     if(!juntar) return te;
-    var fam = filtrar(m, "", "", "", "familia").concat(filtrar(m, "", "", "", "sorelly").filter(ehSocioFolha)), mAna = ff ? ((ff.pixMeta||{})["anabeatriz|"+m]||0) : 0;
-    if(mAna>0){ var rAna = pixDoMes(ff, "anabeatriz", m); return somaT(te, somaT(totais(fam.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; })), {pago:rAna, apagar:r2(Math.max(0, mAna-rAna)), total:mAna, nPago:rAna>0 ? 1 : 0, nApagar:mAna>rAna ? 1 : 0, n:1})); }
+    var fam = trocaPixSocios(ff, filtrar(m, "", "", "", "familia").concat(filtrar(m, "", "", "", "sorelly").filter(ehSocioFolha)), m, "", ""), mAna = ff ? ((ff.pixMeta||{})["anabeatriz|"+m]||0) : 0;
+    if(mAna>0){ var rAna = pixDoMes(ff, "anabeatriz", m); return somaT(te, somaT(totais(fam.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; })), rAna>0.004 ? {pago:rAna, apagar:0, total:rAna, nPago:1, nApagar:0, n:1} : {pago:0, apagar:0, total:0, nPago:0, nApagar:0, n:0})); }
     return somaT(te, totais(fam));
   };
   var anoMes = (mes>"" ? mes : hojeYm()).slice(0, 4), jm = ms.filter(function(m){ return m.slice(0, 4)===anoMes; }), tms = jm.map(totMes);   // o ano inteiro do mês escolhido, de janeiro a dezembro
