@@ -278,5 +278,26 @@ t("o Pix lançado fica na empresa com o nome da conta", !!novoSem && novoSem.val
 await srv.remover(fin, { id: novoSem.id });
 t("no fim não sobra nada", mod.get("contasreceber").conteudo.antecipados.length === nAntes10 - 0 && !mod.get("contasreceber").conteudo.antecipados.some((x) => x.id === idSem));
 
+console.log("\n11) pedido com valor combinado e representante que pediu (opcionais)");
+const nAntes11 = mod.get("contasreceber").conteudo.antecipados.length;
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_forn", valorCombinado: 1500.456, repPediu: "  Representante   Teste  Silva " });
+t("pedido com valor combinado e representante grava", r.ok && r.pedido === true, JSON.stringify(r));
+const idP11 = r.id, p11 = mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === idP11);
+t("o valor combinado é arredondado e o nome da representante é limpo", !!p11 && p11.valorCombinado === 1500.46 && p11.repPediu === "Representante Teste Silva", JSON.stringify(p11));
+t("o valor combinado NÃO vira valor (o pedido segue fora de acerto)", p11.valor === 0 && p11.tipo === "pedido");
+let l11 = await srv.listar(dir);
+t("a tela recebe valorCombinado, repPediu e revCod", l11.itens.some((x) => x.id === idP11 && x.valorCombinado === 1500.46 && x.repPediu === "Representante Teste Silva" && x.revCod === ""), JSON.stringify(l11.itens.filter((x) => x.id === idP11)));
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_forn", valorCombinado: -5, repPediu: "" });
+t("valor combinado negativo vira zero (pedido sem valor)", r.ok && mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === r.id).valorCombinado === 0, JSON.stringify(r));
+await srv.remover(fin, { id: r.id });
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_forn", cod: "100", valorCombinado: 700 });
+t("pedido com a revendedora já conhecida guarda o código dela", r.ok && mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === r.id).revCod === "100", JSON.stringify(r));
+const idRev11 = r.id;
+r = await srv.completar(fin, { id: idRev11, data: "2026-11-21", valor: 700, cod: "100", tipo: "antes" }, deps);
+t("completar com o valor combinado vira o Pix de R$ 700,00", r.ok, JSON.stringify(r));
+await srv.remover(fin, { id: r.id });
+await srv.remover(fin, { id: idP11 });
+t("no fim não sobra nada", mod.get("contasreceber").conteudo.antecipados.length === nAntes11);
+
 console.log("\n" + ok + " ok, " + falha + " com falha");
 process.exit(falha ? 1 : 0);

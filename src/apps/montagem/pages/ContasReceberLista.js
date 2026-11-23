@@ -147,7 +147,11 @@ function AbaCtaReceber(){
   if(ref.current.k!==chaveCache){ ref.current = {k:chaveCache, v:comprovantesDosRecebidos(baseTit.map(function(x){ return Object.assign({}, x, {id:x.rid}); }), s.lancFin || [], {}).mapa}; }   // o código da linha na tela é o rid (mês + código), igual ao que a ligação devolve
   var comps = ref.current.v;
   // Pix antes do acerto entra como um pagamento já recebido (mesmas colunas); o comprovante dele vem do servidor, não do Atendimento
-  var antComoX = function(a){ return {id:"ant|"+a.id, rid:"ant|"+a.id, ant:a, rev:a.rev || (a.tipo==="pedido" ? "Pedido de Pix" : ""), rep:a.repNome || "—", nota:"—", parc:"—", cod:"—", d:a.data, venc:"", valor:a.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+a.conta, titular:a.destino==="socio" ? "Sócio" : "Empresa"}; };
+  // há quantos dias o pedido espera o Pix (Marcus, 23/11/2026)
+  var pedAguard = ((ant && ant.itens) || []).filter(function(a){ return a.tipo==="pedido"; }).sort(function(a, b){ return String(b.em || "").localeCompare(String(a.em || "")); });   // do mais novo para o mais antigo
+  var diasDe = function(a){ var t0 = Date.parse(a.em || ""); return t0 ? Math.floor((Date.now()-t0)/86400000) : -1; };
+  var esperaDe = function(a){ var n = diasDe(a); return n<0 ? "" : n===0 ? " · hoje" : n===1 ? " · 1 dia" : " · "+n+" dias"; };
+  var antComoX = function(a){ return {id:"ant|"+a.id, rid:"ant|"+a.id, ant:a, rev:a.rev || (a.tipo==="pedido" ? "Pedido de Pix" : ""), rep:a.repNome || a.repPediu || "—", nota:"—", parc:"—", cod:"—", d:a.data, venc:"", valor:a.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+a.conta, titular:a.destino==="socio" ? "Sócio" : "Empresa"}; };
   var famComoX = function(p){ return {id:"fam|"+p.pixId, rid:"fam|"+p.pixId, fam:p, cz:{conta:p.conta, certeza:"semtitulo"}, rev:p.rev || "—", rep:"—", nota:"—", parc:"—", cod:"—", d:p.data, venc:"", valor:p.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+String(p.dono || "").toUpperCase()+" - PF", titular:"Família e sócios"}; };   // Pix lançado na Família que ainda não tem título na DevMaster
   var base = baseTit.concat((ant.itens || []).map(antComoX), (cz.sem || []).map(famComoX));
 
@@ -163,7 +167,7 @@ function AbaCtaReceber(){
   ls = ls.slice().sort(function(a, b){ var p = dataBase(a), q = dataBase(b); return PAGO && !ABERTO ? q.localeCompare(p) || a.rev.localeCompare(b.rev) : (p||"9999").localeCompare(q||"9999") || a.rev.localeCompare(b.rev); });   // recebidas: a mais recente primeiro; a receber: vence primeiro no alto
 
   var atrasoDe = function(x){ return x.aberto && x.venc && x.venc<hoje0 ? Math.max(1, Math.round((new Date(hoje0+"T00:00:00") - new Date(x.venc+"T00:00:00")) / 86400000)) : 0; };
-  var sitDe = function(x){ return x.fam ? "Só na Família" : x.ant ? (x.ant.tipo==="pedido" ? "Aguardando Pix" : x.ant.tipo==="outro" ? "Lançada" : x.ant.uso ? "Usado no acerto" : "Sem acerto") : x.aberto ? (atrasoDe(x)>0 ? "Atrasada · "+atrasoDe(x)+" dias" : "A receber") : x.nao ? "Recebida depois" : "Recebida"; };
+  var sitDe = function(x){ return x.fam ? "Só na Família" : x.ant ? (x.ant.tipo==="pedido" ? "Aguardando Pix"+esperaDe(x.ant) : x.ant.tipo==="outro" ? "Lançada" : x.ant.uso ? "Usado no acerto" : "Sem acerto") : x.aberto ? (atrasoDe(x)>0 ? "Atrasada · "+atrasoDe(x)+" dias" : "A receber") : x.nao ? "Recebida depois" : "Recebida"; };
   var acertoDe = function(x){ return x.ant ? (x.ant.tipo==="pedido" || x.ant.tipo==="outro" ? "—" : x.ant.uso ? "Usado "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando") : x.fam ? "—" : "Feito"; };   // coluna Acerto: o Pix antes do acerto espera o acerto da revendedora e depois é usado nele
   var contaDm = function(x){ return /^PIX\s*-\s*BANHO$/i.test(limpa(x.forma)) ? "Pontual" : bancoDe(limpa(x.forma)); };   // a forma PIX - BANHO baixa em CAIXA PIX PONTUAL (conferido na DevMaster em 20/11/2026): na coluna Conta vale o nome da empresa, Pontual, igual à coluna CNPJ
   var tituloDm = function(x){ return x.ant || x.fam ? "—" : bonito2(limpa(x.forma)).replace(/\bPf\b/g, "PF").replace(/\s-\s/g, " · "); };   // o nome que a DevMaster usa para este pagamento
@@ -225,6 +229,7 @@ function AbaCtaReceber(){
       apagar:aberta.ant && aberta.ant.fonte==="rcb" && !aberta.ant.uso ? function(){ apagarAnt(aberta.ant); } : null}), document.body),
     completando && e(LancarPix,{key:"c"+completando.id, pedido:completando, destinos:ant.destinos, verFf:ant.verFf, fechar:function(){ setCompletando(null); }, depois:recarregarAnt, aoLancar:function(nome){ setEscopo("todas"); setBuscaTxt(nome); setBusca(nome); }}),
     lancando && e(LancarPix,{destinos:ant.destinos, verFf:ant.verFf, fechar:function(){ setLancando(false); }, depois:recarregarAnt, aoLancar:function(nome){ setEscopo("todas"); setBuscaTxt(nome); setBusca(nome); }}),
+    pedAguard.length>0 && e("div",{role:"button", tabIndex:0, title:"Mostrar os Pix lançados aqui (os pedidos ficam como Aguardando Pix)", onClick:function(){ setEscopo("todas"); setFOrigem("a"); setBuscaTxt(""); setBusca(""); }, className:"flex min-h-[22px] cursor-pointer items-center justify-center gap-2 border-b border-white/40 bg-[#3f6bb8] px-2 text-[11px] font-semibold text-white hover:brightness-110"}, pedAguard.length+(pedAguard.length===1 ? " pedido aguardando Pix" : " pedidos aguardando Pix")+" · o mais antigo "+(diasDe(pedAguard[pedAguard.length-1])<=0 ? "é de hoje" : diasDe(pedAguard[pedAguard.length-1])===1 ? "espera há 1 dia" : "espera há "+diasDe(pedAguard[pedAguard.length-1])+" dias")),   // padrao-ok: aviso de 11 px, mesma altura das barras do Financeiro
     e(BlocoPainel,{titulo:escopo==="receber" ? "Contas a receber" : escopo==="recebidas" ? "Contas recebidas" : "Contas a receber e recebidas", compacto:true},
       // BARRA EM FORMA DE TABELA, IGUAL À CONTAS A PAGAR (Marcus, 21/11/2026): cada controle numa célula com o título em cima; Buscar à esquerda (peças de components/planilha-cheia.js)
       e(BarraTabela,null,
@@ -300,6 +305,8 @@ function Ficha(p){
       tabF([["Parcelas", x.partes && x.partes.length>1 ? x.partes.length+"x" : (x.parc || "—")], ["CNPJ", x.titular || "—"], ["Código", x.cod || "—"], ["Representante", x.rep || "—"], ["Venda", x.nota || "—"]], "4rem 6rem 4.5rem 1fr 6rem"),
       tabF([["Conta de entrada", limpa(x.forma) || "—"], ["Comprovante", p.compNode ? p.compNode : c ? e("button",{type:"button", onClick:function(){ abrirComp(c); }, className:"cursor-pointer underline hover:bg-white/10"}, "Ver") : "—"]], "1fr 8rem"),
       x.ant && linhaF("Acerto", x.ant.tipo==="pedido" ? "Aguardando o Pix da revendedora (pedido enviado)" : x.ant.tipo==="outro" ? "Outro recebimento (não entra em acerto)" : x.ant.uso ? "Usado no acerto de "+(x.ant.uso.rev || "uma revendedora")+" em "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando o acerto"),
+      x.ant && x.ant.tipo==="pedido" && x.ant.valorCombinado>0 && linhaF("Valor combinado", BKC(x.ant.valorCombinado)),
+      x.ant && x.ant.tipo==="pedido" && x.ant.repPediu && linhaF("Pedido pela representante", x.ant.repPediu),
       x.ant && x.ant.tipo!=="pedido" && linhaF("Pix em nome de", x.ant.pagador || "A própria revendedora"),
       x.ant && x.ant.repNome && linhaF("Acerto de", x.ant.repNome==="Sorelly" ? "Atendimento interno" : "Representante "+x.ant.repNome),
       x.ant && x.ant.por && linhaF("Lançado por", x.ant.por),
@@ -389,6 +396,7 @@ function LancarPix(p){
   var daFamilia = function(d){ return d.tipo==="PRESTADOR" && !!d.personaId; };   // prestador ligado a um sócio no Direcionar = prestador da família
   // A LISTA "Conta que recebeu" VEM DA ABA PAGAMENTOS › CHAVES PIX (Marcus, 23/11/2026: "tem todas as chaves Pix lá alinhadas"): fornecedores e prestadores, representantes e funcionárias saem da MESMA montagem da aba, e a chave da mensagem é a que está lá.
   var chv = blocosChavesPix(cx.state, cx.dispatch, "", false), folhas = {}, chvConta = {};
+  var opsRep = [["", "Não informado"]].concat((((chv.rep || [])[0] || {}).rows || []).map(function(r){ return [r.c2, r.c2]; }));   // representantes da aba Chaves Pix
   chv.cnpjs.forEach(function(b){ b.rows.forEach(function(r){ chvConta[r.id] = r; }); });   // conta bancária de CNPJ → a linha dela na aba Chaves Pix (pelo código da conta, igual à aba)
   var itensChv = function(blocos, pref, rotulo){ var out = []; blocos.forEach(function(b){ b.rows.forEach(function(r){ var id = "x|"+pref+"|"+r.id, rot = rotulo(r); folhas[id] = {row:r, label:rot, pref:pref}; out.push([id, r.c2, rot]); }); }); return out; };
   var itensForn = itensChv(chv.forn, "forn", function(r){ return "Sorelly · "+r.c2; }), itensRep = itensChv(chv.rep, "rep", function(r){ return "Representante · "+r.c2; });
@@ -400,7 +408,7 @@ function LancarPix(p){
   // MODO PEDIDO (Marcus, 23/11/2026): o Lucas manda a conta à representante ANTES de o Pix existir; só a conta é obrigatória e o lançamento fica "Aguardando Pix". Depois, na ficha, "Completar pedido" abre esta janela já na conta escolhida, com revendedora, valor, data e comprovante.
   var ped = p.pedido || null, destInicial = ped && ped.pedidoDest ? (ped.pedidoDest.leaf || ped.pedidoDest.destinoId+(ped.pedidoDest.contaNome ? "|"+ped.pedidoDest.contaNome : ped.pedidoDest.contaId ? "|"+ped.pedidoDest.contaId : "")) : "";
   var smo = useState(ped ? "recebido" : "pedido"), modo = smo[0], setModo = smo[1], pedidoModo = modo==="pedido";
-  var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:destInicial, casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
+  var sf = useState({data:hoje, valor:(ped && ped.valorCombinado>0 ? String(ped.valorCombinado) : ""), repPediu:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:destInicial, casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
   var sl = useState({itens:null, erro:false}), lista = sl[0], setLista = sl[1], sq = useState(""), q = sq[0], setQ = sq[1];
   var setF = function(o){ setF0(function(a){ return Object.assign({}, a, o); }); };
   // a lista de revendedoras fecha ao clicar fora do campo ou ao apertar Esc (Marcus, 23/11/2026); volta a abrir ao digitar
@@ -413,6 +421,7 @@ function LancarPix(p){
     return function(){ document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc, true); };
   }, [listaAberta]);   // eslint-disable-line react-hooks/exhaustive-deps -- setListaAberta não muda
   useEffect(function(){ var vivo = true; chamar("GET", "/contas-receber/revendedoras").then(function(d){ if(vivo) setLista({itens:d.itens || [], erro:false}); }).catch(function(){ if(vivo) setLista({itens:null, erro:true}); }); return function(){ vivo = false; }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps -- lê a lista uma vez ao abrir a janela
+  useEffect(function(){ if(ped && ped.revCod && lista.itens && !f.rev){ var x = lista.itens.find(function(y){ return String(y.cod)===String(ped.revCod); }); if(x) setF({rev:x}); } }, [lista.itens]);   // eslint-disable-line react-hooks/exhaustive-deps -- só preenche a revendedora do pedido quando a lista chega
   var AZ = "var(--bloco-titulo)", FUNDO = "#1b3463", CLARO = "#3f6bb8";   // azul do sistema, azul escuro do fundo e azul um pouco mais claro do botão principal
   var CAMPO = "w-full rounded border border-white/30 bg-[var(--bloco-titulo)] px-1.5 text-center text-[11px] text-white outline-none placeholder:text-white/70 focus-visible:ring-1 focus-visible:ring-white [color-scheme:dark]";   // padrao-ok: janela compacta, letra de 11 px (pedido do Marcus, 20/11/2026), igual à barra de filtros
   var BTN = "rounded border border-white/40 bg-[var(--bloco-titulo)] px-3 text-center text-[11px] font-semibold text-white hover:brightness-125 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60";   // padrao-ok: botão da janela
@@ -442,7 +451,7 @@ function LancarPix(p){
     if(pedidoModo){
       if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
       setSalvando(true); setMsg("");
-      chamar("POST", "/contas-receber/antecipados", {acao:"lancar", tipo:"pedido", cod:f.rev ? f.rev.cod : "", destinoId:alvo.destinoId, contaNome:alvo.contaNome, contaId:alvo.contaId, semDestino:alvo.semDestino, destinoNome:alvo.destinoNome, leaf:alvo.leaf, casa:ehFam(f.destId) ? f.casa : ""})
+      chamar("POST", "/contas-receber/antecipados", {acao:"lancar", tipo:"pedido", repPediu:f.repPediu, valorCombinado:Number(f.valor)>0 ? Number(f.valor) : 0, cod:f.rev ? f.rev.cod : "", destinoId:alvo.destinoId, contaNome:alvo.contaNome, contaId:alvo.contaId, semDestino:alvo.semDestino, destinoNome:alvo.destinoNome, leaf:alvo.leaf, casa:ehFam(f.destId) ? f.casa : ""})
         .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev ? f.rev.nome : ""); p.fechar(); })
         .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o pedido."); });
       return;
@@ -488,14 +497,16 @@ function LancarPix(p){
     !ped && e("div",{className:"mx-1.5 mt-1.5 grid grid-cols-2 gap-1"}, [["pedido", "Pedido de Pix"], ["recebido", "Pix recebido"]].map(function(o){ return e("button",{key:o[0], type:"button", disabled:salvando, onClick:function(){ setModo(o[0]); setMsg(""); }, style:ALTO, className:modo===o[0] ? BTN_AZ : BTN}, o[1]); })),
     e("div",{className:BLOCO}, faixa(pedidoModo ? "1 · Revendedora (se já souber)" : "1 · Quem pagou"),
       e("div",{className:"flex flex-col items-center gap-1 p-2"},
-        e("div",{className:pedidoModo ? "grid w-full grid-cols-1 items-start gap-1" : "grid w-full grid-cols-2 items-start gap-1"},
+        e("div",{className:"grid w-full grid-cols-2 items-start gap-1"},
           campo(pedidoModo ? "Revendedora (opcional, só as ativas)" : "Revendedora (só as ativas)", campoRev, "w-full"),
-          !pedidoModo && sel("Pix em nome de", f.outro ? "outro" : "propria", function(v){ setF({outro:v==="outro", pagador:v==="outro" ? f.pagador : ""}); }, [["propria", "A própria revendedora"], ["outro", "Outra pessoa"]])),
+          (pedidoModo ? sel("Representante que pediu (opcional)", f.repPediu, function(v){ setF({repPediu:v}); }, opsRep, "Não informado") : sel("Pix em nome de", f.outro ? "outro" : "propria", function(v){ setF({outro:v==="outro", pagador:v==="outro" ? f.pagador : ""}); }, [["propria", "A própria revendedora"], ["outro", "Outra pessoa"]]))),
         f.outro && !pedidoModo && campo("Nome de quem fez o Pix", e("input",{value:f.pagador, "aria-label":"Nome de quem fez o Pix", placeholder:"Ex.: João, pai dela", className:CAMPO, style:ALTO, onChange:function(ev){ setF({pagador:ev.target.value}); }}), "w-full"))),
     e("div",{className:BLOCO}, faixa("2 · Para onde foi"),
       e("div",{className:"grid w-full grid-cols-2 items-start gap-1 p-2"},
         campo("Conta que recebeu", ped ? e("div",{className:CAMPO+" flex items-center justify-center", style:{minHeight:"22px", lineHeight:"14px"}}, ped.conta || contaTxt) : e(CaixaArvore,{rot:"Conta que recebeu", valor:f.destId, arvore:arvore, vazio:"Escolha a conta", aoMudar:function(v){ setF({destId:v}); }, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-full"),
         ehFam(f.destId) ? campo("Para qual casa?", e("select",{value:f.casa, "aria-label":"Para qual casa", className:CAMPO, style:ALTO, onChange:function(ev){ setF({casa:ev.target.value}); }}, e("option",{value:""}, "Sem casa (pessoal)"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })), "w-full") : e("div",null))),
+    pedidoModo && e("div",{className:BLOCO}, faixa("3 · Valor combinado (opcional)"),
+      e("div",{className:"grid w-full grid-cols-2 gap-1 p-2"}, campo("Valor", e(Dinheiro,{value:f.valor, out:"ponto", label:"Valor combinado", className:"w-full h-[22px]! rounded! border-white/30! bg-[var(--bloco-titulo)]! text-center text-[11px]! text-white!", onChange:function(v){ setF({valor:v}); }}), "w-full"))),   // padrao-ok: campo de valor de 22 px
     !pedidoModo && e("div",{className:BLOCO}, faixa("3 · Pagamento"),
       e("div",{className:"grid w-full grid-cols-2 gap-1 p-2"},
         campo("Data do Pix", e("input",{type:"date", value:f.data, max:hoje, "aria-label":"Data do Pix", className:CAMPO, style:ALTO, onChange:function(ev){ setF({data:ev.target.value}); }}), "w-full"),
@@ -504,7 +515,7 @@ function LancarPix(p){
         campo("Comprovante (opcional)", e("label",{className:"flex w-full cursor-pointer items-center justify-center rounded border border-white/30 px-1.5 text-center text-[11px] text-white hover:brightness-125 active:brightness-90", style:Object.assign({background:AZ}, ALTO)}, f.arq ? f.arq.name : "Escolher foto ou PDF", e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Comprovante", className:"hidden", onChange:function(ev){ var a = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(a) setF({arq:a}); }})), "w-full"))));   // padrao-ok: letra de 11 px da janela
   var dir = e("div",{className:"flex flex-col border-l border-white/15 bg-[#223f74] px-2.5 py-2"},
     e("div",{className:"pb-1 text-center text-[11px] font-semibold"}, "O que vai acontecer"),   // padrao-ok: título de 11 px
-    Lr("Revendedora", f.rev ? f.rev.nome : (pedidoModo ? "Ainda não sabe" : "")), f.rev && Lr("Representante", repRotulo(f.rev.representante)), !pedidoModo && Lr("Pix em nome de", f.outro ? f.pagador.trim() : (f.rev ? "A própria revendedora" : "")), Lr("Conta que recebeu", contaTxt), !pedidoModo && Lr("Valor", valorOk ? BKC(Number(f.valor)) : ""), !pedidoModo && Lr("Data", f.data ? dm(f.data) : ""),
+    Lr("Revendedora", f.rev ? f.rev.nome : (pedidoModo ? "Ainda não sabe" : "")), f.rev && Lr("Representante", repRotulo(f.rev.representante)), !pedidoModo && Lr("Pix em nome de", f.outro ? f.pagador.trim() : (f.rev ? "A própria revendedora" : "")), Lr("Conta que recebeu", contaTxt), pedidoModo && f.repPediu && Lr("Pedido pela", f.repPediu), pedidoModo && valorOk && Lr("Valor combinado", BKC(Number(f.valor))), !pedidoModo && Lr("Valor", valorOk ? BKC(Number(f.valor)) : ""), !pedidoModo && Lr("Data", f.data ? dm(f.data) : ""),
     Lr("Situação", pedidoModo ? "Aguardando Pix" : f.arq ? "Com comprovante" : "Pendente: falta o comprovante"),
     e("div",{className:"pt-2 text-center text-[11px] font-semibold"}, "Mensagem para pagamento"),   // padrao-ok: título de 11 px
     !orient && e("p",{className:"pt-1 text-center text-[11px]"}, "Escolha a conta que recebeu para ver a mensagem com a chave Pix."),   // padrao-ok: aviso de 11 px

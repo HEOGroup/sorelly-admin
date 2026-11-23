@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.131", data:"2026-11-24", titulo:"Pedido de Pix completo: valor combinado, representante, tempo de espera e aviso no topo", itens:[
+  {tipo:"novo", area:"Financeiro › Receber › Contas a receber", txt:"O Pedido de Pix ganhou: (1) Valor combinado, opcional, que aparece na ficha e já vem preenchido ao completar (não entra nos totais nem em acerto); (2) Representante que pediu, opcional, da lista da aba Chaves Pix, que aparece na ficha e na coluna Representante da tabela; (3) tempo de espera na situação (Aguardando Pix · hoje, · 1 dia, · 3 dias); (4) um aviso azul no topo da tela com a quantidade de pedidos aguardando Pix e há quanto tempo espera o mais antigo, que ao clicar mostra os Pix lançados aqui. Ao completar, a revendedora do pedido (se já havia) volta preenchida. Servidor: valorCombinado e repPediu no pedido (testes: 105 verificações)."}
+ ]},
  {v:"0.21.130", data:"2026-11-23", titulo:"PIX revendedoras: campo Valor aceita números de novo", itens:[
   {tipo:"correção", area:"Financeiro → Família → PIX revendedoras", txt:"O campo Valor do Anotar PIX e do Editar PIX apagava os números ao digitar (regra do campo errada na volta do Anotar PIX). Agora aceita números, vírgula e ponto."}
  ]},

@@ -3,6 +3,13 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Pedido de Pix completo)
+- **Pedido do Marcus:** "faz os quatro itens" do modo pedido.
+- **Os quatro itens:** valor combinado (opcional; não entra em totais nem em acerto; vem preenchido ao completar); representante que pediu (opcional, da lista da aba Chaves Pix); tempo de espera na situação ("Aguardando Pix · hoje / 1 dia / N dias"); aviso azul no topo com os pedidos aguardando e há quanto tempo espera o mais antigo (clicar filtra a origem "Lançadas aqui").
+- **Continua valendo:** o pedido fica fora de acerto, fora da Família e fora do Atendimento interno; quem completa é o Lucas; o comprovante pela representante só quando existir o app dela.
+- Código: `pedidoDest`, `valorCombinado`, `repPediu` em `domain/recebimentos-antecipados.js` e `server/recebimentos-antecipados.js`; `LancarPix`, `esperaDe` e o aviso em `pages/ContasReceberLista.js`. Teste: seção 11 de `scripts/testar-recebimento-antecipado-servidor.mjs` (105 verificações).
+
+
 ## 23/11/2026 (Lançar recebimento: Conta que recebeu = aba Chaves Pix)
 - **Pedido do Marcus:** "o Conta que recebeu você precisa linkar com a aba de Pagamentos › Chaves Pix, porque tem todas as chaves Pix lá alinhadas".
 - **Como ficou:** a lista da janela Lançar recebimento (Empresa › Fornecedor / Prestador, Representante, Funcionário) sai da MESMA montagem da aba Chaves Pix (`blocosChavesPix`, em `pages/ChavesPixBancos.js`); a chave e o Escrever na folha da mensagem são os da linha da aba. CNPJ e Sócios seguem como antes (contas do Direcionar e da Família).
