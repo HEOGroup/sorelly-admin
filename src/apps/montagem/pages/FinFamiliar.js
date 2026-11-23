@@ -2,7 +2,7 @@
 // Financeiro Familiar trazido do SorellyAdmin: Home, Alertas, Contas a pagar, Contas pagas, PIX revendedoras, Prestadores, Pró-labores, Relatório, Histórico e Configurações.
 // As regras e as contas ficam em domain/financeiro-familiar.js; aqui só as telas. Só os sócios (ACESSO_FF) abrem. Dados só neste navegador.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
+import { bancoDeConta, junta, nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { CASAS_PIX, CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
@@ -46,7 +46,15 @@ function Modal(p){
 }
 function MesSel(p){ var l = janela(); return e(Sel,{value:p.ym, label:"Mês", className:"w-52", onChange:p.set}, p.todos && e("option",{value:""}, "Todos os meses"), l.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })); }
 var pessoaNome = function(ff, id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.nome : "—"; };
-var contaLabel = function(ff, id){ var c = ff.contasBanc.find(function(x){ return x.id===id; }); return c ? (c.banco ? c.banco+" — " : "")+c.nome : ""; };
+// ESCRITA PADRÃO DA CONTA (Marcus, 22/11/2026: "alinhar conforme o negócio das contas"; regra em lib/nome-conta.js): sócio = PF · Marcus · Nubank; Casa = Casa · Itaú; cartão leva a palavra Cartão; prestador = Marcus · Higor · Santander; conta da Sorelly sem dono fica só com o nome
+var contaLabel = function(ff, id){ var c = ff.contasBanc.find(function(x){ return x.id===id; }); if(!c) return "";
+  var dono = (ff.personas || []).find(function(q){ return q.id===c.personaId; }), banco = bancoDeConta(c.banco+" "+c.nome) || nomePropio(String(c.banco || "").replace(/^Contas+/i, "")), cartao = /cart[aã]o/i.test(c.nome) ? "Cartão" : "";
+  if(c.prestadorId){ var pr = (ff.prest || []).find(function(q){ return q.id===c.prestadorId; }); return rotuloPrestadorFamilia(dono ? dono.nome : "", pr ? pr.nome : "", c.banco+" "+c.nome); }
+  if(!dono) return nomePropio(String(c.nome).replace(/^Contas+/i, ""));
+  var prefixo = ehCasa(dono.id) || dono.id==="familia" ? "Casa" : "PF";
+  return junta([prefixo, prefixo==="PF" ? nomePropio(dono.nome) : "", cartao, banco]) || nomePropio(c.nome); };
+// LISTA DE CONTA PAGADORA (Marcus, 22/11/2026): só as contas da família (sócios e Casa), ativas, cada conta UMA vez; as contas de prestadores ficam no cadastro de prestadores
+var contasPagadoras = function(ff){ var vistos = {}, out = []; ff.contasBanc.forEach(function(b){ if(!b.ativo || b.prestadorId) return; var n = contaLabel(ff, b.id); if(!n || vistos[n]) return; vistos[n] = 1; out.push(b); }); return out; };
 var corPessoa = function(ff, id){ var p = ff.personas.find(function(x){ return x.id===id; }); return p ? p.cor : "#EC4899"; };
 var catNome = function(ff, k){ var c = ff.categorias.find(function(x){ return x.chave===k; }); return c ? c.nome : k; };
 var statusChip = function(x){ var cor = x.status==="PAGO" ? "#22C55E" : x.atrasada ? "#EF4444" : x.status==="PARCIAL" ? "#F59E0B" : "#94A3B8", lb = x.status==="PAGO" ? "Pago" : x.atrasada ? "Atrasado" : x.status==="PARCIAL" ? "Parcial" : "Pendente";
@@ -281,7 +289,7 @@ function ModalPagar(p){
   var c = p.c, x = p.x, st = useState({paraQuem:paraQuemDe(x.conta), valor:fmtN(x.restante), em:hojeIso(), forma:"PIX", contaTxt:contaLabel(c.ff, x.conta.contaBancId), obs:"", dividir:false, linhas:[{valor:"", forma:"PIX", contaTxt:""}, {valor:"", forma:"Dinheiro", contaTxt:""}]}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var somaL = r2(f.linhas.reduce(function(t, l){ return t+num(l.valor); }, 0)), falta = r2(x.restante-somaL);
   var setL = function(i, o){ set({linhas:f.linhas.map(function(l, j){ return j===i ? Object.assign({}, l, o) : l; })}); };
-  var opContas = [["", "Não definida"]].concat(c.ff.contasBanc.map(function(b){ var n = contaLabel(c.ff, b.id); return [n, n]; }));
+  var opContas = [["", "Não definida"]].concat(contasPagadoras(c.ff).map(function(b){ var n = contaLabel(c.ff, b.id); return [n, n]; }));
   var pagar = function(){ var atual = paraQuemDe(x.conta); if(f.paraQuem && f.paraQuem!==atual) acao(c, "conta_set", {id:x.conta.id, patch:{personaId:f.paraQuem}});
     if(f.dividir) acao(c, "parc_baixa_multipla", {id:x.conta.id, ym:x.ym, em:f.em, linhas:f.linhas.map(function(l){ return {valor:num(l.valor), forma:l.forma, contaTxt:l.contaTxt}; })});
     else acao(c, "parc_baixa", {id:x.conta.id, ym:x.ym, valor:num(f.valor), em:f.em, forma:f.forma, contaTxt:f.contaTxt, obs:f.obs}); p.fechar(); };
@@ -357,7 +365,7 @@ function FormConta(p){   // lançar ou editar conta
     recorrencia:"unica", mesInicio:hojeYm(), mesFim:somaMes(hojeYm(), 5), valor:"", estAte:"", estValor:""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var salvar = function(){ if(nova) acao(c, "conta_add", {personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:Number(f.dia), forma:f.forma, beneficiario:f.beneficiario, obs:f.obs, recorrencia:f.recorrencia, mesInicio:f.mesInicio, mesFim:f.mesFim, valor:num(f.valor)});
     else acao(c, "conta_set", {id:x.id, patch:{personaId:f.personaId, descricao:f.descricao, categoria:f.categoria, contaBancId:f.contaBancId, dia:Number(f.dia)||1, forma:f.forma, beneficiario:f.beneficiario, obs:f.obs}}); p.fechar(); };
-  var ctas = ff.contasBanc.filter(function(b){ return b.ativo; });
+  var ctas = contasPagadoras(ff).concat(x && x.contaBancId && !contasPagadoras(ff).some(function(b){ return b.id===x.contaBancId; }) ? ff.contasBanc.filter(function(b){ return b.id===x.contaBancId; }) : []);   // a conta que a conta já usa fica na lista mesmo se for repetida ou de prestador
   var desligado = !f.descricao.trim() || (nova && !(num(f.valor)>0));
   // ORDEM COMBINADA com o Marcus (22/11/2026): Família ÷4, os sócios, o Lucas, as casas e, no fim, o que está saindo da lista (Casa/Família, Marco / Anamaria, Sorelly)
   var opPessoa = opcoesPessoa(ff), temViagem = ff.categorias.some(function(k){ return k.chave==="VIAGEM_EUA"; }), ehViagem = f.personaId===FAMILIA4 && f.categoria==="VIAGEM_EUA";
@@ -462,7 +470,7 @@ function AbaFfPagas(){
 }
 function EditarPago(p){
   var g = p.x.pagamentos[p.x.pagamentos.length-1]||{}, st = useState({valor:fmtN(p.x.pago), em:g.em||hojeIso(), forma:g.forma||"PIX", contaTxt:g.conta||"", obs:g.obs||""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
-  var opContas = [["", "Não definida"]].concat(p.c.ff.contasBanc.map(function(b){ var n = contaLabel(p.c.ff, b.id); return [n, n]; }));
+  var opContas = [["", "Não definida"]].concat(contasPagadoras(p.c.ff).map(function(b){ var n = contaLabel(p.c.ff, b.id); return [n, n]; }));
   if(f.contaTxt && !opContas.some(function(o){ return o[0]===f.contaTxt; })) opContas.push([f.contaTxt, f.contaTxt]);   // conta antiga escrita à mão continua na lista
   // Pessoa da conta já baixada (Anamaria, 22/11/2026): muda a pessoa SEM estornar e baixar de novo. Vale para a conta inteira (todos os meses), igual ao "Para quem entra" do Pagar. "Salvar" grava o pagamento E a pessoa; "Mudar só a pessoa" não mexe no pagamento (a divisão em várias formas continua).
   var pessoaAtual = paraQuemDe(p.x.conta), ps = useState(pessoaAtual), pessoa = ps[0], opPessoa = opcoesPessoa(p.c.ff).filter(function(o){ return o[0]!=="__viagem"; });

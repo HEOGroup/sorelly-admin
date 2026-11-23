@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.111", data:"2026-11-22", titulo:"Conta pagadora da Família na escrita padrão das contas", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → Contas", txt:"A lista de Conta pagadora (janelas Pagar, Editar conta e pagamento) usa a escrita padrão das contas: PF · Marcus · Nubank, Casa · Itaú, Casa · Cartão · Itaú. Só aparecem as contas da família, ativas e uma vez cada. As contas de prestadores saíram da lista."}]},
  {v:"0.21.110", data:"2026-11-22", titulo:"Contas a pagar da Família: coluna Obs no lugar de Ações", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → Contas → A pagar", txt:"A coluna Ações saiu. Entrou a coluna Obs, que só marca com ✓ quando a conta tem observação. Corrigir valor, Encerrar e Excluir passaram para a janela da conta (clique na linha)."}]},
  {v:"0.21.109", data:"2026-11-22", titulo:"Contas a pagar da Família: coluna Forma, sem ÷, observações dentro da janela", itens:[
