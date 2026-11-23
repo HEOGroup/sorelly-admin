@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.141", data:"2026-11-23", titulo:"Lançamentos marcados como Automático ou Manual", itens:[
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos, PIX revendedoras e Maquininha Banho", txt:"Cada lançamento diz se foi Automático ou Manual: coluna Origem no Lançamento de pagamentos (Automático = veio do Direcionar ou do próprio sistema), e ao lado do nome no PIX revendedoras da Família e na Maquininha Banho (Automático = veio do Direcionar)."}
+ ]},
  {v:"0.21.140", data:"2026-11-23", titulo:"Direcionar: coluna Forma com a forma de pagamento cadastrada", itens:[
   {tipo:"melhoria", area:"Financeiro → Direcionar Pix", txt:"Direcionados ganhou a coluna Forma, com a forma de pagamento exatamente como foi cadastrada no lançamento (Pix, Cartão de crédito, Cartão de débito, Link de pagamento, Dinheiro) ou no pedido da representante. A Conta mostra o destino e a conta escolhida como está no sistema (ex.: Sorelly · Pontual · Maquininha · Getnet). Duas formas no mesmo pagamento: formas e contas na mesma ordem, separadas por +."}
  ]},

@@ -130,7 +130,9 @@ function repartirPix(pf, chave){
 }
 function ListaPagamentos(p){
   var cd = p.cd, c = p.c, res = filtrarLancamentos(cd.lancs, {}), pf = c.pf, minha = repartirPix(pf, cd.chave), cacheOrig = {};
-  var base = function(l){ return {l:l, data:dbr(l.data), rev:l.revendedora||"—", conta:l.conta||"—", chave:l.chavePix||"—", por:l.pagoPor||"---",
+  // ORIGEM (Lucas, 23/11/2026): só Automático (veio do Direcionar ou do próprio sistema) ou Manual
+  var origemDe = function(l){ return (l.origemPix || l.auto) ? "Automático" : "Manual"; };
+  var base = function(l){ return {l:l, data:dbr(l.data), rev:l.revendedora||"—", conta:l.conta||"—", chave:l.chavePix||"—", por:l.pagoPor||"---", origem:origemDe(l),
     sit:conferidoDe(l) ? "Conferido"+(l.conferidoEm ? " "+dbr(l.conferidoEm) : "") : temComprovante(l) ? "Aguardando conferência" : "Falta o comprovante", comp:l.arqKey || l.arqId || l.arqNome || l.aguardaComp ? "com" : "sem"}; };
   // "nome · R$ 1.000,00 · 1/2": o Pix inteiro junto do nome e a parte no fim; a coluna Valor traz só o que fecha esta data
   var nomeParte = function(l, k, n){ return (l.revendedora||"—")+(n>=2 ? " · "+brl(l.valor)+" · "+k+"/"+n : ""); };
@@ -150,10 +152,10 @@ function ListaPagamentos(p){
     linhas.push(Object.assign({id:String(l.id)}, base(l), {rev:nomeParte(l, 1, mp.length+1), valor:ficou}));
   });
   // desconto da Maquininha Banho: abatido direto na conta, entra como uma linha da lista
-  if(cd.mq>0.005) linhas.push({id:"mq", l:null, data:"Desc.", rev:"Maquininha Banho · "+cd.mqRef, conta:"Abatido direto na conta", chave:"—", por:"---", valor:cd.mq, sit:"—", comp:"—",
+  if(cd.mq>0.005) linhas.push({id:"mq", l:null, data:"Desc.", rev:"Maquininha Banho · "+cd.mqRef, conta:"Abatido direto na conta", chave:"—", por:"---", origem:"Automático", valor:cd.mq, sit:"—", comp:"—",
     acao:e(BtL,{ic:"sliders", titulo:"Ajustar na aba Maquininha Banho", onClick:function(){ c.d({type:"ABA", aba:"pfmaq"}); }}, "Ajustar")});
   // o que passou de uma data para outra, o saldo, o ajuste e o pago a mais viram LINHAS da tabela (não entram no Total dos Pix); o Pix que passou de uma data para outra já tem a sua linha própria (Marcus, 21/11/2026)
-  var info = function(id, rev, valor, acao){ linhas.push({id:"i-"+id, l:null, info:true, data:"—", rev:rev, conta:"—", chave:"—", por:"---", valor:valor, sit:"—", comp:"—", acao:acao || null}); };
+  var info = function(id, rev, valor, acao){ linhas.push({id:"i-"+id, l:null, info:true, data:"—", rev:rev, conta:"—", chave:"—", por:"---", origem:"Automático", valor:valor, sit:"—", comp:"—", acao:acao || null}); };
   if(cd.saldoDst) info("falta", "Falta pagar nesta data", cd.aberto, c.edita ? e(BtL,{ic:"arrow-bend-down-right", titulo:"Passar o que falta para a parcela de "+dbr(cd.saldoDst.limite), onClick:function(){
     if(window.confirm("Passar "+brl(cd.aberto)+" que falta em "+dbr(cd.limite)+" para somar na parcela de "+dbr(cd.saldoDst.limite)+"?")) op(c, "saldo_passar", {chave:cd.chave}); }}, "Passar para "+dbr(cd.saldoDst.limite)) : null);
   cd.saldoSaiu.forEach(function(x){ info("ss"+x.chave, "Saldo passou para "+dm(x.chave), -x.valor); });
@@ -161,12 +163,12 @@ function ListaPagamentos(p){
   if(cd.ajuste>0.005) info("aj", "Diferença enviada a mais · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : ""), cd.ajuste, e(BtL,{ic:"plus-circle", titulo:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }}, "Ver ajuste"));
   cd.descVeio.forEach(function(x){ info("dv"+x.chave, "Desconto · enviado a mais em "+dm(x.chave), -x.valor); });
   if(cd.excPix>0.005) info("exc", "Pago a mais", cd.excPix);
-  var cols = [{k:"data", t:"Data"}, {k:"rev", t:"Revendedora"}, {k:"conta", t:"Conta"}, {k:"chave", t:"Chave Pix"}, {k:"por", t:"Pago por"},
+  var cols = [{k:"data", t:"Data"}, {k:"rev", t:"Revendedora"}, {k:"conta", t:"Conta"}, {k:"chave", t:"Chave Pix"}, {k:"por", t:"Pago por"}, {k:"origem", t:"Origem"},
     {k:"comp", t:"Comprovante", render:function(v, l){ return l.l ? comprovanteEl(c, l.l) : "—"; }},
     {k:"sit", t:"Situação", cor:function(l){ return !l.l ? "" : (conferidoDe(l.l) ? "text-success" : "text-warning"); }},
     {k:"valor", t:"Valor", fmt:brl, cor:function(l){ return Number(l.valor)<0 ? "text-destructive" : "text-success"; }},
     {k:"acoes", t:"", render:function(v, l){ return l.parte ? null : l.l ? e(AcoesLanc,{c:c, l:l.l}) : (l.acao || null); }}];   // a parte "2/2" não tem Editar: edita-se o Pix na linha "1/2"
-  var rodape = function(ls){ return ["Total", String(new Set(ls.filter(function(x){ return x.l && !x.l.auto; }).map(function(x){ return x.l.id; })).size)+" Pix", "", "", "", "", cd.aguardando>0 ? cd.aguardando+" a conferir" : "", brl(ls.filter(function(x){ return !x.info; }).reduce(function(t, x){ return t+Number(x.valor||0); }, 0)), ""]; };
+  var rodape = function(ls){ return ["Total", String(new Set(ls.filter(function(x){ return x.l && !x.l.auto; }).map(function(x){ return x.l.id; })).size)+" Pix", "", "", "", "", "", cd.aguardando>0 ? cd.aguardando+" a conferir" : "", brl(ls.filter(function(x){ return !x.info; }).reduce(function(t, x){ return t+Number(x.valor||0); }, 0)), ""]; };
   return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semMao:true, centro:true, semContagem:true, semLimpar:true, totalRodape:rodape, vazio:"Nenhum pagamento lançado nesta data."});
 }
 

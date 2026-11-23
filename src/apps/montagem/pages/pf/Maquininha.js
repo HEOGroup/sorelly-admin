@@ -198,7 +198,8 @@ function AbaPfMaq(){
   var origens = mqOrigensDoMes(pf, mes), dist = mqDistribuicao(pf, mes), distTot = mqDistribuido(pf, mes), sobra = mqSobra(pf, mes), bx = mqBaixasDoMes(pf, mes);
   var pcMes = descMes>0 ? (baixMes+distTot)/descMes*100 : 0, fn = pf.fornecedores.find(function(x){ return x.id===pf.mqFornId; });
   var excesso = dist.reduce(function(s, d){ var j = janelaPorChave(pf, d.chave); return s+(j ? excedenteJanela(pf, d.chave, j.total) : 0); }, 0);
-  var ps = mqPassadasDoMes(pf, mes), todosMeses = mqMesesSel(pf, mes);
+  // Lucas, 23/11/2026: cada passada diz se foi Automático (veio do Direcionar) ou Manual
+  var ps = mqPassadasDoMes(pf, mes).map(function(x){ return Object.assign({}, x, {rev:x.rev+(x.origemPix ? " · Automático" : " · Manual")}); }), todosMeses = mqMesesSel(pf, mes);
   var fechar = function(){ setMd(null); };
 
   var trocaForn = function(v){
