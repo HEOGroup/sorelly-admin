@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.113", data:"2026-11-22", titulo:"Pix da Casa: marcar a casa de vários de uma vez", itens:[
+  {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Botão Marcar os sem casa como Alphaville: marca de uma vez todos os Pix da Casa que ainda estão sem casa."}]},
  {v:"0.21.112", data:"2026-11-22", titulo:"Janela Pagar da Família mais fácil", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → janela Pagar", txt:"Janela compacta, num card só e sem blocos com borda: duas linhas de campos (valor, data, forma e conta pagadora; para quem entra e observação), a observação da conta em uma linha, o aviso se a conta fica paga ou parcial ao lado do botão Registrar pagamento com o valor dentro, e Editar, Corrigir valor, Encerrar e Excluir escondidos em Mais ações. A forma já vem como a da conta (antes era sempre PIX)."}]},
  {v:"0.21.111", data:"2026-11-22", titulo:"Conta pagadora da Família na escrita padrão das contas", itens:[

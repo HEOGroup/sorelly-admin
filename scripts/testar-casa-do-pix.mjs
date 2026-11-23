@@ -29,6 +29,16 @@ t("pix_editar com casa vazia tira a casa", ff.pix[0].casa===undefined, JSON.stri
 r = red(ff, {op:"pix_set", id:ff.pix[1].id, patch:{personaId:"anabeatriz", casa:""}}); ff = (r && r.ff) || ff;
 t("pix_set move o Pix para um sócio", ff.pix[1].personaId==="anabeatriz");
 
+console.log("1b) marcar a casa de vários de uma vez");
+{ let g = ff0(); let r1 = red(g, {op:"pix_add", personaId:"familia", data:"2026-11-10", valor:100, origem:"Rev A Silva", contaId:"cb1"}); g = r1.ff;
+  r1 = red(g, {op:"pix_add", personaId:"familia", data:"2026-11-11", valor:200, origem:"Rev B Souza", contaId:"cb1", casa:"juan"}); g = r1.ff;
+  r1 = red(g, {op:"pix_add", personaId:"anabeatriz", data:"2026-11-12", valor:300, origem:"Rev C Lima", contaId:"cb1"}); g = r1.ff;
+  const r2 = red(g, {op:"pix_casa_lote", casa:"casaalphaville"});
+  t("marca só o Pix da Casa que estava sem casa", r2.ff.pix[0].casa==="casaalphaville" && r2.ff.pix[1].casa==="juan" && r2.ff.pix[2].casa===undefined, JSON.stringify(r2.ff.pix.map(function(x){ return x.casa; })));
+  const r3 = red(r2.ff, {op:"pix_casa_lote", casa:"casaalphaville"});
+  t("sem nada para marcar, recusa", r3.msg && /Nenhum/.test(r3.msg), r3.msg);
+  const r4 = red(g, {op:"pix_casa_lote", casa:"inventada"});
+  t("casa inválida recusa", r4.msg && /Escolha/.test(r4.msg), r4.msg); }
 console.log("2) lançamento da Contas a receber");
 const base = {data:"2026-11-19", valor:1000, rev:"Rev Teste Silva de Souza", destino:"socio", personaId:"familia", contaId:"cb1", casa:"casajardine"};
 const v = ra.validarLancamento(base, "2026-11-20", []);
