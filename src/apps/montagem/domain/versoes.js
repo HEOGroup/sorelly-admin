@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.134", data:"2026-11-23", titulo:"Direcionar Pix: coluna Conta nos Direcionados", itens:[
+  {tipo:"melhoria", area:"Financeiro → Direcionar Pix", txt:"A tabela Direcionados ganhou a coluna Conta, depois de Valor: mostra para qual conta cada Pix foi direcionado (nome pela regra única; mais de uma conta aparece separada por ponto)."}
+ ]},
  {v:"0.21.133", data:"2026-11-23", titulo:"Produção: envio da produção externa acha a prestadora pelo nome", itens:[
   {tipo:"correção", area:"Produção › Pagamento por produção", txt:"O botão Enviar ao Financeiro não achava a Dávila: na Produção ela é Davila Aline e no Financeiro (Prestadores de serviço) é Dávila. Agora vale a mesma pessoa quando todas as palavras do nome mais curto aparecem no mais longo, sem acento (mesmaPessoa em ProdPagamentos.js). Vale também para Leci e Didi quando forem cadastrados."}
  ]},

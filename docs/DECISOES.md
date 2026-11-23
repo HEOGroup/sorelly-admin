@@ -9,6 +9,8 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Continua valendo:** o pedido fica fora de acerto, fora da Família e fora do Atendimento interno; quem completa é o Lucas; o comprovante pela representante só quando existir o app dela.
 - Código: `pedidoDest`, `valorCombinado`, `repPediu` em `domain/recebimentos-antecipados.js` e `server/recebimentos-antecipados.js`; `LancarPix`, `esperaDe` e o aviso em `pages/ContasReceberLista.js`. Teste: seção 11 de `scripts/testar-recebimento-antecipado-servidor.mjs` (105 verificações).
 
+## 23/11/2026 (Direcionar Pix: coluna Conta nos Direcionados)
+- Pedido do Lucas: a tabela Direcionados mostra a coluna Conta, logo depois de Valor, com a conta para onde o Pix foi direcionado (nome pela regra única `rotuloDestino`). Pix dividido em mais de uma conta mostra as contas separadas por " · ".
 
 ## 23/11/2026 (Lançar recebimento: Conta que recebeu = aba Chaves Pix)
 - **Pedido do Marcus:** "o Conta que recebeu você precisa linkar com a aba de Pagamentos › Chaves Pix, porque tem todas as chaves Pix lá alinhadas".
