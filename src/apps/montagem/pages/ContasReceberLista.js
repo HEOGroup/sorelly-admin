@@ -14,7 +14,7 @@ import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
 import { BarraTabela, CelulaBarra, CampoMini, BuscaMini, AvisoMini } from "@/apps/montagem/components/planilha-cheia";
 import { SeletorPeriodo, faixaDe, CNPJ_LETRA } from "@/apps/montagem/pages/ContasPagarLista";
 import { comprovantesDosRecebidos } from "@/apps/montagem/domain/comprovantes-receber";
-import { hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
+import { CASAS_PIX, hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { BKC } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -385,7 +385,7 @@ function LancarPix(p){
   var proprias = (p.destinos && p.destinos.proprias) || [];
   var socios = cpd.filter(function(s){ return s.ativo!==false && s.tipo==="FAMILIA"; }).map(function(s){ var cs = proprias.filter(function(c){ return c.personaId===s.personaId; }), its = cs.length ? cs.map(function(c){ return [s.id+"|"+c.id, bancoDeConta(c.banco || c.nome) || nomePropio(c.banco) || c.nome, rotuloLeaf(s, cpd, LIB_NOME, c.banco || c.nome)]; }) : [[s.id, "Conta pessoal", nomeLeaf(s)]]; cpd.filter(function(d){ return d.ativo!==false && daFamilia(d) && d.personaId===s.personaId; }).forEach(function(d){ its.push([d.id, nomeCurtoLeaf(d, cpd, LIB_NOME), nomeLeaf(d)]); }); return {t:nomePropio(s.nome), itens:its}; });
   var arvore = [{t:"Empresa", filhos:[{t:"CNPJ", filhos:cpd.filter(function(d){ return d.ativo!==false && d.tipo==="CNPJ"; }).map(noCnpj)}, {t:"Fornecedor / Prestador", itens:itensForn}, {t:"Representante", itens:itensRep}]}, {t:"Sócios", filhos:socios}];   // as contas são as do Direcionar (cp.destinos)
-  var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
+  var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:"", casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
   var sl = useState({itens:null, erro:false}), lista = sl[0], setLista = sl[1], sq = useState(""), q = sq[0], setQ = sq[1];
   var setF = function(o){ setF0(function(a){ return Object.assign({}, a, o); }); };
   useEffect(function(){ var vivo = true; chamar("GET", "/contas-receber/revendedoras").then(function(d){ if(vivo) setLista({itens:d.itens || [], erro:false}); }).catch(function(){ if(vivo) setLista({itens:null, erro:true}); }); return function(){ vivo = false; }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps -- lê a lista uma vez ao abrir a janela
@@ -417,7 +417,7 @@ function LancarPix(p){
     if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
     setSalvando(true); setMsg("");
     var pre = f.arq ? lerAnexo(f.arq).then(function(a){ return enviarAnexo("contasreceber", a); }) : Promise.resolve(null);
-    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:"lancar", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
+    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:"lancar", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
       .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev.nome); p.fechar(); })
       .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o Pix."); });
   };
@@ -433,7 +433,8 @@ function LancarPix(p){
           f.outro ? campo("Nome de quem fez o Pix", e("input",{value:f.pagador, "aria-label":"Nome de quem fez o Pix", placeholder:"Ex.: João, pai dela", className:CAMPO, style:ALTO, onChange:function(ev){ setF({pagador:ev.target.value}); }}), "w-full") : e("div",null))),
       ),
       e("div",{className:BLOCO}, faixa("2 · Para onde foi"),
-      e("div",{className:"flex flex-col items-center gap-1 p-2"}, campo("Conta que recebeu", e(CaixaArvore,{rot:"Conta que recebeu", valor:f.destId, arvore:arvore, vazio:"Escolha a conta", aoMudar:function(v){ setF({destId:v}); }, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-1/2")),
+      e("div",{className:"flex flex-col items-center gap-1 p-2"}, campo("Conta que recebeu", e(CaixaArvore,{rot:"Conta que recebeu", valor:f.destId, arvore:arvore, vazio:"Escolha a conta", aoMudar:function(v){ setF({destId:v}); }, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-1/2"),
+        ehFam(f.destId) && campo("Para qual casa?", e("select",{value:f.casa, "aria-label":"Para qual casa", className:CAMPO, style:ALTO, onChange:function(ev){ setF({casa:ev.target.value}); }}, e("option",{value:""}, "Sem casa (pessoal)"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })), "w-1/2")),
       ),
       e("div",{className:BLOCO}, faixa("3 · Pagamento"),
       e("div",{className:"flex flex-col items-center gap-1 p-2"},

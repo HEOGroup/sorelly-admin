@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.107", data:"2026-11-22", titulo:"Pix da Casa: para qual casa foi (Alphaville, Praia, Jardine, Família)", itens:[
+  {tipo:"novo", area:"Financeiro → Família → PIX revendedoras (Casa)", txt:"Cada Pix da Casa ganha o campo Para qual casa (Alphaville, Praia, Jardine ou Família geral), só no nosso sistema: o DevMaster e as funcionárias não veem. Dá para trocar a casa na própria linha e mover o Pix para um sócio quando ele não é da Casa."},
+  {tipo:"novo", area:"Financeiro → Receber → Contas a receber (lançar Pix)", txt:"Ao lançar um Pix em conta de sócio ou da Casa, o campo Para qual casa grava a casa junto."},
+  {tipo:"melhoria", area:"Financeiro → Família → Gasto por casa", txt:"Duas colunas novas: Pix recebido e Saldo do Pix (Pix recebido menos o que já foi pago), por casa."}]},
  {v:"0.21.106", data:"2026-11-22", titulo:"Família › Contas: telas próprias, títulos e botão Lançar conta", itens:[
   {tipo:"correção", area:"Financeiro → Família → Contas", txt:"A pagar e Pagas abrem as telas próprias da Família (sem CNPJ), não a lista da Sorelly. Títulos: Contas a pagar - Família, Contas pagas - Família e Contas pagas / A pagar - Sorelly."},
   {tipo:"melhoria", area:"Contas a pagar da família", txt:"O botão Lançar conta fica no início da barra, em tamanho médio."},

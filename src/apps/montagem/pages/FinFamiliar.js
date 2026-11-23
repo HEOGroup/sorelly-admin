@@ -5,7 +5,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
+import { CASAS_PIX, CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
 import { abrirAnexo, buscarAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -518,7 +518,7 @@ function CartaoPix(p){
     cont++;
     if(stDe(x)!=="NAOIDENT") soma = r2(soma+x.valor);
     linhas.push(e("tr",{key:x.id},
-      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, casa ? (casaDe(ff, x.contaId) || prestDe(x.contaId)) : prestDe(x.contaId)),
+      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, casa ? e("div",{className:"flex flex-col items-center gap-1"}, e("span",null, casaDe(ff, x.contaId) || prestDe(x.contaId)), e("select",{value:x.casa || "", disabled:c.leitura, "aria-label":"Para qual casa", className:CAMPO+" w-44! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v.indexOf("p:")===0){ if(window.confirm("Mover este Pix para o sócio? Ele sai da Casa e entra nos números dele.")) acao(c, "pix_set", {id:x.id, patch:{personaId:v.slice(2), casa:""}}); } else acao(c, "pix_set", {id:x.id, patch:{casa:v}}); }}, e("option",{value:""}, "Sem casa definida"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); }), ff.personas.filter(function(q){ return q.tipo==="SOCIO" && q.ativo; }).map(function(q){ return e("option",{key:"p:"+q.id, value:"p:"+q.id}, "Mover para "+q.nome); }))) : prestDe(x.contaId)),
       e("td",{className:TC+(stDe(x)==="NAOIDENT" ? " line-through opacity-60" : "")}, BK(x.valor)),
       e("td",{className:TC}, e("span",{className:"inline-flex items-center justify-center gap-2"},
         e("select",{value:valSel(x), disabled:c.leitura, "aria-label":"Conferência", className:CAMPO+" w-40! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else if(v==="DIVD") abrirDiv(x.id, "data", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
@@ -566,7 +566,9 @@ function ResumoPix(p){
   var porFav = {}, porDia = {}, nDia = {};
   vl.forEach(function(x){ var k = x.contaId || "—", d = todos ? x.data.slice(0,7) : x.data; nomesFav[k] = rotuloFav(x.contaId); porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
   var rodTotal = {r:"Recebido", v:BK(casa ? recL : rec), p:vl.length+" PIX"}, rodFav = {r:"Total enviado", v:BK(recL), p:vl.length+" PIX"}, rodDia = {r:"Total", v:BK(recL), p:vl.length+" PIX"};   // o total fica numa linha fixa no fundo de cada bloco
-  var linTotal = casa ? []
+  var porCasaPix = {}; vl.forEach(function(x){ var k = x.casa || "__sem"; porCasaPix[k] = r2((porCasaPix[k] || 0)+x.valor); });
+  var linCasas = CASAS_PIX.concat([["__sem", "Sem casa definida"]]).filter(function(k){ return porCasaPix[k[0]]; }).map(function(k){ return {r:k[1], v:BK(porCasaPix[k[0]]), p:pct(porCasaPix[k[0]], recL)}; });
+  var linTotal = casa ? linCasas
     : [{r:"Direto", v:BK(dir), p:pct(dir, rec)}, {r:"Prestadores", v:BK(pres), p:pct(pres, rec)}]
       .concat(atual && !um ? pes.filter(function(pe){ return ["marco", "anabeatriz", "marcus", "lucas", "anamaria"].indexOf(pe.id)>=0; }).map(function(pe){ var t = totaisPersona(ff, pe.id, ym); return {r:"Meta · "+pe.nome, v:t.pix.meta>0 ? BK(t.pix.meta) : "Sem meta", p:t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta" : ""}; }) : [])   // meta de cada sócio em uma linha (Marcus, 04/11/2026)
       .concat(atual && meta>0 ? [{r:"Meta do mês", v:BK(meta), p:"", total:!um}, {r:"Falta", v:BK(Math.max(0, r2(meta-rec))), p:Math.round(rec/meta*100)+"% da meta"}] : []);

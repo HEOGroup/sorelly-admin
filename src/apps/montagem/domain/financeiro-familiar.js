@@ -54,6 +54,9 @@ var janela = function(){ var h = hojeYm(), l = []; for(var i=-6; i<=12; i++) l.p
 var CASA_CONTAS = {cmsorluqk000102juthewf8x5:"Ana Beatriz", cb4:"Anamaria", cb7:"Itaú Black", cmtcyoby6000002l8un1db5h7:"Itaú Black"};
 function casaDe(ff, contaId){ var b = (ff.contasBanc||[]).find(function(y){ return y.id===contaId; }); return (b && b.casaNome) || CASA_CONTAS[contaId] || ""; }
 function pixCasa(ff, x){ return x.personaId==="familia"; }
+// PARA QUAL CASA o Pix da Casa foi (Marcus, 22/11/2026): campo só do nosso sistema (o DevMaster e as funcionárias não veem); vazio = ainda sem casa definida
+var CASAS_PIX = [["casaalphaville", "Casa Alphaville"], ["juan", "Casa Praia"], ["casajardine", "Casa Jardine"], ["familia", "Casa/Família (geral)"]];
+var casaPixOk = function(v){ return CASAS_PIX.some(function(c){ return c[0]===v; }) ? v : ""; };
 function pixDoMes(ff, pid, ym){
   var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); }).reduce(function(t, x){ return t+x.valor; }, 0);
   var b = ff.repasses.filter(function(x){ return x.origemPixPersonaId===pid && !x.origemPixLancId && x.data.slice(0,7)===ym; }).reduce(function(t, x){ return t+x.valor; }, 0);
@@ -229,7 +232,7 @@ function ffReduz(s, a){
       return ok(criadas ? criadas+" conta(s) de pró-labore geradas" : "Nada novo para gerar neste mês", "Pró-labore", "Gerou contas do mês", nomeMes(ym), criadas+" nova(s)"); }
     // ---- PIX das revendedoras
     case "pix_meta": { ff.pixMeta[a.personaId+"|"+a.ym] = r2(a.valor); return ok("Meta salva", "PIX revendedoras", "Definiu meta de PIX", nomeP(a.personaId)+" · "+nomeMes(a.ym), money(a.valor)); }
-    case "pix_add": { var pv2 = r2(a.valor); if(!a.personaId || !a.data || !(pv2>0)) return recusa("Informe data, valor e pessoa."); var l = {id:uid("px"), personaId:a.personaId, data:a.data, valor:pv2, origem:String(a.origem||"").trim(), contaId:a.contaId||"", forma:a.forma||"PIX", auditoria:"PENDENTE", auditadoPor:""}; ff.pix.push(l); syncRepasse(l);
+    case "pix_add": { var pv2 = r2(a.valor); if(!a.personaId || !a.data || !(pv2>0)) return recusa("Informe data, valor e pessoa."); var l = {id:uid("px"), personaId:a.personaId, data:a.data, valor:pv2, origem:String(a.origem||"").trim(), contaId:a.contaId||"", forma:a.forma||"PIX", auditoria:"PENDENTE", auditadoPor:""}; if(casaPixOk(a.casa)) l.casa = a.casa; ff.pix.push(l); syncRepasse(l);
       return ok("PIX anotado (aguardando conferência)", "PIX revendedoras", "Lançou PIX", (l.origem||"sem nome")+" · "+nomeP(a.personaId), money(pv2)); }
     case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); if((ff.pixUsados||{})[lx.id] && a.patch && a.patch.valor!==undefined && r2(a.patch.valor)!==r2(lx.valor)) return recusa("Esse PIX já foi usado no acerto de "+(ff.pixUsados[lx.id].rev||"uma revendedora")+": o valor não muda."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
     // editar o PIX anotado (Lucas, 18/11/2026): só enquanto estiver "Aguardando" a conferência
@@ -243,6 +246,7 @@ function ffReduz(s, a){
       if(pe.data!==undefined) le.data = pe.data;
       if(pe.origem!==undefined) le.origem = String(pe.origem).trim();
       if(pe.contaId!==undefined) le.contaId = pe.contaId||"";
+      if(pe.casa!==undefined){ if(casaPixOk(pe.casa)) le.casa = pe.casa; else delete le.casa; }
       le.valor = ve;
       (le.hist = le.hist||[]).push({em:new Date().toISOString().slice(0,10), por:por, antes:antesE});
       syncRepasse(le);
@@ -305,5 +309,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { CASAS_PIX, casaPixOk, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };
