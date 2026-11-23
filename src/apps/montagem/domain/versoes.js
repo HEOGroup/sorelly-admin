@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.136", data:"2026-11-23", titulo:"Direcionar: cartão para a Pontual cai na Maquininha Banho", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar Pix", txt:"Cartão ou link direcionado a um fornecedor não vira mais Pix na Conferência de pagamentos. Se o fornecedor é o da Maquininha Banho (Pontual), entra sozinho como passada na Maquininha Banho (data, revendedora, valor e maquininha; bandeira e parcela ficam A informar). Reabrir no Direcionar tira a passada."}
+ ]},
  {v:"0.21.135", data:"2026-11-24", titulo:"Lançar recebimento por forma de pagamento (Pix, Dinheiro, Crédito, Débito, Link)", itens:[
   {tipo:"novo", area:"Financeiro › Receber › Contas a receber", txt:"A janela Lançar recebimento ganhou a Forma de pagamento: Pix, Dinheiro, Crédito, Débito e Link. O Para onde foi muda com a forma: Pix mostra Empresa (CNPJ, Fornecedor / Prestador, Representante, Funcionário) e Sócios; Crédito, Débito e Link mostram as contas e maquininhas da lista de formas da DevMaster, agrupadas por CNPJ (e Maquininhas · Pontual); Dinheiro é uma só. A mensagem com a chave Pix só aparece no Pix. A tabela mostra a forma de cada linha."},
   {tipo:"novo", area:"Financeiro › Receber › Contas a receber", txt:"As contas pessoais dos sócios (Nubank, Caixa, Itaú, Santander, Sicredi) agora geram a mensagem com a chave Pix, lida da aba Chaves Pix › Sócios (a conta é achada pelo banco). Quem não tem chave cadastrada lá mostra o aviso de que falta a chave."},

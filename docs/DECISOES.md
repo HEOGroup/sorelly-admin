@@ -12,6 +12,9 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Decidi sem resposta:** Dinheiro não pede conta (uma só); o aguardando recebimento vale para qualquer forma.
 - Código: `NOME_FORMA`, `arvoreForma`, `alvoDe` e a mensagem dos sócios em `pages/ContasReceberLista.js`; `forma` em `server/recebimentos-antecipados.js` e no domínio. Teste: seção 12 de `scripts/testar-recebimento-antecipado-servidor.mjs` (114 verificações).
 
+## 23/11/2026 (Direcionar: cartão para fornecedor não vira Pix; Pontual cai na Maquininha Banho)
+- Pedido do Lucas ("corrija esse erro"): cartão ou link direcionado a fornecedor virava Pix na Conferência de pagamentos (caso real: Tatiane Cristina Pinati, R$ 184,00 por link para a Pontual em 19/11; o lançamento foi tirado às 16:45).
+- Agora: só Pix vira pagamento do fornecedor. Cartão ou link para o fornecedor da Maquininha Banho (`pf.mqFornId`, hoje a Pontual) vira passada na Maquininha Banho, com `origemPix`, maquininha pela conta (Getnet ou Cielo; link = Link de pagamento), bandeira e parcela "A informar" (só aparecem na tela, não entram em conta). Cartão para outro fornecedor não lança nada. Reabrir tira a passada. Código: `pix_dir` (campo `mq`) e `pix_dir_desfaz` em `domain/pf.js`; `confirma` do DP em `state/reducer.js`.
 
 ## 24/11/2026 (Pedido de Pix completo)
 - **Pedido do Marcus:** "faz os quatro itens" do modo pedido.

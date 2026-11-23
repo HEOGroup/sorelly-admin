@@ -1154,12 +1154,19 @@ function pfReduz(s, a){
         pf.lancamentos.push({id:pf.seq.L++, chave:jn2.chave, fornId:it.fornId, mes:jn2.mes, limite:jn2.limite, data:it.data||hojeIso(), revendedora:String(it.revendedora||"").trim()||"Pix do Direcionar", valor:r2(it.valor), conta:String(it.conta||"").trim()||"—", lf:it.lf||null,
           arqNome:"", arqTipo:"", arqData:"", chavePix:"", conferido:false, conferidoEm:"", origemPix:it.origemPix, aguardaComp:true, direcionadoPor:it.por||""});
         nNovos++; invalidar(pf); });
-      if(!nNovos) return recusa("");
-      return ok(nNovos+" Pix virou(aram) pagamento de fornecedor · falta o comprovante"); }
+      // cartão ou link direcionado ao fornecedor da maquininha (23/11/2026, Lucas): vira passada na Maquininha Banho; bandeira e parcela ficam "A informar" para o financeiro completar
+      var nMq = 0; (a.mq||[]).forEach(function(it){ if(!it.origemPix || !(it.valor>0) || !DATA_OK.test(it.data||"") || pf.mqPassadas.some(function(x){ return x.origemPix===it.origemPix; })) return;
+        var tx = String(it.conta||"").toLowerCase(), marca = tx.indexOf("cielo")>=0 ? "Cielo" : "Getnet", mesMq = it.data.slice(0,7), antesMq = mqSomaPassadas(pf, mesMq);
+        pf.mqPassadas.push({id:pf.seq.mqP++, data:it.data, rev:String(it.rev||"").trim()||"Direcionar", valor:r2(it.valor), band:"A informar", parc:"A informar", maq:it.via==="link" ? "Link de pagamento "+marca : marca, origemPix:it.origemPix});
+        mqSincronizarBruto(pf, mesMq, antesMq); nMq++; });
+      if(!nNovos && !nMq) return recusa("");
+      return ok([nNovos ? nNovos+" Pix virou(aram) pagamento de fornecedor · falta o comprovante" : "", nMq ? nMq+" cartão(ões) lançado(s) na Maquininha Banho" : ""].filter(Boolean).join(" · ")); }
     // Pix reaberto no Direcionar: o pagamento que ainda não tem comprovante sai da lista
     case "pix_dir_desfaz": { var antes = pf.lancamentos.length;
       pf.lancamentos = pf.lancamentos.filter(function(x){ return !(x.origemPix && x.origemPix.indexOf(a.id+"#")===0 && x.aguardaComp); });
-      if(pf.lancamentos.length===antes) return recusa(""); return ok("Pagamento do Direcionar retirado"); }
+      var tiraMq = pf.mqPassadas.filter(function(x){ return x.origemPix && x.origemPix.indexOf(a.id+"#")===0; });   // cartão que o Direcionar lançou na Maquininha Banho sai junto
+      tiraMq.forEach(function(p){ var mM = p.data.slice(0,7), anM = mqSomaPassadas(pf, mM); pf.mqPassadas = pf.mqPassadas.filter(function(x){ return x.id!==p.id; }); mqSincronizarBruto(pf, mM, anM); });
+      if(pf.lancamentos.length===antes && !tiraMq.length) return recusa(""); return ok("Pagamento do Direcionar retirado"); }
     // comprovante anexado: o pagamento passa a contar como pago
     case "lanc_comp": { var l3 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l3) return recusa("Pagamento não encontrado.");
       l3.arqNome = a.arqNome||""; l3.arqTipo = a.arqTipo||""; l3.arqKey = a.arqKey||""; l3.arqData = a.arqData || hojeIso(); if(l3.aguardaComp) l3.aguardaComp = false;

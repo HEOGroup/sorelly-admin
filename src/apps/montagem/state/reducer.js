@@ -420,12 +420,14 @@ function reducer(s, a){
       // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
       if(a.op==="confirma" && rDp.patch.dp){ var pFo = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFo && pFo.status==="direcionado" && sDp.pf){
-          var itFo = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
+          var itFo = [], itMq = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
             var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
+            // 23/11/2026 (Lucas): cartão ou link NÃO vira Pix do fornecedor; se o fornecedor é o da Maquininha Banho, vira passada na maquininha (bandeira e parcela a informar)
+            if(d.via && d.via!=="pix"){ if(fo.id===sDp.pf.mqFornId) itMq.push({origemPix:pFo.id+"#"+n, rev:pFo.quem||pFo.revendedora||pFo.repOrigem||"", valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), via:d.via, conta:d.conta||""}); return; }
             var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
             if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
             itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
-          if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
+          if(itFo.length || itMq.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo, mq:itMq}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
       // 18/11/2026 (Marcus): Pix confirmado para um PRESTADOR DA FAMÍLIA vira repasse no Financeiro familiar sozinho e abate a dívida dele (conta corrente). Reabrir retira.
       if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
