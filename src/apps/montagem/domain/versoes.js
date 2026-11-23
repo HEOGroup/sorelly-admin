@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.140", data:"2026-11-23", titulo:"Direcionar: coluna Forma com a forma de pagamento cadastrada", itens:[
+  {tipo:"melhoria", area:"Financeiro → Direcionar Pix", txt:"Direcionados ganhou a coluna Forma, com a forma de pagamento exatamente como foi cadastrada no lançamento (Pix, Cartão de crédito, Cartão de débito, Link de pagamento, Dinheiro) ou no pedido da representante. A Conta mostra o destino e a conta escolhida como está no sistema (ex.: Sorelly · Pontual · Maquininha · Getnet). Duas formas no mesmo pagamento: formas e contas na mesma ordem, separadas por +."}
+ ]},
+ {v:"0.21.139", data:"2026-11-23", titulo:"Atendimento Sorelly: bandeira e parcelas no comprovante da Maquininha Banho", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Cartão ou link que o financeiro direcionou para a maquininha da Pontual pede Bandeira e Parcelas ao lado do comprovante; sem as duas, o botão Anexar comprovante não aparece. A escolha vai sozinha para a passada da Maquininha Banho (no lugar de A informar)."}
+ ]},
  {v:"0.21.137", data:"2026-11-23", titulo:"Início da representante: a tela do app dentro do Admin", itens:[
   {tipo:"novo", area:"Início", txt:"Conta ou acesso de representante abre a primeira tela do app (mês, vendido, acerto, comissão e atalhos), sem moldura de iPhone, no PC e no celular."},
   {tipo:"novo", area:"Acesso", txt:"Seletor Atuar como ganha Marcus (Sorelly 02), com a lista de revendedoras do vendedor 02, e Vanessa Alves Lapa."},

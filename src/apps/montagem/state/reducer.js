@@ -100,7 +100,21 @@ function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) retu
 
 // Pix de fornecedor vindo do atendimento interno (17/11/2026, Marcus): o comprovante já é anexado no Atendimento Sorelly (e aparece no Consolidado Sorelly).
 // Quando a parte do lançamento (lancFin) ganha o comprovante, o pagamento do fornecedor pega o mesmo comprovante e passa a contar como pago.
+// bandeira e parcelas que a funcionária informou no comprovante vão para a passada da Maquininha Banho (23/11/2026, Lucas)
+function sincMqBanho(s){
+  if(!s.pf || !(s.pf.mqPassadas||[]).some(function(p){ return p.lf && p.origemPix && (p.band==="A informar" || p.parc==="A informar"); })) return s;
+  var sx = s;
+  s.pf.mqPassadas.filter(function(p){ return p.lf && p.origemPix && (p.band==="A informar" || p.parc==="A informar"); }).forEach(function(p){
+    var x, li, pt;
+    if(p.lf.repId){ x = (s.lancFin||[]).find(function(z){ return z.id===p.lf.repId; }); li = x && (x.linhas||[]).find(function(z){ return z.pid===p.lf.pid; }); pt = li && (li.partes||[])[0]; }
+    else { x = (s.lancFin||[]).find(function(z){ return z.internoId===p.lf.internoId; }); li = x && (x.linhas||[])[p.lf.li]; pt = li && (li.partes||[])[p.lf.k]; }
+    if(!pt || !pt.band || !pt.parc) return;
+    var r = pfReduz(sx, {op:"mq_passada_set", id:p.id, patch:{band:pt.band, parc:pt.parc}});
+    if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
+  return sx;
+}
 function sincCompFornecedor(s){
+  s = sincMqBanho(s);
   if(!s.pf || !(s.pf.lancamentos||[]).some(function(l){ return l.aguardaComp && l.lf; })) return s;
   var sx = s;
   s.pf.lancamentos.filter(function(l){ return l.aguardaComp && l.lf; }).forEach(function(l){
@@ -412,9 +426,11 @@ function reducer(s, a){
             return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==pDp.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {enviada:true, partes:[{descricao:descD, valor:l.valor, comprovante:q0.comprovante||null, ok:false}]}); })}); });
           sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); }
         // pedido do atendimento interno (09/11/2026): cada parte (forma#n) é uma linha do lançamento; a conta escolhida volta para a Atendimento Sorelly
+        // 23/11/2026 (Lucas): cartão ou link para o fornecedor da Maquininha Banho: a funcionária informa bandeira e parcelas ao anexar o comprovante
+        var ehMqBanho = function(d){ if(!d.via || d.via==="pix" || !sDp.pf) return false; var dz = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dz || dz.tipo!=="FORNECEDOR") return false; var fz = fornDoDestino(sDp.pf, dz.nome); return !!fz && fz.id===sDp.pf.mqFornId; };
         if(pDp && pDp.internoId && pDp.status==="direcionado"){ var nomeI = function(id){ var d = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===id; }); return d ? d.nome : ""; };
           var porLinha = {}; (pDp.partes||[]).forEach(function(pt, n){ var li = (pDp.linhas||[])[n]; if(li==null) return; var ds = (pDp.divisoes||[]).filter(function(d){ return d.parte===(pt.forma||"pix")+"#"+n; });
-            if(ds.length) porLinha[li] = ds.map(function(d){ return {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; }); });
+            if(ds.length) porLinha[li] = ds.map(function(d){ var pt0 = {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; if(ehMqBanho(d)) pt0.mqBanho = true; return pt0; }); });
           sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
             return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
       // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
@@ -422,10 +438,10 @@ function reducer(s, a){
         if(pFo && pFo.status==="direcionado" && sDp.pf){
           var itFo = [], itMq = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
             var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
-            // 23/11/2026 (Lucas): cartão ou link NÃO vira Pix do fornecedor; se o fornecedor é o da Maquininha Banho, vira passada na maquininha (bandeira e parcela a informar)
-            if(d.via && d.via!=="pix"){ if(fo.id===sDp.pf.mqFornId) itMq.push({origemPix:pFo.id+"#"+n, rev:pFo.quem||pFo.revendedora||pFo.repOrigem||"", valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), via:d.via, conta:d.conta||""}); return; }
             var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
             if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
+            // 23/11/2026 (Lucas): cartão ou link NÃO vira Pix do fornecedor; se o fornecedor é o da Maquininha Banho, vira passada na maquininha (bandeira e parcelas vêm do comprovante da funcionária)
+            if(d.via && d.via!=="pix"){ if(fo.id===sDp.pf.mqFornId) itMq.push({origemPix:pFo.id+"#"+n, lf:lfFo, rev:pFo.quem||pFo.revendedora||pFo.repOrigem||"", valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), via:d.via, conta:d.conta||""}); return; }
             itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
           if(itFo.length || itMq.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo, mq:itMq}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }

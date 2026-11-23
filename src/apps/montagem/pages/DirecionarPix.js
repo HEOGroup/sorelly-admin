@@ -22,6 +22,7 @@ import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe, prazoDaDivida } from "@
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
 import { orientacaoDoDia } from "@/apps/montagem/domain/cerebro-financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
+import { FORMA_LABEL } from "@/apps/montagem/domain/consignado";   // nomes das formas de pagamento como foram cadastradas
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
@@ -474,9 +475,20 @@ function AbaDirecionar(){
       var conferirAqui = function(x){ var l = lfDe(x); if(!l) return;
         c.d({type:"FIN_ETAPA", id:l.id, patch:{etapaComprovantes:true, finalizado:true, finalizadoTs:Date.now()}});
         l.linhas.forEach(function(q, i){ if(q.tipo!=="pagamento" || q.isento) return; c.d({type:"FIN_LINHA", id:l.id, i:i, patch:{partes:(q.partes||[]).map(function(p){ return Object.assign({}, p, {ok:true}); })}, por:c.por}); }); };
-      // CONTA (Lucas, 23/11/2026): para qual conta o Pix foi direcionado, com o nome pela regra única; mais de um destino = separados por ponto
-      var contasDir = function(x){ var l = (x.divisoes||[]).map(function(d){ var dd = cp.destinos.filter(function(z){ return z.id===d.destinoId; })[0]; return dd ? rotuloDestino(dd, d.conta||"") : (d.conta||""); }).filter(Boolean); return l.length ? l.filter(function(v, i){ return l.indexOf(v)===i; }).join(" · ") : "—"; };
-      var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), conta:contasDir(x), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
+      // CONTA (Lucas, 23/11/2026): para qual conta o Pix foi direcionado, com o nome pela regra única; mais de um destino = separados por " + "
+      // FORMA (Lucas, 23/11/2026: "exatamente a forma de pagamento como foi cadastrada"): vem do lançamento da funcionária (Pix, Cartão de crédito, Cartão de débito, Link de pagamento, Dinheiro...) ou do pedido da representante; nunca da conta escolhida
+      var formaDiv = function(x, d){ var n = parseInt(String(d.parte||"").split("#")[1], 10), lf = lfDe(x), li = !isNaN(n) && x.linhas ? x.linhas[n] : null, ln = lf && li!=null ? (lf.linhas||[])[li] : null;
+        if(ln && ln.forma) return FORMA_LABEL[ln.forma] || ln.forma;
+        if(x.origem==="rep" && x.obs) return String(x.obs).split(" · ")[0];   // pedido da representante: "Cartão de crédito em 3x", como ela escolheu no app
+        return formaLonga(d.via || x.forma || "pix"); };
+      // CONTA: a conta exatamente como foi escolhida no Direcionar (ex.: "Maquininha · Getnet"), depois do destino
+      var contaDiv = function(d){ var dd = cp.destinos.filter(function(z){ return z.id===d.destinoId; })[0], ct = String(d.conta||"");
+        if(dd && dd.tipo==="FORNECEDOR" && ct) return rotuloDestino(dd, "")+" · "+ct;
+        return dd ? rotuloDestino(dd, ct) : ct; };
+      var unicos = function(l){ l = l.filter(Boolean); return l.length ? l.filter(function(v, i){ return l.indexOf(v)===i; }).join(" + ") : "—"; };   // " + " separa duas contas (" · " já é usado dentro do nome)
+      var contasDir = function(x){ return unicos((x.divisoes||[]).map(contaDiv)); };
+      var formasDir = function(x){ return unicos((x.divisoes||[]).map(function(d){ return formaDiv(x, d); })); };
+      var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), forma:formasDir(x), conta:contasDir(x), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
       // as linhas ficam sempre no mesmo lugar (mais novo em cima): conferir não muda a linha de posição (Marcus, 12/11/2026: "clicou e sumiu")
       var desfazerAqui = function(x){ var l = lfDe(x); if(!l) return;   // volta a conferência para pendente (o comprovante e as etapas da atendente ficam)
         l.linhas.forEach(function(q, i){ if(q.tipo!=="pagamento" || q.isento) return; c.d({type:"FIN_LINHA", id:l.id, i:i, patch:{partes:(q.partes||[]).map(function(p){ return Object.assign({}, p, {ok:false}); })}, por:c.por}); }); };
@@ -490,7 +502,7 @@ function AbaDirecionar(){
             /^data:image|^https?:/.test(cp.url||"") && !/pdf/i.test(cp.nome||"")
               ? e("img",{src:cp.url, alt:"Comprovante "+(k+1), className:"max-h-[75vh] w-full rounded-md object-contain"})
               : e("a",{href:cp.url, download:cp.nome||"comprovante", className:"text-center text-[13px] font-semibold text-primary underline"}, "Baixar "+(cp.nome||"comprovante"))); })));
-      return e(Fragment,null, modalComp, e(BlocoPainel,{titulo:"Direcionados", compacto:true}, e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", vazio:"Nada direcionado", linhas:linhas, cols:[{k:"data", t:"Data"}, {k:"hora", t:"Hora"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor"}, {k:"conta", t:"Conta"}, {k:"quem", t:"Quem direcionou"},
+      return e(Fragment,null, modalComp, e(BlocoPainel,{titulo:"Direcionados", compacto:true}, e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", vazio:"Nada direcionado", linhas:linhas, cols:[{k:"data", t:"Data"}, {k:"hora", t:"Hora"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor"}, {k:"forma", t:"Forma"}, {k:"conta", t:"Conta"}, {k:"quem", t:"Quem direcionou"},
         {k:"sit", t:"Situação", render:function(v){ return e("span",{className:"font-semibold", style:{color:COR_SIT[v]}}, v); }},
         {k:"com", t:"Com"},
         {k:"comp", t:"Comprovante", render:function(v, r){ return v==="Ver" ? e("button",{type:"button", onClick:function(){ setVerComp({nome:r.rev, lista:compsDe(r.x)}); }, className:BTN_CLARO}, compsDe(r.x).length>1 ? "Abrir comprovantes ("+compsDe(r.x).length+")" : "Abrir comprovante") : "—"; }},

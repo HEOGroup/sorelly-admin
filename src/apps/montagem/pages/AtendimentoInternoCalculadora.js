@@ -593,6 +593,13 @@ function AtendimentoInterno(){
     return e("span",{className:"flex flex-col leading-tight", title:txt}, e("span",null, pt.slice(0, pt.length-1).join(" · ")), e("b",{className:"text-[11px]"}, pt[pt.length-1])); };
   var GRID_FIN = "grid min-h-8 grid-cols-[minmax(0,.7fr)_minmax(0,3fr)_6rem_minmax(0,1.9fr)] items-center gap-2 px-2 py-1 text-center text-[13px]";   // 19/11/2026 (Marcus, opção C): Forma · Conta e chave Pix · Valor · Comprovante
   var STATUS_FIN = {aguardando:["Aguardando o financeiro definir e enviar as contas","#F59E0B"], conta:["Contas definidas: anexe os comprovantes","#38BDF8"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
+  // MAQUININHA BANHO (Lucas, 23/11/2026): cartão ou link que foi para a maquininha da Pontual pede bandeira e parcelas antes do comprovante (mesma lista da Maquininha Banho)
+  var MQ_BAND = ["MASTERCARD","VISA","ELO","HIPERCARD","AMEX","OUTRA"], MQ_PARC = ["DÉBITO"].concat(Array.from({length:12}, function(_, n){ return (n+1)+"x"; }));
+  var faltaMq = function(p){ return !!p.mqBanho && !(p.band && p.parc); };
+  var campoMq = function(i, j, p){ if(!p.mqBanho) return null;
+    if(p.ok || (lancFin && lancFin.finalizado)) return e("span",{className:"font-semibold"}, (p.band||"Bandeira a informar")+" · "+(p.parc||"parcelas a informar"));
+    var sel = function(rot, campo, lista){ return e("select",{"aria-label":rot, value:p[campo]||"", onChange:function(ev){ var pt = {}; pt[campo] = ev.target.value; trocaParte(i, j, pt); }, className:INPUT+" h-8! w-32 text-center text-[13px]!"}, e("option",{value:""}, rot), lista.map(function(o){ return e("option",{key:o, value:o}, o); })); };
+    return e(React.Fragment,null, sel("Bandeira", "band", MQ_BAND), sel("Parcelas", "parc", MQ_PARC)); };
   var trocaParte = function(i, j, patch){ var l = lancFin.linhas[i]; d({type:"FIN_LINHA", id:lancFin.id, i:i, patch:{partes:l.partes.map(function(p,k){ return k===j ? Object.assign({}, p, patch) : p; })}}); };
   // 16/11/2026 (Marcus: "compacta melhor"): título, botões e avisos na MESMA linha (os filhos entram direto na linha, "contents"); só a tabela de contas ocupa a largura toda
   var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : // 16/11/2026 (Marcus: "é um bloco só"): a barra do Financeiro é o título da tabela de contas, tudo no mesmo bloco
@@ -626,9 +633,10 @@ function AtendimentoInterno(){
         partes.forEach(function(p,j){
           var ckP = p.ok ? null : chaveDaParte(s, p.descricao);   // chave Pix da conta direcionada, para passar à revendedora: fica visível até o financeiro conferir (19/11/2026)
           acc.push(linha(i+"-"+j, contaNo(p.descricao||"—", ckP), p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
+            campoMq(i, j, p),
             p.ok ? e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"font-bold text-success"},"✓ conferido"),
               !p.comprovante && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Anexar comprovante",
-                e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
+                e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : faltaMq(p) ? e("span",{className:"font-semibold text-warning"}, "Informe bandeira e parcelas") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
               p.comprovante ? "✓ Trocar comprovante" : "Anexar comprovante",
               e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }})),
             p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},(p.extras||[]).length ? "ver 1" : "ver"),
