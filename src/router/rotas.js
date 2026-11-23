@@ -140,7 +140,6 @@ const montagem = {
     pagina("configurador", () => import("@/apps/montagem/pages/ConfiguradorGeral"), "AbaConfiguradorGeral"),
     pagina("estoque-sorelly", () => import("@/apps/montagem/pages/EstoqueSorelly"), "AbaEstoqueSorelly"),
     pagina("producao-resumo", () => import("@/apps/montagem/pages/Producao"), "AbaProducao"),
-    pagina("producao-premiacao", () => import("@/apps/montagem/pages/Producao"), "AbaPremiacao"),
     pagina("producao-funcionarias", () => import("@/apps/montagem/pages/Producao"), "AbaProdCadastro"),
     pagina("producao-codigos", () => import("@/apps/montagem/pages/Producao"), "AbaProdCadastro"),
     pagina("producao-pagamentos", () => import("@/apps/montagem/pages/Producao"), "AbaProdExterna"),

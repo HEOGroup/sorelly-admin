@@ -28,10 +28,25 @@ function usePr(){
 }
 
 // casca da tela: mesma de Contas a pagar (sem a margem do topo da página, cores de linha do padrão)
-function Raiz(p){ return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"}, p.children); }
+// VISUAL PLANO (Marcus, 22/11/2026: "as telas do financeiro tipo Negociações... as cores de fundo, as linhas brancas grossas; faz todas as telas da produção nesse formato, compacto"):
+// blocos colados (sem espaço preto), fundo azul, faixa branca de 3 px entre um bloco e o outro e no fim, borda de 4 px dos lados, cabeçalho de coluna azul claro, célula com margem mínima.
+// A divisão é feita AQUI (Raiz e casca): as telas só entregam os blocos, uma atrás da outra.
+var PLANA = PADRAO_BLOCOS+" flex min-w-0 flex-col gap-0 [&_section]:!rounded-none [&_section]:!border-x-[4px] [&_section]:!border-y-0 [&_section]:!bg-[var(--bloco-colunas)] [&_tbody_td]:!bg-[var(--bloco-colunas)] [&_tfoot_td]:!bg-[var(--bloco-titulo)] [&_tbody_td]:!border-white/45 [&_td]:!px-0.5 [&_thead_th]:!bg-[#3b6bb5] [&_table]:border [&_table]:border-white/70";   // padrao-ok: igual Negociações (Marcus, 22/11/2026)
+var plana = function(filhos, comFim){
+  var lista = [], achatar = function(f){ if(Array.isArray(f)) f.forEach(achatar); else if(f) lista.push(f); };
+  achatar(filhos);
+  var saida = [];
+  lista.forEach(function(f, i){ if(i) saida.push(e("div",{key:"sep"+i, className:"h-[3px] bg-white"})); saida.push(e("div",{key:"b"+i, className:"contents"}, f)); });
+  if(comFim && lista.length) saida.push(e("div",{key:"sepfim", className:"h-[3px] bg-white"}));
+  return saida;
+};
+// p.cls: classes extras só desta tela (ex.: letra menor na Produção externa)
+// letra pequena e linhas de 18 px (igual à Home do Financeiro familiar e à Negociações; Marcus, 22/11/2026): só dentro dos blocos (section); a janela de lançar fica como está
+var MIUDA = "[&_section_td]:!text-[10px] [&_section_td_*]:!text-[10px] [&_section_th]:!text-[10px] [&_section_th_*]:!text-[10px] [&_section_label]:!text-[10px] [&_section_select]:!text-[10px] [&_section_select]:!h-5 [&_section_input]:!text-[10px] [&_section_input]:!h-5 [&_section_button]:!text-[10px] [&_section_button]:!h-5 [&_section_button]:!py-0 [&_section_tbody_td]:!h-[18px] [&_section_tfoot_td]:!h-[20px] [&_section_td]:!leading-none [&_section_tbody_td_button]:!h-[18px] [&_section_td_span]:!leading-none";   // padrao-ok: letra de 10 px e linha de 18 px (Marcus, 22/11/2026)
+function Raiz(p){ return e(Pagina,{className:"-mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"}, e("div",{className:PLANA+(p.cls ? " "+p.cls : "")}, plana(p.children, true))); }
 
 // semRaiz: a tela vai DENTRO de outra (Produção externa e Cadastro juntam duas telas numa só, 16/11/2026): só uma coluna de blocos, sem a margem da casca
-function casca(semRaiz){ var f = Array.prototype.slice.call(arguments, 1); return semRaiz ? e("div",{className:"flex min-w-0 flex-col gap-2"}, f) : e.apply(null, [Raiz, null].concat(f)); }
+function casca(semRaiz){ var f = Array.prototype.slice.call(arguments, 1); return semRaiz ? e("div",{className:"flex min-w-0 flex-col gap-0"}, plana(f, false)) : e.apply(null, [Raiz, null].concat(f)); }
 
 // faixa azul de controles (fica logo abaixo da barra de título do bloco)
 function FaixaAzul(p){
@@ -62,6 +77,6 @@ var VISOES_PREMIO = [["premio", "Premiação"], ["func", "Funcionárias"], ["cod
 
 // VISUAL LIMPO das tabelas largas da Produção (Marcus, 16/11/2026: "melhora esse fundo, linhas branca com cinza, esses espaços"): UMA cor de linha (cinza suave, em vez de branco forte misturado com cinza),
 // fundo igual em todas as células (a coluna do nome deixa de ter outro tom), total um tom acima e sem as barras brancas grossas que a coluna travada desenhava. Vai numa div em volta do bloco.
-var GRADE_LIMPA = "[--border:rgba(255,255,255,.12)] [--color-border:rgba(255,255,255,.12)] [&_tbody_td]:!bg-[#17181c] [&_tfoot_td]:!bg-[#1f2128] [&_span.pointer-events-none.absolute.bg-white]:hidden";
+var GRADE_LIMPA = "";   // aposentado em 22/11/2026: o visual plano (PLANA, em Raiz) cuida das cores; fica vazio para não quebrar quem ainda importa
 
-export { COR, GRADE_LIMPA, VISOES_PREMIO, usePr, Raiz, casca, FaixaAzul, grupoBtn, BtFaixa, CAMPO_FAIXA, Aviso, pc };
+export { COR, MIUDA, GRADE_LIMPA, VISOES_PREMIO, usePr, Raiz, casca, FaixaAzul, grupoBtn, BtFaixa, CAMPO_FAIXA, Aviso, pc };

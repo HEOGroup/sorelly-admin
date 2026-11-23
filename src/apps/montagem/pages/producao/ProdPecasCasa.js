@@ -7,7 +7,7 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { chamar } from "@/apps/montagem/lib/api";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { CASA_CONTROLE_DESDE, categoriaDaLinha, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, precoPorCodigo, situacaoCasa } from "@/apps/montagem/domain/producao";
-import { BtFaixa, GRADE_LIMPA, casca, usePr } from "@/apps/montagem/pages/producao/visualProd";
+import { BtFaixa, casca, usePr } from "@/apps/montagem/pages/producao/visualProd";
 import { e, useEffect, useState } from "@/shared/react";
 
 var cacheDm = {};   // CÓDIGO → dados da DevMaster (preço, descrição) ou null se ela não conhece; vale enquanto a página estiver aberta
@@ -18,7 +18,7 @@ var traco = function(v){ return v ? n0(v) : "—"; };
 function AbaProdPecasCasa(props){
   var x = usePr(), sJ = useState(null), j = sJ[0], editaNum = !x.leitura;
   var func = (props && props.func) || "", mesmo = function(n){ return !func || String(n || "Davila Aline").trim().toLowerCase()===func.trim().toLowerCase(); };   // a tela mostra UMA pessoa que faz em casa (Dávila, Leci, Didi...)
-  var sit = situacaoCasa(x.pr, func), hoje = hojeSP(), sVer = useState(0);
+  var sit = situacaoCasa(x.pr, func), hoje = hojeSP(), sVer = useState(0), sAb = useState({});   // sAb = dias abertos nas Movimentações
   var chaveCod = j && j.modo==="novo" ? j.linhas.map(function(l){ return limpa(l.codigo); }).filter(function(c){ return c.length>=3; }).join(",") : "";
   useEffect(function(){   // digitou o código: busca o PREÇO na DevMaster (só leitura, a mesma consulta da Produção por tipo)
     if(!chaveCod) return;
@@ -52,8 +52,14 @@ function AbaProdPecasCasa(props){
   var movs = (x.pr.movCasa || []).filter(function(m){ return mesmo(m.func); }).map(function(m){ return {id:"e"+m.id, dia:m.dia, codigo:m.codigo, entrou:m.qtd, voltou:0, mov:m}; }), vol = {};
   Object.keys(x.pr.lancamentos || {}).forEach(function(d){ if(d<CASA_CONTROLE_DESDE) return; (x.pr.lancamentos[d] || []).forEach(function(l){ var q = Number(l.qtd) || 0; if(eCasa(l) && q>0 && l.codigo && mesmo(l.func)){ var k = d+"|"+l.codigo; vol[k] = vol[k] || {id:"v"+k, dia:d, codigo:l.codigo, entrou:0, voltou:0}; vol[k].voltou += q; } }); });
   movs = movs.concat(Object.keys(vol).map(function(k){ return vol[k]; })).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : (a.voltou ? 1 : 0)-(b.voltou ? 1 : 0) || (a.codigo<b.codigo ? -1 : 1); });
-  var colsE = [{k:"dia", t:"Data", w:"28%", fmt:function(v){ return formatarDia(v); }}, {k:"codigo", t:"Código", w:"24%"}, {k:"entrou", t:"Entrou", w:"24%", fmt:traco}, {k:"voltou", t:"Voltou", w:"24%", fmt:traco, cor:function(r){ return r.voltou ? "text-success" : ""; }}];
-  var rodapeE = function(ls){ var s = function(k){ return ls.reduce(function(t, r){ return t+(r[k]||0); }, 0); }; return ["TOTAL · "+ls.length+(ls.length===1 ? " movimento" : " movimentos"), "", traco(s("entrou")), traco(s("voltou"))]; };
+  // MOVIMENTAÇÕES POR DIA (Marcus, 22/11/2026: "nas movimentações faz por dia, ali total"): uma linha por dia com o total que entrou e voltou; clicar no dia abre os códigos dele (e clicar num envio abre para alterar)
+  var porDiaM = {}; movs.forEach(function(m){ var g = porDiaM[m.dia] || (porDiaM[m.dia] = {dia:m.dia, entrou:0, voltou:0, itens:[]}); g.entrou += m.entrou || 0; g.voltou += m.voltou || 0; g.itens.push(m); });
+  var movsDia = []; Object.keys(porDiaM).sort().reverse().forEach(function(d){ var g = porDiaM[d], aberto = !!sAb[0][d];
+    movsDia.push({id:"d"+d, tipo:"dia", dia:d, quando:(aberto ? "▾ " : "▸ ")+formatarDia(d), codigo:g.itens.length+(g.itens.length===1 ? " código" : " códigos"), entrou:g.entrou, voltou:g.voltou});
+    if(aberto) g.itens.forEach(function(m){ movsDia.push({id:"i"+m.id, tipo:"item", dia:d, quando:"", codigo:m.codigo, entrou:m.entrou, voltou:m.voltou, mov:m.mov}); }); });
+  var abreDia = function(r){ if(r.tipo==="dia"){ var n = Object.assign({}, sAb[0]); if(n[r.dia]) delete n[r.dia]; else n[r.dia] = 1; sAb[1](n); } else if(r.mov && editaNum) abrir(r.mov); };
+  var colsE = [{k:"quando", t:"Data", w:"28%"}, {k:"codigo", t:"Código", w:"24%"}, {k:"entrou", t:"Entrou", w:"24%", fmt:traco}, {k:"voltou", t:"Voltou", w:"24%", fmt:traco, cor:function(r){ return r.voltou ? "text-success" : ""; }}];
+  var rodapeE = function(ls){ var d = ls.filter(function(r){ return r.tipo==="dia"; }), s = function(k){ return d.reduce(function(t, r){ return t+(r[k]||0); }, 0); }; return ["TOTAL · "+d.length+(d.length===1 ? " dia" : " dias"), "", traco(s("entrou")), traco(s("voltou"))]; };
 
   // JANELA COMPACTA (Marcus, 19/11/2026: "mais compacta, mais cor, mais alinhada"): título azul, fundo em degradê, UMA linha de campos alinhados (data, código, quantidade, observação) e os botões embaixo à direita
   var fecha = function(){ sJ[1](null); }, ehNovo = j && j.modo==="novo";
@@ -93,11 +99,12 @@ function AbaProdPecasCasa(props){
         e("button",{type:"button", onClick:salvar, className:"h-8 rounded-md bg-[#2f7bd6] px-5 text-[13px] font-semibold text-white hover:bg-[#3b8be8]"}, "Salvar"))));
 
   return casca(props && props.semRaiz,
-    e("div",{className:GRADE_LIMPA+" grid grid-cols-1 items-stretch gap-2 lg:grid-cols-2"},
-      e(BlocoPainel,{titulo:"Estoque com "+(func ? func.split(" ")[0] : "elas"), dir:"Saldo "+n0(sit.tot.comEla), alta:true, compacto:true, acao:e(BtFaixa,{onClick:novo, disabled:!editaNum || !func, titulo:"Anotar o estoque que a Sorelly enviou para "+(func || "ela")}, "+ Estoque enviado")},
-        e(TabelaPlanilha,{key:"pc", fina:true, cols:colsC, linhas:saldo, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeC, vazio:"Nenhuma peça enviada a ela desde 16/11."})),
-      e(BlocoPainel,{titulo:"Movimentações", dir:movs.length || "", alta:true, compacto:true},
-        e(TabelaPlanilha,{key:"pe", fina:true, cols:colsE, linhas:movs, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeE, aoClicar:editaNum ? function(r){ if(r.mov) abrir(r.mov); } : undefined, vazio:"Nenhuma movimentação."}))),
+    e(BlocoPainel,{titulo:"Estoque e movimentações · "+(func ? func.split(" ")[0] : "elas"), dir:"Saldo "+n0(sit.tot.comEla), compacto:true, acao:e(BtFaixa,{onClick:novo, disabled:!editaNum || !func, titulo:"Anotar o estoque que a Sorelly enviou para "+(func || "ela")}, "+ Estoque enviado")},
+      e("div",{className:"grid grid-cols-1 items-start lg:grid-cols-2"},
+        e("div",{className:"min-w-0 lg:border-r-[3px] lg:border-white"},
+          e(TabelaPlanilha,{key:"pc", fina:true, cols:colsC, linhas:saldo, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeC, vazio:"Nenhuma peça enviada a ela desde 16/11."})),
+        e("div",{className:"min-w-0"},
+          e(TabelaPlanilha,{key:"pe"+JSON.stringify(sAb[0]), fina:true, cols:colsE, linhas:movsDia, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeE, aoClicar:abreDia, vazio:"Nenhuma movimentação."})))),
     janela);
 }
 export { AbaProdPecasCasa };

@@ -80,7 +80,7 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 ];
 
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
-var MENU_PRODUCAO = [M("Produção","producao"), M("Premiação","prodpremio"), M("Produção externa","prodcasa"), M("Pagamento por produção","prodpagproducao"), M("Cadastro","prodfunc")];   // setor próprio desde 16/11/2026: Produção (grade do mês), Premiação, Produção externa (Dávila) e Cadastro
+var MENU_PRODUCAO = [M("Produção","producao"), M("Produção externa","prodcasa"), M("Pagamento por produção","prodpagproducao"), M("Cadastro","prodfunc")];   // setor próprio desde 16/11/2026: Produção (grade do mês, com o bônus), Produção externa (Dávila) e Cadastro
 var MENU_REPRESENTANTES = [
   // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
@@ -224,7 +224,7 @@ var SETORES = [
   ]},
   // Produção de peças: setor próprio (16/11/2026, pedido do Marcus). Saiu de Representantes & Kits › Montagem; a tela e os dados são os mesmos (`pages/Producao.js`, `domain/producao.js`).
   {id:"producao", nome:"Produção", ic:"montadora", cor:"#EC4899", menu:MENU_PRODUCAO, semAbas:true, areas:[
-    {nome:"Produção", telas:[T("producao","Produção"), T("prodpremio","Premiação"), T("prodcasa","Produção externa"), T("prodpagproducao","Pagamento por produção"), T("prodfunc","Cadastro")]}]},
+    {nome:"Produção", telas:[T("producao","Produção"), T("prodcasa","Produção externa"), T("prodpagproducao","Pagamento por produção"), T("prodfunc","Cadastro")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
   // 12/11/2026 (Marcus): o relatório de links de pagamento mora AQUI, no setor Link de pagamento (saiu do Financeiro).
   {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, areas:[

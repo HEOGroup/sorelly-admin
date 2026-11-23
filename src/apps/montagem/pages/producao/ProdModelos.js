@@ -64,7 +64,7 @@ function ProdModelos(){
     var g = pessoas[l.func] || (pessoas[l.func] = {id:l.func, nome:l.func, dias:{}, qtd:0, modelos:{}, custoTotal:0, valorTotal:0, semPreco:0});
     var dm = c ? cacheDm[c] : null; g.dias[d] = 1; g.qtd += q; if(c) g.modelos[c] = 1; if(dm){ g.custoTotal += dm.custo*q; g.valorTotal += dm.preco*q; } else g.semPreco += q; }); });
   var titulo = modo==="mes" ? (sVis[0]==="tipo" ? "Produção por tipo · " : "Produção por modelo · ")+nomeMes(Number(mes.slice(0, 4)), Number(mes.slice(5, 7))) : (sVis[0]==="tipo" ? "Produção por tipo · " : "Produção por modelo · ")+formatarDia(dia)+" · "+diaDaSemana(dia);
-  return e("div",{className:GRADE_LIMPA+" flex flex-col gap-2"},
+  return e("div",{className:GRADE_LIMPA+" flex flex-col gap-0"},
     e(BlocoPainel,{key:"mod", titulo:titulo, dir:carregando ? "Buscando custos na DevMaster" : (sErro[0] ? "Sem conexão com a DevMaster" : ""), compacto:true},
       e(FaixaAzul,null,
         grupoBtn([["modelo", "Por modelo"], ["tipo", "Por tipo"]], sVis[0], sVis[1]),
@@ -73,6 +73,6 @@ function ProdModelos(){
         modo==="mes" && e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sDia[1](ev.target.value+"-01"); }, className:CAMPO_FAIXA}),
         modo==="dia" && diasComDado.length>0 && e(BtFaixa,{onClick:function(){ sDia[1](diasComDado[diasComDado.length-1]); }, titulo:"Vai para o último dia com produção"}, "Último dia"),
         sErro[0] && e(BtFaixa,{onClick:function(){ sErro[1](""); sVer[1](function(v){ return v+1; }); }}, "Tentar de novo")),
-      e(TabelaPlanilha,{key:"mod"+sVis[0]+modo+dia+sVer[0], cols:sVis[0]==="tipo" ? colsTipo : cols, linhas:sVis[0]==="tipo" ? linhasTipo : linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:sVis[0]==="tipo" ? totalTipo : totalRodape, vazio:carregando ? "Buscando custos na DevMaster..." : (sErro[0] || "Nenhuma peça lançada neste período.")})));
+      e(TabelaPlanilha,{fina:true, key:"mod"+sVis[0]+modo+dia+sVer[0], cols:sVis[0]==="tipo" ? colsTipo : cols, linhas:sVis[0]==="tipo" ? linhasTipo : linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:sVis[0]==="tipo" ? totalTipo : totalRodape, vazio:carregando ? "Buscando custos na DevMaster..." : (sErro[0] || "Nenhuma peça lançada neste período.")})));
 }
 export { ProdModelos };

@@ -6,9 +6,9 @@
 import { ProdModelos } from "@/apps/montagem/pages/producao/ProdModelos";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { META_DIA_PADRAO, ROTULO_UNIDADE, UNIDADES, bonusDoDia, diaDaSemana, eCasa, ehExterna, resumoExterna, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, nomeMes, somaDias } from "@/apps/montagem/domain/producao";
+import { ROTULO_UNIDADE, metaDoDia, UNIDADES, bonusDoDia, diaDaSemana, eCasa, ehExterna, resumoExterna, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, nomeMes, somaDias } from "@/apps/montagem/domain/producao";
 import { EditorDia } from "@/apps/montagem/pages/producao/ProdEditorDia";
-import { BtFaixa, CAMPO_FAIXA, FaixaAzul, GRADE_LIMPA, Raiz, grupoBtn, usePr } from "@/apps/montagem/pages/producao/visualProd";
+import { BtFaixa, CAMPO_FAIXA, FaixaAzul, Raiz, grupoBtn, usePr } from "@/apps/montagem/pages/producao/visualProd";
 import { e, useState } from "@/shared/react";
 
 var n0 = function(v){ return typeof v==="number" ? formatarInteiro(v) : v; };
@@ -34,7 +34,7 @@ function AbaProdGrade(){
   var rows = Object.keys(por).map(function(k){
     var g = por[k], melhor = Object.keys(g.graf).sort(function(a, b){ return g.graf[b]-g.graf[a]; })[0];
     var casa = !Object.keys(g.unid).some(function(u){ return u!=="CASA"; }) || ehExterna(melhor);   // só produz em casa: fora do bônus (paga por dia), então Bônus e Falta ficam em traço
-    var bonusMes = Object.keys(g.diaB).reduce(function(t, dd){ return t+bonusDoDia(g.diaB[dd]); }, 0);   // bônus só das peças internas (a produção em casa paga R$ 0,45 por peça, sem bônus)   // bônus por DIA: R$ 15 (300), R$ 20 (350), R$ 25 (400+), somado no mês
+    var bonusMes = Object.keys(g.diaB).reduce(function(t, dd){ return t+bonusDoDia(g.diaB[dd], melhor); }, 0);   // bônus só das peças internas (a produção em casa paga R$ 0,45 por peça, sem bônus)   // bônus por DIA: R$ 15 (300), R$ 20 (350), R$ 25 (400+), somado no mês
     var r = {id:k, nome:melhor, casa:casa, total:g.total, bonus:(casa || g.temCasa) ? (casa ? 0 : bonusMes)+resumoExterna(pr, Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), melhor).valor : bonusMes};   // a externa recebe pelas peças (diária até 15/11, R$ 0,45 por peça depois), não bônus
     diasMes.forEach(function(dd){ r["d"+dd] = g.dia[dd] || 0; });
     return r;
@@ -45,9 +45,9 @@ function AbaProdGrade(){
   var ocultas = recentes.length ? rows.filter(function(r){ return !recentes.some(function(dd){ return r["d"+dd]>0; }) && !(typeof r.bonus==="number" && r.bonus>0); }) : [];
   var rowsVis = sTodas[0] ? rows : rows.filter(function(r){ return ocultas.indexOf(r)<0; });
   var abrir = function(dia, func, nova){ sE[1]({dia:dia, func:func || "", nova:!!nova}); };
-  var cel = function(dd){ return function(v, r){ return e("button",{type:"button", onClick:function(){ abrir(dd, r.nome); }, "aria-label":r.nome+", dia "+dd.slice(8)+": "+(v ? formatarInteiro(v)+" peças" : "sem lançamento")+". Clique para ver ou alterar", className:"group h-8 w-full tabular-nums hover:bg-white/10"+(v>=META_DIA_PADRAO && !r.casa ? " text-success" : "")}, v ? formatarInteiro(v) : dd<hoje ? "—" : e("span",{className:"opacity-0 group-hover:opacity-60"}, "+")); }; };
-  var cols = [{k:"nome", t:"Funcionária", w:"9.5rem", fixa:true}, {k:"total", t:"Total", w:"4.5rem", fmt:n0}, {k:"bonus", t:"Bônus", w:"6rem", fmt:function(v){ return typeof v==="number" ? formatarReais(v) : v; }, cor:function(r){ return r.bonus>0 ? "text-success" : ""; }}]
-    .concat(diasMes.map(function(dd){ return {k:"d"+dd, t:dd.slice(8), w:"2.4rem", render:cel(dd), corTopo:dd===hoje ? "#5BB8FF" : undefined}; }));
+  var cel = function(dd){ return function(v, r){ return e("span",{role:"button", tabIndex:0, onKeyDown:function(ev){ if(ev.key==="Enter") abrir(dd, r.nome); }, onClick:function(){ abrir(dd, r.nome); }, "aria-label":r.nome+", dia "+dd.slice(8)+": "+(v ? formatarInteiro(v)+" peças" : "sem lançamento")+". Clique para ver ou alterar", style:{width:"100%", fontSize:"10px", minWidth:0, padding:0}, className:"group flex h-8 w-full cursor-pointer items-center justify-center text-[10px] tabular-nums hover:bg-white/10"+(v>=metaDoDia(r.nome) && !r.casa ? " text-success" : "")}, v ? String(v) : dd<=hoje ? "—" : e("span",{className:"opacity-0 group-hover:opacity-60"}, "+")); }; };   // padrao-ok: número do dia em 10 px para caber os 30 dias na tela (Marcus, 22/11/2026)
+  var cols = [{k:"nome", t:"Funcionária", w:"6.5rem", fixa:true, semFiltro:true}, {k:"total", t:"Total", w:"4%", semFiltro:true, fmt:n0}, {k:"bonus", t:"A receber", w:"6%", semFiltro:true, fmt:function(v){ return typeof v==="number" ? formatarReais(v) : v; }, cor:function(r){ return r.bonus>0 ? "text-success" : ""; }}]
+    .concat(diasMes.map(function(dd){ return {k:"d"+dd, t:dd.slice(8), w:(80/diasMes.length)+"%", semFiltro:true, render:cel(dd), corTopo:dd===hoje ? "#5BB8FF" : undefined}; }));
   if(restrito) cols = cols.filter(function(c){ return c.k!=="bonus"; });
   // linha de TOTAL no FIM da tabela (Marcus, 16/11/2026): soma do mês, bônus e, em cada dia, o total do dia (clicar no total do dia abre o dia inteiro)
   var totalRodape = function(ls){ return cols.map(function(c, i){
@@ -56,12 +56,11 @@ function AbaProdGrade(){
     if(c.k==="bonus") return formatarReais(rows.reduce(function(t, r){ return t+(typeof r.bonus==="number" ? r.bonus : 0); }, 0));
     if(c.k==="falta") return "";
     var dd = c.k.slice(1), s = rows.reduce(function(t, r){ return t+(r[c.k] || 0); }, 0);
-    return e("button",{type:"button", onClick:function(){ abrir(dd, ""); }, title:"Abrir o dia inteiro para lançar", className:"group h-8 w-full tabular-nums hover:text-primary"+(s ? " underline" : "")}, s ? formatarInteiro(s) : dd<hoje ? "—" : e("span",{className:"opacity-0 group-hover:opacity-60"}, "+"));
+    return e("span",{role:"button", tabIndex:0, onKeyDown:function(ev){ if(ev.key==="Enter") abrir(dd, ""); }, onClick:function(){ abrir(dd, ""); }, title:"Abrir o dia inteiro para lançar", style:{width:"100%", fontSize:"10px", minWidth:0, padding:0}, className:"group flex h-8 w-full cursor-pointer items-center justify-center text-[10px] tabular-nums hover:text-primary"}, s ? String(s) : dd<=hoje ? "—" : e("span",{className:"opacity-0 group-hover:opacity-60"}, "+"));   // padrao-ok: mesmo 10 px da linha dos dias (Marcus, 22/11/2026)
   }); };
   var ym = mes.split("-").map(Number);
 
   return e(Raiz,null,
-    e("div",{className:GRADE_LIMPA},
     e(BlocoPainel,{titulo:"Produção · "+nomeMes(ym[0], ym[1]), compacto:true},
       e(FaixaAzul,null,
         e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sM[1](ev.target.value); }, className:CAMPO_FAIXA})),
@@ -69,7 +68,7 @@ function AbaProdGrade(){
         e("span",{className:"flex-1"}),
         ocultas.length>0 && e(BtFaixa,{titulo:sTodas[0] ? "Fecha de novo quem não lançou nos últimos 2 dias úteis" : "Mostra quem não lançou nos últimos 2 dias úteis e não tem bônus no mês", onClick:function(){ sTodas[1](!sTodas[0]); }}, sTodas[0] ? "− "+ocultas.length : "+ "+ocultas.length),
         e(BtFaixa,{titulo:"Abre a janela de lançamento no dia de hoje, já com uma linha nova para digitar", onClick:function(){ abrir(hojeSP(), "", true); }}, "+ Adicionar lançamento")),
-            e(TabelaPlanilha,{key:mes+unidade+(sTodas[0] ? "t" : "f"), cols:cols, linhas:rowsVis, chave:"id", grade:true, compacta:true, barraFina:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhuma produção lançada neste mês."}))),
+            e(TabelaPlanilha,{key:mes+unidade+(sTodas[0] ? "t" : "f"), fina:true, cols:cols, linhas:rowsVis, chave:"id", grade:true, barraFina:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhuma produção lançada neste mês."})),
     e(ProdModelos,{key:"modelos"}),   // embaixo da grade: o que foi produzido por modelo, com custo e valor (só diretoria)
     editor && e(EditorDia,{key:editor.dia+"|"+editor.func+"|"+editor.nova, dia:editor.dia, func:editor.func, nova:editor.nova, aoFechar:function(){ sE[1](null); }}));
 }

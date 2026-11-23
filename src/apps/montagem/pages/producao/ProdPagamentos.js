@@ -31,13 +31,15 @@ function AbaProdPagamentos(props){
 
   // CONTA A PAGAR (Marcus, 17/11/2026: "sempre sobe no Contas a pagar e na aba de fornecedores, igual dos outros"): cada envio vira uma conta a pagar na quarta (natureza 3.01.01.19 Freelancer, Folha e pessoal); marcar pago dá a baixa nela
   var idConta = function(p){ return "prod-"+p.id; };
-  var itemConta = function(p){ return {id:idConta(p), filial:"34", nat:"3.01.01.19", natNome:"Freelancer (Taxa-salário)", pref:"PIX", forn:p.func, nome:p.func+" · "+p.tipo+" · "+formatarDia(p.data), venc:p.data, valor:p.valor, status:"apagar", fam:false, saida:"Pix", centro:"", hist:"Enviado pela Produção › Produção externa", emissao:hoje}; };
+  var ehInt = function(p){ return p.tipo==="Produção interna"; };   // as internas recebem EM DINHEIRO, no dia 12 do mês seguinte (ou dia útil)
+  var itemConta = function(p){ return ehInt(p) ? {id:idConta(p), filial:"34", nat:"3.01.01.12", natNome:"Bônus (produção interna)", pref:"DIN", forn:p.func, nome:p.func+" · produção interna · "+p.detalhe.split(" · ")[0]+" · dinheiro", venc:p.data, valor:p.valor, status:"apagar", fam:false, saida:"Dinheiro", centro:"", hist:"Enviado pela Produção › Pagamento por produção · pagar EM DINHEIRO em "+formatarDia(p.data), emissao:hoje}
+    : {id:idConta(p), filial:"34", nat:"3.01.01.19", natNome:"Freelancer (Taxa-salário)", pref:"PIX", forn:p.func, nome:p.func+" · "+p.tipo+" · "+formatarDia(p.data), venc:p.data, valor:p.valor, status:"apagar", fam:false, saida:"Pix", centro:"", hist:"Enviado pela Produção › Produção externa", emissao:hoje}; };
   var temConta = function(p){ return (((cf.s.cpe||{}).lanc)||[]).some(function(l){ return l.id===idConta(p); }); };
   var criaConta = function(p){ cf.d({type:"CPE_LANC_DEL", id:idConta(p), por:cf.por}); cf.d({type:"CPE_LANC_ADD", itens:[itemConta(p)]}); };
   var pagar = function(p, valorPago){
     var vp = valorPago===undefined ? p.valor : valorPago;
     // 1) conta a pagar: baixa do que cobre a conta (o que passou do devido vira crédito da próxima semana, não sobra aberto aqui)
-    if(temConta(p) && !(((cf.s.cpe||{}).baixas)||[]).some(function(b){ return b.chave==="l|"+idConta(p); })) cf.d({type:"CPE_BAIXA", baixas:[{id:"bx"+Date.now(), chave:"l|"+idConta(p), data:hoje, forma:"Pix revendedora", conta:"", contaNome:"Pix revendedora", principal:Math.min(vp, p.valor), juros:0, multa:0, desc:0, obs:"Pago pelo Direcionar (Pix de revendedoras)"+(vp>p.valor+0.004 ? " · passou "+formatarReais(vp-p.valor)+" (crédito da próxima semana)" : ""), por:cf.s.usuario, em:Date.now(), desc_txt:p.func+" · "+p.tipo+" · "+formatarDia(p.data)}]});
+    if(temConta(p) && !(((cf.s.cpe||{}).baixas)||[]).some(function(b){ return b.chave==="l|"+idConta(p); })) cf.d({type:"CPE_BAIXA", baixas:[{id:"bx"+Date.now(), chave:"l|"+idConta(p), data:hoje, forma:ehInt(p) ? "Dinheiro" : "Pix revendedora", conta:"", contaNome:ehInt(p) ? "Dinheiro" : "Pix revendedora", principal:Math.min(vp, p.valor), juros:0, multa:0, desc:0, obs:(ehInt(p) ? "Pago em dinheiro" : "Pago pelo Direcionar (Pix de revendedoras)")+(vp>p.valor+0.004 ? " · passou "+formatarReais(vp-p.valor)+" (crédito da próxima semana)" : ""), por:cf.s.usuario, em:Date.now(), desc_txt:p.func+" · "+p.tipo+" · "+formatarDia(p.data)}]});
     // 2) pedido da prestadora no Financeiro: dá baixa na parcela
     var f = prestadorDe(p.func), ped = f && p.envio ? ((cf.pf && cf.pf.pedidos) || []).filter(function(q){ return q.fornId===f.id && q.numero===p.envio.numero; })[0] : null;
     if(ped){ var ix = (ped.parcelas||[]).findIndex(function(q){ return q.status!=="Pago"; }); if(ix>=0){ var d2 = {type:"PF", op:"parcela_baixa", por:cf.por, pedId:ped.id, idx:ix}, r2x = pfReduz(cf.s, d2); if(r2x.patch && r2x.patch.pf) cf.d(d2); } }
@@ -46,6 +48,10 @@ function AbaProdPagamentos(props){
   };
   var pedirPagamento = function(p){ if(p.id.indexOf("casa|")===0) sPag[1]({p:p, valor:p.valor}); else pagar(p); };   // produção externa abre a janela do valor pago; bônus marca direto
   var enviar = function(p){
+    if(ehInt(p)){   // interna: só a conta a pagar, em dinheiro (sem pedido de prestadora nem Pix)
+      if(p.aberto){ window.alert("O mês ainda está aberto. Dá para enviar ao Contas a pagar depois que ele fechar."); return; }
+      x.exec("pag_enviado", {id:p.id, valor:p.valor, numero:"Produção interna · "+p.func+" · "+formatarDia(p.data)+" · dinheiro"}); criaConta(p); return;
+    }
     var f = prestadorDe(p.func);
     if(!f){ window.alert("Cadastre "+p.func+" em Financeiro › Pagamentos a fornecedores › Prestadores de serviço (com a chave Pix) antes de enviar."); return; }
     var numero = p.tipo+" · "+p.func+" · "+formatarDia(p.data);
@@ -71,23 +77,24 @@ function AbaProdPagamentos(props){
     enviar(p);
   };
 
-  // PAGAMENTOS, um por SEMANA (segunda a domingo, paga na quarta): semana, quando paga, peças, valor da semana, quanto já foi pago e quanto falta (Marcus, 19/11/2026: "arruma os pagamentos, está estranho")
-  var pecasDe = function(p){ return p.tipo==="Bônus" ? null : p.dias.reduce(function(t, d){ return t+(((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===p.func && eCasa(l); }).reduce(function(t2, l){ return t2+(Number(l.qtd)||0); }, 0)); }, 0); };
-  var semanaDe = function(p){ return p.tipo==="Bônus" ? p.detalhe.split(" · ")[0] : formatarDia(somaDias(p.data, -9)).slice(0, 5)+" a "+formatarDia(somaDias(p.data, -3)).slice(0, 5); };
-  var varias = lista.some(function(p){ return p.tipo==="Bônus"; }) || lista.some(function(p){ return p.func!==lista[0].func; });   // com a pessoa escolhida só sobram as linhas dela
+  // PAGAMENTOS, um por CICLO (terça a segunda, paga na quinta; regra de 22/11/2026): semana, quando paga, peças, valor da semana, quanto já foi pago e quanto falta (Marcus, 19/11/2026: "arruma os pagamentos, está estranho")
+  var pecasDe = function(p){ return p.tipo==="Produção interna" ? null : p.dias.reduce(function(t, d){ return t+(((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===p.func && eCasa(l); }).reduce(function(t2, l){ return t2+(Number(l.qtd)||0); }, 0)); }, 0); };
+  var semanaDe = function(p){ return p.tipo==="Produção interna" ? p.detalhe.split(" · ")[0] : formatarDia(somaDias(p.data, -9)).slice(0, 5)+" a "+formatarDia(somaDias(p.data, -3)).slice(0, 5); };
+  var varias = lista.some(function(p){ return p.tipo==="Produção interna"; }) || lista.some(function(p){ return p.func!==lista[0].func; });   // com a pessoa escolhida só sobram as linhas dela
   var linhas = lista.map(function(p){
     var situ = p.pago ? "Pago" : p.envio ? (Math.abs(p.envio.valor-p.valor)>0.005 ? "Valor mudou" : "Enviado ao Financeiro") : p.data<hoje ? "Atrasado" : "A enviar";
     var jaPago = p.pago ? p.pago.valor : Math.max(0, Math.round((p.total-p.bruto)*100)/100);
-    return {id:p.id, p:p, quem:p.func, semana:semanaDe(p), pagarEm:formatarDia(p.data), pecas:pecasDe(p), semanaValor:p.total, jaPago:jaPago, falta:p.pago ? 0 : p.valor, situ:situ};
+    return {id:p.id, p:p, quem:p.func, semana:semanaDe(p), forma:p.forma || "Pix revendedora", pagarEm:formatarDia(p.data), pecas:pecasDe(p), semanaValor:p.total, jaPago:jaPago, falta:p.pago ? 0 : p.valor, situ:situ};
   });
-  var cols = (varias ? [{k:"quem", t:"Funcionária"}] : []).concat([{k:"semana", t:"Semana"}, {k:"pagarEm", t:"Pagar em"}, {k:"pecas", t:"Peças", fmt:function(v){ return v===null ? "—" : formatarInteiro(v); }},
-    {k:"semanaValor", t:"Valor da semana", fmt:formatarReais}, {k:"jaPago", t:"Já pago", fmt:formatarReais, cor:function(r){ return r.jaPago>0 ? "text-success" : ""; }},
+  var cols = (varias ? [{k:"quem", t:"Funcionária"}] : []).concat([{k:"semana", t:"Período"}, {k:"forma", t:"Forma"}, {k:"pagarEm", t:"Pagar em"}, {k:"pecas", t:"Peças", fmt:function(v){ return v===null ? "—" : formatarInteiro(v); }},
+    {k:"semanaValor", t:"Valor", fmt:formatarReais}, {k:"jaPago", t:"Já pago", fmt:formatarReais, cor:function(r){ return r.jaPago>0 ? "text-success" : ""; }},
     {k:"falta", t:"Falta pagar", fmt:formatarReais, cor:function(r){ return r.falta>0 ? "text-warning" : "text-success"; }},
     {k:"situ", t:"Situação", cor:function(r){ return r.p.pago ? "text-success" : r.situ==="Atrasado" || r.situ==="Valor mudou" ? "text-danger" : ""; }}]);
   if(!x.leitura) cols.push({k:"ac", t:"Ação", render:function(v, r){
     var p = r.p;
     return e("span",{className:"inline-flex flex-wrap items-center justify-center gap-3"},
-      !p.pago && !p.envio && e("button",{type:"button", onClick:function(){ enviar(p); }, className:LINK, title:"Cria o Pix revendedora na quarta para o Lucas pagar no Direcionar"}, "Enviar ao Financeiro"),
+      !p.pago && !p.envio && p.aberto && e("span",{className:"text-[11px] font-semibold"}, "Envia quando o mês fechar"),
+      !p.pago && !p.envio && !p.aberto && e("button",{type:"button", onClick:function(){ enviar(p); }, className:LINK, title:ehInt(p) ? "Cria a conta a pagar EM DINHEIRO para "+formatarDia(p.data) : "Cria o Pix revendedora na quinta para o Lucas pagar no Direcionar"}, ehInt(p) ? "Enviar ao Contas a pagar" : "Enviar ao Financeiro"),
       !p.pago && p.envio && Math.abs(p.envio.valor-p.valor)>0.005 && e("button",{type:"button", onClick:function(){ reenviar(p); }, className:LINK, title:"O valor mudou depois do envio: troca o pedido antigo pelo novo"}, "Reenviar ("+formatarReais(p.valor)+")"),
       !p.pago && p.envio && Math.abs(p.envio.valor-p.valor)<=0.005 && e("button",{type:"button", onClick:function(){ pedirPagamento(p); }, className:LINK}, "Marcar pago"),
       p.dias.length>0 && e("button",{type:"button", onClick:function(){ sDias[1](p.id); }, className:LINK}, "Dias"),
@@ -119,7 +126,7 @@ function AbaProdPagamentos(props){
       e(Painel,{key:"a", t:"Ações", ic:"gear"}, e("div",{className:"flex flex-col gap-2"}, e(Botao,{principal:true, onClick:confirmar}, estoura ? "Confirmar mesmo assim" : "Confirmar pagamento"), e(Botao,{onClick:function(){ sPag[1](null); }}, "Cancelar")))]});
   }
   return casca(props && props.semRaiz,
-    e(BlocoPainel,{titulo:"Pagamentos da produção", dir:"Toda quarta-feira", compacto:true},
+    e(BlocoPainel,{titulo:"Pagamentos da produção", dir:(props && props.interna) ? "Em dinheiro · dia 12" : "Toda quinta-feira", compacto:true},
       e(TabelaPlanilha,{key:"pag", fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhum pagamento a fazer."})),
     jan, jp);
 }

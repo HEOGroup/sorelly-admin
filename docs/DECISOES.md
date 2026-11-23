@@ -3,6 +3,15 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Produção: regras de pagamento e visual)
+- **Dávila é a mulher do Igor; Leci é funcionária** (outra pessoa). Nunca trocar.
+- **Produção externa (Dávila, Leci, Didi):** ciclo de TERÇA a SEGUNDA (a segunda entra), paga na QUINTA-FEIRA por Pix revendedora; R$ 0,45 por peça desde 16/11. O que a pessoa tem em mãos é ESTOQUE, não dinheiro: só vale o que ela entrega. O pago vem do Contas a pagar, nunca de botão na Produção (botão Marcar pago saiu da lista de dias).
+- **Internas:** NÃO existe bônus do mês. Cada dia vale por si (300 a 349 = R$ 15, 350 a 399 = R$ 20, 400 ou mais = R$ 25; abaixo de 100 peças o dia nem conta). Paga EM DINHEIRO no dia 12 do mês seguinte, ou na segunda-feira se cair no fim de semana (novembro = 14/12/2026). Vai ao Contas a pagar com forma Dinheiro depois que o mês fecha.
+- **Aba Premiação apagada.** Pagamento por produção serve para externas e internas (campo Pessoa). Produção externa fica só com Estoque e movimentações (por dia).
+- **Visual da Produção = Negociações:** azul, blocos colados, faixa branca de 3 px, linhas finas. Uma peça só (visualProd.js).
+- Código: quartaDaSemana (devolve a quinta), dataPagBonus, pagamentosDaProducao (tipo Produção interna), ProdPagamentoProducao.js.
+- **Supervisora da produção = Crisbele Silva (23/11/2026):** a meta dela é 100 peças mais baixa, porque ela ajuda as meninas: 200 peças = R$ 15, 250 = R$ 20, 300 = R$ 25 (meta por dia 200). As outras seguem 300 / 350 / 400. Dia com menos de 100 peças continua sem contar. Código: SUPERVISORAS, faixasDe, metaDoDia e bonusDoDia(pecas, nome) em domain/producao.js. Outra supervisora: acrescentar o primeiro nome em SUPERVISORAS.
+
 ## 22/11/2026 (Encomendas: tela Ranking)
 - **Marcus pediu a tela de ranking do Top 100:** Encomendas › Ranking (`pages/encomendas/Ranking.js`, `src/server/encomendas-ranking.js`, rota `/api/encomendas/ranking`). Classifica pelo total de vendas dos últimos 3 meses (mesma base da média: sem brinde, troca, indicação e prêmio, mesmo dia junto, Leilão fora), mostra a posição de 1 mês atrás e a situação diante da lista: Ativa (1 a 100 e na lista), Entrar (1 a 100 e fora), Protegida (101 a 150 e na lista), Sem acesso (101 a 150 e fora), Em saída (depois do 150 e na lista). Só leitura; ainda não muda a lista. Regra completa em `docs/setores/encomendas-e-reposicoes/regras-top100.md`.
 - Textos "Top 50" trocados por "Top 100" nas janelas, no Quadro, nas Regras e no Funil.

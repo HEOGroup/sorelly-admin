@@ -60,8 +60,18 @@ var FAIXAS_BONUS = [{pct:60, valor:150}, {pct:80, valor:175}, {pct:100, valor:25
 // 18/11/2026 (Marcus: "o bônus é pelo dia mesmo: 300 peças R$ 15, 350 R$ 20, 400 R$ 25"; pagamento no dia 11 do mês seguinte): REGRA NOVA, vale no lugar das faixas por % dos dias acima.
 // Cada dia vale por si: 300 a 349 peças = R$ 15,00 · 350 a 399 = R$ 20,00 · 400 ou mais = R$ 25,00 · menos de 300 = nada. O bônus do mês é a SOMA dos dias. Só se muda AQUI.
 var BONUS_DIAS = [{min:400, valor:25}, {min:350, valor:20}, {min:300, valor:15}];
-var BONUS_PAGA_DIA = 11;   // dia do mês seguinte em que o bônus é pago
-function bonusDoDia(pecas){ var q = Number(pecas)||0; if(q<DIA_MINIMO) return 0; for(var i=0; i<BONUS_DIAS.length; i++){ if(q>=BONUS_DIAS[i].min) return BONUS_DIAS[i].valor; } return 0; }
+var BONUS_PAGA_DIA = 12;   // dia do mês seguinte em que as internas recebem, EM DINHEIRO (Marcus, 23/11/2026: "dia 12 ou dia útil do próximo mês"); caindo em sábado ou domingo, vai para a segunda-feira
+/** Data em que as funcionárias internas recebem a produção do mês (ano, mes = o mês produzido): dia 12 do mês seguinte, ou a segunda-feira se cair no fim de semana. */
+function dataPagBonus(ano, mes){ var a = mes===12 ? ano+1 : ano, m = mes===12 ? 1 : mes+1, d = a+"-"+p2(m)+"-"+p2(BONUS_PAGA_DIA), dow = new Date(utcDe(d)).getUTCDay(); return dow===6 ? somaDias(d, 2) : dow===0 ? somaDias(d, 1) : d; }
+// SUPERVISORA (Marcus, 23/11/2026: "pra menina que é supervisora a meta dela é 200, 250, 300: 100 a menos, porque ela ajuda as meninas"): a Crisbele tem as três faixas 100 peças mais baixas (200 = R$ 15, 250 = R$ 20, 300 = R$ 25; meta por dia 200). Para pôr outra supervisora, acrescente o primeiro nome aqui (minúsculo, sem acento).
+var SUPERVISORAS = {crisbele:100};
+function descontoMeta(nome){ var k = String(nome||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().split(" ")[0]; return SUPERVISORAS[k] || 0; }
+function ehSupervisora(nome){ return descontoMeta(nome)>0; }
+/** Faixas do bônus POR DIA de uma pessoa: as normais (300 / 350 / 400) ou, para a supervisora, 100 a menos (200 / 250 / 300). */
+function faixasDe(nome){ var d = descontoMeta(nome); return BONUS_DIAS.map(function(f){ return {min:f.min-d, valor:f.valor}; }); }
+/** Meta de peças por dia de uma pessoa (300, ou 200 para a supervisora). */
+function metaDoDia(nome){ return META_DIA_PADRAO-descontoMeta(nome); }
+function bonusDoDia(pecas, nome){ var q = Number(pecas)||0; if(q<DIA_MINIMO) return 0; var fx = faixasDe(nome); for(var i=0; i<fx.length; i++){ if(q>=fx[i].min) return fx[i].valor; } return 0; }
 var DIA_MINIMO = 100;   // DIA SÓ CONTA COMO TRABALHADO com pelo menos 100 peças no dia (Marcus, 16/11/2026: "só com um mínimo"); quem passa o dia ajudando e faz pouco não puxa a meta. Só se muda AQUI.
 var META_DIA_PADRAO = 300;   // META DE PEÇAS POR DIA TRABALHADO (Marcus, 16/11/2026: 300; "pode retirar o campo da tela"): vale para todas e só se muda AQUI no código
 // mapa de códigos do mockup original (categoria pelo prefixo). Só entra se alguém pedir (op "cod_padrao"); nasce vazio.
@@ -207,7 +217,7 @@ function pecasPorDia(pr, ano, mes){
 function diasTrabalhados(pr, ano, mes){
   var por = pecasPorDia(pr, ano, mes);
   // dia válido = soma do dia ≥ DIA_MINIMO; dia BATIDO = dia válido com soma ≥ META_DIA_PADRAO; Melhor dia olha todos os dias
-  var out = {}; Object.keys(por).forEach(function(n){ var ds = Object.keys(por[n]); out[n] = {dias:ds.filter(function(k){ return por[n][k]>=DIA_MINIMO; }).length, batidos:ds.filter(function(k){ return por[n][k]>=DIA_MINIMO && por[n][k]>=META_DIA_PADRAO; }).length, melhor:Math.max.apply(null, ds.map(function(k){ return por[n][k]; }))}; });
+  var out = {}; Object.keys(por).forEach(function(n){ var ds = Object.keys(por[n]); out[n] = {dias:ds.filter(function(k){ return por[n][k]>=DIA_MINIMO; }).length, batidos:ds.filter(function(k){ return por[n][k]>=DIA_MINIMO && por[n][k]>=metaDoDia(n); }).length, melhor:Math.max.apply(null, ds.map(function(k){ return por[n][k]; }))}; });
   return out;
 }
 // meta por dia trabalhado: fixa no código (META_DIA_PADRAO)
@@ -221,8 +231,8 @@ function premiacaoDoMes(pr, ano, mes){
   Object.keys(por).forEach(function(n){ if(!nomes[n]){ nomes[n] = false; lista.push(n); } });
   var linhas = lista.map(function(n){
     var pecas = por[n]||0, t = dt[n] || {dias:0, batidos:0, melhor:0}, aj = ajusteDoMes(pr, n, ano, mes), dias = pd[n] || {}, bonusDia = {}, calc = 0, f15 = 0, f20 = 0, f25 = 0;
-    Object.keys(dias).forEach(function(d){ var v = bonusDoDia(dias[d]); bonusDia[d] = v; calc += v; if(v===15) f15++; else if(v===20) f20++; else if(v===25) f25++; });
-    return {nome:n, cadastrada:nomes[n], pecas:pecas, dias:t.dias, batidos:t.batidos, melhor:t.melhor, porDia:dias, bonusDia:bonusDia, f15:f15, f20:f20, f25:f25, calculado:r2(calc), ajuste:aj, valor:aj ? aj.valor : r2(calc)};
+    Object.keys(dias).forEach(function(d){ var v = bonusDoDia(dias[d], n); bonusDia[d] = v; calc += v; if(v===15) f15++; else if(v===20) f20++; else if(v===25) f25++; });
+    return {nome:n, supervisora:ehSupervisora(n), meta:metaDoDia(n), faixas:faixasDe(n), cadastrada:nomes[n], pecas:pecas, dias:t.dias, batidos:t.batidos, melhor:t.melhor, porDia:dias, bonusDia:bonusDia, f15:f15, f20:f20, f25:f25, calculado:r2(calc), ajuste:aj, valor:aj ? aj.valor : r2(calc)};
   }).sort(function(a, b){ return b.pecas-a.pecas || (a.nome<b.nome ? -1 : 1); });
   linhas.forEach(function(l, i){ l.posicao = i+1; });
   return {ano:ano, mes:mes, rotulo:nomeMes(ano, mes), metaDia:metaPorDia(), faixas:BONUS_DIAS, linhas:linhas,
@@ -296,9 +306,9 @@ function situacaoCasa(pr, func){
 // ---------- pagamentos (toda QUARTA-FEIRA) ----------
 // 16/11/2026 (Marcus: "enviar em Pix revendedora toda quarta-feira, daí sobe para o Lucas pagar no Direcionar"): o dia trabalhado é pago na primeira quarta-feira DEPOIS dele (dia de semana 3). Dia já pago fica marcado em pr.diasPagos e sai do valor a pagar.
 function quartaApos(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return somaDias(dia, ((3-dow+7)%7) || 7); }
-/** CICLO da produção externa (Marcus, 17/11/2026: "fecha na segunda com tudo que fez até domingo, paga na quarta"): semana de SEGUNDA a DOMINGO; o que foi feito na semana fecha na segunda seguinte e é pago na QUARTA seguinte (domingo + 3 dias). */
-function quartaDaSemana(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return somaDias(dia, (dow===0 ? 0 : 7-dow)+3); }
-/** Lista de pagamentos da produção: diária da produção em casa (por quarta) e bônus de mês fechado. pr.diasPagos = dias da casa já pagos; pr.pagos = bônus pagos; pr.envios = o que já foi enviado ao Financeiro. */
+/** CICLO da produção externa (regra NOVA do Marcus, 22/11/2026: "tudo que entregar até segunda entra no pagamento de quinta da mesma semana, Pix revendedora; domingo trabalha, segunda entrega, quinta recebe"): o ciclo vai de TERÇA a SEGUNDA (a segunda entra); fecha na segunda e é pago na QUINTA seguinte (segunda + 3 dias). Antes (17/11/2026): domingo fechava e quarta pagava. O nome da função ficou (quartaDaSemana) só para não mexer em quem a importa; devolve a QUINTA. */
+function quartaDaSemana(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return somaDias(dia, ((1-dow+7)%7)+3); }
+/** Lista de pagamentos da produção: diária da produção em casa (por quinta) e bônus de mês fechado. pr.diasPagos = dias da casa já pagos; pr.pagos = bônus pagos; pr.envios = o que já foi enviado ao Financeiro. */
 function pagamentosDaProducao(pr, hoje){
   var out = [], grupos = {}, dp = pr.diasPagos || {};
   Object.keys(pr.lancamentos||{}).sort().forEach(function(d){ (pr.lancamentos[d]||[]).forEach(function(l){
@@ -319,9 +329,10 @@ function pagamentosDaProducao(pr, hoje){
   out.forEach(function(r){ if(r.bruto===undefined){ r.bruto = r.valor; r.credito = 0; } });
   var meses = {}; Object.keys(pr.lancamentos||{}).forEach(function(d){ meses[d.slice(0, 7)] = 1; });
   Object.keys(meses).sort().forEach(function(m){
-    var ano = Number(m.slice(0, 4)), mes = Number(m.slice(5, 7)); if(m<BONUS_DESDE || m>=String(hoje||hojeSP()).slice(0, 7)) return;   // só mês fechado
-    var seg = mes===12 ? (ano+1)+"-01" : ano+"-"+p2(mes+1);
-    premiacaoDoMes(pr, ano, mes).linhas.forEach(function(l){ if(l.valor>0){ var id = "bonus|"+l.nome+"|"+m; out.push({id:id, data:seg+"-"+p2(BONUS_PAGA_DIA), func:l.nome, tipo:"Bônus", dias:[], diasPagos:[], diasFalta:[], detalhe:nomeMes(ano, mes)+" · "+(l.f15+l.f20+l.f25)+" dias com bônus (R$ 15: "+l.f15+" · R$ 20: "+l.f20+" · R$ 25: "+l.f25+")", valor:r2(l.valor), total:r2(l.valor), pago:(pr.pagos||{})[id] || null}); } }); });
+    var ano = Number(m.slice(0, 4)), mes = Number(m.slice(5, 7)); if(m<BONUS_DESDE) return;
+    var aberto = m>=String(hoje||hojeSP()).slice(0, 7);   // mês ainda aberto: aparece com o valor até agora, mas só envia ao Contas a pagar depois que o mês fecha
+    var dataInt = dataPagBonus(ano, mes);
+    premiacaoDoMes(pr, ano, mes).linhas.forEach(function(l){ if(l.valor>0){ var id = "bonus|"+l.nome+"|"+m; out.push({id:id, data:dataInt, func:l.nome, tipo:"Produção interna", forma:"Dinheiro", aberto:aberto, dias:[], diasPagos:[], diasFalta:[], detalhe:nomeMes(ano, mes)+" · "+(l.f15+l.f20+l.f25)+" dias que valeram (R$ 15: "+l.f15+" · R$ 20: "+l.f20+" · R$ 25: "+l.f25+")", valor:r2(l.valor), total:r2(l.valor), pago:(pr.pagos||{})[id] || null}); } }); });
   out.forEach(function(x){ x.envio = (pr.envios||{})[x.id] || null; });
   return out.sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : (a.func<b.func ? -1 : 1); });
 }
@@ -537,7 +548,7 @@ function prReduz(s, a){
   }
 }
 
-export { situacaoCasa, CASA_CONTROLE_DESDE, prDemo, prMigrar, prReduz, hojeSP, somaDias, quartaApos, quartaDaSemana, LIMITE_EXCEDENTE, controleDaCasa, valorDiaCasa, CASA_POR_PECA, CASA_PECA_DESDE, estatisticasDoMes, comparativoCasa, CUSTO_DIA_INTERNA, pagamentosDaProducao, CASA_DIARIA,
+export { SUPERVISORAS, descontoMeta, ehSupervisora, faixasDe, metaDoDia, dataPagBonus, situacaoCasa, CASA_CONTROLE_DESDE, prDemo, prMigrar, prReduz, hojeSP, somaDias, quartaApos, quartaDaSemana, LIMITE_EXCEDENTE, controleDaCasa, valorDiaCasa, CASA_POR_PECA, CASA_PECA_DESDE, estatisticasDoMes, comparativoCasa, CUSTO_DIA_INTERNA, pagamentosDaProducao, CASA_DIARIA,
   UNIDADES, ROTULO_UNIDADE, PERIODOS, ROTULO_PERIODO, FAIXAS_BONUS, META_DIA_PADRAO, DIA_MINIMO, CODIGOS_PADRAO, DIAS_SEMANA,
   formatarReais, formatarInteiro, formatarDia, diaDaSemana, nomeMes,
   valorLinha, limparLinha, limparLinhas, montarMapa, categoriaDe, agregar, tendencia, ranking,

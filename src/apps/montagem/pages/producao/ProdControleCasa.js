@@ -58,7 +58,7 @@ function AbaProdControleCasa(props){
       e(BlocoPainel,{titulo:"Produção externa · "+nomeMes(ym[0], ym[1]), compacto:true},
         e(FaixaAzul,null,
           e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:sMes[0], "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sMes[1](ev.target.value); }, className:CAMPO_FAIXA}))),
-        e(TabelaPlanilha,{key:"cc"+sMes[0], cols:cols, linhas:rows, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhum dia de produção externa neste mês."}))),
+        e(TabelaPlanilha,{key:"cc"+sMes[0], fina:true, cols:cols, linhas:rows, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhum dia de produção externa neste mês."}))),
     janela);
 }
 export { AbaProdControleCasa };

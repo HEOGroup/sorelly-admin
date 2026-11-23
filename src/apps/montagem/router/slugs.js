@@ -175,7 +175,6 @@ export const SLUG_DA_ABA = {
   equipes: "equipes",
   estoquesorelly: "estoque-sorelly",
   producao: "producao-resumo",   // setor Produção (16/11/2026): /producao/resumo, /producao/premiacao, /producao/casa, /producao/funcionarias; o link antigo /producao continua abrindo (ABA_DO_SLUG abaixo)
-  prodpremio: "producao-premiacao",
   prodfunc: "producao-funcionarias",
   prodcod: "producao-codigos",
   prodpag: "producao-pagamentos",
@@ -285,7 +284,7 @@ export const SLUG_DA_ABA = {
 export const ABA_DO_SLUG = Object.keys(SLUG_DA_ABA).reduce(function (acc, aba) {
   acc[SLUG_DA_ABA[aba]] = aba;
   return acc;
-}, { producao: "producao", "producao-painel": "producao", "producao-lancamento": "producao", "producao-configuracoes": "prodpremio", "producao-faixas": "prodpremio", melhorias: "melhorias", "pagamentos-regras-do-pix": "dirregras", "pix-representantes": "direcionar" });   // link antigo das Regras do Pix abre Contas das representantes (12/11/2026)   // endereço antigo dos Chamados (até 02/11/2026)
+}, { producao: "producao", "producao-painel": "producao", "producao-lancamento": "producao", "producao-configuracoes": "producao", "producao-faixas": "producao", "producao-premiacao": "producao", melhorias: "melhorias", "pagamentos-regras-do-pix": "dirregras", "pix-representantes": "direcionar" });   // link antigo das Regras do Pix abre Contas das representantes (12/11/2026)   // endereço antigo dos Chamados (até 02/11/2026)
 
 export const ABA_INICIAL = "painel";
 

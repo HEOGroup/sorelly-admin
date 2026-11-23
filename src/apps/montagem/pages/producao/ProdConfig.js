@@ -49,7 +49,7 @@ function AbaProdConfig(p){
     var cmp = comparativoCasa(est), semDado = !cmp[0].dias;
     comparativo = e(BlocoPainel,{titulo:"Comparativo · Externa × funcionárias", dir:nomeMes(ymF[0], ymF[1]), compacto:true},
       e(FaixaAzul,null, e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:sMes[0], "aria-label":"Mês do comparativo", onChange:function(ev){ if(ev.target.value) sMes[1](ev.target.value); }, className:CAMPO_FAIXA}))),
-      e(TabelaPlanilha,{key:"cmp"+sMes[0], chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Sem produção neste mês.",
+      e(TabelaPlanilha,{key:"cmp"+sMes[0], fina:true, chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true, vazio:"Sem produção neste mês.",
         cols:[{k:"quem", t:"Quem"}, {k:"dias", t:"Dias", fmt:formatarInteiro}, {k:"pecas", t:"Peças", fmt:formatarInteiro}, {k:"media", t:"Média por dia", fmt:formatarInteiro}, {k:"melhor", t:"Melhor dia", fmt:formatarInteiro}, {k:"custoDia", t:"Custo por dia", fmt:formatarReais}, {k:"custoPeca", t:"Custo por peça", fmt:formatarReais, cor:function(r){ return r.id==="0" ? "text-success" : ""; }}],
         linhas:cmp.filter(function(l){ return l.dias>0 || l.quem==="Externa"; }).map(function(l, i){ return Object.assign({id:String(i)}, l, {dias:l.dias, pecas:l.pecas}); }),
         totalRodape:semDado || cmp.diferenca===null ? undefined : function(){ return ["Externa contra a média das funcionárias", "", "", (cmp.diferenca>0 ? "+" : "")+cmp.diferenca+"%", "", "", ""]; }}));
@@ -97,8 +97,8 @@ function AbaProdConfig(p){
   var lista = e(BlocoPainel,{titulo:TITULO[visao], dir:linhas.length+(linhas.length===1 ? " registro" : " registros"), compacto:true},
     e(FaixaAzul,null, controles),
     visao==="cod" ? e("div",{className:gradeCod},
-      Array.apply(null, {length:nCol}).map(function(_, i){ var tam = Math.ceil(linhas.length/nCol), parte = linhas.slice(i*tam, (i+1)*tam); return e("div",{key:i, className:"min-w-0"+(i ? " md:border-l-2 md:border-[var(--bloco-titulo)]" : "")}, e(TabelaPlanilha,{key:"cod"+i, cols:cols, linhas:parte, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:vazio, aoClicar:x.leitura ? undefined : function(r){ sJ[1]({tipo:"cod", id:r.c.id, orig:r.c.codigo, codigo:r.c.codigo, rotulo:r.c.rotulo}); }})); }))
-    : e(TabelaPlanilha,{key:visao+sMes[0], cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalFuncs, vazio:vazio}));
+      Array.apply(null, {length:nCol}).map(function(_, i){ var tam = Math.ceil(linhas.length/nCol), parte = linhas.slice(i*tam, (i+1)*tam); return e("div",{key:i, className:"min-w-0"+(i ? " md:border-l-2 md:border-[var(--bloco-titulo)]" : "")}, e(TabelaPlanilha,{fina:true, key:"cod"+i, cols:cols, linhas:parte, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:vazio, aoClicar:x.leitura ? undefined : function(r){ sJ[1]({tipo:"cod", id:r.c.id, orig:r.c.codigo, codigo:r.c.codigo, rotulo:r.c.rotulo}); }})); }))
+    : e(TabelaPlanilha,{key:visao+sMes[0], fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalFuncs, vazio:vazio}));
   return casca(p.semRaiz,
     p.parte==="comparativo" ? comparativo : lista,
     janela);
