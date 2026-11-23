@@ -22,6 +22,7 @@ t("uma tabela com poucas colunas: Pessoa, Acesso, Setor, Situação e Ação", [
 t("lista a equipe: Priscila, Amanda de Miranda e Marcus", ["Priscila", "Amanda de Miranda", "Marcus"].every((n) => h.includes(n)));
 t("Priscila e Amanda aparecem com Acesso total", h.split("Acesso total").length - 1 >= 2);
 t("sem busca no topo, sem blocos de totais, sem botões de abas lado a lado e sem detalhe de três colunas", !/Buscar pessoa/.test(h) && !/Quem pode fazer o quê/.test(h) && !/aria-pressed/.test(h) && !/Telas que abre/.test(h));
+t("a coluna Setor é um menu com os setores (Diretoria, Financeiro, Inadimplência...)", ["Diretoria", "Financeiro", "Inadimplência", "Secretaria"].every((n) => h.includes(">"+n+"<")));
 let hp = "";
 try { hp = desenha(P.AbaAcessosPessoas, 31); t("quem só vê (Marco Antonio) recebe o aviso e a tabela", /Você está só vendo/.test(hp) && hp.includes("Pessoa")); } catch(x){ t("visão Pessoas desenha", false, String(x && x.stack || x).slice(0, 300)); }
 console.log("\n"+ok+" verificações OK, "+falha+" com falha."); process.exit(falha ? 1 : 0);

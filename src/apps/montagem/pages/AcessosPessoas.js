@@ -22,6 +22,10 @@ var COR_SIT = {Aguardando:"text-warning", Ativo:"text-success", Bloqueado:"text-
 var LB = {supervisora:"Supervisão da montagem", agendamento:"Agendamento", financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem", listagens:"Listagens", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças", encomendas:"Encomendas", basico:"Básico"};
 // setor onde cada pessoa trabalha (Marcus, 19/11/2026: Anamaria e Ana Beatriz = Financeiro, Amanda de Miranda = Inadimplência); aparece na coluna Setor mesmo quando o acesso é Total ou Direção. Pessoa nova: acrescentar o código aqui.
 var SETOR_PESSOA = {16:"Diretoria", 17:"Diretoria", 28:"Diretoria", 29:"Financeiro", 30:"Financeiro", 32:"Inadimplência"};
+// SETOR editável para todos (Marcus, 23/11/2026: "sim, editar o Setor"). O setor é só uma etiqueta (onde a pessoa trabalha): quem libera é o Acesso. A escolha fica guardada em autorizações com a chave "setor:<nome>" (lista de pessoas),
+// que o sistema já grava e sincroniza. Para quem tem acesso "Por setor", escolher um setor que tem grupo também muda o grupo da conta.
+var SETORES_LISTA = ["Diretoria", "Financeiro", "Inadimplência", "Agendamento", "Atendimento e bipagem", "Montagem", "Supervisão da montagem", "Listagens", "Kit novo", "Cadastro de revendedoras", "Cadastro de peças", "Encomendas", "Produção", "Marketing", "RH", "Secretaria", "Garantia", "Básico"];
+var MAPA_SETOR_GRUPO = {"Supervisão da montagem":"supervisora", "Agendamento":"agendamento", "Financeiro":"financeiro", "Inadimplência":"inadimplencia", "Atendimento e bipagem":"bipadora", "Montagem":"montadora", "Listagens":"listagens", "Kit novo":"kitnovo", "Cadastro de peças":"cadastropecas", "Encomendas":"encomendas", "Básico":"basico"};
 var GRUPOS_SETOR = GRUPOS.filter(function(g){ return g!=="supervisao" && g!=="familia"; });
 var ENDERECO = "https://sorelly-admin.vercel.app/";
 var NL = String.fromCharCode(10);
@@ -30,7 +34,7 @@ var novaSenha = function(){ return "sorelly" + (1000 + Math.floor(Math.random() 
 var pessoasDoSistema = EQUIPE.map(function(p){ return {id:p.id, nome:p.nome}; });
 
 function AbaAcessosPessoas(){
-  var cx = use(), s = cx.state, edita = EDITORES.indexOf(s.usuario)>=0;
+  var cx = use(), s = cx.state, d = cx.dispatch, edita = EDITORES.indexOf(s.usuario)>=0;
   var sc = useState(null), contas = sc[0], setContas = sc[1], se = useState(""), erro = se[0], setErro = se[1], sm = useState(""), modId = sm[0], setModId = sm[1], cf = useState(null), conf = cf[0], setConf = cf[1], av = useState(""), aviso = av[0], setAviso = av[1];
   useEffect(function(){ if(apiAtiva()) chamar("GET", "/contas").then(function(j){ setContas(j.contas || []); setErro(""); }).catch(function(x){ setErro(x.message || "Não consegui ler as contas."); }); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var muda = function(id, corpo){ chamar("PATCH", "/contas/"+id, corpo).then(function(j){ setContas(function(l){ return (l || []).map(function(c){ return c.id===id ? j.conta : c; }); }); setErro(""); }).catch(function(x){ setErro(x.message || "Não consegui salvar."); }); };
@@ -51,16 +55,24 @@ function AbaAcessosPessoas(){
     if(n==="total") setConf({tipo:"total", c:c, nome:nome});
     else if(n==="direcao") muda(c.id, {grupo:"familia", abas:null, ocultar:null});
     else muda(c.id, {grupo:GRUPOS_SETOR.indexOf(efetivo(c))>=0 ? efetivo(c) : "basico", perfil:"MEMBER"}); };
-  var linhas = (contas || []).map(function(c){ var g = efetivo(c), n = nivelDe(g); return {id:"c_"+c.id, c:c, cor:(VISUAL[g] || [])[0] || "#64748B", nome:nomeDe(c), nivel:rotNivel(n), n:n, grupo:n==="grupo" ? (LB[g] || "Sem setor") : (SETOR_PESSOA[c.pessoaId] || "—"), modulos:c.perfil==="ADMIN" ? "Todos" : (c.setores || []).length+" de "+MODULOS.length, sit:SIT[c.status] || c.status, acao:""}; });
-  pessoasDoSistema.forEach(function(p){ if(!(contas || []).some(function(c){ return c.pessoaId===p.id; })){ var g = grupoDe(p.id), n = nivelDe(g); linhas.push({id:"p_"+p.id, c:null, cor:(VISUAL[g] || [])[0] || "#64748B", nome:p.nome, nivel:rotNivel(n), n:n, grupo:n==="grupo" ? (LB[g] || g) : (SETOR_PESSOA[p.id] || "—"), modulos:"—", sit:apiAtiva() && contas ? "Sem conta" : "—", acao:""}); } });
+  var setorSalvo = function(pid){ var au = s.autoriz || {}, ach = Object.keys(au).filter(function(k){ return k.indexOf("setor:")===0 && (au[k] || []).indexOf(pid)>=0; })[0]; return ach ? ach.slice(6) : ""; };
+  var rotSetor = function(pid, n, g){ return setorSalvo(pid) || (n==="grupo" ? (LB[g] || "Sem setor") : (SETOR_PESSOA[pid] || "—")); };
+  var mudaSetor = function(l, novo){
+    var au = s.autoriz || {};
+    Object.keys(au).forEach(function(k){ if(k.indexOf("setor:")===0 && k!=="setor:"+novo && (au[k] || []).indexOf(l.pid)>=0) d({type:"AUTORIZ_SET", k:k, ids:au[k].filter(function(x){ return x!==l.pid; })}); });
+    var atual = au["setor:"+novo] || []; if(atual.indexOf(l.pid)<0) d({type:"AUTORIZ_SET", k:"setor:"+novo, ids:atual.concat([l.pid])});
+    var g = MAPA_SETOR_GRUPO[novo]; if(l.n==="grupo" && g && l.c) muda(l.c.id, {grupo:g}); };
+  var linhas = (contas || []).map(function(c){ var g = efetivo(c), n = nivelDe(g); return {id:"c_"+c.id, c:c, pid:c.pessoaId, cor:(VISUAL[g] || [])[0] || "#64748B", nome:nomeDe(c), nivel:rotNivel(n), n:n, grupo:rotSetor(c.pessoaId, n, g), modulos:c.perfil==="ADMIN" ? "Todos" : (c.setores || []).length+" de "+MODULOS.length, sit:SIT[c.status] || c.status, acao:""}; });
+  pessoasDoSistema.forEach(function(p){ if(!(contas || []).some(function(c){ return c.pessoaId===p.id; })){ var g = grupoDe(p.id), n = nivelDe(g); linhas.push({id:"p_"+p.id, c:null, pid:p.id, cor:(VISUAL[g] || [])[0] || "#64748B", nome:p.nome, nivel:rotNivel(n), n:n, grupo:rotSetor(p.id, n, g), modulos:"—", sit:apiAtiva() && contas ? "Sem conta" : "—", acao:""}); } });
   linhas.sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
 
   var cols = [
     {k:"nome", t:"Pessoa", w:"13rem", render:function(v, l){ return e("span",{className:"inline-flex items-center justify-center gap-1.5"}, e("span",{"aria-hidden":"true", className:"size-2 shrink-0 rounded-full", style:{background:l.cor}}), v); }},
     {k:"nivel", t:"Acesso", w:"14rem", render:function(v, l){ var c = l.c; if(!c) return e("span",null, v);
       return e("select",{className:CAMPO+" w-full cursor-pointer !bg-[#4a6bb0]/45 !text-[11px] [text-align-last:center]", value:l.n, disabled:!edita, "aria-label":"Acesso de "+l.nome, onChange:function(ev){ mudaNivel(c, ev.target.value, l.nome); }}, NIVEIS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })); }},
-    {k:"grupo", t:"Setor", w:"13rem", render:function(v, l){ var c = l.c; if(!c || l.n!=="grupo") return e("span",null, v);
-      return e("select",{className:CAMPO+" w-full cursor-pointer !bg-[#4a6bb0]/45 !text-[11px] [text-align-last:center]", value:efetivo(c), disabled:!edita, "aria-label":"Setor de "+l.nome, onChange:function(ev){ muda(c.id, {grupo:ev.target.value}); }}, GRUPOS_SETOR.map(function(g){ return e("option",{key:g, value:g}, LB[g] || g); })); }},
+    {k:"grupo", t:"Setor", w:"13rem", render:function(v, l){ if(l.pid==null) return e("span",null, v);
+      var ops = SETORES_LISTA.indexOf(v)>=0 ? SETORES_LISTA : [v].concat(SETORES_LISTA);
+      return e("select",{className:CAMPO+" w-full cursor-pointer !bg-[#4a6bb0]/45 !text-[11px] [text-align-last:center]", value:v, disabled:!edita, "aria-label":"Setor de "+l.nome, onChange:function(ev){ mudaSetor(l, ev.target.value); }}, ops.map(function(o){ return e("option",{key:o, value:o}, o); })); }},
     {k:"modulos", t:"Módulos", w:"7rem", render:function(v, l){ var c = l.c; if(!c || c.perfil==="ADMIN") return e("span",null, v);
       return e(Botao,{onClick:function(){ setModId(c.id); }, title:"Escolher os módulos do servidor que esta pessoa abre"}, v); }},
     {k:"sit", t:"Situação", w:"7rem", cor:function(l){ return COR_SIT[l.sit] || ""; }},
