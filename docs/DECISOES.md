@@ -3250,3 +3250,8 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 
 ## 22/11/2026 (Contas a pagar e Contas pagas da EMPRESA também separadas)
 - Marcus: "ok, execute" (separar também a empresa). Em `pages/ContasPagarLista.js` o seletor Situação saiu de todas as telas: A pagar mostra só a pagar, Pagas só pagas. A opção "Todas" deixou de existir; a busca do topo continua procurando em tudo.
+
+## 23/11/2026 (Encomendas: taxa de entrega paga lança no Contas a receber e no Contas a pagar)
+- Marcus: "B faz agora e sobe tudo". Na ficha do pedido, o botão **Confirmar pagamento** (só quem abre Encomendas) lança UMA taxa já paga: Contas a receber (recebimento sem acerto, pago ao entregador) e Contas a pagar (conta lançada e baixada, forma Pix revendedora), com o mesmo comprovante da revendedora. Taxa não paga não lança nada.
+- Código: `src/server/taxa-entrega.js` (`confirmarTaxa`), rota `app/api/encomendas/link/confirmar`, botão em `pages/encomendas/FichaPedido.js`. Trava: o pedido guarda `pagamento.confirmado`, então não lança duas vezes. O `linkId` fica nos dois lançamentos para cruzar.
+- Testado com pedido de teste (criado e apagado): 1 conta a pagar, 1 baixa com comprovante, 1 recebimento; segunda confirmação recusada.

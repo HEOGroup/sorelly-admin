@@ -30,4 +30,4 @@ A conferência humana fica antes do lançamento: comprovante errado não vira di
 - Identificador do pedido (`linkId`) guardado no lançamento para cruzar sem duplicar.
 
 ## Situação
-**Não construído.** Depende do lançamento universal (em alinhamento nesta pasta). Pronto hoje: o link já recebe o comprovante, a ficha mostra a imagem e o pedido guarda a data. Falta o botão "Confirmar pagamento" e o lançamento em si.
+**Construído em 23/11/2026** (`src/server/taxa-entrega.js`, botão Confirmar pagamento na ficha do pedido). Lança no Contas a receber como recebimento sem acerto e no Contas a pagar já pago, com o mesmo comprovante. Quando o lançamento universal ficar pronto, só o ponto de gravação muda; a regra continua a mesma.

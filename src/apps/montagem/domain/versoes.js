@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.117", data:"2026-11-23", titulo:"Encomendas: confirmar a taxa paga lança nas duas contas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → ficha do pedido → Taxa de entrega", txt:"Botão Confirmar pagamento: depois que a revendedora anexa o comprovante da taxa no link, a equipe confere e confirma. A taxa paga entra no Contas a receber (recebimento sem acerto) e no Contas a pagar já paga ao entregador, com o mesmo comprovante. Taxa não paga não lança nada. Confirmar duas vezes não lança duas vezes."}]},
  {v:"0.21.116", data:"2026-11-23", titulo:"Passar conta da Família para a empresa", itens:[
   {tipo:"novo", area:"Financeiro → Família → Contas a pagar → janela Pagar → Mais ações", txt:"Botão Passar para a empresa: lança a conta na Contas a pagar da empresa como Retirada de sócio paga em dinheiro e tira a conta da Família (as parcelas em aberto saem, o histórico pago fica). Serve para retirada em dinheiro e gasto da conta PJ."}]},
  {v:"0.21.115", data:"2026-11-22", titulo:"Janelas Lançar e Pagar iguais, Observações embaixo do Total, sem Beneficiário", itens:[

@@ -350,6 +350,10 @@ function FichaPedido(p){
   var peçasQuero = (x.pecas || []).filter(function(y){ return queroCods.indexOf(y.cod)>=0; });
   var desm = v.desm || {};
   var codsSep = queroCods.filter(function(c){ return !desm[c]; });
+  var confirmarPag = function(){
+    if(v.conf) return; if(!window.confirm("Conferiu o comprovante? A taxa vai para o Contas a receber e para o Contas a pagar, já paga.")) return; set("conf", true); set("lkErro", "");
+    chamar("POST", "/encomendas/link/confirmar", {linkId:x.linkId}).then(function(){ return chamar("GET", "/encomendas/link/retorno?ids="+encodeURIComponent(x.linkId)); }).then(function(j){ set("ret", j[x.linkId] || null); set("conf", false); }, function(err){ set("conf", false); set("lkErro", err && err.message ? err.message : "Não consegui confirmar o pagamento."); });
+  };
   var separar = function(){
     if(v.sep) return; set("sep", true); set("lkErro", "");
     chamar("POST", "/encomendas/link/separado", {linkId:x.linkId, cods:codsSep}).then(function(){ return chamar("GET", "/encomendas/link/retorno?ids="+encodeURIComponent(x.linkId)); }).then(function(j){ set("ret", j[x.linkId] || null); set("sep", false); copiar(textoMsg); }, function(err){ set("sep", false); set("lkErro", err && err.message ? err.message : "Não consegui avisar que separou."); });
@@ -367,7 +371,9 @@ function FichaPedido(p){
     e("div",{className:"flex flex-col gap-1 text-[13px]"},
       e("p",null, "Peças separadas e taxa liberada no link em "+formatarDataHora(sepInfo.em)+"."),
       pagInfo ? e("div",{className:"flex flex-col gap-1"}, e("p",{className:"font-bold text-[#bbf7d0]"}, "Comprovante enviado pela revendedora em "+formatarDataHora(pagInfo.em)+". Confira o pagamento e avance o pedido."),
-        e("button",{type:"button", title:"Abrir o comprovante", onClick:function(){ abrirAnexo(pagInfo.key); }, className:"block w-28 overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:pagInfo.key, cls:"block aspect-square w-full object-cover"})))
+        e("button",{type:"button", title:"Abrir o comprovante", onClick:function(){ abrirAnexo(pagInfo.key); }, className:"block w-28 overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:pagInfo.key, cls:"block aspect-square w-full object-cover"})),
+        pagInfo.confirmado ? e("p",{className:"font-bold text-[#bbf7d0]"}, "Pagamento confirmado"+(pagInfo.confirmado.por ? " por "+pagInfo.confirmado.por : "")+" em "+formatarDataHora(pagInfo.confirmado.em)+". Lançado no Contas a receber e no Contas a pagar já pago.")
+        : e("button",{type:"button", disabled:!!v.conf, title:"Lança a taxa paga no Contas a receber e no Contas a pagar, com o comprovante", onClick:confirmarPag, className:"h-8 self-start rounded-md border border-border bg-card px-3.5 text-[13px] font-semibold hover:bg-white/10 disabled:opacity-50"}, v.conf ? "Confirmando" : "Confirmar pagamento"))
       : e("p",{className:"font-bold text-[#fbbf24]"}, "Aguardando o pagamento. Sem pagar, o pedido não é liberado para envio."))) : null;
   var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, msgBloco, taxaBloco, respBloco, extrasBloco, pecasBloco);
 
