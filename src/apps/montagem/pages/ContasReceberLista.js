@@ -8,6 +8,8 @@ import { Pagina, Dinheiro } from "@/apps/montagem/components/padrao";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { rotuloDestino, rotuloPrestadorFamilia, nomePropio, rotuloContaCnpj, contaRecebePix, bancoDeConta } from "@/apps/montagem/lib/nome-conta";
 import { rotuloLeaf, nomeCurtoLeaf } from "@/apps/montagem/domain/recebimentos-antecipados";
+import { chavesDoDestino } from "@/apps/montagem/lib/chave-do-destino";
+import { mensagemPixDaChave, mensagemPixPessoa } from "@/apps/montagem/lib/mensagem-pix";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
@@ -83,7 +85,7 @@ function AbaCtaReceber(){
   useEffect(function(){ var t = setTimeout(function(){ setBusca(buscaTxt); }, 300); return function(){ clearTimeout(t); }; }, [buscaTxt]);   // eslint-disable-line react-hooks/exhaustive-deps -- espera parar de digitar (0,3 s) antes de procurar
   var setPer = function(mudanca){ setPerRaw(function(o){ return Object.assign({}, o, mudanca); }); };
   // PIX ANTES DO ACERTO (Marcus, 20/11/2026): lançado aqui, mostrado junto com os pagamentos da DevMaster; o acerto o usa como "já pago". Dados no servidor (/api/contas-receber/antecipados).
-  var sant = useState({itens:[], destinos:{pessoas:[], contas:[]}, verFf:false, lido:false}), ant = sant[0], setAnt = sant[1], slan = useState(false), lancando = slan[0], setLancando = slan[1];
+  var sant = useState({itens:[], destinos:{pessoas:[], contas:[]}, verFf:false, lido:false}), ant = sant[0], setAnt = sant[1], slan = useState(false), lancando = slan[0], setLancando = slan[1], scmp = useState(null), completando = scmp[0], setCompletando = scmp[1];
   var recarregarAnt = function(){ return chamar("GET", "/contas-receber/antecipados").then(function(d){ setAnt(Object.assign({}, d, {lido:true})); }).catch(function(){ setAnt(function(o){ return Object.assign({}, o, {lido:true, falhou:true}); }); }); };
   useEffect(function(){ if(!apiAtiva()) return undefined; recarregarAnt(); var iv = setInterval(recarregarAnt, 30000), foco = function(){ if(!document.hidden) recarregarAnt(); }; document.addEventListener("visibilitychange", foco); return function(){ clearInterval(iv); document.removeEventListener("visibilitychange", foco); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps -- lê ao abrir, a cada 30 s e quando a aba volta ao foco: Pix lançado por outra pessoa ou em outra aba aparece sozinho
   var anexarAnt = function(a, arq){ if(!arq) return; lerAnexo(arq).then(function(f){ return enviarAnexo(a.compModulo, f); }).then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:"anexar", id:a.id, key:sv.key, nome:arq.name, tipo:arq.type}); }).then(recarregarAnt).catch(function(x){ window.alert((x && x.message) || "Não consegui anexar o comprovante."); }); };
@@ -143,7 +145,7 @@ function AbaCtaReceber(){
   if(ref.current.k!==chaveCache){ ref.current = {k:chaveCache, v:comprovantesDosRecebidos(baseTit.map(function(x){ return Object.assign({}, x, {id:x.rid}); }), s.lancFin || [], {}).mapa}; }   // o código da linha na tela é o rid (mês + código), igual ao que a ligação devolve
   var comps = ref.current.v;
   // Pix antes do acerto entra como um pagamento já recebido (mesmas colunas); o comprovante dele vem do servidor, não do Atendimento
-  var antComoX = function(a){ return {id:"ant|"+a.id, rid:"ant|"+a.id, ant:a, rev:a.rev, rep:a.repNome || "—", nota:"—", parc:"—", cod:"—", d:a.data, venc:"", valor:a.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+a.conta, titular:a.destino==="socio" ? "Sócio" : "Empresa"}; };
+  var antComoX = function(a){ return {id:"ant|"+a.id, rid:"ant|"+a.id, ant:a, rev:a.rev || (a.tipo==="pedido" ? "Pedido de Pix" : ""), rep:a.repNome || "—", nota:"—", parc:"—", cod:"—", d:a.data, venc:"", valor:a.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+a.conta, titular:a.destino==="socio" ? "Sócio" : "Empresa"}; };
   var famComoX = function(p){ return {id:"fam|"+p.pixId, rid:"fam|"+p.pixId, fam:p, cz:{conta:p.conta, certeza:"semtitulo"}, rev:p.rev || "—", rep:"—", nota:"—", parc:"—", cod:"—", d:p.data, venc:"", valor:p.valor, saldo:0, aberto:false, nao:false, fn:false, grupo:"Pix", forma:"PIX - "+String(p.dono || "").toUpperCase()+" - PF", titular:"Família e sócios"}; };   // Pix lançado na Família que ainda não tem título na DevMaster
   var base = baseTit.concat((ant.itens || []).map(antComoX), (cz.sem || []).map(famComoX));
 
@@ -159,8 +161,8 @@ function AbaCtaReceber(){
   ls = ls.slice().sort(function(a, b){ var p = dataBase(a), q = dataBase(b); return PAGO && !ABERTO ? q.localeCompare(p) || a.rev.localeCompare(b.rev) : (p||"9999").localeCompare(q||"9999") || a.rev.localeCompare(b.rev); });   // recebidas: a mais recente primeiro; a receber: vence primeiro no alto
 
   var atrasoDe = function(x){ return x.aberto && x.venc && x.venc<hoje0 ? Math.max(1, Math.round((new Date(hoje0+"T00:00:00") - new Date(x.venc+"T00:00:00")) / 86400000)) : 0; };
-  var sitDe = function(x){ return x.fam ? "Só na Família" : x.ant ? (x.ant.tipo==="outro" ? "Lançada" : x.ant.uso ? "Usado no acerto" : "Sem acerto") : x.aberto ? (atrasoDe(x)>0 ? "Atrasada · "+atrasoDe(x)+" dias" : "A receber") : x.nao ? "Recebida depois" : "Recebida"; };
-  var acertoDe = function(x){ return x.ant ? (x.ant.tipo==="outro" ? "—" : x.ant.uso ? "Usado "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando") : x.fam ? "—" : "Feito"; };   // coluna Acerto: o Pix antes do acerto espera o acerto da revendedora e depois é usado nele
+  var sitDe = function(x){ return x.fam ? "Só na Família" : x.ant ? (x.ant.tipo==="pedido" ? "Aguardando Pix" : x.ant.tipo==="outro" ? "Lançada" : x.ant.uso ? "Usado no acerto" : "Sem acerto") : x.aberto ? (atrasoDe(x)>0 ? "Atrasada · "+atrasoDe(x)+" dias" : "A receber") : x.nao ? "Recebida depois" : "Recebida"; };
+  var acertoDe = function(x){ return x.ant ? (x.ant.tipo==="pedido" || x.ant.tipo==="outro" ? "—" : x.ant.uso ? "Usado "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando") : x.fam ? "—" : "Feito"; };   // coluna Acerto: o Pix antes do acerto espera o acerto da revendedora e depois é usado nele
   var contaDm = function(x){ return /^PIX\s*-\s*BANHO$/i.test(limpa(x.forma)) ? "Pontual" : bancoDe(limpa(x.forma)); };   // a forma PIX - BANHO baixa em CAIXA PIX PONTUAL (conferido na DevMaster em 20/11/2026): na coluna Conta vale o nome da empresa, Pontual, igual à coluna CNPJ
   var tituloDm = function(x){ return x.ant || x.fam ? "—" : bonito2(limpa(x.forma)).replace(/\bPf\b/g, "PF").replace(/\s-\s/g, " · "); };   // o nome que a DevMaster usa para este pagamento
   var ehPixFam = function(x){ return !x.ant && !x.fam && x.grupo==="Pix" && x.titular==="Família e sócios" && !/\bPJ\b/i.test(x.forma || ""); };   // Pix para conta de empresa (Itaú PJ do Marco) não é da Família: não entra no cruzamento
@@ -168,10 +170,10 @@ function AbaCtaReceber(){
   var difDe = function(x){ return x.cz && x.cz.certeza==="diferenca" ? (x.cz.dif<0 ? "− " : "+ ")+BKC(Math.abs(x.cz.dif)) : "—"; };   // DevMaster menos Família: "− R$ 15,00" = a DevMaster tem R$ 15,00 a menos que o Pix
   var linhas = ls.map(function(x){
     var c = comps[x.rid] || null, ehPix = /pix/i.test(x.forma || ""), ck = [x.cod, x.nota, x.parc, x.d, x.forma, x.valor].join("|");
-    return {id:x.rid, it:x, comp:c, ck:ck, sit:sitDe(x), acerto:acertoDe(x), rec:x.aberto ? "—" : dm(x.d), venc:dm(x.venc), nome:x.rev, pagador:x.ant ? (x.ant.pagador || "A própria revendedora") : "—", valor:x.aberto ? x.saldo : x.valor, orig:x.valor, forma:x.grupo || "—", conta:x.ant ? x.ant.conta : x.cz ? x.cz.conta : contaDm(x), dmtit:tituloDm(x), cruz:cruzDe(x), dife:difDe(x), cnpj:x.ant ? (x.ant.destino==="socio" ? "Sócio" : "Empresa") : donoDe(x), rep:doisNomes(x.rep), repCheio:x.rep, nota:x.nota || "—", parc:x.partes && x.partes.length>1 ? x.partes.length+"x" : (x.parc || "—"),
+    return {id:x.rid, it:x, comp:c, ck:ck, sit:sitDe(x), acerto:acertoDe(x), rec:x.aberto ? "—" : dm(x.d), venc:dm(x.venc), nome:x.rev, pagador:x.ant ? (x.ant.tipo==="pedido" ? "—" : (x.ant.pagador || "A própria revendedora")) : "—", valor:x.aberto ? x.saldo : x.valor, orig:x.valor, forma:x.grupo || "—", conta:x.ant ? x.ant.conta : x.cz ? x.cz.conta : contaDm(x), dmtit:tituloDm(x), cruz:cruzDe(x), dife:difDe(x), cnpj:x.ant ? (x.ant.destino==="socio" ? "Sócio" : "Empresa") : donoDe(x), rep:doisNomes(x.rep), repCheio:x.rep, nota:x.nota || "—", parc:x.partes && x.partes.length>1 ? x.partes.length+"x" : (x.parc || "—"),
       compro:x.fam ? "—" : x.ant ? (x.ant.compKey ? "Ver" : "Anexar") : c || cmap[ck] ? "Ver" : (!x.aberto && ehPix) ? "Anexar" : "—", abrir:"Abrir"}; });   // só o Pix do Atendimento interno (representante "Sorelly") tem comprovante lá; o das representantes não passa pelo Atendimento
   var corCruz = function(l){ return l.cruz==="Certo" ? "text-success" : l.cruz==="Lendo" || l.cruz==="—" ? "" : "text-warning"; };   // verde = par certo; amarelo = precisa de olho (provável, valor diferente, sem par)
-  var corSit = function(l){ return l.it.fam ? "text-warning" : l.it.ant ? (l.it.ant.uso ? "text-success" : "") : l.it.aberto ? (atrasoDe(l.it)>0 ? "text-warning" : "") : "text-success"; };
+  var corSit = function(l){ return l.it.fam ? "text-warning" : l.it.ant ? (l.it.ant.tipo==="pedido" ? "text-warning" : l.it.ant.uso ? "text-success" : "") : l.it.aberto ? (atrasoDe(l.it)>0 ? "text-warning" : "") : "text-success"; };
   var corAcerto = function(l){ return l.it.ant && l.it.ant.uso ? "text-success" : ""; };
   var botaoAnexarAnt = function(a){ return e("label",{className:"cursor-pointer underline", title:"Anexar o comprovante (foto ou PDF)", onClick:function(ev){ ev.stopPropagation(); }}, "Anexar", e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Anexar comprovante de "+BKC(a.valor), className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; anexarAnt(a, f); }})); };
   var botaoAbrir = function(v, l){ return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); setAberta(l.it); }, className:"cursor-pointer text-[11px] font-semibold underline hover:text-primary"}, "Abrir"); };
@@ -217,7 +219,9 @@ function AbaCtaReceber(){
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-4 -mb-4 -mt-4 md:-mx-6 md:-mb-6 md:-mt-6 [&>section]:!rounded-none [&>section]:!border-l-[4px] [&>section]:!border-t-0 [&>section]:!border-r-[4px] [&>section]:!border-b-[4px]"},
     aberta && createPortal(e(Ficha,{key:aberta.rid, x:aberta, c:comps[aberta.rid] || null, sit:sitDe(aberta), fechar:function(){ setAberta(null); },
       compNode:aberta.ant ? (aberta.ant.compKey ? e("button",{type:"button", onClick:function(){ abrirAnexo(aberta.ant.compKey).catch(function(){ window.alert("Não consegui abrir o comprovante."); }); }, className:"cursor-pointer underline hover:bg-white/10"}, "Ver") : botaoAnexarAnt(aberta.ant)) : null,
+      completar:aberta.ant && aberta.ant.tipo==="pedido" && aberta.ant.pedidoDest ? function(){ setCompletando(aberta.ant); setAberta(null); } : null,
       apagar:aberta.ant && aberta.ant.fonte==="rcb" && !aberta.ant.uso ? function(){ apagarAnt(aberta.ant); } : null}), document.body),
+    completando && e(LancarPix,{key:"c"+completando.id, pedido:completando, destinos:ant.destinos, verFf:ant.verFf, fechar:function(){ setCompletando(null); }, depois:recarregarAnt, aoLancar:function(nome){ setEscopo("todas"); setBuscaTxt(nome); setBusca(nome); }}),
     lancando && e(LancarPix,{destinos:ant.destinos, verFf:ant.verFf, fechar:function(){ setLancando(false); }, depois:recarregarAnt, aoLancar:function(nome){ setEscopo("todas"); setBuscaTxt(nome); setBusca(nome); }}),
     e(BlocoPainel,{titulo:escopo==="receber" ? "Contas a receber" : escopo==="recebidas" ? "Contas recebidas" : "Contas a receber e recebidas", compacto:true},
       // BARRA EM FORMA DE TABELA, IGUAL À CONTAS A PAGAR (Marcus, 21/11/2026): cada controle numa célula com o título em cima; Buscar à esquerda (peças de components/planilha-cheia.js)
@@ -293,8 +297,8 @@ function Ficha(p){
       tabF([["Situação", p.sit], ["Valor", BKC(x.aberto ? x.saldo : x.valor)]].concat(x.aberto ? [["Valor original", BKC(x.valor)]] : [], [["Emissão", dm(x.d)], ["Vence", dm(x.venc)], ["Forma", x.grupo || "—"]]), "repeat("+(x.aberto ? 6 : 5)+", 1fr)"),
       tabF([["Parcelas", x.partes && x.partes.length>1 ? x.partes.length+"x" : (x.parc || "—")], ["CNPJ", x.titular || "—"], ["Código", x.cod || "—"], ["Representante", x.rep || "—"], ["Venda", x.nota || "—"]], "4rem 6rem 4.5rem 1fr 6rem"),
       tabF([["Conta de entrada", limpa(x.forma) || "—"], ["Comprovante", p.compNode ? p.compNode : c ? e("button",{type:"button", onClick:function(){ abrirComp(c); }, className:"cursor-pointer underline hover:bg-white/10"}, "Ver") : "—"]], "1fr 8rem"),
-      x.ant && linhaF("Acerto", x.ant.tipo==="outro" ? "Outro recebimento (não entra em acerto)" : x.ant.uso ? "Usado no acerto de "+(x.ant.uso.rev || "uma revendedora")+" em "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando o acerto"),
-      x.ant && linhaF("Pix em nome de", x.ant.pagador || "A própria revendedora"),
+      x.ant && linhaF("Acerto", x.ant.tipo==="pedido" ? "Aguardando o Pix da revendedora (pedido enviado)" : x.ant.tipo==="outro" ? "Outro recebimento (não entra em acerto)" : x.ant.uso ? "Usado no acerto de "+(x.ant.uso.rev || "uma revendedora")+" em "+dm((x.ant.uso.em || "").slice(0, 10)) : "Aguardando o acerto"),
+      x.ant && x.ant.tipo!=="pedido" && linhaF("Pix em nome de", x.ant.pagador || "A própria revendedora"),
       x.ant && x.ant.repNome && linhaF("Acerto de", x.ant.repNome==="Sorelly" ? "Atendimento interno" : "Representante "+x.ant.repNome),
       x.ant && x.ant.por && linhaF("Lançado por", x.ant.por),
       x.cz && x.cz.certeza!=="semtitulo" && linhaF("Conta (Família)", x.cz.conta),
@@ -304,6 +308,7 @@ function Ficha(p){
       x.cz && x.cz.motivo && linhaF("Motivo do par", x.cz.motivo),
       x.fam && linhaF("Conta (Família)", x.fam.conta),
       x.fam && linhaF("Situação do Pix", "Sem título na DevMaster"),
+      p.completar && e("div",{className:"flex justify-center pt-1"}, e("button",{type:"button", onClick:p.completar, className:"cursor-pointer rounded border border-white/60 bg-[#3f6bb8] px-3 text-[11px] font-semibold text-white hover:brightness-125"}, "Completar pedido")),   // padrao-ok: botão de 11 px da ficha
       p.apagar && e("div",{className:"flex justify-center pt-1"}, e("button",{type:"button", onClick:p.apagar, className:"cursor-pointer rounded border border-white/40 px-3 text-[11px] font-semibold text-warning hover:bg-white/10"}, "Apagar lançamento"))));
 }
 
@@ -357,7 +362,8 @@ function CaixaArvore(p){
   var LINHA = "flex w-full items-center border-b border-white/15 last:border-b-0 px-2 text-left text-[13px] hover:bg-[var(--bloco-titulo)] active:brightness-125 ";   // padrao-ok: letra de 12 px na lista da janela (Marcus: "aumenta um pouco")
   var ALTURA = {height:"26px", scrollSnapAlign:"start"};
   var CAIXA = {maxHeight:"210px", scrollSnapType:"y mandatory"};   // 8 linhas de 26 px + a borda: nunca sobra meia linha
-  var abrir = function(){ if(!aberto) setCaminho(atual ? atual.trilha : []); setAberto(!aberto); setBusca(""); };
+  var sa = useState(false), acima = sa[0], setAcima = sa[1];   // sem lugar embaixo (tela baixa), a lista abre PARA CIMA em vez de ficar cortada
+  var abrir = function(){ if(!aberto){ setCaminho(atual ? atual.trilha : []); if(ref.current) setAcima(ref.current.getBoundingClientRect().bottom+260>window.innerHeight); } setAberto(!aberto); setBusca(""); };
   var lista = achados
     ? [e("div",{key:"cxb", className:"m-1 overflow-y-auto rounded border border-white/40", style:CAIXA}, achados.length ? achados.map(function(x){ return e("button",{type:"button", key:"b"+x.id, role:"option", onClick:function(){ escolhe(x.id); }, className:LINHA+"justify-between", style:ALTURA}, e("span",null, x.t), e("span",{className:"text-white/70"}, x.trilha.join(" › "))); }) : e("div",{className:"flex items-center px-2 text-[12px]", style:ALTURA}, "Nada encontrado"))]   // padrao-ok: letra de 12 px
     : [].concat(
@@ -366,7 +372,7 @@ function CaixaArvore(p){
         itens.map(function(it){ var sel = it[0]===p.valor; return e("button",{type:"button", key:"f"+it[0], role:"option", "aria-selected":sel, onClick:function(){ escolhe(it[0]); }, className:LINHA+(sel ? "bg-[#3f6bb8]" : ""), style:ALTURA}, it[1]); })))]);
   return e("div",{ref:ref, className:"relative w-full"},
     e("button",{type:"button", "aria-label":p.rot, "aria-haspopup":"listbox", "aria-expanded":aberto, onClick:abrir, className:p.cls+" relative flex items-center justify-center", style:p.estilo}, atual ? atual.cheio : p.vazio),
-    aberto && e("div",{role:"listbox", className:"absolute left-0 right-0 z-20 overflow-hidden rounded border border-white/40 text-white shadow-lg", style:{top:"24px", background:p.fundo}},
+    aberto && e("div",{role:"listbox", className:"absolute left-0 right-0 z-20 overflow-hidden rounded border border-white/40 text-white shadow-lg", style:acima ? {bottom:"24px", background:p.fundo} : {top:"24px", background:p.fundo}},
       e("div",null, lista)));
 }
 
@@ -385,9 +391,21 @@ function LancarPix(p){
   var proprias = (p.destinos && p.destinos.proprias) || [];
   var socios = cpd.filter(function(s){ return s.ativo!==false && s.tipo==="FAMILIA"; }).map(function(s){ var cs = proprias.filter(function(c){ return c.personaId===s.personaId; }), its = cs.length ? cs.map(function(c){ return [s.id+"|"+c.id, bancoDeConta(c.banco || c.nome) || nomePropio(c.banco) || c.nome, rotuloLeaf(s, cpd, LIB_NOME, c.banco || c.nome)]; }) : [[s.id, "Conta pessoal", nomeLeaf(s)]]; cpd.filter(function(d){ return d.ativo!==false && daFamilia(d) && d.personaId===s.personaId; }).forEach(function(d){ its.push([d.id, nomeCurtoLeaf(d, cpd, LIB_NOME), nomeLeaf(d)]); }); return {t:nomePropio(s.nome), itens:its}; });
   var arvore = [{t:"Empresa", filhos:[{t:"CNPJ", filhos:cpd.filter(function(d){ return d.ativo!==false && d.tipo==="CNPJ"; }).map(noCnpj)}, {t:"Fornecedor / Prestador", itens:itensForn}, {t:"Representante", itens:itensRep}]}, {t:"Sócios", filhos:socios}];   // as contas são as do Direcionar (cp.destinos)
-  var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:"", casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
+  // MODO PEDIDO (Marcus, 23/11/2026): o Lucas manda a conta à representante ANTES de o Pix existir; só a conta é obrigatória e o lançamento fica "Aguardando Pix". Depois, na ficha, "Completar pedido" abre esta janela já na conta escolhida, com revendedora, valor, data e comprovante.
+  var ped = p.pedido || null, destInicial = ped && ped.pedidoDest ? ped.pedidoDest.destinoId+(ped.pedidoDest.contaNome ? "|"+ped.pedidoDest.contaNome : ped.pedidoDest.contaId ? "|"+ped.pedidoDest.contaId : "") : "";
+  var smo = useState(ped ? "recebido" : "pedido"), modo = smo[0], setModo = smo[1], pedidoModo = modo==="pedido";
+  var sf = useState({data:hoje, valor:"", rev:null, tipo:"antes", outro:false, pagador:"", destId:destInicial, casa:"", arq:null}), f = sf[0], setF0 = sf[1], sm = useState(""), msg = sm[0], setMsg = sm[1], ss = useState(false), salvando = ss[0], setSalvando = ss[1];
   var sl = useState({itens:null, erro:false}), lista = sl[0], setLista = sl[1], sq = useState(""), q = sq[0], setQ = sq[1];
   var setF = function(o){ setF0(function(a){ return Object.assign({}, a, o); }); };
+  // a lista de revendedoras fecha ao clicar fora do campo ou ao apertar Esc (Marcus, 23/11/2026); volta a abrir ao digitar
+  var sla = useState(true), listaAberta = sla[0], setListaAberta = sla[1], refRev = useRef(null);
+  useEffect(function(){
+    if(!listaAberta) return undefined;
+    var fora = function(ev){ if(refRev.current && !refRev.current.contains(ev.target)) setListaAberta(false); };
+    var esc = function(ev){ if(ev.key==="Escape" && refRev.current && refRev.current.contains(document.activeElement)){ ev.stopPropagation(); setListaAberta(false); } };
+    document.addEventListener("mousedown", fora); document.addEventListener("keydown", esc, true);
+    return function(){ document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc, true); };
+  }, [listaAberta]);   // eslint-disable-line react-hooks/exhaustive-deps -- setListaAberta não muda
   useEffect(function(){ var vivo = true; chamar("GET", "/contas-receber/revendedoras").then(function(d){ if(vivo) setLista({itens:d.itens || [], erro:false}); }).catch(function(){ if(vivo) setLista({itens:null, erro:true}); }); return function(){ vivo = false; }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps -- lê a lista uma vez ao abrir a janela
   var AZ = "var(--bloco-titulo)", FUNDO = "#1b3463", CLARO = "#3f6bb8";   // azul do sistema, azul escuro do fundo e azul um pouco mais claro do botão principal
   var CAMPO = "w-full rounded border border-white/30 bg-[var(--bloco-titulo)] px-1.5 text-center text-[11px] text-white outline-none placeholder:text-white/70 focus-visible:ring-1 focus-visible:ring-white [color-scheme:dark]";   // padrao-ok: janela compacta, letra de 11 px (pedido do Marcus, 20/11/2026), igual à barra de filtros
@@ -403,49 +421,87 @@ function LancarPix(p){
   var achadas = (lista.itens && termos.length) ? lista.itens.filter(function(x){ var n = semAc(x.nome+" "+x.cod); return termos.every(function(t){ return n.indexOf(t)>=0; }); }).slice(0, 8) : [];
   var escolher = function(x){ setF({rev:x}); setQ(""); setMsg(""); };
   var campoRev = f.rev
-    ? e("div",{className:"flex w-full flex-wrap items-center justify-center gap-x-2 rounded border border-white/30 px-1.5 py-0.5 text-center text-[11px] text-white", style:{background:AZ, minHeight:"22px", lineHeight:"14px"}}, e("b",null, f.rev.nome), e("span",null, repRotulo(f.rev.representante)), e("button",{type:"button", disabled:salvando, onClick:function(){ setF({rev:null}); }, className:"font-semibold underline hover:brightness-150"}, "Trocar"))   // padrao-ok: letra de 11 px da janela
-    : e("div",{className:"relative w-full"},
-        e("input",{value:q, autoFocus:true, disabled:lista.itens===null, "aria-label":"Revendedora", placeholder:lista.erro ? "Não consegui ler as revendedoras" : lista.itens===null ? "Lendo as revendedoras ativas" : "Digite o nome ou o código e escolha", className:CAMPO, style:ALTO, onChange:function(ev){ setQ(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter" && achadas.length) escolher(achadas[0]); }}),
-        termos.length>0 && e("div",{role:"listbox", className:"absolute left-0 right-0 top-[24px] z-10 max-h-[210px] overflow-y-auto rounded-md border-2 border-white/60 text-white shadow-lg", style:{background:FUNDO}},
-          achadas.length ? [e("div",{key:"cab", className:"sticky top-0 z-10 grid h-5 w-full grid-cols-[3fr_2fr] border-b border-white/40 text-center text-[11px] text-white", style:{background:AZ}}, e("span",{className:"flex items-center justify-center border-r border-white/40"}, "Revendedora"), e("span",{className:"flex items-center justify-center"}, "Representante"))].concat(achadas.map(function(x){ return e("button",{type:"button", key:x.cod, role:"option", onClick:function(){ escolher(x); }, style:{height:"20px"}, className:"grid w-full grid-cols-[3fr_2fr] border-b border-white/40 text-center text-[11px] leading-tight last:border-b-0 hover:bg-[var(--bloco-titulo)] active:brightness-125"}, e("span",{className:"flex items-center justify-center border-r border-white/40 px-2"}, x.nome), e("span",{className:"flex items-center justify-center px-2 text-white/60"}, x.representante==="Sorelly" ? "Sorelly" : String(x.representante || "").split(/\s+/).filter(function(w){ return w!=="-"; }).slice(0, 2).join(" "))); }))   // padrao-ok: letra de 11 px da janela
+    ? e("div",{className:"flex w-full flex-wrap items-center justify-center gap-x-2 rounded border border-white/30 px-1.5 py-0.5 text-center text-[11px] text-white", style:{background:AZ, minHeight:"22px", lineHeight:"14px"}}, e("b",null, f.rev.nome), e("button",{type:"button", disabled:salvando, onClick:function(){ setF({rev:null}); }, className:"font-semibold underline hover:brightness-150"}, "Trocar"))   // padrao-ok: letra de 11 px da janela
+    : e("div",{ref:refRev, className:"relative w-full"},
+        e("input",{value:q, autoFocus:true, disabled:lista.itens===null, "aria-label":"Revendedora", placeholder:lista.erro ? "Não consegui ler as revendedoras" : lista.itens===null ? "Lendo as revendedoras ativas" : "Digite o nome ou o código e escolha", className:CAMPO+" block", style:ALTO, onChange:function(ev){ setQ(ev.target.value); setListaAberta(true); }, onFocus:function(){ setListaAberta(true); }, onKeyDown:function(ev){ if(ev.key==="Enter" && achadas.length) escolher(achadas[0]); }}),
+        termos.length>0 && listaAberta && e("div",{role:"listbox", className:"absolute left-0 top-[24px] z-30 max-h-[260px] w-[32rem] max-w-[80vw] overflow-y-auto rounded-md border-2 border-white/60 text-white shadow-lg", style:{background:FUNDO}},
+          achadas.length ? [e("div",{key:"cab", className:"sticky top-0 z-10 grid h-5 w-full grid-cols-[3fr_2fr] border-b border-white/40 text-center text-[11px] text-white", style:{background:AZ}}, e("span",{className:"flex items-center justify-center border-r border-white/40"}, "Revendedora"), e("span",{className:"flex items-center justify-center"}, "Representante"))].concat(achadas.map(function(x){ return e("button",{type:"button", key:x.cod, role:"option", onClick:function(){ escolher(x); }, style:{minHeight:"22px"}, className:"grid w-full grid-cols-[3fr_2fr] items-stretch border-b border-white/40 text-center text-[11px] leading-tight last:border-b-0 hover:bg-[var(--bloco-titulo)] active:brightness-125"}, e("span",{className:"flex items-center justify-center border-r border-white/40 px-2 py-1"}, x.nome), e("span",{className:"flex items-center justify-center px-2 py-1 text-white/60"}, x.representante==="Sorelly" ? "Sorelly" : String(x.representante || "").split(/\s+/).filter(function(w){ return w!=="-"; }).slice(0, 2).join(" "))); }))   // padrao-ok: letra de 11 px da janela
             : e("div",{className:"flex items-center justify-start px-1.5 text-[11px]", style:{height:"17px"}}, "Nenhuma revendedora ativa com esse nome")));   // padrao-ok: letra de 11 px da janela
   var enviar = function(){
     if(salvando) return;
+    if(pedidoModo){
+      if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
+      setSalvando(true); setMsg("");
+      chamar("POST", "/contas-receber/antecipados", {acao:"lancar", tipo:"pedido", cod:f.rev ? f.rev.cod : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : ""})
+        .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev ? f.rev.nome : ""); p.fechar(); })
+        .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o pedido."); });
+      return;
+    }
     if(!f.rev){ setMsg("Escolha a revendedora na lista."); return; }
     if(f.outro && f.pagador.trim().length<3){ setMsg("Escreva o nome de quem fez o Pix."); return; }
     if(!(Number(f.valor)>0)){ setMsg("Informe o valor do Pix."); return; }
     if(!f.destId){ setMsg("Escolha a conta que recebeu."); return; }
     setSalvando(true); setMsg("");
     var pre = f.arq ? lerAnexo(f.arq).then(function(a){ return enviarAnexo("contasreceber", a); }) : Promise.resolve(null);
-    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:"lancar", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
+    pre.then(function(sv){ return chamar("POST", "/contas-receber/antecipados", {acao:ped ? "completar" : "lancar", id:ped ? ped.id : "", data:f.data, valor:Number(f.valor), cod:f.rev.cod, tipo:f.tipo, pagador:f.outro ? f.pagador.trim() : "", destinoId:String(f.destId).split("|")[0], contaNome:ehFam(f.destId) ? "" : (String(f.destId).split("|")[1] || ""), contaId:ehFam(f.destId) ? (String(f.destId).split("|")[1] || "") : "", casa:ehFam(f.destId) ? f.casa : "", key:sv ? sv.key : "", nome:f.arq ? f.arq.name : "", compTipo:f.arq ? f.arq.type : ""}); })
       .then(function(){ return p.depois(); }).then(function(){ p.aoLancar(f.rev.nome); p.fechar(); })
       .catch(function(x){ setSalvando(false); setMsg((x && x.message) || "Não consegui lançar o Pix."); });
   };
   var sel = function(rot, valor, aoMudar, ops, vazio){ return campo(rot, e(CaixaEscolha,{rot:rot, valor:valor, ops:ops, vazio:vazio || "Escolha", aoMudar:aoMudar, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-full"); };
+  // BLOCO 4 · MENSAGEM PARA A REVENDEDORA (Marcus, 23/11/2026): ao escolher a conta que recebeu (Point, outro fornecedor, prestador, conta da empresa), abre embaixo o que o Lucas manda à revendedora:
+  // o texto "Escrever na folha" (rótulo da conta no Direcionar) e a mensagem pronta com a chave Pix (a mesma do botão Copiar das Chaves Pix). Tudo lido do cadastro na hora; nada é digitado de novo.
+  var idDest = String(f.destId || "").split("|")[0], nomeConta = String(f.destId || "").split("|")[1] || "";
+  var destSel = f.destId ? cpd.find(function(d){ return d.id===idDest; }) : null, orient = null;
+  if(destSel && destSel.tipo!=="FAMILIA"){
+    var ks = chavesDoDestino(cx.state, destSel), pal = function(t){ return semAc(t).split(/[^a-z0-9]+/).filter(Boolean); }, wn = pal(nomeConta);
+    // conta de CNPJ: só vale a chave da PRÓPRIA conta escolhida (todas as palavras do nome dela no rótulo da chave); nunca a chave de outra conta
+    var k1 = (destSel.cnpjId && wn.length) ? (ks.filter(function(k){ var wf = pal(k.folha); return wn.every(function(w){ return wf.indexOf(w)>=0; }); })[0] || null) : (destSel.cnpjId && ks.length>1) ? null : ks[0];
+    var dadosK = k1 ? {nome:destSel.nome, banco:k1.banco, favorecido:k1.fav, tipo:k1.tipo} : null;
+    orient = {folha:(k1 && k1.folha) || nomeLeaf(destSel), chave:k1 ? k1.chave : "", dados:dadosK, msg:k1 ? (mensagemPixDaChave(cx.state, k1.chave) || mensagemPixPessoa(Object.assign({}, dadosK, {chave:k1.chave}))) : ""};
+    orient.texto = orient.msg ? "Escrever na folha: *"+orient.folha+"*\n\n"+orient.msg : "";   // o texto da folha vai no INÍCIO da mensagem que o Lucas copia (Marcus, 23/11/2026)
+  }
+  // JANELA LATERAL (Marcus, 23/11/2026: "faz no mesmo estilo do Contas a pagar, mais lateral"): o mesmo desenho da janela Pagar conta: à esquerda os blocos 1 a 3;
+  // à direita o painel "O que vai acontecer", com a mensagem para a revendedora (o que o Lucas copia e manda no WhatsApp); botões no rodapé.
+  var sco = useState(0), copiado = sco[0], setCopiado = sco[1];
+  var copiarMsg = function(){ var txt = orient ? orient.texto : ""; if(!txt) return; var fim = function(v){ setCopiado(v); setTimeout(function(){ setCopiado(0); }, 1800); }; var antigo = function(){ var ta = document.createElement("textarea"), certo = false; ta.value = txt; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.focus(); ta.select(); try { certo = document.execCommand("copy"); } catch(x){} document.body.removeChild(ta); fim(certo ? 1 : 2); }; try { navigator.clipboard.writeText(txt).then(function(){ fim(1); }, antigo); } catch(x){ antigo(); } };
+  var Lr = function(rot, val){ return e("div",{key:rot, className:"flex justify-between gap-2 border-b border-white/15 py-0.5 text-[11px]"}, e("span",null, rot), e("b",{className:"text-right"}, val || "—")); };   // padrao-ok: linha de 11 px do resumo
+  var contaTxt = !f.destId ? "" : orient ? orient.folha : destSel ? nomeLeaf(destSel) : "";
+  var valorOk = Number(f.valor)>0;
+  var esq = e("div",{className:"pb-1"},
+    !ped && e("div",{className:"mx-1.5 mt-1.5 grid grid-cols-2 gap-1"}, [["pedido", "Pedido de Pix"], ["recebido", "Pix recebido"]].map(function(o){ return e("button",{key:o[0], type:"button", disabled:salvando, onClick:function(){ setModo(o[0]); setMsg(""); }, style:ALTO, className:modo===o[0] ? BTN_AZ : BTN}, o[1]); })),
+    e("div",{className:BLOCO}, faixa(pedidoModo ? "1 · Revendedora (se já souber)" : "1 · Quem pagou"),
+      e("div",{className:"flex flex-col items-center gap-1 p-2"},
+        e("div",{className:pedidoModo ? "grid w-full grid-cols-1 items-start gap-1" : "grid w-full grid-cols-2 items-start gap-1"},
+          campo(pedidoModo ? "Revendedora (opcional, só as ativas)" : "Revendedora (só as ativas)", campoRev, "w-full"),
+          !pedidoModo && sel("Pix em nome de", f.outro ? "outro" : "propria", function(v){ setF({outro:v==="outro", pagador:v==="outro" ? f.pagador : ""}); }, [["propria", "A própria revendedora"], ["outro", "Outra pessoa"]])),
+        f.outro && !pedidoModo && campo("Nome de quem fez o Pix", e("input",{value:f.pagador, "aria-label":"Nome de quem fez o Pix", placeholder:"Ex.: João, pai dela", className:CAMPO, style:ALTO, onChange:function(ev){ setF({pagador:ev.target.value}); }}), "w-full"))),
+    e("div",{className:BLOCO}, faixa("2 · Para onde foi"),
+      e("div",{className:"grid w-full grid-cols-2 items-start gap-1 p-2"},
+        campo("Conta que recebeu", ped ? e("div",{className:CAMPO+" flex items-center justify-center", style:{minHeight:"22px", lineHeight:"14px"}}, ped.conta || contaTxt) : e(CaixaArvore,{rot:"Conta que recebeu", valor:f.destId, arvore:arvore, vazio:"Escolha a conta", aoMudar:function(v){ setF({destId:v}); }, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-full"),
+        ehFam(f.destId) ? campo("Para qual casa?", e("select",{value:f.casa, "aria-label":"Para qual casa", className:CAMPO, style:ALTO, onChange:function(ev){ setF({casa:ev.target.value}); }}, e("option",{value:""}, "Sem casa (pessoal)"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })), "w-full") : e("div",null))),
+    !pedidoModo && e("div",{className:BLOCO}, faixa("3 · Pagamento"),
+      e("div",{className:"grid w-full grid-cols-2 gap-1 p-2"},
+        campo("Data do Pix", e("input",{type:"date", value:f.data, max:hoje, "aria-label":"Data do Pix", className:CAMPO, style:ALTO, onChange:function(ev){ setF({data:ev.target.value}); }}), "w-full"),
+        campo("Valor", e(Dinheiro,{value:f.valor, out:"ponto", label:"Valor do Pix", className:"w-full h-[22px]! rounded! border-white/30! bg-[var(--bloco-titulo)]! text-center text-[11px]! text-white!", onChange:function(v){ setF({valor:v}); }}), "w-full"),   // padrao-ok: campo de valor de 22 px
+        sel("Tipo", f.tipo, function(v){ setF({tipo:v}); }, [["antes", "Antes do acerto"], ["outro", "Outro recebimento"]]),
+        campo("Comprovante (opcional)", e("label",{className:"flex w-full cursor-pointer items-center justify-center rounded border border-white/30 px-1.5 text-center text-[11px] text-white hover:brightness-125 active:brightness-90", style:Object.assign({background:AZ}, ALTO)}, f.arq ? f.arq.name : "Escolher foto ou PDF", e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Comprovante", className:"hidden", onChange:function(ev){ var a = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(a) setF({arq:a}); }})), "w-full"))));   // padrao-ok: letra de 11 px da janela
+  var dir = e("div",{className:"flex flex-col border-l border-white/15 bg-[#223f74] px-2.5 py-2"},
+    e("div",{className:"pb-1 text-center text-[11px] font-semibold"}, "O que vai acontecer"),   // padrao-ok: título de 11 px
+    Lr("Revendedora", f.rev ? f.rev.nome : (pedidoModo ? "Ainda não sabe" : "")), f.rev && Lr("Representante", repRotulo(f.rev.representante)), !pedidoModo && Lr("Pix em nome de", f.outro ? f.pagador.trim() : (f.rev ? "A própria revendedora" : "")), Lr("Conta que recebeu", contaTxt), !pedidoModo && Lr("Valor", valorOk ? BKC(Number(f.valor)) : ""), !pedidoModo && Lr("Data", f.data ? dm(f.data) : ""),
+    Lr("Situação", pedidoModo ? "Aguardando Pix" : f.arq ? "Com comprovante" : "Pendente: falta o comprovante"),
+    e("div",{className:"pt-2 text-center text-[11px] font-semibold"}, "Mensagem para pagamento"),   // padrao-ok: título de 11 px
+    !orient && e("p",{className:"pt-1 text-center text-[11px]"}, "Escolha a conta que recebeu para ver a mensagem com a chave Pix."),   // padrao-ok: aviso de 11 px
+    orient && (orient.texto ? e("textarea",{readOnly:true, rows:12, value:orient.texto, "aria-label":"Mensagem para pagamento", onFocus:function(ev){ ev.target.select(); }, className:CAMPO+" mt-1 resize-none py-1 text-left leading-tight"}) : e("p",{className:"pt-1 text-center text-[11px] font-semibold text-warning"}, (destSel.cnpjId && ks.length>1 && !wn.length) ? "Escolha a conta do banco em Conta que recebeu (Sicredi, Itaú...)." : "Este destino ainda não tem chave Pix cadastrada.")),   // padrao-ok: letra de 11 px da janela
+    orient && orient.texto && e("div",{className:"flex justify-center pt-1"}, e("button",{type:"button", onClick:copiarMsg, style:ALTO, className:BTN+" min-w-24"}, copiado===1 ? "Copiado ✓" : copiado===2 ? "Não copiou" : "Copiar mensagem")));
   return createPortal(e("div",{role:"dialog", "aria-modal":"true", "aria-label":"Lançar recebimento", onMouseDown:function(ev){ if(ev.target===ev.currentTarget && !salvando) p.fechar(); }, className:"fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"},
-    e("div",{className:"flex max-h-[90vh] w-full max-w-md flex-col rounded-lg border-2 pb-1.5 text-center text-white shadow-xl", style:{background:FUNDO, borderColor:AZ}},
-      e("div",{className:"relative flex items-center justify-center rounded-t-md px-2 py-1 text-white", style:{background:AZ}}, e("b",{className:"text-[11px]"}, "Lançar recebimento"), e("button",{type:"button", "aria-label":"Fechar", disabled:salvando, onClick:p.fechar, className:"absolute right-1 rounded px-1 text-[11px] font-semibold underline hover:bg-white/20 active:bg-white/30"}, "Fechar")),   // padrao-ok: título de 11 px e botão de 10 px
-      e("div",{className:BLOCO}, faixa("1 · Quem pagou"),
-      e("div",{className:"flex flex-col items-center gap-1 p-2"},
-        campo("Revendedora (só as ativas)", campoRev, "w-full"),
-        e("div",{className:(f.outro ? "grid w-full grid-cols-2 gap-1" : "flex w-full justify-center")},
-          e("div",{key:"pix-nome", className:f.outro ? "w-full" : "w-1/2"}, sel("Pix em nome de", f.outro ? "outro" : "propria", function(v){ setF({outro:v==="outro", pagador:v==="outro" ? f.pagador : ""}); }, [["propria", "A própria revendedora"], ["outro", "Outra pessoa"]])),
-          f.outro ? campo("Nome de quem fez o Pix", e("input",{value:f.pagador, "aria-label":"Nome de quem fez o Pix", placeholder:"Ex.: João, pai dela", className:CAMPO, style:ALTO, onChange:function(ev){ setF({pagador:ev.target.value}); }}), "w-full") : e("div",null))),
-      ),
-      e("div",{className:BLOCO}, faixa("2 · Para onde foi"),
-      e("div",{className:"flex flex-col items-center gap-1 p-2"}, campo("Conta que recebeu", e(CaixaArvore,{rot:"Conta que recebeu", valor:f.destId, arvore:arvore, vazio:"Escolha a conta", aoMudar:function(v){ setF({destId:v}); }, cls:CAMPO, estilo:ALTO, fundo:FUNDO, campoCls:CAMPO}), "w-1/2"),
-        ehFam(f.destId) && campo("Para qual casa?", e("select",{value:f.casa, "aria-label":"Para qual casa", className:CAMPO, style:ALTO, onChange:function(ev){ setF({casa:ev.target.value}); }}, e("option",{value:""}, "Sem casa (pessoal)"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })), "w-1/2")),
-      ),
-      e("div",{className:BLOCO}, faixa("3 · Pagamento"),
-      e("div",{className:"flex flex-col items-center gap-1 p-2"},
-        e("div",{className:"grid w-full grid-cols-2 gap-1"},
-          campo("Data do Pix", e("input",{type:"date", value:f.data, max:hoje, "aria-label":"Data do Pix", className:CAMPO, style:ALTO, onChange:function(ev){ setF({data:ev.target.value}); }}), "w-full"),
-          campo("Valor", e(Dinheiro,{value:f.valor, out:"ponto", label:"Valor do Pix", className:"w-full h-[22px]! rounded! border-white/30! bg-[var(--bloco-titulo)]! text-center text-[11px]! text-white!", onChange:function(v){ setF({valor:v}); }}), "w-full")),   // padrao-ok: campo de valor de 22 px
-        e("div",{className:"grid w-full grid-cols-2 gap-1"},
-          sel("Tipo", f.tipo, function(v){ setF({tipo:v}); }, [["antes", "Antes do acerto"], ["outro", "Outro recebimento"]]),
-          campo("Comprovante (opcional)", e("label",{className:"flex w-full cursor-pointer items-center justify-center rounded border border-white/30 px-1.5 text-center text-[11px] text-white hover:brightness-125 active:brightness-90", style:Object.assign({background:AZ}, ALTO)}, f.arq ? f.arq.name : "Escolher foto ou PDF", e("input",{type:"file", accept:"image/*,application/pdf", "aria-label":"Comprovante", className:"hidden", onChange:function(ev){ var a = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(a) setF({arq:a}); }})), "w-full")),   // padrao-ok: letra de 11 px da janela
-        msg && e("p",{role:"alert", className:"text-center text-[11px] font-semibold text-warning"}, msg),   // padrao-ok: aviso de 11 px da janela
-        e("div",{className:"flex w-full justify-center gap-1 pt-0.5"}, e("button",{type:"button", disabled:salvando, onClick:p.fechar, style:ALTO, className:BTN+" min-w-20"}, "Cancelar"), e("button",{type:"button", disabled:salvando, onClick:enviar, style:ALTO, className:BTN_AZ+" min-w-20"}, salvando ? "Lançando" : "Lançar")))))), document.body);
+    e("div",{className:"flex max-h-[92vh] w-full max-w-5xl flex-col rounded-lg border-2 pb-1.5 text-center text-white shadow-xl", style:{background:FUNDO, borderColor:AZ}},
+      e("div",{className:"relative flex items-center justify-center rounded-t-md px-2 py-1 text-white", style:{background:AZ}}, e("b",{className:"text-[11px]"}, ped ? "Completar pedido" : pedidoModo ? "Pedido de Pix" : "Lançar recebimento"), e("button",{type:"button", "aria-label":"Fechar", disabled:salvando, onClick:p.fechar, className:"absolute right-1 rounded px-1 text-[11px] font-semibold underline hover:bg-white/20 active:bg-white/30"}, "Fechar")),   // padrao-ok: título de 11 px e botão de 11 px
+      e("div",{className:"grid", style:{gridTemplateColumns:"1.6fr 1fr"}}, esq, dir),   // sem rolagem aqui: ela cortava a lista da conta que recebeu
+      e("div",{className:"flex flex-wrap items-center gap-1.5 border-t border-white/15 px-3 py-1.5"},
+        msg && e("span",{role:"alert", className:"text-[11px] font-semibold text-warning"}, msg),   // padrao-ok: aviso de 11 px da janela
+        e("span",{className:"ml-auto"}),
+        e("button",{type:"button", disabled:salvando, onClick:p.fechar, style:ALTO, className:BTN+" min-w-20"}, "Cancelar"),
+        e("button",{type:"button", disabled:salvando, onClick:enviar, style:ALTO, className:BTN_AZ+" min-w-20"}, salvando ? "Lançando" : ped ? "Completar pedido" : pedidoModo ? "Lançar pedido" : (f.arq ? "Lançar" : "Lançar sem comprovante"))))), document.body);
 }
 
 export { AbaCtaReceber, CLS_GRUPO, menuMini };   // a tela Contas bancárias (Caixa.js) usa a mesma faixa e o mesmo grupo azul

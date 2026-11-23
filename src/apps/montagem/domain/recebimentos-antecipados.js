@@ -70,7 +70,7 @@ function linhasAntecipados(rcb0, ff, opcoes){
     if(!x) return;
     var uso = x.destino==="socio" ? usosFf[x.ffPixId] : rcb.usados[x.id];
     var conta = x.destinoNome ? x.destinoNome : x.destino==="socio" ? (verFf ? (contaDe(x.contaId) || "Conta da família")+(nomePersona(x.personaId) ? " · "+nomePersona(x.personaId) : "") : "Pix direto") : (x.contaTxt || "Pix direto");
-    out.push({id:x.id, fonte:"rcb", tipo:x.tipo || "antes", pagador:x.pagador || "", repNome:x.repNome || "", data:x.data, valor:r2(x.valor), rev:x.rev, destino:x.destino, conta:conta, compKey:x.compKey || "", compModulo:"contasreceber", uso:usoDe(uso), ffPixId:x.ffPixId || "", por:x.por || "", em:x.em || ""});
+    out.push({id:x.id, fonte:"rcb", tipo:x.tipo || "antes", pagador:x.pagador || "", repNome:x.repNome || "", pedidoDest:x.pedidoDest || null, data:x.data, valor:r2(x.valor), rev:x.rev, destino:x.destino, conta:conta, compKey:x.compKey || "", compModulo:"contasreceber", uso:usoDe(uso), ffPixId:x.ffPixId || "", por:x.por || "", em:x.em || ""});
   });
   rcb.adotados.forEach(function(id){
     var x = ((ff && ff.pix) || []).find(function(y){ return y.id===id; });

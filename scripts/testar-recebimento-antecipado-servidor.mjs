@@ -230,5 +230,36 @@ t("a tela mostra os dois com o tipo outro", l.itens.filter((x) => x.tipo === "ou
 await srv.remover(fin, { id: idOutroEmp }); await srv.remover(dir, { id: idOutroSoc });
 t("apagar tira os dois (e a cópia da Família)", mod.get("ff").conteudo.pix.every((x) => x.valor !== 88));
 
+console.log("\n9) pedido de Pix (modo pedido, 23/11/2026): o Lucas manda a conta antes de o Pix existir");
+const nAntes = mod.get("contasreceber").conteudo.antecipados.length, ffPixAntes = mod.get("ff").conteudo.pix.length;
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_emp", contaNome: "Sicredi Sorelly 34" });
+t("pedido só com a conta: grava sem revendedora e sem valor", r.ok && r.pedido === true, JSON.stringify(r));
+const idPed = r.id, ped = mod.get("contasreceber").conteudo.antecipados.find((x) => x.id === idPed);
+t("o pedido tem tipo pedido, valor 0 e guarda a conta escolhida", !!ped && ped.tipo === "pedido" && ped.valor === 0 && ped.rev === "" && ped.pedidoDest.contaNome === "Sicredi Sorelly 34" && ped.pedidoDest.destinoId === "d_emp", JSON.stringify(ped));
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_fam" });
+t("pedido para conta de sócio NÃO grava na Família", r.ok && mod.get("ff").conteudo.pix.length === ffPixAntes, JSON.stringify(r));
+await srv.remover(fin, { id: r.id });
+r = await lanca(fin, { tipo: "pedido" });
+t("pedido sem a conta é recusado", !!r.erro, JSON.stringify(r));
+r = await lanca(fin, { tipo: "pedido", destinoId: "d_emp", contaNome: "Banco Fechado 34" });
+t("pedido em conta bloqueada do CNPJ é recusado", !!r.erro, JSON.stringify(r));
+t("pedido recusado não grava nada", mod.get("contasreceber").conteudo.antecipados.length === nAntes + 1);
+let l9 = await srv.listar(dir);
+t("a tela recebe o pedido com o destino para completar", l9.itens.some((x) => x.id === idPed && x.tipo === "pedido" && x.pedidoDest && x.pedidoDest.destinoId === "d_emp" && x.pedidoDest.contaNome === "Sicredi Sorelly 34"), JSON.stringify(l9.itens.filter((x) => x.id === idPed)));
+const lPed = await pix.listarPixAdiantados({ nome: "Rev Teste Silva de Souza", desde: "2026-10-23", internoId: "A10" });
+t("o Atendimento interno não vê o pedido", lPed.every((x) => x.id !== idPed), JSON.stringify(lPed.map((x) => x.id)));
+r = await srv.completar(fin, { id: idPed, data: "2026-11-20", cod: "100", tipo: "antes" }, deps);
+t("completar sem valor é recusado e o pedido continua", !!r.erro && mod.get("contasreceber").conteudo.antecipados.some((x) => x.id === idPed), JSON.stringify(r));
+r = await srv.completar(fin, { id: "ra_inexistente", data: "2026-11-20", valor: 5, cod: "100" }, deps);
+t("completar um pedido que não existe é recusado", !!r.erro, JSON.stringify(r));
+r = await srv.completar(fin, { id: idPed, data: "2026-11-20", valor: 321, cod: "100", tipo: "antes", key: "an_teste000001", nome: "c1.jpg" }, deps);
+t("completar com revendedora, valor, data e comprovante vira Pix lançado", r.ok && !!r.id, JSON.stringify(r));
+const depoisC = mod.get("contasreceber").conteudo.antecipados, novoPix = depoisC.find((x) => x.id === r.id);
+t("o pedido some e o Pix fica na MESMA conta do pedido", !depoisC.some((x) => x.id === idPed) && !!novoPix && novoPix.valor === 321 && novoPix.tipo === "antes" && novoPix.destinoId === "d_emp" && novoPix.rev === "Rev Teste Silva de Souza" && !!novoPix.compKey, JSON.stringify(novoPix));
+r = await srv.completar(fin, { id: idPed, data: "2026-11-20", valor: 321, cod: "100" }, deps);
+t("completar o mesmo pedido de novo é recusado", !!r.erro, JSON.stringify(r));
+await srv.remover(fin, { id: novoPix.id });
+t("no fim não sobra nada do pedido", mod.get("contasreceber").conteudo.antecipados.length === nAntes);
+
 console.log("\n" + ok + " ok, " + falha + " com falha");
 process.exit(falha ? 1 : 0);

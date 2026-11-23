@@ -47,10 +47,12 @@ export async function listar(eu) {
 // deps.ativas = função que devolve [{cod, nome}] (nos testes, uma lista de mentira; na tela, a lista da DevMaster).
 export async function lancar(eu, b, deps) {
   const por = nomeDe(eu);
-  let ativas;
-  try { ativas = await ((deps && deps.ativas) || (await import("./revendedoras.js")).revendedorasAtivasBasico)(); } catch (e) { return { erro: "Não consegui ler as revendedoras da DevMaster agora. Tente de novo em um minuto." }; }
+  // PEDIDO DE PIX (Marcus, 23/11/2026): o Lucas manda a conta à representante ANTES de o Pix existir. Só a conta é obrigatória; revendedora e valor são opcionais e entram depois em "completar".
+  const ehPedido = b.tipo === "pedido";
+  let ativas = [];
+  if (!(ehPedido && !b.cod)) { try { ativas = await ((deps && deps.ativas) || (await import("./revendedoras.js")).revendedorasAtivasBasico)(); } catch (e) { return { erro: "Não consegui ler as revendedoras da DevMaster agora. Tente de novo em um minuto." }; } }
   const rv = (ativas || []).find((x) => String(x.cod) === String(b.cod || ""));
-  if (!rv) return { erro: "Escolha a revendedora na lista (só as ativas aparecem)." };
+  if (!rv && !(ehPedido && !b.cod)) return { erro: "Escolha a revendedora na lista (só as ativas aparecem)." };
   // a conta que recebeu vem do MESMO menu do Direcionar (cp.destinos): o servidor descobre se fica só aqui (empresa) ou também na Família (sócio ou prestador da família)
   const [cp, ffAtual] = await Promise.all([lerModulo("cp"), lerModulo("ff")]);
   const dCp = ((cp && cp.destinos) || []).find((d) => d.id === String(b.destinoId || "") && d.ativo !== false);
@@ -63,6 +65,11 @@ export async function lancar(eu, b, deps) {
   }
   const rd = resolverDestino(dCp, ffAtual, (d, c) => rotuloLeaf(d, (cp && cp.destinos) || [], { rotuloDestino, rotuloPrestadorFamilia, nomePropio }, c || contaNome), String(b.contaId || ""));
   if (rd.erro) return { erro: rd.erro };
+  if (ehPedido) {   // pedido: não entra em acerto (valor 0), não vai para a Família e não cruza com nada até ser completado
+    const ped = { id: "ra" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), data: hojeIso(), valor: 0, rev: rv ? rv.nome : "", revCod: rv ? String(rv.cod) : "", repNome: rv ? String(rv.representante || "") : "", destino: rd.destino, tipo: "pedido", destinoId: dCp.id, destinoNome: rd.nome, personaId: "", contaId: "", contaTxt: rd.nome, pagador: "", compKey: "", compNome: "", compTipo: "", ffPixId: "", por, em: new Date().toISOString(), pedidoDest: { destinoId: dCp.id, contaNome, contaId: String(b.contaId || ""), casa: String(b.casa || "") } };
+    await gravarModulo("contasreceber", {}, "patch", por, (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.concat([ped]), usados: g.usados, adotados: g.adotados }); });
+    return { ok: true, id: ped.id, pedido: true };
+  }
   const v = validarLancamento(Object.assign({}, b, { rev: rv.nome, destino: rd.destino, personaId: rd.personaId, contaId: rd.contaId, contaTxt: rd.contaTxt, destinoId: dCp.id, destinoNome: rd.nome }), hojeIso(), ((await lerModulo("contasreceber")) || {}).antecipados);
   if (v.erro) return { erro: v.erro };
   const item = v.item; item.por = por; item.em = new Date().toISOString(); item.revCod = String(rv.cod);
@@ -92,6 +99,16 @@ export async function lancar(eu, b, deps) {
     return Object.assign({}, novo, { antecipados: g.antecipados.concat([item]), usados: g.usados, adotados: g.adotados });
   });
   return { ok: true, id: item.id };
+}
+
+// COMPLETAR um pedido (Marcus, 23/11/2026): chegou o Pix e o comprovante. Com revendedora, valor e data, o pedido vira um Pix lançado de verdade (a mesma conta que o Lucas escolheu no pedido) e o pedido some.
+export async function completar(eu, b, deps) {
+  const id = String(b.id || ""), rcb = garantir(await lerModulo("contasreceber")), ped = rcb.antecipados.find((x) => x.id === id && x.tipo === "pedido");
+  if (!ped || !ped.pedidoDest) return { erro: "Pedido não encontrado (talvez já tenha sido completado)." };
+  const r = await lancar(eu, Object.assign({}, b, { acao: "lancar", tipo: b.tipo === "outro" ? "outro" : "antes", destinoId: ped.pedidoDest.destinoId, contaNome: ped.pedidoDest.contaNome, contaId: ped.pedidoDest.contaId, casa: ped.pedidoDest.casa, key: b.key || ped.compKey || "", nome: b.nome || ped.compNome || "", compTipo: b.compTipo || ped.compTipo || "" }), deps);
+  if (r.erro) return r;
+  await gravarModulo("contasreceber", {}, "patch", nomeDe(eu), (guardado, novo) => { const g = garantir(guardado); return Object.assign({}, novo, { antecipados: g.antecipados.filter((x) => x.id !== id), usados: g.usados, adotados: g.adotados }); });
+  return { ok: true, id: r.id };
 }
 
 // Anexa (ou troca) o comprovante de uma linha. fonte "rcb": arquivo no módulo contasreceber; fonte "ff" (Pix que já estava na Família): arquivo no módulo ff, só quem abre a Família.

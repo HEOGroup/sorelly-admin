@@ -3,6 +3,20 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Contas a receber: modo Pedido de Pix)
+- **Pedido do Marcus:** "faz o modo pedido". O Lucas manda a conta pelo WhatsApp ANTES de o Pix existir; ainda não há nome de quem pagou, nem valor. Funciona como o Direcionar, só que no WhatsApp; depois o app da representante deixa tudo dentro do sistema.
+- **Como ficou:** a janela Lançar recebimento tem os modos **Pedido de Pix** e **Pix recebido**. No pedido só a conta é obrigatória (revendedora opcional). A linha entra em Contas a receber como **Aguardando Pix**, com valor 0: não entra em acerto, não vai para a Família e não cruza com a DevMaster. Na ficha, **Completar pedido** abre a janela na MESMA conta; ao completar com revendedora, valor, data e comprovante, o pedido vira o Pix lançado e some.
+- **Decidi sem resposta (3 perguntas abertas):** valor e representante que pediu não são gravados no pedido; só a conta e, se o Lucas souber, a revendedora. Quem completa é o Lucas. Se o Marcus quiser outro desenho, mudar aqui.
+- Código: ação `completar` e ramo `tipo:"pedido"` em `src/server/recebimentos-antecipados.js`; `pedidoDest` em `linhasAntecipados` (domain); `LancarPix` e a ficha em `pages/ContasReceberLista.js`. Teste: `node scripts/testar-recebimento-antecipado-servidor.mjs` (seção 9).
+
+## 23/11/2026 (Contas a receber: janela Lançar recebimento)
+- **Pedido do Marcus:** o Lucas às vezes lança o Pix e fica esperando a representante mandar o comprovante. A janela Lançar recebimento ganha, igual à Contas a pagar, um bloco embaixo com a mensagem copiável.
+- **Como ficou:** ao escolher a conta que recebeu (Point, fornecedor, prestador, representante ou conta de CNPJ), abre o bloco **4 · Mensagem para a revendedora** com o texto **Escrever na folha** (o rótulo da conta no Direcionar) e a mensagem pronta com a chave Pix (a mesma do botão Copiar das Chaves Pix). Lido do cadastro na hora; nada digitado de novo. Sócio da família não abre o bloco.
+- **Pendente:** sem comprovante o botão diz **Lançar sem comprovante** e o lançamento fica pendente (regra D-03 de 20/11/2026) até alguém anexar.
+- **A confirmar com o Marcus:** para fornecedor e prestador, o Escrever na folha mostra o nome do destino (ex.: Sorelly · Point), pois só a conta de CNPJ tem rótulo próprio de DevMaster.
+- Código: `LancarPix` em `pages/ContasReceberLista.js` (usa `chavesDoDestino`, `mensagemPixDaChave`, `mensagemPixPessoa` e `CopiarChave`).
+
+
 ## 23/11/2026 (Produção: regras de pagamento e visual)
 - **Dávila é a mulher do Igor; Leci é funcionária** (outra pessoa). Nunca trocar.
 - **Produção externa (Dávila, Leci, Didi):** ciclo de TERÇA a SEGUNDA (a segunda entra), paga na QUINTA-FEIRA por Pix revendedora; R$ 0,45 por peça desde 16/11. O que a pessoa tem em mãos é ESTOQUE, não dinheiro: só vale o que ela entrega. O pago vem do Contas a pagar, nunca de botão na Produção (botão Marcar pago saiu da lista de dias).
