@@ -32,11 +32,24 @@ function chamarApp(_metodo, rota) {
   });
 }
 
-// VENDA NO APP DA REVENDEDORA (Marcus, 23/11/2026): quanto cada uma já vendeu NESTE MÊS para as clientes dela, direto do app (GET /admin/resellers/ranking, só leitura).
-// O app não guarda o código da DevMaster: a ligação é pelo telefone (últimos 8 números) e, se não casar, pelo nome inteiro igual. Falha do app não derruba o ranking (a coluna fica vazia).
+// VENDA NO APP DA REVENDEDORA (Marcus, 23/11/2026): é o "vendido no ciclo" que a revendedora vê na home do app
+// (ficha /representantes/revendedoras/:id › snapshot.totalSales = vendas desde o último acerto, o que vira o acerto). Só leitura.
+// NÃO é o mês civil: a Ana Claudia Moura tem R$ 3.296 no mês civil e R$ 12.346 no ciclo (7 condicionais em aberto).
+// O app não guarda o código da DevMaster: a ligação é pelo telefone (últimos 8 números) e, se não casar, pelo nome inteiro igual.
+// Só vale se a ligação apontar UMA pessoa do app (telefone repetido ou nome repetido = fica vazio, nunca chuta). Falha do app não derruba o ranking.
 const soNumeros = (s) => String(s || "").replace(/[^0-9]/g, "");
 const fim8 = (s) => { const n = soNumeros(s); return n.length >= 8 ? n.slice(-8) : ""; };
 const chaveNome = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z ]/g, " ").split(" ").filter(Boolean).join(" ");
+const cicloApp = new Map();   // id do app -> { t, v }  (guarda 60 s)
+async function cicloDoUsuario(id) {
+  const c = cicloApp.get(id);
+  if (c && Date.now() - c.t < 60000) return c.v;
+  const r = await chamarApp("GET", "/representantes/revendedoras/" + id);
+  const s = r && r.j && r.j.snapshot;
+  const v = s && s.totalSales !== undefined && s.totalSales !== null && !isNaN(Number(s.totalSales)) ? Math.round(Number(s.totalSales) * 100) / 100 : undefined;
+  cicloApp.set(id, { t: Date.now(), v });
+  return v;
+}
 async function vendasDoApp(cods, nomes) {
   try {
     const lista = [];
@@ -44,18 +57,31 @@ async function vendasDoApp(cods, nomes) {
       const l = await consultarTabela("dmaam", { registros: 100, campos: ["aam_codigo", "aam_celular", "aam_whatsapp"], filtro: { aam_codigo: { in: cods.slice(i, i + 100) } } });
       l.itens.forEach((p) => lista.push(p));
     }
-    const r = await chamarApp("GET", "/admin/resellers/ranking?period=month&limit=2000&order_by=total_vendido&order_dir=desc");
-    const dados = r && r.j && Array.isArray(r.j.data) ? r.j.data : null;
-    if (!dados) return {};
+    // a lista do app passa de 2.000 pessoas: lê página por página (ordem fixa por data de cadastro) até acabar
+    const dados = [];
+    for (let off = 0; off < 20000; off += 2000) {
+      const r = await chamarApp("GET", "/admin/resellers/ranking?period=month&limit=2000&offset=" + off + "&order_by=criado_em&order_dir=asc");
+      const pag = r && r.j && Array.isArray(r.j.data) ? r.j.data : null;
+      if (!pag) { if (off === 0) return {}; break; }
+      pag.forEach((u) => dados.push(u));
+      if (pag.length < 2000) break;
+    }
     const porFone = new Map(), porNome = new Map();
-    dados.forEach((u) => { const v = Number(u.total_vendido) || 0, f = fim8(u.telefone), nm = chaveNome(u.nome); if (f && !porFone.has(f)) porFone.set(f, v); if (nm && !porNome.has(nm)) porNome.set(nm, v); });
-    const out = {};
+    const guarda = (m, k, id) => { if (!k) return; const a = m.get(k) || m.set(k, new Set()).get(k); a.add(id); };
+    dados.forEach((u) => { guarda(porFone, fim8(u.telefone), u.id); guarda(porNome, chaveNome(u.nome), u.id); });
+    const idDe = {};
     cods.forEach((c) => {
       const p = lista.find((x) => x.aam_codigo === c) || {};
-      const v = [fim8(p.aam_celular), fim8(p.aam_whatsapp)].filter(Boolean).map((f) => porFone.get(f)).find((x) => x !== undefined);
-      const w = v !== undefined ? v : porNome.get(chaveNome(nomes.get(c)));
-      if (w !== undefined) out[c] = Math.round(w * 100) / 100;
+      const ids = new Set();
+      [fim8(p.aam_celular), fim8(p.aam_whatsapp)].filter(Boolean).forEach((f) => (porFone.get(f) || []).forEach((id) => ids.add(id)));
+      let id = ids.size === 1 ? [...ids][0] : undefined;
+      if (ids.size === 0) { const n = porNome.get(chaveNome(nomes.get(c))); if (n && n.size === 1) id = [...n][0]; }
+      if (id !== undefined) idDe[c] = id;
     });
+    const out = {}, fila = Object.entries(idDe);
+    for (let i = 0; i < fila.length; i += 8) {
+      await Promise.all(fila.slice(i, i + 8).map(async ([c, id]) => { try { const v = await cicloDoUsuario(id); if (v !== undefined) out[c] = v; } catch (_) { /* uma falha deixa só aquela linha vazia */ } }));
+    }
     return out;
   } catch (x) { G.__rankAppErro = String((x && x.message) || x).slice(0, 160); return {}; }
 }
