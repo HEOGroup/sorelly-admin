@@ -8,9 +8,9 @@ import { nomeDaRep } from "./rep-filtro.js";
 import { gravarModulo, lerModulo } from "./app-rep/base.js";
 import { LAPIDE, STATUS_TIRAR, idDaChave, prefixo, vivo } from "../apps/montagem/domain/app-rep.js";
 
-const PREFIXOS = { rpo: ["l", "k", "ke", "en"], rpf: ["a", "ar", "km", "gv"] };
-const LER = { rpo: ["l_", "lx_", "k_", "kx_", "ke_", "en_"], rpf: ["a_", "ax_", "ar_", "km_", "gv_"] };
-const ORDEM = ["l", "k", "ke", "en", "a", "ar", "km", "gv"];
+const PREFIXOS = { rpo: ["l", "k", "ke", "en", "pr", "pd"], rpf: ["a", "ar", "km", "gv"] };
+const LER = { rpo: ["l_", "lx_", "k_", "kx_", "ke_", "en_", "pr_", "pd_"], rpf: ["a_", "ax_", "ar_", "km_", "gv_"] };
+const ORDEM = ["l", "k", "ke", "en", "pr", "pd", "a", "ar", "km", "gv"];
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 // campos do kit que são da EQUIPE (montagem, bipagem, valor): a representante nunca muda pelo ke_
 const CAMPOS_EQUIPE = ["id", "lid", "rev", "rep", "repCod", "origem", "valor", "valorReal", "manual", "defPor", "defEm", "prio", "designada", "montId", "iniM", "fimM", "pausaMs", "pausadoEm", "tempoM",
@@ -69,6 +69,14 @@ export async function gravarItensRep(modulo, chaves, eu) {
           // o que é da equipe nasce zerado, venha o que vier da tela
           valor: null, valorReal: null, manual: false, defPor: null, defEm: null, montId: null, iniM: null, fimM: null, tempoM: null, bipId: null, iniB: null, fimB: null, retEm: null, retPor: null, divReg: false, corrigido: false,
           status: v.status === "condicional" ? "condicional" : "semvalor" });
+      } else if (p === "pr") {   // ficha da revendedora: qualquer representante preenche a das revendedoras dela; nunca troca a de quem já é de outra
+        if (!/^\d{6,10}$/.test(id) || v._apagado) { nega(k); continue; }
+        if (existe && vivo(existe) && existe.repCod && String(existe.repCod) !== cod) { nega(k, "Essa ficha já é de outra representante."); continue; }
+        gravar[k] = Object.assign({}, v, { revCod: id, repCod: cod, rep: nome, em: new Date().toISOString() });
+      } else if (p === "pd") {   // pedido de nova data do acerto: chave pd_<código dela>-<id>; a Diretoria decide em Agendamento > Plano 45/60 > Aprovação
+        if (!id.startsWith(cod + "-") || v._apagado) { nega(k); continue; }
+        if (existe && vivo(existe) && String(existe.repCod || "") !== cod) { nega(k); continue; }
+        gravar[k] = Object.assign({}, existe && vivo(existe) ? existe : {}, v, { repCod: cod, rep: nome, id: id.slice(cod.length + 1) });
       } else if (p === "ke" || p === "en") {
         if (!kitMeu(id)) { nega(k); continue; }
         if (p === "en") { gravar[k] = v; continue; }

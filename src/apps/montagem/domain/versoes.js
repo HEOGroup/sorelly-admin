@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.150", data:"2026-11-23", titulo:"App da representante: carteira grande, % de cada uma, ficha e pedido de data no servidor", itens:[
+  {tipo:"correção", area:"App da representante", txt:"Carteira grande (Veridiana, 202 revendedoras) aparecia só com 1: a busca estourava o tempo. Servidor com 60 s, venda do app em paralelo e nova tentativa no app."},
+  {tipo:"correção", area:"App da representante", txt:"O cartão da revendedora mostra a % de comissão de cada representante (antes, 8% para todas)."},
+  {tipo:"novo", area:"App da representante", txt:"Ficha da revendedora (2º telefone, endereços, profissão, referências) e pedido de nova data gravam no servidor; o pedido aparece em Agendamento › Plano 45/60 › Aprovação."}]},
  {v:"0.21.149", data:"2026-11-23", titulo:"Encomendas › Ranking: Cronograma de postagens", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Ranking → Cronograma de postagens", txt:"Nova aba com um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro, janeiro e fevereiro): formato, o que postar, legenda sugerida e o acerto do 1º e do 10º lugar nos dias de parcial. Cada dia tem a situação Para fazer, Feito ou Postado, gravada no servidor (módulo ercrono). Temas em domain/cronograma-ranking.js."}
  ]},

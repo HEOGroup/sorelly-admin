@@ -38,7 +38,7 @@ export async function respostaItensRep(modulo, desde, repCod) {
   const filtro = modulo === "rpo"
     ? `(left(chave,2)='l_' and substr(chave,3) in ${ids("l_")}) or (left(chave,3)='lx_' and substr(chave,4) in ${ids("l_")})
        or (left(chave,2)='k_' and substr(chave,3) in ${ids("k_")}) or (left(chave,3) in ('kx_','ke_','en_','eb_') and substr(chave,4) in ${ids("k_")})
-       or (left(chave,3) in ('pa_','pr_') and valor->>'repCod' = $1)`
+       or (left(chave,3) in ('pa_','pr_','pd_') and valor->>'repCod' = $1)`
     : `(left(chave,2)='a_' and substr(chave,3) in ${ids("a_")}) or (left(chave,3) in ('ax_','ar_') and substr(chave,4) in ${ids("a_")})
        or (left(chave,3) in ('km_','gv_') and valor->>'repCod' = $1)`;
   const params = [repCod, nome, parcial ? desde : null, modulo];

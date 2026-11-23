@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (App da representante: carteira grande, ficha e pedido de data no servidor)
+- **Carteira grande:** `/api/representante/revendedoras` ganhou `maxDuration = 60` e busca a venda do app junto com a DevMaster (a base fria leva ~22 s); o app tenta 3 vezes e não guarda a falha. Antes a Veridiana (202) via só 1 revendedora.
+- **% no cartão:** `pctDaRep` (Dayanne, Lysie e Vanessa 10%; as demais 8%, no módulo `comis` do servidor).
+- **Ficha da revendedora (`pr_<código>`) e pedido de nova data (`pd_<código da rep>-<id>`)** gravam no servidor pela conta da representante (`rep-gravar.js`); a equipe recebe a ficha no nome da revendedora e o pedido em Plano 45/60 › Aprovação. A DECISÃO da Diretoria sobre o pedido ainda fica só no computador de quem decidiu (o Plano 45/60 não é módulo do servidor).
+- **Ainda não grava:** recusa de kit novo (depende de liberar o módulo `kn` para a conta) e rascunho do acerto. Teste: `node scripts/testar-ficha-pedido-rep.mjs`.
+
 ## 23/11/2026 · Encomendas › Ranking › Cronograma de postagens (Marcus)
 - Terceira aba do menu Ranking. Um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro + janeiro + fevereiro). O Marcus liberará o acesso do Marketing a esta tela depois; por isso o módulo do servidor `ercrono` já aceita Encomendas e Marketing.
 - Nas parciais a tela escreve o acerto do 1º e do 10º lugar do momento, sem nomes. Nome de revendedora só depois da Diretoria liberar. O ranking da nova disputa (soma de 3 meses) ainda não existe; as regras finais saem em 24/11.

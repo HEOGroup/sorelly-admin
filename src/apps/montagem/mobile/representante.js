@@ -7,7 +7,7 @@ import { contatoDaRepresentante, registrarRevendedora } from "@/apps/montagem/do
 import { codigoRetirada } from "@/apps/montagem/components/dialogos";
 import { ETAPA } from "@/apps/montagem/components/fila";
 import { KitsNovosRep } from "@/apps/montagem/components/kits-novos-rep";import { derivarAcerto, FORM_ACERTO_VAZIO } from "@/apps/montagem/domain/acerto-derivado";
-import { comisEfetiva, itensComissao, totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
+import { comisEfetiva, itensComissao, pctDaRep, totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { mensagemFechamento, mensagemEntrega, abrirPdfAcerto } from "@/apps/montagem/domain/mensagem-fechamento";
 import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { atrasoAcerto, linhasAtraso, textoNegociacao, vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
@@ -74,7 +74,9 @@ function codigoRep(s, rep){ var cc = repCodDaConta(); if(cc) return cc;   // con
   var v = REPRESENTANTES_VER.find(function(x){ return x.rep===rep && x.cod; }); if(v) return v.cod; var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
 function listaReal(rep, cod){
   var k = rep+"|"+(cod||"");
-  if(!LISTA_REVS[k]) LISTA_REVS[k] = chamar("GET", "/representante/revendedoras?rep="+encodeURIComponent(rep)+(cod ? "&vendedor="+encodeURIComponent(cod) : "")).catch(function(){ LISTA_REVS[k] = null; return null; });
+  // tenta até 3 vezes (a carteira grande demora na primeira chamada do dia); falha NÃO fica guardada: na próxima abertura tenta de novo
+  var url = "/representante/revendedoras?rep="+encodeURIComponent(rep)+(cod ? "&vendedor="+encodeURIComponent(cod) : "");
+  if(!LISTA_REVS[k]) LISTA_REVS[k] = chamar("GET", url).catch(function(){ return chamar("GET", url); }).catch(function(){ return chamar("GET", url); }).catch(function(){ delete LISTA_REVS[k]; return null; });
   return LISTA_REVS[k];
 }
 function vendasDoSistema(rep, nome, cod){
@@ -94,7 +96,7 @@ function carteiraRep(s, rep, reais){
   var lids = s.listagens.filter(function(x){return x.rep===rep;}).map(function(x){return x.id;});
   var appDe = {}; (reais||[]).forEach(function(it){ if(it.vendaApp>0) appDe[semAcento(it.nome)] = it.vendaApp; });   // venda lançada no app da revendedora desde o último acerto
   var hojeK = s.kits.filter(function(k){return lids.indexOf(k.lid)>=0;}).map(function(k){
-    return {vendaApp:appDe[semAcento(k.rev)]||0, id:k.id, rev:k.rev, fone:k.fone||"", bairro:k.endereco||k.bairro, vendas:k.vendas||[], cond:k.valor, hora:k.horaAtend, hoje:true, data:dm(new Date()), nova:(k.tipoKit||"").indexOf("kit_novo")===0, tipoKit:k.tipoKit, status:k.status, lid:k.lid}; });
+    return {vendaApp:appDe[semAcento(k.rev)]||0, cod:k.codRev||"", id:k.id, rev:k.rev, fone:k.fone||"", bairro:k.endereco||k.bairro, vendas:k.vendas||[], cond:k.valor, hora:k.horaAtend, hoje:true, data:dm(new Date()), nova:(k.tipoKit||"").indexOf("kit_novo")===0, tipoKit:k.tipoKit, status:k.status, lid:k.lid}; });
   // Revendedora que já fez o acerto neste mês: o card mostra "Acerto realizado · mês" e o vendido/acerto reais do acerto
   var mesAtual = isoDia(new Date()).slice(0,7);
   var feito = function(rev){ return (s.acertosConsignado||[]).find(function(a){ return a.tipo==="acerto" && a.rev===rev && (a.data||"").slice(0,7)===mesAtual; }); };
@@ -203,7 +205,7 @@ function AppRepresentante(p){
   var voltar = e("div",{className:"flex items-center gap-2"},
     e("button",{onClick:function(){setTela("inicio");}, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[12px] font-semibold text-amber-200"}, "‹ Início"),
     e("b",{className:"text-[16px]"}, TITULO[tela]));
-  var PCT_COMISSAO_REP_CARD = 0.08; // comissão da representante exibida no card: 8% do valor do acerto
+  var PCT_COMISSAO_REP_CARD = pctDaRep(comisEfetiva(s), l.rep)/100;   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
   var LINHA_CARD = "border-[#E9DDBB]";
   var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };
   var cartao = function(r){
@@ -954,7 +956,7 @@ function AppRepresentante(p){
   var fone2 = perfilAtual.fone2 || "";
   var refsBase = [];
   var refsAtuais = (perfilAtual.refs || refsBase).slice(0,3);
-  var salvarPerfil = function(patch){ if(sel) d({type:"SALVAR_PERFIL_REV", chave:sel.rev, patch:patch}); };
+  var salvarPerfil = function(patch){ if(sel) d({type:"SALVAR_PERFIL_REV", chave:sel.rev, patch:Object.assign({}, patch, (sel.cod || sel.codRev) ? {revCod:String(sel.cod || sel.codRev)} : {})}); };
   var setRef = function(i, campo, valor){ var novo = [0,1,2].map(function(j){ return Object.assign({nome:"",rel:"",fone:""}, refsAtuais[j]); });
     novo[i][campo] = valor; salvarPerfil({refs:novo}); };
   var enderecoCasa = perfilAtual.enderecoCasa!==undefined ? perfilAtual.enderecoCasa : (sel && sel.bairro) || "";

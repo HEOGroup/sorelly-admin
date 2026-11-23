@@ -10,11 +10,11 @@
 // Este arquivo é PURO (sem React, sem navegador): o servidor e o reducer usam as mesmas funções.
 
 var ITENS_MODULOS = ["rpo", "rpf"];
-var DONO = {l:"app", k:"app", ke:"app", en:"app", cb:"app", eb:"app", pa:"app", pr:"app", ks:"app", a:"app", ar:"app", km:"app", gv:"app",
+var DONO = {pd:"app", l:"app", k:"app", ke:"app", en:"app", cb:"app", eb:"app", pa:"app", pr:"app", ks:"app", a:"app", ar:"app", km:"app", gv:"app",
   lx:"admin", kx:"admin", ax:"admin", cf:"admin"};
 // pr_ (rpo): ficha da revendedora preenchida no app (2º telefone, endereços, profissão, referências), server/app-rep/perfil.js
 // ks_ (rpo): estado da sincronização com o backend do app (kits novos enviados, cursor das respostas, avisos de kit pronto) — só o servidor grava
-var MODULO_DO_PREFIXO = {l:"rpo", lx:"rpo", k:"rpo", kx:"rpo", ke:"rpo", en:"rpo", cb:"rpo", eb:"rpo", pa:"rpo", pr:"rpo", ks:"rpo",
+var MODULO_DO_PREFIXO = {pd:"rpo", l:"rpo", lx:"rpo", k:"rpo", kx:"rpo", ke:"rpo", en:"rpo", cb:"rpo", eb:"rpo", pa:"rpo", pr:"rpo", ks:"rpo",
   a:"rpf", ax:"rpf", ar:"rpf", km:"rpf", gv:"rpf", cf:"rpf"};
 // cf_comis (rpf, dono admin): a configuração de comissões (s.comis, sem km) espelhada do navegador do financeiro, para o servidor calcular
 // "só as minhas comissões" para o app (régua, % e grupo de cada representante, datas, gasolina, pagamentos lançados).
@@ -106,6 +106,26 @@ function juntar(locais, doServidor, origemApp){
   var ids = porId(doServidor);
   return doServidor.concat((locais||[]).filter(function(x){ return x && !ids[x.id] && x.origem!==origemApp; }));
 }
+// FICHA DA REVENDEDORA (pr_<código>, 23/11/2026): o que a representante digita (2º telefone, endereços, profissão, 3 referências) fica no servidor. Mesmos nomes do navegador (fone2, enderecoCasa, refs...).
+// O app da loja grava os mesmos dados com outros nomes (telefone2, enderecoResidencial, referencias): os dois formatos são lidos.
+function fichaDe(v){ return {fone2:v.fone2 || v.telefone2 || "", enderecoCasa:v.enderecoCasa!==undefined ? v.enderecoCasa : (v.enderecoResidencial || ""), enderecoTrabalho:v.enderecoTrabalho || "", profissao:v.profissao || "",
+  refs:(v.refs || v.referencias || []).map(function(r){ return {nome:r.nome||"", rel:r.rel||r.relacao||"", fone:r.fone||r.telefone||""}; }), enderecoFavorito:v.enderecoFavorito || ""}; }
+function fichasDoServidor(rpo, perfis){
+  var novo = null;
+  Object.keys(rpo||{}).forEach(function(c){ if(prefixo(c)!=="pr" || !vivo(rpo[c]) || !rpo[c].rev) return;
+    var nome = rpo[c].rev, f = fichaDe(rpo[c]), at = (perfis||{})[nome] || {}, mudou = false, o = {};
+    ["fone2","enderecoCasa","enderecoTrabalho","profissao","enderecoFavorito"].forEach(function(k){ if(f[k] && f[k]!==at[k]){ o[k] = f[k]; mudou = true; } });
+    if(f.refs.some(function(r){ return r.nome || r.fone; }) && j(f.refs)!==j(at.refs||[])){ o.refs = f.refs; mudou = true; }
+    if(!mudou) return; novo = novo || Object.assign({}, perfis); novo[nome] = Object.assign({}, at, o, {revCod:idDaChave(c)}); });
+  return novo;
+}
+function pedidosDataDoServidor(rpo, p45){
+  var base = p45 || {pedidos:[]}, lista = (base.pedidos||[]).slice(), mudou = false;
+  Object.keys(rpo||{}).forEach(function(c){ if(prefixo(c)!=="pd" || !vivo(rpo[c])) return;
+    var id = "pd-"+idDaChave(c); if(lista.some(function(x){ return x.id===id; })) return;
+    lista.push(Object.assign({}, rpo[c], {id:id})); mudou = true; });
+  return mudou ? Object.assign({}, base, {pedidos:lista}) : null;
+}
 // devolve o patch do estado montado a partir de s.rpo e s.rpf (chamado no SYNC_MODULO)
 // soApp (conta de REPRESENTANTE, 17/11/2026): as listagens, kits e acertos ficam SÓ com o que o servidor mandou (já filtrado por ela); nada de demonstração do navegador junto.
 function aplicarAppNoEstado(s, soApp){
@@ -116,6 +136,8 @@ function aplicarAppNoEstado(s, soApp){
     p.kits = juntar2(s.kits, montarKits(s.rpo), "app");
     var en = montarEntregas(s.rpo); if(Object.keys(en).length) p.entregasKN = Object.assign({}, s.entregasKN, en);
     var eb = montarErrosBipagem(s.rpo); if(eb.length) p.errosBipagem = juntar(s.errosBipagem, eb, "app");
+    var fi = fichasDoServidor(s.rpo, s.perfisRev); if(fi) p.perfisRev = fi;   // ficha da revendedora preenchida pela representante (pr_)
+    var pdn = pedidosDataDoServidor(s.rpo, s.p45); if(pdn) p.p45 = pdn;   // pedidos de nova data feitos pelas representantes (pd_): aparecem em Agendamento > Plano 45/60 > Aprovação
   }
   if(s.rpf){
     p.acertosConsignado = juntar2(s.acertosConsignado, montarAcertos(s.rpf), "app");
@@ -208,6 +230,14 @@ function espelharRep(s, repCod, repNome){
     });
     // kit do app que saiu da lista dela (ela excluiu da listagem): lápide
     Object.keys(rpo).forEach(function(c){ if(prefixo(c)!=="k") return; var id = idDaChave(c), kx = rpo["kx_"+id]; if(vivo(rpo[c]) && !idsK[id] && !(kx && kx._apagado)) pRpo(c, LAPIDE("tirado pela representante")); });
+    // ficha da revendedora (2º telefone, endereços, profissão, referências) e pedidos de nova data: sobem para o servidor
+    Object.keys(s.perfisRev||{}).forEach(function(nome){ var p = s.perfisRev[nome]; if(!p || !p.revCod) return;
+      var cod = String(p.revCod).replace(/\D/g,"").padStart(6,"0"), ch = "pr_"+cod, ex = rpo[ch], f = fichaDe(p);
+      if(!(f.fone2 || f.enderecoCasa || f.enderecoTrabalho || f.profissao || f.refs.some(function(r){ return r.nome || r.fone; }))) return;
+      var at = vivo(ex) ? fichaDe(ex) : null; if(at && j(at)===j(f)) return;
+      pRpo(ch, Object.assign({}, vivo(ex) ? ex : {}, {rev:nome, revCod:cod, repCod:repCod, rep:repNome, em:agora, telefone2:f.fone2||null, enderecoResidencial:f.enderecoCasa||"", enderecoTrabalho:f.enderecoTrabalho, profissao:f.profissao,
+        referencias:f.refs.map(function(r){ return {nome:r.nome, relacao:r.rel, telefone:r.fone||null}; })}, f)); });
+    ((s.p45 && s.p45.pedidos) || []).forEach(function(pd){ if(!pd || !pd.id || String(pd.id).indexOf("pd-")===0) return; var ch = "pd_"+repCod+"-"+pd.id; if(!rpo[ch]) pRpo(ch, Object.assign({}, pd, {rep:repNome, repCod:repCod})); });
     // entrega guiada do kit novo (etapas, foto do expositor, assinatura)
     Object.keys(s.entregasKN||{}).forEach(function(kitId){ if(idsK[kitId] && s.entregasKN[kitId]) pRpo("en_"+kitId, s.entregasKN[kitId]); });
   }
@@ -253,4 +283,4 @@ function listagemParaApp(l, kits, agoraMs){
 
 export { ITENS_MODULOS, LAPIDE, MAX_LISTAGEM, REPOSICOES_SEMANA, PRAZO_PEDIDO_HORAS, SEM_KIT, TIPOS_KIT_APP, STATUS_TIRAR,
   prefixo, donoDaChave, moduloDaChave, idDaChave, vivo, ehViagem, capacidade, inicioSemana, horasAteRetirada, codigoRetirada, semAcento,
-  montarListagens, montarKits, montarAcertos, aplicarAppNoEstado, espelharAdmin, espelharRep, kitParaApp, listagemParaApp };
+  montarListagens, montarKits, montarAcertos, aplicarAppNoEstado, espelharAdmin, espelharRep, kitParaApp, listagemParaApp, fichaDe };
