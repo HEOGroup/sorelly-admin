@@ -4,6 +4,8 @@
 // Conta de CNPJ (destino com cnpjId): uma linha por conta bancária. Fornecedor, sócio, representante: acha pelo nome em s.cp.chaves e s.cp.func.
 import { chaveAdminDaConta, contaDaCaixa, extrasSeed } from "@/apps/montagem/domain/pix-regras";
 import { bancoDaConta } from "@/apps/montagem/lib/mensagem-pix";
+import { acharChaveCentral } from "@/apps/montagem/lib/chave-central";
+var paraSaida = function(c){ return {folha:"", banco:c.banco || "", fav:c.fav || "", chave:c.chave, tipo:c.tipo || tipoDe(c.chave)}; };
 
 var FAV_EMPRESA = {"34":"Sorelly Comércio Atacadista de Semijoias", "46":"Mayz Comércio de Moda Praia, Lingeries e Acessórios Ltda", "59":"Serenity", "67":"Axis Comércio de Joias e Acessórios Ltda", "HO":"H&O Apps", "ho":"H&O Apps", "ITM":"Marco Antônio de Oliveira"};
 var FOLHA = {"ITM":"PIX - ITAÚ PJ - MARCO"};   // texto que se escreve na folha (rótulo da DevMaster), como o Marcus passou em 10/11/2026
@@ -56,7 +58,11 @@ export function chavesDoDestino(s, d){
     });
     return out;
   }
-  var pf = prestFamDoDestino(s, d); if(pf){ var kf = chaveDoPrestFam(s, pf); return kf ? [kf] : out; }   // prestador da família: a chave é a do cadastro dele
+  var pf = prestFamDoDestino(s, d); if(pf){
+    var cc = acharChaveCentral(s, pf.nome, {grupos:["ffp", "prest", "func", "pes"], copias:false});   // 24/11/2026: a aba Chaves Pix vale primeiro
+    if(cc) return [paraSaida(cc)];
+    var kf = chaveDoPrestFam(s, pf); return kf ? [kf] : out;   // prestador da família: a chave é a do cadastro dele
+  }
   var mine = palavras(d.nome); if(!mine.length) return out;
   var casa = function(nome){ var o = palavras(nome); return o.length && mine.every(function(w){ return o.indexOf(w)>=0; }); };
   var cch = Object.assign({}, cp.chaves || {});
@@ -67,5 +73,6 @@ export function chavesDoDestino(s, d){
     Object.keys(cch).forEach(function(id){ var x = cch[id]; if(x && chaveValida(x.chave) && casaFrouxa(d.nome, x.nome)) out.push({folha:"", banco:x.banco || "", fav:x.favorecido || "", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave)}); });
     Object.keys(cp.func||{}).forEach(function(n){ var x = cp.func[n]; if(x && chaveValida(x.chave) && casaFrouxa(d.nome, n)) out.push({folha:"", banco:x.banco || "", fav:"", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave)}); });
   }
+  if(!out.length){ var cf = acharChaveCentral(s, d.nome, {grupos:["func", "prest", "ffp", "forn", "rep", "pes"]}); if(cf) out.push(paraSaida(cf)); }   // 24/11/2026: nome diferente do cadastro (Higor x Higor Fernando Goulart) ou chave só numa cópia antiga
   return out;
 }
