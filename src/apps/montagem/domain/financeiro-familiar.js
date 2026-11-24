@@ -56,6 +56,8 @@ function casaDe(ff, contaId){ var b = (ff.contasBanc||[]).find(function(y){ retu
 function pixCasa(ff, x){ return x.personaId==="familia"; }
 // PARA QUAL CASA o Pix da Casa foi (Marcus, 22/11/2026): campo só do nosso sistema (o DevMaster e as funcionárias não veem); vazio = ainda sem casa definida
 var CASAS_PIX = [["casaalphaville", "Casa Alphaville"], ["juan", "Casa Praia"], ["casajardine", "Casa Jardine"], ["familia", "Casa/Família (geral)"]];
+// A conta escolhida no Direcionar é de um PRESTADOR do sócio (e não do próprio sócio)? Mesma regra do rótulo da tela (Marcus, 23/11/2026).
+var contaDePrestador = function(ff, personaId, conta){ if(!conta) return false; var cb = (ff.contasBanc||[]).find(function(z){ return z.nome===conta && z.prestadorId; }); return !!(cb ? (ff.prest||[]).find(function(z){ return z.id===cb.prestadorId; }) : (ff.prest||[]).find(function(z){ return z.nome===conta && z.responsavelId===personaId; })); };
 var casaPixOk = function(v){ return CASAS_PIX.some(function(c){ return c[0]===v; }) ? v : ""; };
 function pixDoMes(ff, pid, ym){
   var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); }).reduce(function(t, x){ return t+x.valor; }, 0);
@@ -301,6 +303,16 @@ function ffReduz(s, a){
       if(ff.repasses.some(function(x){ return x.prestId===pxd.id && !x.origemDirecionar && Math.abs(x.valor-vd)<0.005 && x.data===dtD && nmO(x.origem)===nmO(a.origem) && nmO(a.origem)!=="" && nmO(a.origem)!=="pix revendedora"; })) return recusa("");
       ff.repasses.push({id:uid("rp"), prestId:pxd.id, valor:vd, data:a.data||hojeIso(), origem:String(a.origem||"").trim()||"PIX revendedora", forma:"PIX", conta:a.contaTxt||"", chavePixDestino:pxd.chavePix||"", origemPixPersonaId:pxd.responsavelId||"", socioId:"", divId:"", origemDirecionar:a.origemDirecionar});
       return ok("Pix do Direcionar lançado como repasse", "Prestadores", "Repasse do Direcionar", pxd.nome, money(vd)); }
+    // Pix confirmado no Direcionar para a conta de um sócio vira Pix da Família sozinho, já com a casa (Marcus, 23/11/2026: "Direcionar precisa lançar"). Reabrir retira.
+    case "pix_dir": { if(!a.origemDirecionar) return recusa("Pix sem identificação."); if(ff.pix.some(function(x){ return x.origemDirecionar===a.origemDirecionar; })) return recusa("");
+      var vpd = r2(a.valor), dtp = a.data||hojeIso(); if(!(vpd>0) || !ff.personas.some(function(x){ return x.id===a.personaId; })) return recusa("");
+      var nmP = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); };
+      var jaPx = ff.pix.find(function(x){ return x.personaId===a.personaId && !x.origemDirecionar && Math.abs(x.valor-vpd)<0.005 && x.data===dtp && nmP(x.origem)===nmP(a.origem); });   // o mesmo Pix já lançado à mão (Contas a receber) não conta duas vezes
+      if(jaPx){ if(!jaPx.casa && casaPixOk(a.casa)){ jaPx.casa = a.casa; return ok("Casa marcada no Pix já lançado", "PIX revendedoras", "Marcou a casa", nomeP(a.personaId), money(vpd)); } return recusa(""); }
+      var lpd = {id:uid("px"), personaId:a.personaId, data:dtp, valor:vpd, origem:String(a.origem||"").trim(), contaId:"", forma:"PIX", auditoria:"PENDENTE", auditadoPor:"", origemDirecionar:a.origemDirecionar};
+      if(casaPixOk(a.casa)) lpd.casa = a.casa; ff.pix.push(lpd);
+      return ok("Pix do Direcionar lançado", "PIX revendedoras", "Pix do Direcionar", nomeP(a.personaId), money(vpd)); }
+    case "pix_dir_desfaz": { var antesX = ff.pix.length; ff.pix = ff.pix.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.pix.length===antesX) return recusa(""); return ok("Pix do Direcionar retirado"); }
     case "repasse_dir_desfaz": { var antesR = ff.repasses.length; ff.repasses = ff.repasses.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.repasses.length===antesR) return recusa(""); return ok("Repasse do Direcionar retirado"); }
     case "repasse_add": { var rv = r2(a.valor); if(!a.prestId || !a.data || !(rv>0)) return recusa("Informe prestador, data e valor."); if(!String(a.origem||"").trim()) return recusa("Informe quem pagou."); var pxr = ff.prest.find(function(x){ return x.id===a.prestId; });
       if(a.pixRevendedora && (!pxr || !pxr.responsavelId)) return recusa("Defina o sócio responsável do prestador para contar como PIX de revendedora.");
@@ -317,5 +329,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { CASAS_PIX, casaPixOk, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { CASAS_PIX, casaPixOk, contaDePrestador, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };

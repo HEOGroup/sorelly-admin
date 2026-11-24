@@ -18,7 +18,7 @@ import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
 import { descontoCartao, fornecedoresDoMesPf, geradoEm, prestadoresAbertosPf } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
-import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe, prazoDaDivida } from "@/apps/montagem/domain/financeiro-familiar";
+import { ACESSO_FF, CASAS_PIX, baixaDividas, contaDePrestador, diasEntre, parcelasDe, prazoDaDivida } from "@/apps/montagem/domain/financeiro-familiar";
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
 import { orientacaoDoDia } from "@/apps/montagem/domain/cerebro-financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
@@ -184,8 +184,13 @@ function AbaDirecionar(){
   var rotuloParte = function(p){ if(p.brinde) return "Diferença do brinde"; var mesmas = partes.filter(function(z){ return z.forma===p.forma && !z.brinde; }); return formaLonga(p.forma)+(mesmas.length>1 ? " "+(mesmas.indexOf(p)+1) : ""); };
   var addDest = function(destinoId, valor, regra, conta, motivo, pref){ if(!sel) return; var pt = parteAlvo(pref); if(!pt) return; var l = divDe(pt.id), rest = restDe(pt.id), i = l.findIndex(function(x){ return x.destinoId===destinoId && (x.conta||"")===(conta||""); }), v = r2(Math.min(valor==null ? rest : valor, Math.max(rest, 0)));
     if(!(v>0)) return; if(i>=0) l[i] = Object.assign({}, l[i], {valor:r2(l[i].valor+v)}); else l.push({destinoId:destinoId, valor:v, regra:regra||0, conta:conta||"", via:pt.forma, parte:pt.id, motivo:motivo||""}); setDivDe(pt.id, l); };
+  // Pix para a conta de um sócio (não prestador) pede a casa: o Direcionar lança na Família sozinho (Marcus, 23/11/2026)
+  var ehSocio = function(x){ var d = destinoDe(x.destinoId); return (x.via||"pix")==="pix" && d.tipo==="FAMILIA" && !!d.personaId && !d.prestFamId && !contaDePrestador(s.ff||{}, d.personaId, x.conta); };
+  var temSocio = div.some(ehSocio), casaDiv = (div.filter(ehSocio)[0] || {}).casa || "";
+  var setCasa = function(v){ setDiv(div.map(function(x){ return ehSocio(x) ? Object.assign({}, x, {casa:v}) : x; })); };
   var confirmar = function(){
     if(!sel) return; if(!div.length){ setErro("Defina o destino de cada forma de pagamento."); return; }
+    var semCasa = div.filter(function(x){ return ehSocio(x) && !x.casa; })[0]; if(semCasa){ setErro("Escolha para quê é o Pix do sócio."); return; }
     var aberta = partes.filter(function(p){ return Math.abs(restDe(p.id))>0.009; })[0];
     if(aberta){ var rr = restDe(aberta.id); setErro("Falta definir "+rotuloParte(aberta)+": "+(rr>0 ? "falta "+BKC(rr) : "passou "+BKC(-rr))+"."); return; }
     c.d({type:"DP", op:"divisao", id:sel.id, divisoes:div}); c.d({type:"DP", op:"confirma", id:sel.id, por:c.por});
@@ -436,6 +441,7 @@ function AbaDirecionar(){
         (function(){ var vb = r2(partes.filter(function(z){ return z.brinde; }).reduce(function(t, z){ return t+z.valor; }, 0)); return vb>0 ? [RL("Falta pagar do acerto", BKC(r2(sel.valor-vb)), "#f5c14b"), RL("Diferença do brinde", BKC(vb), "#f5c14b"), RL("Total a direcionar", BKC(sel.valor))] : RL("Falta pagar", BKC(sel.valor), "#f5c14b"); })(),
         e("div",{className:CEL+" col-span-2 flex-col gap-2 py-2.5"},
           c.edita && temSugestao ? e("button",{type:"button", onClick:usarTodas, className:"h-8 w-full whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Usar todas as sugestões") : null,
+          c.edita && temSocio ? e("select",{value:casaDiv, "aria-label":"Para quê é o Pix do sócio", title:"Para quê é o Pix do sócio: uma das casas ou pessoal", onChange:function(ev){ setCasa(ev.target.value); }, className:CAMPO+" w-full text-center"}, e("option",{value:""}, "Escolha para quê"), e("option",{value:"pessoal"}, "Pessoal (sem casa)"), CASAS_PIX.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })) : null,
           c.edita ? e("button",{type:"button", onClick:confirmar, disabled:!div.length, className:BOTAO_OK+"w-full "+(div.length ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-border bg-card text-foreground opacity-60")}, "OK · enviar") : null,
           avisoTxt.t!=="—" ? e("span",{className:"text-center text-[13px] font-semibold", style:avisoTxt.cor ? {color:avisoTxt.cor} : undefined}, avisoTxt.t) : null)),
       e("div",{className:"min-w-0 overflow-x-auto bg-[#0f1829]"}, e("div",{className:"grid content-start gap-px bg-border pb-px", style:{gridTemplateColumns:GR, gridTemplateRows:"30px", minWidth:"46rem"}},   // content-start (Marcus, 16/11/2026): 1 ou 2 pagamentos ficam em cima, do tamanho deles; 3, 4, 5... vão descendo

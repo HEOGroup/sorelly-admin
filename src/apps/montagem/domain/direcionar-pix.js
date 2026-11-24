@@ -140,7 +140,7 @@ function dpReduz(s, a){
   var dp = JSON.parse(JSON.stringify(s.dp || dpDemo())), por = a.por || "—", recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{dp:dp}, msg:msg}; };
   var pix = function(id){ return dp.pix.find(function(x){ return x.id===id; }); };
   switch(a.op){
-    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix", parte:d.parte||""}; }); return ok(); }   // parte (forma#n) liga a divisão à linha do pedido do atendimento interno
+    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix", parte:d.parte||"", casa:d.casa||""}; }); return ok(); }   // parte (forma#n) liga a divisão à linha do pedido do atendimento interno
     case "confirma": { var p2 = pix(a.id); if(!p2) return recusa("Pix não encontrado."); var soma = r2((p2.divisoes||[]).reduce(function(t, d){ return t+d.valor; }, 0));
       if(!p2.divisoes.length) return recusa("Escolha pelo menos um destino."); if(Math.abs(soma-p2.valor)>0.009) return recusa("A soma dos destinos precisa fechar com "+brl(p2.valor)+"."); p2.status = "direcionado"; p2.confirmadoPor = por; p2.confirmadoEm = Date.now(); return ok("Pix direcionado"); }
     // pedido de conta feito no app da representante (acerto): entra na fila do Direcionar; quando o financeiro confirma, a conta volta para o app (reducer DP)

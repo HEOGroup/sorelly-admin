@@ -3397,3 +3397,9 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - O Ranking virou **Top vendedoras** e as duas telas ficam no alto do menu de Encomendas e reposições (Top vendedoras, Premiação do mês). Top vendedoras = só para premiar: Top 20 do mês + Top 50 pelo acerto de 3 meses; nada de lista de acesso.
 - **Premiação do mês** = só o Top 10 do mês pelo VALOR DE ACERTO (soma do acerto_dm das linhas de venda; brinde, troca, indicação e prêmio não contam), com a foto e a descrição do prêmio ao lado. Campanha de novembro/2026 (artes do Instagram @sorellyoficial) em domain/premiacao-mes.js; mês novo = nova entrada + fotos em public/premiacao/AAAA-MM/.
 - Em aberto na campanha: data da divulgação, desempate (hoje: maior venda), se acertos de novembro feitos em dezembro entram, pagamento dos R$ 1.000 do 1º lugar, reserva do jantar.
+
+## 23/11/2026 — Direcionar lança o Pix do sócio na Família
+- Pedido do Marcus: "Direcionar precisa lançar". Até aqui o Pix do sócio só entrava na Família quando alguém lançava em Contas a receber › Lançar recebimento.
+- Agora, ao confirmar no Direcionar um Pix para a conta de um **sócio** (destino tipo Família com pessoa; prestador da família segue como repasse), o sistema lança o Pix na Família (`pix_dir`, chave `origemDirecionar` = pedido#linha). O campo "Escolha para quê" (Pessoal, ou uma das casas) é obrigatório e só aparece na conta pessoal do sócio; conta de prestador do sócio, empresa e fornecedor não pedem nada. Pedido de teste (demo) nunca lança na Família. Reabrir retira (`pix_dir_desfaz`).
+- Sem lançamento em dobro: se já existe Pix à mão da mesma pessoa, mesmo valor, mesmo dia e mesma origem, o sistema só marca a casa nele.
+- Teste: `node scripts/testar-direcionar-lanca-pix-familia.mjs` (13 verificações). A Contas a receber › Lançar recebimento continua valendo para o Pix que não passa pelo Direcionar.

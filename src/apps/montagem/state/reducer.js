@@ -60,7 +60,7 @@ import { avReduz } from "@/apps/montagem/domain/avaliacoes";
 import { prReduz } from "@/apps/montagem/domain/producao";
 import { cpcDoServidor, cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
 import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
-import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
+import { contaDePrestador, ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { MODELO_PADRAO } from "@/apps/montagem/domain/condicional-modelo";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 import { uneItau } from "@/apps/montagem/domain/itau-unico";
@@ -467,6 +467,11 @@ function reducer(s, a){
       if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId || (d.via && d.via!=="pix")) return;   // só Pix abate a dívida: link e maquininha não
           var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:dataLocalDe(pFa.confirmadoEm), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
+      // 23/11/2026 (Marcus: "Direcionar precisa lançar"): Pix confirmado para a conta de um SÓCIO vira Pix da Família, com a casa escolhida. Reabrir retira.
+      if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFs = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pFs && pFs.status==="direcionado" && !pFs.demo){ (pFs.divisoes||[]).forEach(function(d, n){ var ds = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!ds || ds.tipo!=="FAMILIA" || !ds.personaId || ds.prestFamId || contaDePrestador(sDp.ff, ds.personaId, d.conta) || (d.via && d.via!=="pix")) return;
+          var rS = ffReduz(sDp, {op:"pix_dir", origemDirecionar:pFs.id+"#"+n, personaId:ds.personaId, valor:d.valor, data:dataLocalDe(pFs.confirmadoEm), origem:pFs.revendedora||pFs.repOrigem||pFs.quem||"PIX revendedora", casa:d.casa}); if(rS.patch && rS.patch.ff) sDp = Object.assign({}, sDp, {ff:rS.patch.ff}); }); } }
+      if(a.op==="reabre" && sDp.ff){ var rS2 = ffReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rS2.patch && rS2.patch.ff) sDp = Object.assign({}, sDp, {ff:rS2.patch.ff}); }
       if(a.op==="reabre" && sDp.ff){ var rF2 = ffReduz(sDp, {op:"repasse_dir_desfaz", id:a.id}); if(rF2.patch && rF2.patch.ff) sDp = Object.assign({}, sDp, {ff:rF2.patch.ff}); }
       if(a.op==="confirma") sDp = sincCompFornecedor(sDp);   // o comprovante já pode estar anexado (representante ou funcionária)
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
