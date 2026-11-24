@@ -130,7 +130,7 @@ var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
   M("Mapa do sistema","mapa")];
-var MENU_MARCUS = [M("Resumo","marcus"), M("Faturamento","marcusfat"), M("Patrimônio e dívidas","marcuspat"), M("Extratos","marcusextratos"), M("Atividades","marcusativ"), M("Acessos e senhas","marcusacessos"), M("Dados","marcusdados"), M("Progresso","marcusprog")];
+var MENU_MARCUS = [M("Atividades","marcusativ"), M("Acessos e senhas","marcusacessos"), M("Dados","marcusdados"), M("Progresso","marcusprog")];
 var MENU_JURIDICO = [
   {nome:"Notas promissórias", itens:[M("Execução de notas promissórias", undefined, {breve:true}), M("Inadimplência jurídica", undefined, {breve:true})]},
   M("Contratos de salas comerciais", undefined, {breve:true}),
@@ -277,10 +277,6 @@ var SETORES = [
     {nome:"Central de controle", telas:[T("mapa","Mapa do sistema")]}]},
   // Setor MARCUS (23/11/2026, pedido do Marcus: "o Admin Marcus não pode ficar separado"): setor comum do menu lateral, grupo Geral. Só o Marcus (16) e o Leonardo (44) abrem; telas e dados são os de antes (ficam só neste navegador).
   {id:"marcus", grupo:"geral", nome:"Marcus", ic:"escudo", cor:"#D9A63A", menu:MENU_MARCUS, semAbas:true, areas:[
-    {nome:"Resumo", telas:[T("marcus","Resumo")]},
-    {nome:"Faturamento", telas:[T("marcusfat","Faturamento")]},
-    {nome:"Patrimônio e dívidas", telas:[T("marcuspat","Patrimônio e dívidas")]},
-    {nome:"Extratos", telas:[T("marcusextratos","Extratos")]},
     {nome:"Atividades", telas:[T("marcusativ","Atividades")]},
     {nome:"Acessos e senhas", telas:[T("marcusacessos","Acessos e senhas")]},
     {nome:"Dados", telas:[T("marcusdados","Dados")]},

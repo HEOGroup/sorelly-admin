@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Marcus: Resumo, Faturamento, Patrimônio e dívidas e Extratos excluídas)
+- Pedido do Marcus: "Resumo exclui, Faturamento exclui, Patrimônio e dívidas exclui, Extratos também". Saíram do menu, das rotas e das abas. O setor Marcus ficou com Atividades, Acessos e senhas, Dados e Progresso. O código das páginas ficou no projeto, sem rota.
+
 ## 23/11/2026 (Marcus: Contas do mês excluída)
 - Pedido do Marcus: "Contas do mês exclui". A tela saiu do setor Marcus (menu, endereço `marcus-contas`, aba e o bloco do Resumo).
 
