@@ -252,18 +252,22 @@ function AppRepresentante(p){
   // RASCUNHO DO ATENDIMENTO (Marcus, 24/11/2026): a representante está sempre no meio de um atendimento; se o app recarregar (atualização do sistema, aba que fecha, erro de arquivo novo),
   // ela volta na MESMA tela, com o acerto, as peças bipadas e os brindes como estavam. O rascunho fica só neste aparelho (localStorage), vale 12 horas e some quando ela sai do atendimento de propósito
   // (volta ao início, vai para outra tela do app) ou termina o acerto.
-  var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1", TELAS_RASCUNHO = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","confdev","assinarrepos","reposicao","regrascom","rev"], TELAS_SAIDA = ["inicio","revs","comissoes","listagens","novos","fechamento","resumokn","retirada","mensagens"];
-  var rascRef = useRef(undefined);
+  var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1", TELAS_RASCUNHO = ["pedidodata","preacerto","calcacerto","assinaracerto","entregakit","confkit","confdev","assinarrepos","reposicao","rev"], TELAS_SAIDA = ["inicio","revs","comissoes","listagens","novos","fechamento","resumokn","retirada","mensagens"];
+  var rascRef = useRef(undefined), pularSalvar = useRef(false);
   if(rascRef.current===undefined){ rascRef.current = null; try{ var rr = JSON.parse(localStorage.getItem(CHAVE_RASCUNHO)||"null"); if(rr && rr.rep===l.rep && Date.now()-(rr.em||0) < 12*3600*1000 && TELAS_RASCUNHO.indexOf(rr.tela)>=0) rascRef.current = rr; }catch(x){} }
   useEffect(function(){   // devolve a representante ao ponto onde estava assim que a lista de revendedoras carregar
     var r = rascRef.current; if(!r) return;
     var alvo = cart.find(function(x){ return x.id===r.selId; }) || cart.find(function(x){ return x.rev===r.rev; });
     if(!alvo){ if(reais!==null) rascRef.current = null; return; }
-    rascRef.current = null;
-    setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, r.acertoForm||{})); setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(r.tela);
+    rascRef.current = null; pularSalvar.current = true;   // pularSalvar: o efeito de guardar não apaga o rascunho no mesmo ciclo da restauração
+    // só volta para uma tela do acerto se o kit de hoje ainda existe e o acerto ainda não foi registrado; senão volta na ficha da revendedora (nunca numa tela em branco)
+    var kitR = alvo.hoje ? s.kits.find(function(k){ return k.id===alvo.id; }) : null, jaR = (s.acertosConsignado||[]).some(function(x){ return x.kitId===alvo.id && x.tipo==="acerto"; });
+    var telaR = r.tela!=="rev" && (!kitR || jaR) ? "rev" : r.tela;
+    setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, telaR==="rev" ? {} : (r.acertoForm||{}))); setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(telaR);
   }, [cart.length, reais]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){   // guarda o rascunho a cada mudança dentro do atendimento
     if(rascRef.current) return;   // ainda restaurando: não sobrescreve
+    if(pularSalvar.current){ pularSalvar.current = false; return; }
     try{
       if(TELAS_RASCUNHO.indexOf(tela)>=0 && sel){ try{ localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify({rep:l.rep, selId:sel.id, rev:sel.rev, tela:tela, confVolta:confVolta, acertoForm:acertoForm, brindeIn:brindeIn, em:Date.now()})); }catch(x){ localStorage.removeItem(CHAVE_RASCUNHO); } }
       else if(TELAS_SAIDA.indexOf(tela)>=0) localStorage.removeItem(CHAVE_RASCUNHO);
