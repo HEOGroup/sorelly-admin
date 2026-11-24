@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.186", data:"2026-11-24", titulo:"Fila de resgates: agenda das retiradas à mão", itens:[
+  {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações → Resgates", txt:"O topo da Fila de resgates mostra quantas retiradas estão agendadas hoje, e o botão Agenda abre a agenda do dia."},
+  {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações", txt:"A tela Retiradas passou a se chamar Agenda (como Agendamentos no admin antigo): dias da semana com o número de retiradas em cada um e, ao clicar no dia, quem vem e em que horário."}]},
  {v:"0.21.185", data:"2026-11-24", titulo:"App da representante: Acerto sem agendamento", itens:[
   {tipo:"novo", area:"App da representante → Revendedoras", txt:"Botão Acerto sem agendamento: para a revendedora sem atendimento hoje, cria o atendimento de hoje sem o prazo da montagem, marcado como sem agendamento (quem criou e quando), e abre a Calculadora de acertos. Pedido urgente do caso Jessica e Kimberly."}]},
  {v:"0.21.184", data:"2026-11-24", titulo:"App da representante: Kit apoio bolsinhas (MP0063) vindo da condicional e ordem das vendas no Kit novo", itens:[

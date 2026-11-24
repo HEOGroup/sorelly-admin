@@ -42,7 +42,7 @@ var MENU_FISCAL = [M("Painel e notas","fiscal"), M("Limite de faturamento","limi
 var MENU_CADASTRO = [
   {nome:"Cadastro", itens:[M("Aprovação de cadastros","aprovacaocad"), M("Base de revendedoras","revendedoras")]},
   {nome:"Kits novos", itens:[M("Kits novos","kitnovo"), M("Pendências","knpendencias"), M("Consolidado","knconsolidado"), M("Regras","knregras"), M("Representantes","knrepresentantes"), M("Entregues","knentregues")]},
-  {nome:"Indicações", itens:[M("Funil","indicacoes"), M("Resgates de prêmios","indresgates"), M("Retiradas","indretiradas"), M("Revendedoras e moedas","indrevs"), M("Histórico","indhistorico")]},
+  {nome:"Indicações", itens:[M("Funil","indicacoes"), M("Resgates de prêmios","indresgates"), M("Agenda","indretiradas"), M("Revendedoras e moedas","indrevs"), M("Histórico","indhistorico")]},
   {nome:"Desempenho", itens:[M("Desempenho do cadastro","desempenhocad"), M("Avaliações","avaliacoes")]},
   M("Representantes","repcad"),
   M("Mensagens prontas","msgcad")
@@ -197,7 +197,7 @@ var SETORES = [
     {nome:"Desempenho do cadastro", telas:[
       T("desempenhocad","Desempenho do cadastro")]},
     {nome:"Indicações", telas:[
-      T("indicacoes","Funil"), T("indresgates","Resgates de prêmios"), T("indretiradas","Retiradas"), T("indrevs","Revendedoras e moedas"), T("indhistorico","Histórico")]},
+      T("indicacoes","Funil"), T("indresgates","Resgates de prêmios"), T("indretiradas","Agenda"), T("indrevs","Revendedoras e moedas"), T("indhistorico","Histórico")]},
     {nome:"Representantes", telas:[
       T("repcad","Representantes")]},
     {nome:"Mensagens prontas", telas:[
