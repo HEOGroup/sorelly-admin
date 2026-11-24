@@ -1090,16 +1090,15 @@ function AppRepresentante(p){
           className:"h-10 flex-1 rounded-xl bg-[#F4F5F7] px-2 text-sm text-[#111827] outline-none ring-1 ring-black/10"}),
         e("input",{type:"time", value:agendaForm.hora, placeholder:"Horário", onChange:function(ev){setAgendaForm(Object.assign({}, agendaForm, {hora:ev.target.value}));},
           className:"h-10 w-24 rounded-xl bg-[#F4F5F7] px-2 text-sm text-[#111827] outline-none ring-1 ring-black/10"})),
-      e("div",{className:"grid grid-cols-2 gap-1 rounded-xl bg-[#F4F5F7] p-1 ring-1 ring-black/10"},
-        [["acerto_kit","Acerto + kit"],["reposicao","Reposição"]].map(function(o){ var on = tipoAgenda===o[0];
-          return e("button",{key:o[0], type:"button", onClick:function(){ setTipoAgenda(o[0]); }, className:"h-8 rounded-lg text-[13px] font-bold "+(on ? ouro : "text-[#111827]")}, o[1]); })),
+      e("select",{value:tipoAgenda, "aria-label":"Tipo do atendimento", onChange:function(ev){ setTipoAgenda(ev.target.value); }, className:"h-8 w-full rounded-lg bg-[#F4F5F7] px-2 text-[13px] font-bold text-[#111827] outline-none ring-1 ring-black/10"},
+        [["acerto_kit","Acerto + kit"],["saiu","Acerto + retirada (saída)"],["kit_novo","Kit novo"],["reposicao","Reposição"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),   // tipos do Agendar (Marcus, 24/11/2026: faltavam acerto + retirada e kit novo)
       tipoAgenda==="reposicao" && e("p",{className:"text-[13px] text-[#111827]"}, "Reposições na semana: "+reposSemana+" de "+limiteReposSemana),
       !agendaForm.data
         ? e("p",{className:"text-[12px] text-[#6B7280]"},"Escolha o dia do atendimento com a revendedora.")
         : listagensNaData.length>0
           ? e("div",{className:"flex flex-col gap-2"}, listagensNaData.map(function(x){
               var kitsX = s.kits.filter(function(k){return k.lid===x.id;});
-              var cheiaX = listagemCheia(s, x.id), foraX = passouPrazo(x, Date.now(), s.cfg);
+              var cheiaX = listagemCheia(s, x.id), foraX = passouPrazo(x, Date.now(), s.cfg) && !SEM_KIT[tipoAgenda];
               return e("div",{key:x.id, className:"flex flex-col gap-1.5 rounded-xl border "+LINHA_CARD+" bg-[#F4F5F7] p-2.5"},
                 e("div",{className:"flex items-center justify-between gap-2"},
                   e("div",null,
@@ -1113,11 +1112,11 @@ function AppRepresentante(p){
                     (k.horaAtend?k.horaAtend+" · ":"")+k.rev+(k.bairro?" · "+k.bairro:"")); })),
                 foraX && e("p",{className:"text-[11px] font-semibold text-rose-600"},"Prazo encerrado ("+prazoDaListagem(x, s.cfg).texto+"). Só a Deysiane libera."),
                 e("button",{disabled:cheiaX || foraX || x.fechada || (tipoAgenda==="reposicao" && reposCheia), onClick:function(){ pedir(tipoAgenda, {lid:x.id, hora:agendaForm.hora||null, ficarNaTela:true}); setAgendarAberto(false); },
-                  className:"h-8 rounded-lg text-[13px] font-bold disabled:opacity-40 "+ouro}, cheiaX ? "Listagem cheia" : tipoAgenda==="reposicao" ? (reposCheia ? "Limite de reposições da semana" : "Agendar reposição") : "Agendar nessa listagem"));
+                  className:"h-8 rounded-lg text-[13px] font-bold disabled:opacity-40 "+ouro}, cheiaX ? "Listagem cheia" : tipoAgenda==="reposicao" ? (reposCheia ? "Limite de reposições da semana" : "Agendar reposição") : tipoAgenda==="saiu" ? "Agendar acerto e retirada" : tipoAgenda==="kit_novo" ? "Agendar kit novo" : "Agendar nessa listagem"));
             }))
           : e(React.Fragment,null,
               e("p",{className:"text-[12px] text-[#6B7280]"},"Nenhuma listagem aberta para esse dia ainda. Crie uma:"),
-              e(NovaListagemRep,{key:"nl"+agendaForm.data, s:s, d:d, rep:l.rep, data:agendaForm.data, ouro:ouro, aoCriar:function(){ setAutoAg(true); }})));
+              e(NovaListagemRep,{key:"nl"+agendaForm.data, s:s, d:d, rep:l.rep, data:agendaForm.data, ouro:ouro, semKit:!!SEM_KIT[tipoAgenda], aoCriar:function(){ setAutoAg(true); }})));
   var blocoSolicitar = sel && !sel.hoje && mostrarSolicitar && e("div",{className:"flex flex-col gap-2 "+blocoClaro},
     e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-[#6B7280]"},"Solicitar kit pra retirada"),
     minhasL.length===0

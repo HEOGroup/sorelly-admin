@@ -27,7 +27,7 @@ function NovaListagemRep(p){
   var s = p.s, hoje = isoDia(new Date()), dias = diasEscolha(s, p.rep, hoje);
   var primeiroLivre = dias.find(function(x){ return !x.travado; });
   var st = useState({data:p.data || (primeiroLivre ? primeiroLivre.iso : hoje), horario:"10:00", horario2:"", destino:"Curitiba"}), f = st[0], set = function(k, v){ var o = Object.assign({}, f); o[k] = v; st[1](o); };
-  var tem = listagensDoDia(s, p.rep, f.data).length>0, fechou = passouPrazo({data:f.data}, Date.now(), s.cfg), passado = f.data<hoje;
+  var tem = listagensDoDia(s, p.rep, f.data).length>0, fechou = passouPrazo({data:f.data}, Date.now(), s.cfg) && !p.semKit, passado = f.data<hoje;   // semKit: acerto + retirada não tem kit para montar, então o prazo da montagem não vale
   var pronto = f.data && f.horario && f.destino && !passado && !tem && !fechou;
   var campo = function(rotulo, filho){ return e("label",{className:ROTULO}, rotulo, filho); };
   return e("div",{className:"flex flex-col gap-2 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm"},
@@ -46,7 +46,7 @@ function NovaListagemRep(p){
     fechou && !tem && !passado && e("p",{className:"text-[11px] font-bold text-[#B91C1C]"}, "Prazo encerrado ("+prazoDaListagem({data:f.data}, s.cfg).texto+"). Só a Deysiane libera."),
     e("div",{className:"flex gap-2"},
       p.aoCancelar && e("button",{type:"button", onClick:p.aoCancelar, className:"h-8 flex-1 rounded-xl bg-[#F3F4F6] text-[13px] font-semibold text-[#111827]"}, "Cancelar"),
-      e("button",{type:"button", disabled:!pronto, onClick:function(){ p.d({type:"CRIAR_LISTAGEM", rep:p.rep, destino:f.destino, viagem:f.destino!=="Curitiba", horario:f.horario, horario2:f.horario2, data:f.data, porRep:true}); if(p.aoCriar) p.aoCriar(f); },
+      e("button",{type:"button", disabled:!pronto, onClick:function(){ p.d({type:"CRIAR_LISTAGEM", rep:p.rep, destino:f.destino, viagem:f.destino!=="Curitiba", horario:f.horario, horario2:f.horario2, data:f.data, porRep:true, semKit:!!p.semKit}); if(p.aoCriar) p.aoCriar(f); },
         className:"h-8 flex-1 rounded-xl text-[13px] font-bold disabled:opacity-40 "+(p.ouro||"bg-[#C9A13B] txt-branco")}, "Criar listagem")));
 }
 

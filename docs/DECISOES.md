@@ -3509,3 +3509,6 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 
 ## 24/11/2026 · App da representante: agendar (Thainá)
 - Thainá: cliente agendada para hoje só podia às 19h e não havia a opção; e as informações de agendamento não salvavam. Horários de retirada agora vão até 21:00. Criar listagem dentro do Agendar já coloca a revendedora nela. Prazo (2 dias antes, 07:30, só a Deysiane libera) não foi mudado: cliente agendada para hoje depois do prazo ainda precisa da Deysiane.
+
+## 24/11/2026 · Agendar no app: tipos
+- Marcus (caso da Thainá): o Agendar precisa ter Kit novo, Acerto + kit, Acerto + retirada, Reposição e Entrega de reposição. Feitos os quatro primeiros (Acerto + retirada = tipo saiu, sem prazo da montagem). Entrega de reposição aguarda definição de como é gravada.

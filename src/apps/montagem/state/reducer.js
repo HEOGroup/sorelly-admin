@@ -678,7 +678,7 @@ function reducer(s, a){
       var l = s.listagens.find(function(x){return x.id===a.lid;}); if(!l || l.fechada) return s;
       if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+l.horario+" j\u00e1 est\u00e1 com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(l)+" revendedoras: escolha outra listagem", "alerta");
       // 09/11/2026 (Marcus e Deysiane): a representante n\u00e3o inclui depois do prazo (2 dias \u00fateis antes, at\u00e9 07:30; s\u00f3 a supervis\u00e3o libera) e a revendedora s\u00f3 entra em uma listagem por dia
-      if(a.porRep && passouPrazo(l, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(l.data)+" ("+prazoDaListagem(l, s.cfg).texto+"). S\u00f3 a Deysiane libera.", "alerta");
+      if(a.porRep && !SEM_KIT[a.tipoKit] && passouPrazo(l, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(l.data)+" ("+prazoDaListagem(l, s.cfg).texto+"). S\u00f3 a Deysiane libera.", "alerta");
       var jaNoDia = kitDaRevNoDia(s, a.rev, l.data, null);
       if(jaNoDia && (a.porRep || jaNoDia.lid===a.lid)) return com(s, {}, a.rev+" j\u00e1 est\u00e1 em uma listagem de "+tituloDoDia(l.data)+". Cada revendedora entra em uma listagem por dia.", "alerta");
       var nk = kit(a.lid, a.rev, a.bairro||"\u2014", 5000, a.prio, {sem:true});
@@ -719,7 +719,7 @@ function reducer(s, a){
       if(novaL.data<isoDia(new Date(agora))) return com(s, {}, "O dia da listagem não pode ser no passado", "alerta");
       // 09/11/2026 (Marcus): UMA listagem por representante por dia; passou do prazo, só a supervisão cria
       if(listagensDoDia(s, novaL.rep, novaL.data).length>0) return com(s, {}, "Você já tem uma listagem em "+tituloDoDia(novaL.data)+". Cada representante tem uma listagem por dia, com até 2 horários.", "alerta");
-      if(a.porRep && passouPrazo(novaL, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(novaL.data)+" ("+prazoDaListagem(novaL, s.cfg).texto+"). Só a Deysiane libera.", "alerta");
+      if(a.porRep && !a.semKit && passouPrazo(novaL, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(novaL.data)+" ("+prazoDaListagem(novaL, s.cfg).texto+"). Só a Deysiane libera.", "alerta");
       return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+tituloDoDia(novaL.data)+" criada para "+novaL.rep);
     }
     // 09/11/2026 (Marcus e Deysiane): a representante exclui a revendedora da listagem. Ela diz quem desmarcou e o motivo; a Deysiane é avisada sempre

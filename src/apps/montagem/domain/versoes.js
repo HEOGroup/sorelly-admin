@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.181", data:"2026-11-24", titulo:"App da representante: Agendar com acerto + retirada e kit novo", itens:[
+  {tipo:"novo", area:"App da representante → Revendedoras → Agendar atendimento", txt:"O tipo vira um menu com Acerto + kit, Acerto + retirada (saída), Kit novo e Reposição. Acerto + retirada não tem kit para montar, então o prazo da montagem (2 dias antes, 07:30) não vale. Falta: Entrega de reposição."}]},
  {v:"0.21.180", data:"2026-11-24", titulo:"App da representante: horários até 21:00 e agendar salva a revendedora na listagem", itens:[
   {tipo:"correção", area:"App da representante → Revendedoras → Agendar atendimento", txt:"O horário da retirada vai de 08:00 a 21:00, de meia em meia hora (antes parava às 17:00; a Thainá tinha cliente só às 19h)."},
   {tipo:"correção", area:"App da representante → Revendedoras → Agendar atendimento", txt:"Ao criar a listagem dentro do Agendar, a revendedora já entra nela sozinha, com o horário escolhido (antes ficava só a listagem e parecia que não salvava)."}]},
