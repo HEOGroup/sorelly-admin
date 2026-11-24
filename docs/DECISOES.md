@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Marcus: Acessos e senhas igual à Contas a pagar; Atividades e Dados excluídas)
+- Pedido do Marcus: aplicar 100% o visual da Contas a pagar (azul) na tela Acessos e senhas e excluir Atividades e Dados. Tela nova: `pages/MarcusAcessos.js`. O setor Marcus ficou com Acessos e senhas e Progresso.
+
 ## 23/11/2026 (Marcus fica em Setores)
 - Pedido do Marcus: "Marcus é pra ficar em Setores, eu sou um setor". Saiu do grupo Geral. Pasta `docs/setores/marcus/` criada; perfil, Instagram e objetivos ficam em arquivos `.local.md` (fora do Git).
 

@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.159", data:"2026-11-23", titulo:"Marcus: Acessos e senhas no visual da Contas a pagar", itens:[
+  {tipo:"melhoria", area:"Marcus → Acessos e senhas", txt:"A tela ganhou o mesmo visual da Contas a pagar do Financeiro: barra azul com Buscar e Mostrar, tabela fina com filtro no nome de cada coluna, linha de total e botão no canto da barra. Atividades e Dados foram excluídas."}]},
  {v:"0.21.158", data:"2026-11-23", titulo:"Direcionar lança o Pix do sócio na Família, com a casa", itens:[
   {tipo:"novo", area:"Financeiro → Direcionar Pix", txt:"Quando o Pix vai para a conta pessoal de um sócio, aparece o campo Escolha para quê (Pessoal, Casa Alphaville, Praia, Jardine ou geral). Sem escolher, o OK · enviar não deixa confirmar. Empresa, fornecedor e prestador não pedem nada."},
   {tipo:"novo", area:"Financeiro › Família", txt:"Ao confirmar, o Pix já entra no Pix revendedoras da Família com a casa marcada. Se o mesmo Pix já foi lançado à mão na Contas a receber, não duplica: só marca a casa. Reabrir o pedido retira o Pix."}
