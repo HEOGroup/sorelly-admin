@@ -3,10 +3,39 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.21.146", data:"2026-11-23", titulo:"Direcionar lança o Pix do sócio na Família, com a casa", itens:[
+ {v:"0.21.158", data:"2026-11-23", titulo:"Direcionar lança o Pix do sócio na Família, com a casa", itens:[
   {tipo:"novo", area:"Financeiro → Direcionar Pix", txt:"Quando o Pix vai para a conta pessoal de um sócio, aparece o campo Escolha para quê (Pessoal, Casa Alphaville, Praia, Jardine ou geral). Sem escolher, o OK · enviar não deixa confirmar. Empresa, fornecedor e prestador não pedem nada."},
   {tipo:"novo", area:"Financeiro › Família", txt:"Ao confirmar, o Pix já entra no Pix revendedoras da Família com a casa marcada. Se o mesmo Pix já foi lançado à mão na Contas a receber, não duplica: só marca a casa. Reabrir o pedido retira o Pix."}
  ]},
+ {v:"0.21.157", data:"2026-11-23", titulo:"Marcus fica na lista de Setores", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"O setor Marcus saiu do grupo Geral e fica na lista de Setores, como os outros. Pasta do setor em docs/setores/marcus (dados pessoais só em arquivos .local.md)."}]},
+ {v:"0.21.156", data:"2026-11-23", titulo:"Marcus: telas Resumo, Faturamento, Patrimônio e dívidas e Extratos excluídas", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"As telas Resumo, Faturamento, Patrimônio e dívidas e Extratos saíram do setor Marcus (menu, endereço e aba). Ficam Atividades, Acessos e senhas, Dados e Progresso."}]},
+ {v:"0.21.155", data:"2026-11-23", titulo:"App da representante: Listagens com calendário, menu da conta e foto maior", itens:[
+  {tipo:"melhoria", area:"App da representante → Listagens", txt:"A primeira tela é o calendário do mês (feriados em roxo, dias com kits em dourado) e o dia tocado abre logo abaixo, compacto e sem frases."},
+  {tipo:"melhoria", area:"App da representante → Início", txt:"Menu da conta menor, logo abaixo do nome, sem empurrar os totais; foto maior."}]},
+ {v:"0.21.154", data:"2026-11-23", titulo:"Marcus: cronômetro dentro da tela Progresso", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"O cronômetro saiu do menu lateral e fica no alto da tela Progresso, compacto e alinhado (sem letra maiúscula). Nada do Marcus fica mais no lado: tudo abre pelo menu do setor, no topo."}]},
+ {v:"0.21.153", data:"2026-11-23", titulo:"Marcus: tela Contas do mês excluída", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"A tela Contas do mês saiu do setor Marcus (menu, endereço e bloco do Resumo). O setor ficou com Resumo, Faturamento, Patrimônio e dívidas, Extratos, Atividades, Acessos e senhas, Dados e Progresso."}]},
+ {v:"0.21.152", data:"2026-11-23", titulo:"Marcus virou um setor do menu", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"O sistema pessoal do Marcus deixou de ser uma visão separada: agora é o setor Marcus no menu lateral (grupo Geral), com o menu do setor e as telas Resumo, Faturamento, Patrimônio e dívidas, Contas do mês, Extratos, Atividades, Acessos e senhas, Dados e Progresso. Só o Marcus e o Leonardo abrem; o endereço digitado também fica fechado para as demais pessoas."}]},
+ {v:"0.21.151", data:"2026-11-23", titulo:"App da representante: novo Início com foto, totais do app e menu da conta", itens:[
+  {tipo:"melhoria", area:"App da representante", txt:"Início: foto grande dela (por cima das ondas), logo maior, menu no nome com Trocar foto e Sair da conta, sem meses, sino, Desempenho, Indique e SorellyChat, botões e ícones maiores."},
+  {tipo:"correção", area:"App da representante", txt:"Vendido Total e Acerto Total vêm do app das revendedoras (antes ficavam em R$ 0,00 na conta dela); Comissão Rep. = % dela sobre o Acerto Total (Vanessa 10%)."}]},
+ {v:"0.21.150", data:"2026-11-23", titulo:"App da representante: carteira grande, % de cada uma, ficha e pedido de data no servidor", itens:[
+  {tipo:"correção", area:"App da representante", txt:"Carteira grande (Veridiana, 202 revendedoras) aparecia só com 1: a busca estourava o tempo. Servidor com 60 s, venda do app em paralelo e nova tentativa no app."},
+  {tipo:"correção", area:"App da representante", txt:"O cartão da revendedora mostra a % de comissão de cada representante (antes, 8% para todas)."},
+  {tipo:"novo", area:"App da representante", txt:"Ficha da revendedora (2º telefone, endereços, profissão, referências) e pedido de nova data gravam no servidor; o pedido aparece em Agendamento › Plano 45/60 › Aprovação."}]},
+ {v:"0.21.149", data:"2026-11-23", titulo:"Encomendas › Ranking: Cronograma de postagens", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Ranking → Cronograma de postagens", txt:"Nova aba com um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro, janeiro e fevereiro): formato, o que postar, legenda sugerida e o acerto do 1º e do 10º lugar nos dias de parcial. Cada dia tem a situação Para fazer, Feito ou Postado, gravada no servidor (módulo ercrono). Temas em domain/cronograma-ranking.js."}
+ ]},
+ {v:"0.21.148", data:"2026-11-23", titulo:"App da representante travado como app", itens:[
+  {tipo:"correção", area:"App da representante", txt:"A página não balança mais no celular: o topo escuro fica preso, só o miolo rola e o Sair da conta fica no pé da tela."}]},
+ {v:"0.21.147", data:"2026-11-23", titulo:"Conta de representante: abre direto no app", itens:[
+  {tipo:"correção", area:"Representantes → App no Admin", txt:"A conta de representante que abria na tela Entrada do setor ficava numa tela preta com o aviso Escolha o setor no menu, porque ela não tem menu. Agora essa tela leva direto para o app da representante."}]},
+ {v:"0.21.146", data:"2026-11-23", titulo:"RH › Acessos: Setor editável para todos", itens:[
+  {tipo:"novo", area:"RH → Acessos e autorizações", txt:"A coluna Setor virou um menu suspenso para todas as pessoas (Diretoria, Financeiro, Inadimplência, Secretaria...). O setor é só uma etiqueta de onde a pessoa trabalha: quem libera as telas continua sendo o Acesso. Para quem tem acesso Por setor, escolher um setor que tem grupo também muda o grupo da conta."}]},
  {v:"0.21.145", data:"2026-11-23", titulo:"Comissões: Pix representante conta comissão e tudo fica no servidor", itens:[
   {tipo:"correção", area:"Financeiro › Comissões", txt:"O acerto pago com Pix direto para a representante paga comissão como qualquer acerto; o Pix entra só como pagamento já feito a ela."},
   {tipo:"novo", area:"Financeiro › Comissões", txt:"Percentuais, gasolina, km e pagamentos das comissões ficam no servidor: todos os computadores e o app da representante veem igual."},

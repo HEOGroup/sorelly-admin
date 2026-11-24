@@ -37,8 +37,8 @@ function IPhone15(p){
 function IPhone17ProMax(p){
   var agora = useAgora();
   // semMoldura (18/11/2026): a mesma tela do app, sem o desenho do iPhone, ocupando a coluna do Admin (Início da representante, em PC e celular)
-  if(p.semMoldura) return e("div",{className:"app-claro relative flex w-full flex-col overflow-hidden bg-[#F2F3F5] "+(p.semMoldura==="cheia" ? "" : "rounded-2xl"), style:Object.assign({height:p.semMoldura==="cheia" ? "calc(100dvh - 32px)" : "calc(100dvh - 96px)", minHeight:480}, IOS_VARS)},
-    e("div",{id:"app-screen", className:"flex-1 overflow-y-auto px-4 pb-10 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}, p.children));
+  if(p.semMoldura) return e("div",{className:"app-claro "+(p.semMoldura==="cheia" ? "app-fixo min-h-0 flex-1" : "rounded-2xl")+" relative flex w-full flex-col overflow-hidden bg-[#F2F3F5]", style:Object.assign(p.semMoldura==="cheia" ? {} : {height:"calc(100dvh - 96px)", minHeight:480}, IOS_VARS)},
+    e("div",{id:"app-screen", className:"min-h-0 flex-1 overflow-y-auto px-4 pb-10 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", style:{overscrollBehavior:"contain", WebkitOverflowScrolling:"touch"}}, p.children));
   var botao = function(lado, top, h){ return e("span",{className:"absolute w-[3px] rounded-sm bg-[#2B2B2F] "+(lado==="e"?"-left-[3px]":"-right-[3px]"), style:{top:top, height:h}}); };
   return e("div",{className:"relative w-[372px] shrink-0 rounded-[66px] bg-[#0A0A0B] p-[10px] shadow-[0_0_0_2px_#2B2B2F,0_0_0_4px_#0A0A0B,0_40px_80px_-24px_rgba(0,0,0,.85)]"},
     botao("e",126,32), botao("e",184,58), botao("e",254,58), botao("d",214,94),

@@ -8,7 +8,7 @@ import { consulta } from "./db.js";
 import { garantirTabela, versaoItens } from "./estado-itens.js";
 
 export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc", "pag", "comis"];   // pag = pedidos de conta (Direcionar Pix): só os dos kits dela (src/server/rep-pag.js)
-export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante"];   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
+export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante", "/api/perfil/eu"];   // /api/perfil/eu = a própria representante troca a foto dela (23/11/2026)   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
 export const rotaPermitidaRep = (caminho) => ROTAS_REP.some((p) => caminho === p || caminho.startsWith(p + "/"));
 
 const sem = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -38,7 +38,7 @@ export async function respostaItensRep(modulo, desde, repCod) {
   const filtro = modulo === "rpo"
     ? `(left(chave,2)='l_' and substr(chave,3) in ${ids("l_")}) or (left(chave,3)='lx_' and substr(chave,4) in ${ids("l_")})
        or (left(chave,2)='k_' and substr(chave,3) in ${ids("k_")}) or (left(chave,3) in ('kx_','ke_','en_','eb_') and substr(chave,4) in ${ids("k_")})
-       or (left(chave,3) in ('pa_','pr_') and valor->>'repCod' = $1)`
+       or (left(chave,3) in ('pa_','pr_','pd_') and valor->>'repCod' = $1)`
     : `(left(chave,2)='a_' and substr(chave,3) in ${ids("a_")}) or (left(chave,3) in ('ax_','ar_') and substr(chave,4) in ${ids("a_")})
        or (left(chave,3) in ('km_','gv_') and valor->>'repCod' = $1)`;
   const params = [repCod, nome, parcial ? desde : null, modulo];

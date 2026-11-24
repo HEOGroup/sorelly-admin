@@ -60,7 +60,7 @@ var MENU_CADPECAS = [
 
 // Menu das Encomendas e reposições (23/10/2026): mesmo estilo do Financeiro e do Cadastro. Poucas telas = palavras diretas no topo (sem lista), na ORDEM DO FLUXO: pedido → ida na empresa → Top 100 → representantes → expositores → regras.
 var MENU_ENCOMENDAS = [
-  {nome:"Ranking", itens:[M("Top vendedoras","encranking"), M("Premiação do mês","encpremio")]},   // 23/11/2026 (Marcus): Top vendedoras e Premiação do mês são abas DENTRO de um menu, no alto do setor
+  {nome:"Ranking", itens:[M("Top vendedoras","encranking"), M("Premiação do mês","encpremio"), M("Cronograma de postagens","enccrono")]},   // 23/11/2026 (Marcus): Top vendedoras e Premiação do mês são abas DENTRO de um menu, no alto do setor
   M("Funil de pedidos","encomendas"),
   M("Top 100","enctop50"),
   M("Representantes","encrep"),
@@ -130,6 +130,7 @@ var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
   M("Mapa do sistema","mapa")];
+var MENU_MARCUS = [M("Atividades","marcusativ"), M("Acessos e senhas","marcusacessos"), M("Dados","marcusdados"), M("Progresso","marcusprog")];
 var MENU_JURIDICO = [
   {nome:"Notas promissórias", itens:[M("Execução de notas promissórias", undefined, {breve:true}), M("Inadimplência jurídica", undefined, {breve:true})]},
   M("Contratos de salas comerciais", undefined, {breve:true}),
@@ -249,6 +250,7 @@ var SETORES = [
   {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Top vendedoras", telas:[T("encranking","Top vendedoras")]},
     {nome:"Premiação do mês", telas:[T("encpremio","Premiação do mês")]},
+    {nome:"Cronograma de postagens", telas:[T("enccrono","Cronograma de postagens")]},
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
     {nome:"Top 100", telas:[T("enctop50","Top 100")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
@@ -273,17 +275,12 @@ var SETORES = [
   // "Comissões e desempenho" saiu (28/10/2026): não é usada, já existe em Financeiro → Comissões.
   {id:"diretoria", grupo:"geral", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", menu:MENU_DIRETORIA, semAbas:true, areas:[
     {nome:"Central de controle", telas:[T("mapa","Mapa do sistema")]}]},
-  // Sistema particular do Marcus (20/10/2026): só aparece no modo "Marcus" do botão do alto do menu, e só para ele
-  // Sistema particular do Marcus (20/10/2026): cada tela é um item do menu lateral, só aparece no modo "Marcus" (ids começam com "marcus")
-  {id:"marcus", nome:"Resumo", ic:"grid4", cor:"#D9A63A", direto:T("marcus","Resumo")},
-  {id:"marcusfat", nome:"Faturamento", ic:"grafico", cor:"#D9A63A", direto:T("marcusfat","Faturamento")},
-  {id:"marcuspat", nome:"Patrimônio e dívidas", ic:"banco", cor:"#D9A63A", direto:T("marcuspat","Patrimônio e dívidas")},
-  {id:"marcuscontas", nome:"Contas do mês", ic:"calendario", cor:"#D9A63A", direto:T("marcuscontas","Contas do mês")},
-  {id:"marcusextratos", nome:"Extratos", ic:"banco", cor:"#D9A63A", direto:T("marcusextratos","Extratos")},
-  {id:"marcusativ", nome:"Atividades", ic:"caixa", cor:"#D9A63A", direto:T("marcusativ","Atividades")},
-  {id:"marcusacessos", nome:"Acessos e senhas", ic:"escudo", cor:"#D9A63A", direto:T("marcusacessos","Acessos e senhas")},
-  {id:"marcusdados", nome:"Dados", ic:"users", cor:"#D9A63A", direto:T("marcusdados","Dados")},
-  {id:"marcusprog", nome:"Progresso", ic:"calendario", cor:"#D9A63A", direto:T("marcusprog","Progresso")},
+  // Setor MARCUS (23/11/2026, pedido do Marcus: "o Admin Marcus não pode ficar separado"): setor comum do menu lateral, grupo Geral. Só o Marcus (16) e o Leonardo (44) abrem; telas e dados são os de antes (ficam só neste navegador).
+  {id:"marcus", nome:"Marcus", ic:"escudo", cor:"#D9A63A", menu:MENU_MARCUS, semAbas:true, areas:[
+    {nome:"Atividades", telas:[T("marcusativ","Atividades")]},
+    {nome:"Acessos e senhas", telas:[T("marcusacessos","Acessos e senhas")]},
+    {nome:"Dados", telas:[T("marcusdados","Dados")]},
+    {nome:"Progresso", telas:[T("marcusprog","Progresso")]}]},
   // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em docs/negocio/JURIDICO-COBRANCA.md
   {id:"inadimplencia", nome:"Inadimplência", ic:"registro", cor:"#F97316", menu:MENU_INAD, semAbas:true, areas:[
     {nome:"Inadimplência", telas:[T("inaddiv","Dívidas"), T("inadcob","Cobrança do dia"), T("inadpag","Pagamentos"), T("inadser","Serasa"), T("inadkit","Kits em atraso"), T("inadrel","Relatórios"), T("inadreg","Regras")]},

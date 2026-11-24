@@ -3,6 +3,29 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Marcus fica em Setores)
+- Pedido do Marcus: "Marcus é pra ficar em Setores, eu sou um setor". Saiu do grupo Geral. Pasta `docs/setores/marcus/` criada; perfil, Instagram e objetivos ficam em arquivos `.local.md` (fora do Git).
+
+## 23/11/2026 (Marcus: Resumo, Faturamento, Patrimônio e dívidas e Extratos excluídas)
+- Pedido do Marcus: "Resumo exclui, Faturamento exclui, Patrimônio e dívidas exclui, Extratos também". Saíram do menu, das rotas e das abas. O setor Marcus ficou com Atividades, Acessos e senhas, Dados e Progresso. O código das páginas ficou no projeto, sem rota.
+
+## 23/11/2026 (Marcus: Contas do mês excluída)
+- Pedido do Marcus: "Contas do mês exclui". A tela saiu do setor Marcus (menu, endereço `marcus-contas`, aba e o bloco do Resumo).
+
+## 23/11/2026 (Marcus virou um setor do menu)
+- **Pedido do Marcus:** "O Admin Marcus não pode ficar separado. Quero como um SETOR dentro do Sorelly" (e não dentro do RH).
+- A visão separada (botão Marcus / "← Sorelly Admin") acabou. Existe um setor `marcus` no grupo Geral, com `MENU_MARCUS` (9 telas) em `navigation/setores.js`.
+- **Privacidade:** só a pessoa 16 (Marcus) e a 44 (Leonardo) abrem; as demais não veem no menu e, com o servidor ligado, o endereço digitado também cai fora (`App.js`). Os dados das telas ficam só no navegador (`localStorage`), nada no servidor nem no Git.
+
+## 23/11/2026 (App da representante: carteira grande, ficha e pedido de data no servidor)
+- **Carteira grande:** `/api/representante/revendedoras` ganhou `maxDuration = 60` e busca a venda do app junto com a DevMaster (a base fria leva ~22 s); o app tenta 3 vezes e não guarda a falha. Antes a Veridiana (202) via só 1 revendedora.
+- **% no cartão:** `pctDaRep` (Dayanne, Lysie e Vanessa 10%; as demais 8%, no módulo `comis` do servidor).
+- **Ficha da revendedora (`pr_<código>`) e pedido de nova data (`pd_<código da rep>-<id>`)** gravam no servidor pela conta da representante (`rep-gravar.js`); a equipe recebe a ficha no nome da revendedora e o pedido em Plano 45/60 › Aprovação. A DECISÃO da Diretoria sobre o pedido ainda fica só no computador de quem decidiu (o Plano 45/60 não é módulo do servidor).
+- **Ainda não grava:** recusa de kit novo (depende de liberar o módulo `kn` para a conta) e rascunho do acerto. Teste: `node scripts/testar-ficha-pedido-rep.mjs`.
+
+## 23/11/2026 · Encomendas › Ranking › Cronograma de postagens (Marcus)
+- Terceira aba do menu Ranking. Um tema por dia (24/11 a 07/12) para o Marketing postar sobre o Top 10 de novembro e a nova disputa (soma dos acertos de dezembro + janeiro + fevereiro). O Marcus liberará o acesso do Marketing a esta tela depois; por isso o módulo do servidor `ercrono` já aceita Encomendas e Marketing.
+- Nas parciais a tela escreve o acerto do 1º e do 10º lugar do momento, sem nomes. Nome de revendedora só depois da Diretoria liberar. O ranking da nova disputa (soma de 3 meses) ainda não existe; as regras finais saem em 24/11.
 ## 23/11/2026 (Comissões: Pix representante conta comissão; comissões no servidor)
 - **Marcus: "isso da comissão precisa resolver".** Fluxo que ele descreveu: o Pix cai no Consolidado → cai nas Comissões → com tudo alinhado, o Financeiro dá o check e confirma **para gerar as contas a pagar**. A parte "gerar conta a pagar" ainda NÃO foi feita.
 - **Pix representante (decisão de 10/11 aplicada):** o acerto paga comissão como qualquer acerto, para quem FEZ o acerto; o Pix que foi direto para a representante é só um pagamento já feito a ela. No código a linha virou dois itens em `itensComissao` (`domain/comissoes.js`): a comissão (item normal, fica "Aguardando o OK do Pix representante" até o Financeiro confirmar) e o pagamento direto (`pixRep`, sem comissão). Teste: `node scripts/testar-pix-representante.mjs` (8 verificações).
@@ -3398,6 +3421,9 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - **Premiação do mês** = só o Top 10 do mês pelo VALOR DE ACERTO (soma do acerto_dm das linhas de venda; brinde, troca, indicação e prêmio não contam), com a foto e a descrição do prêmio ao lado. Campanha de novembro/2026 (artes do Instagram @sorellyoficial) em domain/premiacao-mes.js; mês novo = nova entrada + fotos em public/premiacao/AAAA-MM/.
 - Em aberto na campanha: data da divulgação, desempate (hoje: maior venda), se acertos de novembro feitos em dezembro entram, pagamento dos R$ 1.000 do 1º lugar, reserva do jantar.
 
+## 23/11/2026 · Início do app da representante
+- Marcus: topo com foto grande (V vira a foto), logo maior, menu ao tocar no nome (Trocar foto, Sair da conta), sem barra Sair no pé, sem meses/sino/Desempenho/Indique/SorellyChat.
+- Vendido Total e Acerto Total = valores do app das revendedoras (rota própria `/api/representante/eu`, campo `painel`, só a conta dela). Comissão Rep. = % da representante sobre o Acerto Total (Vanessa 10%).
 ## 23/11/2026 — Direcionar lança o Pix do sócio na Família
 - Pedido do Marcus: "Direcionar precisa lançar". Até aqui o Pix do sócio só entrava na Família quando alguém lançava em Contas a receber › Lançar recebimento.
 - Agora, ao confirmar no Direcionar um Pix para a conta de um **sócio** (destino tipo Família com pessoa; prestador da família segue como repasse), o sistema lança o Pix na Família (`pix_dir`, chave `origemDirecionar` = pedido#linha). O campo "Escolha para quê" (Pessoal, ou uma das casas) é obrigatório e só aparece na conta pessoal do sócio; conta de prestador do sócio, empresa e fornecedor não pedem nada. Pedido de teste (demo) nunca lança na Família. Reabrir retira (`pix_dir_desfaz`).

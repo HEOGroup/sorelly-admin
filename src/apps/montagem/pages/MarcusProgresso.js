@@ -1,10 +1,10 @@
 // Sorelly Admin · montagem — pages/MarcusProgresso.js
 // Progresso do Marcus (09/11/2026), layout B1 escolhido pelo Marcus: calendário do mês grande à DIREITA, com tudo do dia dentro do quadrado; à ESQUERDA os controles
 // (Filtros, Agora, Academia e Trechos do dia). Clicar num dia do calendário troca o dia da esquerda. Só dropdown e menu suspenso (sem chips); só dourado de destaque.
-// O relógio fica na barra de cima (components/relogio-progresso.js). Perguntas e edições abrem na Janela do sistema. Lógica em domain/progresso.js.
+// O relógio fica no alto desta tela (components/relogio-progresso.js). Perguntas e edições abrem na Janela do sistema. Lógica em domain/progresso.js.
 import { Bloco, Botao, CAMPO, CampoSel, MenuMulti, Rotulo, TabelaCampos, FileiraCampos } from "@/apps/montagem/components/padrao-fin";
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { Pergunta, useAgora } from "@/apps/montagem/components/relogio-progresso";
+import { Pergunta, useAgora, RelogioProgresso } from "@/apps/montagem/components/relogio-progresso";
 import { Btn } from "@/apps/montagem/ui/button";
 import { MOTIVOS, MEMBROS, useProgresso, chaveDia, dia, aberto, comecarDia, pausar, voltar, encerrarDia, reabrirDia, ajustarTrecho, removerTrecho, setAcademia, somas, hms, hm, rotuloMotivo, dataBr } from "@/apps/montagem/domain/progresso";
 import { e, useState } from "@/shared/react";
@@ -105,5 +105,5 @@ function Progresso(){
 
     dlg && (dlg.horas ? e(Horas,{k:dlg.k, i:dlg.i, t:dlg.t, fechar:function(){ setDlg(null); }}) : e(Pergunta,Object.assign({}, dlg, {fechar:function(){ setDlg(null); }}))));
 }
-function AbaMarcusProg(){ return e(Pagina, null, e("style",null, ".mx{font-size:13px}"), e("div",{className:"mx flex flex-col gap-3"}, e(Progresso))); }
+function AbaMarcusProg(){ return e(Pagina, null, e("style",null, ".mx{font-size:13px}"), e("div",{className:"mx flex flex-col gap-3"}, e("div",{className:"w-full max-w-sm"}, e(RelogioProgresso)), e(Progresso))); }
 export { AbaMarcusProg };

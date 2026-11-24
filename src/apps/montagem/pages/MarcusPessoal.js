@@ -76,8 +76,6 @@ function Resumo(p){
       e(Bloco,{t:"Recebido e faturado", dir:e(Botao,{onClick:function(){ ir("marcusfat"); }}, "Mês a mês")},
         ras.length ? e(TabelaP,{cols:[{t:"Ano", w:64}, {t:"Recebido", n:true, w:130}, {t:"Faturado", n:true, w:130}, {t:"%", n:true, w:72}]}, ras.map(function(x){ return e(Tr,{key:x.ano}, e(Td,{forte:true}, String(x.ano)), e(Td,{n:true, cor:COR.entra}, R(x.r.rec)), e(Td,{n:true}, R(x.r.fat)), e(Td,{n:true}, pct(x.r.pct))); }))
         : Vazio("Nenhum mês lançado.")),
-      e(Bloco,{t:"Contas do mês · "+nomeMes(mes), dir:e(Botao,{onClick:function(){ ir("marcuscontas"); }}, "Abrir")},
-        proximas.length ? e(TabelaP,{cols:[{t:"Dia", w:48}, {t:"Conta"}, {t:"Onde sai", w:130}, {t:"Valor", n:true, w:120}]}, proximas.map(function(c){ return e(Tr,{key:c.id}, e(Td,{forte:true}, String(c.dia)), e(Td,null, c.desc), e(Td,null, c.conta||"—"), e(Td,{n:true}, R(c.valor))); })) : Vazio("Tudo pago neste mês.")),
       e(Bloco,{t:"Atividades abertas", dir:e(Botao,{onClick:function(){ ir("marcusativ"); }}, "Abrir")},
         abertas.length ? e(TabelaP,{cols:[{t:"Urgência", w:84}, {t:"Atividade"}, {t:"Grupo", w:84}]}, abertas.slice(0, 8).map(function(a){ return e(Tr,{key:a.id}, e("td",{className:"h-8 truncate border-b border-border px-2.5 font-semibold", style:{color:URG[a.urg]||"#fff"}}, a.urg), e(Td,null, a.texto), e(Td,null, a.cat)); })) : Vazio("Nada aberto."))));
 }
@@ -265,8 +263,7 @@ var tela = function(Comp){ return function(){ return e(Tela,{Comp:Comp}); }; };
 var AbaMarcus = tela(Resumo);
 var AbaMarcusFat = tela(Recebimentos);
 var AbaMarcusPat = tela(Patrimonio);
-var AbaMarcusContas = tela(Contas);
 var AbaMarcusAtiv = tela(Atividades);
 var AbaMarcusAcessos = tela(Acessos);
 var AbaMarcusDados = tela(Dados);
-export { ESTILO, BtnCopiar, AbaMarcus, AbaMarcusFat, AbaMarcusPat, AbaMarcusContas, AbaMarcusAtiv, AbaMarcusAcessos, AbaMarcusDados };
+export { ESTILO, BtnCopiar, AbaMarcus, AbaMarcusFat, AbaMarcusPat, AbaMarcusAtiv, AbaMarcusAcessos, AbaMarcusDados };
