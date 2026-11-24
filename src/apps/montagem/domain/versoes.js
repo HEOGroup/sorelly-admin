@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.153", data:"2026-11-23", titulo:"Marcus: tela Contas do mês excluída", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"A tela Contas do mês saiu do setor Marcus (menu, endereço e bloco do Resumo). O setor ficou com Resumo, Faturamento, Patrimônio e dívidas, Extratos, Atividades, Acessos e senhas, Dados e Progresso."}]},
  {v:"0.21.152", data:"2026-11-23", titulo:"Marcus virou um setor do menu", itens:[
   {tipo:"melhoria", area:"Marcus", txt:"O sistema pessoal do Marcus deixou de ser uma visão separada: agora é o setor Marcus no menu lateral (grupo Geral), com o menu do setor e as telas Resumo, Faturamento, Patrimônio e dívidas, Contas do mês, Extratos, Atividades, Acessos e senhas, Dados e Progresso. Só o Marcus e o Leonardo abrem; o endereço digitado também fica fechado para as demais pessoas."}]},
  {v:"0.21.151", data:"2026-11-23", titulo:"App da representante: novo Início com foto, totais do app e menu da conta", itens:[

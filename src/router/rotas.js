@@ -277,7 +277,6 @@ const montagem = {
     pagina("marcus", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcus"),
     pagina("marcus-faturamento", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusFat"),
     pagina("marcus-patrimonio", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusPat"),
-    pagina("marcus-contas", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusContas"),
     pagina("marcus-extratos", () => import("@/apps/montagem/pages/MarcusExtratos"), "AbaMarcusExtratos"),
     pagina("marcus-atividades", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusAtiv"),
     pagina("marcus-acessos", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusAcessos"),

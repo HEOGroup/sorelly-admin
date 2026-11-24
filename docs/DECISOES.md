@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Marcus: Contas do mês excluída)
+- Pedido do Marcus: "Contas do mês exclui". A tela saiu do setor Marcus (menu, endereço `marcus-contas`, aba e o bloco do Resumo).
+
 ## 23/11/2026 (Marcus virou um setor do menu)
 - **Pedido do Marcus:** "O Admin Marcus não pode ficar separado. Quero como um SETOR dentro do Sorelly" (e não dentro do RH).
 - A visão separada (botão Marcus / "← Sorelly Admin") acabou. Existe um setor `marcus` no grupo Geral, com `MENU_MARCUS` (9 telas) em `navigation/setores.js`.

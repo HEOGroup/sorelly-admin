@@ -130,7 +130,7 @@ var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
   M("Mapa do sistema","mapa")];
-var MENU_MARCUS = [M("Resumo","marcus"), M("Faturamento","marcusfat"), M("Patrimônio e dívidas","marcuspat"), M("Contas do mês","marcuscontas"), M("Extratos","marcusextratos"), M("Atividades","marcusativ"), M("Acessos e senhas","marcusacessos"), M("Dados","marcusdados"), M("Progresso","marcusprog")];
+var MENU_MARCUS = [M("Resumo","marcus"), M("Faturamento","marcusfat"), M("Patrimônio e dívidas","marcuspat"), M("Extratos","marcusextratos"), M("Atividades","marcusativ"), M("Acessos e senhas","marcusacessos"), M("Dados","marcusdados"), M("Progresso","marcusprog")];
 var MENU_JURIDICO = [
   {nome:"Notas promissórias", itens:[M("Execução de notas promissórias", undefined, {breve:true}), M("Inadimplência jurídica", undefined, {breve:true})]},
   M("Contratos de salas comerciais", undefined, {breve:true}),
@@ -280,7 +280,6 @@ var SETORES = [
     {nome:"Resumo", telas:[T("marcus","Resumo")]},
     {nome:"Faturamento", telas:[T("marcusfat","Faturamento")]},
     {nome:"Patrimônio e dívidas", telas:[T("marcuspat","Patrimônio e dívidas")]},
-    {nome:"Contas do mês", telas:[T("marcuscontas","Contas do mês")]},
     {nome:"Extratos", telas:[T("marcusextratos","Extratos")]},
     {nome:"Atividades", telas:[T("marcusativ","Atividades")]},
     {nome:"Acessos e senhas", telas:[T("marcusacessos","Acessos e senhas")]},

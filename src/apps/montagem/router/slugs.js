@@ -270,7 +270,6 @@ export const SLUG_DA_ABA = {
   marcus: "marcus",
   marcusfat: "marcus-faturamento",
   marcuspat: "marcus-patrimonio",
-  marcuscontas: "marcus-contas",
   marcusativ: "marcus-atividades",
   marcusacessos: "marcus-acessos",
   marcusdados: "marcus-dados",
