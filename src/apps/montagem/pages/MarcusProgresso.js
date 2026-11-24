@@ -87,14 +87,15 @@ function TelaProgresso(){
       corrigir:function(i, t){ setDlg({horas:true, k:sel, i:i, t:t}); },
       excluir:function(i, t){ setDlg({t:"Excluir trecho", texto:"Excluir este trecho de "+rotuloMotivo(t.tipo)+" do dia "+dataBr(sel)+"?", ok:"Excluir", onOk:function(){ removerTrecho(sel, i); }}); }}),
     dlg && (dlg.horas ? e(Horas,{k:dlg.k, i:dlg.i, t:dlg.t, fechar:function(){ setDlg(null); }}) : e(Pergunta,Object.assign({}, dlg, {fechar:function(){ setDlg(null); }}))),
-    e(BlocoPainel,{titulo:"Progresso - Marcus", compacto:true, acao:acaoDia},
+    e(BlocoPainel,{titulo:"Progresso - Marcus", compacto:true},
       e(BarraTabela,null,
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:opMeses})),
         e(CelulaBarra,{rotulo:"Agora"}, abertoHoje
           ? e(CampoMini,{valor:abertoHoje.tipo, aoMudar:function(v){ if(v==="trabalho") voltar(Date.now()); else pausa(v); }, rotulo:"Estado agora", ops:[["trabalho", "Trabalhando"]].concat(MOTIVOS)})
           : e("span",{className:"text-[11px]"}, diaHoje.inicio ? "Dia encerrado" : "Não iniciado")),
         e(CelulaBarra,{rotulo:"Hoje"}, e("span",{className:"text-[11px] tabular-nums"}, hms(soHoje.trabalho))),
-        e(CelulaBarra,{rotulo:"Média do mês"}, e("span",{className:"text-[11px] tabular-nums"}, diasTrab ? hms(totMs/diasTrab) : "—"))),
+        e(CelulaBarra,{rotulo:"Média do mês"}, e("span",{className:"text-[11px] tabular-nums"}, diasTrab ? hms(totMs/diasTrab) : "—")),
+        e(CelulaBarra,{rotulo:"Dia"}, acaoDia)),
       e("div",{ref:refCheia({}), className:CLS_FINA_ESPACO},
         e(TabelaPlanilha,{key:mes, fina:true, cols:cols, aoClicar:function(l){ setSel(l.id); }, alturaMax:"calc(100vh - 6.6rem)", linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, limite:6000, totalRodape:rodape, vazio:"Nenhum dia neste mês."}))));
 }
