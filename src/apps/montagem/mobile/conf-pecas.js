@@ -31,13 +31,17 @@ function ConfPecas(p){
   var bipar = function(c){ if(!c) return; d({type:"CONF_BIPAR", kitId:k.id, codigo:c}); };
   var proxima = function(){ var r = null; conds.some(function(c){ return itensDe(c).some(function(i){ if(lido(c,i)<i.qtd){ r = i; return true; } return false; }); }); return r; };
 
+  // Resumo em UMA tabela alinhada (Marcus, 24/11/2026: "tudo tem que ficar mais alinhado"): colunas fixas, nada quebra de linha, total no rodapé.
+  var GRADE = "grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_6.5rem] items-center gap-x-2 px-3";
+  var cel = "whitespace-nowrap text-right "+MONO;
   var resumo = e("div",{className:"flex flex-col gap-2"},
-    e("div",{className:"flex flex-col rounded-xl bg-[#F9FAFB] ring-1 ring-[#E5E7EB]"},
-      [["Condicionais", tot.condicionais],["Peças", tot.pecas],["Valor total", BR(tot.valor)]].map(function(x, i){
-        return e("div",{key:x[0], className:"flex min-h-8 items-center justify-between px-3 text-[13px] text-[#111827] "+(i ? "border-t border-[#E5E7EB]" : "")},
-          e("span",null, x[0]), e("b",{className:MONO}, x[1])); })),
-    conds.map(function(c){ var t = totaisDe(c); return e("div",{key:c.numero, className:"flex items-center justify-between rounded-xl bg-[#F9FAFB] px-3 py-2 ring-1 ring-[#E5E7EB]"},
-      e("b",{className:"text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[12px] text-[#6B7280]"}, t.modelos+" modelos · "+t.pecas+" peças · "+BR(t.valor))); }),
+    e("div",{className:"overflow-hidden rounded-xl bg-[#F9FAFB] ring-1 ring-[#E5E7EB]"},
+      e("div",{className:GRADE+" h-8 bg-[#F3F4F6] text-[11px] font-bold uppercase tracking-wide text-[#6B7280]"},
+        e("span",null,"Condicional"), e("span",{className:"text-right"},"Modelos"), e("span",{className:"text-right"},"Peças"), e("span",{className:"text-right"},"Valor")),
+      conds.map(function(c){ var t = totaisDe(c); return e("div",{key:c.numero, className:GRADE+" min-h-9 border-t border-[#E5E7EB] text-[13px] text-[#111827]"},
+        e("b",{className:"whitespace-nowrap"}, c.numero), e("span",{className:cel}, t.modelos), e("span",{className:cel}, t.pecas), e("span",{className:cel}, BR(t.valor))); }),
+      e("div",{className:GRADE+" min-h-9 border-t-2 border-[#D1D5DB] bg-[#F3F4F6] text-[13px] font-bold text-[#111827]"},
+        e("span",{className:"whitespace-nowrap"},"Total"), e("span",{className:cel}, tot.modelos), e("span",{className:cel}, tot.pecas), e("span",{className:cel}, BR(tot.valor)))),
     e("p",{className:"text-[11.5px] text-[#6B7280]"},"Bipado na empresa por "+bipadora+" · montado por "+montadora));
 
   // sem condicional real da DevMaster não há o que conferir (nada de peça inventada)

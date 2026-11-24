@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Conferência das peças: resumo alinhado; bipagem pela câmera ainda não existe)
+- **Marcus: "tudo tem que ficar mais alinhado".** O resumo da tela de conferência (`mobile/conf-pecas.js`) virou uma tabela de colunas fixas (condicional, modelos, peças, valor) com total no rodapé. Só o visual; a conferência continua por QUANTIDADE (`BIPAR_ATIVO = false`, decisão de 03/11).
+- **Bipagem pela câmera (pedido do Marcus, ainda NÃO construída):** a representante junta as condicionais da revendedora e bipa a etiqueta de cada peça. A etiqueta tem código de barras, e a DevMaster guarda o número dele em `dmaaa.aaa_codbarras` (conferido em 7 peças: CL2542 = 00032358, B5053 = 00034299, CK0571 = 00034321, COL0047 = 00027558, B4113 = 00026038, CL1294 = 00015099, B4973 = 00032976). Falta: confirmar que as listras guardam esse número (leitor no celular), ler com a câmera do navegador e ligar a conferência por peça. O app da loja lê código e valor da etiqueta por módulo nativo (tela "Devolução / Conferência" do documento do app).
+
 ## 24/11/2026 (Produção: envio e baixa automáticos, novos produtores externos)
 - **Marcus: "não precisa clicar em enviar ao financeiro, é tudo automático".** Saíram os botões Enviar, Reenviar, Marcar pago e Desfazer. O sistema cria sozinho o pedido do prestador, a conta a pagar e o destino no Direcionar (e atualiza o valor enquanto nada foi pago). Quando o Direcionar paga, dá a baixa. Roda em segundo plano para a Diretoria (`AutoProducao` no App). Não duplica: se já existe pedido do mesmo prestador, vencimento e valor, adota esse.
 - **A Dávila recebeu exatamente R$ 520,00** (12 a 15/11, R$ 130 por dia). O dia 11/11 vale R$ 0.
