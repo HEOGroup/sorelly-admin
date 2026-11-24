@@ -110,6 +110,19 @@ function AvisoSemEspaco(p){
     temCopia && e("button",{onClick:p.liberar, className:"h-8 shrink-0 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground hover:opacity-90"},"Apagar cópia antiga"));
 }
 
+// CASCA DA CONTA DE REPRESENTANTE no iPhone (Marcus, 24/11/2026): o app ocupa a tela toda (viewport-fit=cover, só enquanto esta tela existe), a faixa do relógio/notch fica PRETA
+// (mesma cor do cabeçalho) e a faixa de baixo, onde fica a linha do iPhone, fica BRANCA. Em aparelho sem notch as duas faixas têm altura zero.
+function CascaRepresentante(){
+  useEffect(function(){ var m = document.querySelector("meta[name=viewport]"), antes = m ? m.getAttribute("content") : null;
+    if(m) m.setAttribute("content", String(antes||"width=device-width, initial-scale=1").replace(/,?s*viewport-fit=[a-z]+/, "")+", viewport-fit=cover");
+    return function(){ if(m && antes!=null) m.setAttribute("content", antes); }; }, []);
+  return e("div",{className:"fixed inset-0 flex flex-col bg-white", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation"}},
+    e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%;background:#fff}"),
+    e("div",{"aria-hidden":true, style:{flex:"none", height:"env(safe-area-inset-top, 0px)", background:"#0B0B0D"}}),
+    e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet)),   // Sair da conta e Trocar foto ficam no menu do nome, no Início do app
+    e("div",{"aria-hidden":true, style:{flex:"none", height:"env(safe-area-inset-bottom, 0px)", background:"#fff"}}));
+}
+
 function App(){
   // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
   if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
@@ -331,9 +344,7 @@ function App(){
   // CONTA DE REPRESENTANTE (23/11/2026, Marcus: "100% a visão do app somente"): sem menu e sem as barras do Admin; só o app dela na tela inteira e o Sair.
   if(srv.repCodDaConta()) return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     // TRAVADO COMO APP (Marcus, 23/11/2026: "não pode quebrar para cima e para baixo"): a página não rola nem balança; só o miolo do app rola, o topo fica preso e o "Sair da conta" fica embaixo.
-    e("div",{className:"fixed inset-0 flex flex-col bg-background", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation"}},
-      e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%}"),
-      e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet))),   // Sair da conta e Trocar foto ficam no menu do nome, no Início do app
+    e(CascaRepresentante),
     e(Aviso));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
