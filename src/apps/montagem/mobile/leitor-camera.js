@@ -2,75 +2,110 @@
 // Leitor de código de barras pela câmera do celular, para a conferência das peças (Marcus, 24/11/2026: "precisa ter a câmera para bipar; se não bipar, digita o código").
 // Como lê: usa o leitor nativo do navegador (BarcodeDetector, Chrome/Android) e, onde ele não existe (Safari do iPhone), carrega a biblioteca @zxing/library só nessa hora.
 // O número lido é o código de barras da etiqueta (campo aaa_codbarras da DevMaster, ex.: 00032358); quem recebe (aoLer) acha a peça por ele.
+// 24/11/2026 (2): zoom 2x já ligado (da câmera, onde o aparelho deixa; senão digital), bip que toca de verdade, borda verde ao ler, e leitura só vale se vier igual em 2 quadros seguidos e com formato de código de peça.
 // Segurança do uso: a imagem NÃO sai do aparelho e nada é gravado; só o número lido sobe para a conferência. A câmera desliga ao fechar a tela.
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var FORMATOS = ["code_128", "code_39", "code_93", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "codabar"];
 var ENTRE_LEITURAS = 1800;   // ms: o mesmo número na mira não conta de novo antes disso (a peça só conta outra vez se sair da mira e voltar)
 
+// O som do celular só toca depois de um toque na tela: o contexto de som é criado uma vez e "destravado" no primeiro toque.
+var AUDIO = null;
+function audio(){
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext; if(!AC) return null;
+    if(!AUDIO) AUDIO = new AC();
+    if(AUDIO.state === "suspended") AUDIO.resume();
+    return AUDIO;
+  } catch(x){ return null; }
+}
 // bip curto + vibração a cada leitura
 function avisar(){
-  try { if(navigator.vibrate) navigator.vibrate(60); } catch(x){}
+  try { if(navigator.vibrate) navigator.vibrate(80); } catch(x){}
   try {
-    var AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
-    var a = new AC(), o = a.createOscillator(), g = a.createGain();
-    o.frequency.value = 880; g.gain.value = 0.08; o.connect(g); g.connect(a.destination); o.start();
-    setTimeout(function(){ try { o.stop(); a.close(); } catch(x){} }, 90);
+    var a = audio(); if(!a) return;
+    var o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+    o.type = "square"; o.frequency.value = 1500;
+    g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + 0.17);
   } catch(x){}
 }
+// Vale número de barras com 7 a 13 dígitos (a DevMaster guarda 8) ou código de peça (CL2542, BB0531). Leitura torta (ex.: 6 dígitos) é descartada.
+function valido(c){ return /^\d{7,13}$/.test(c) || /^[A-Z]{1,4}\d{3,6}$/.test(c); }
 
 function LeitorCamera(p){
-  var ref = useRef(null), st = useState({est:"abrindo", msg:""}), estado = st[0], setEstado = st[1];
+  var ref = useRef(null), st = useState({est:"abrindo", msg:"", zoom:2, flash:0}), estado = st[0], setEstado = st[1];
   var lerRef = useRef(p.aoLer); lerRef.current = p.aoLer;
   useEffect(function(){
-    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0};
-    function parar(){ vivo = false; if(timer) clearTimeout(timer); if(stream) stream.getTracks().forEach(function(t){ t.stop(); }); }
+    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 2;
+    function parar(){ vivo = false; if(timer) clearTimeout(timer); if(stream) stream.getTracks().forEach(function(t){ t.stop(); }); window.removeEventListener("pointerdown", audio); }
+    window.addEventListener("pointerdown", audio); audio();
     (async function(){
       if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ setEstado({est:"erro", msg:"Este aparelho ou navegador não abre a câmera aqui. Digite o código da peça."}); return; }
-      try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
+      try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}, audio:false}); }
       catch(x){ setEstado({est:"erro", msg: x && x.name==="NotAllowedError" ? "A câmera está bloqueada. Permita o uso da câmera para o app nas configurações do celular, ou digite o código." : "Não consegui abrir a câmera. Digite o código da peça."}); return; }
       if(!vivo){ parar(); return; }
       var v = ref.current; if(!v){ parar(); return; }
+      // zoom 2x: onde o aparelho deixa (Android) é o zoom da câmera; onde não deixa (iPhone) é zoom digital (corta o centro e amplia, na tela e na leitura)
+      try {
+        var tr = stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, adv = [];
+        if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); digital = 1; }
+        if(cap.focusMode && cap.focusMode.indexOf("continuous") >= 0) adv.push({focusMode:"continuous"});
+        if(adv.length) await tr.applyConstraints({advanced:adv});
+      } catch(x){}
       v.srcObject = stream; v.setAttribute("playsinline", "true"); v.muted = true;
       try { await v.play(); } catch(x){}
-      var detectar;
+      var cv = document.createElement("canvas"), cvG = document.createElement("canvas"), volta = 0, detectarImg;
       try {
         if(window.BarcodeDetector){
           var sup = window.BarcodeDetector.getSupportedFormats ? await window.BarcodeDetector.getSupportedFormats() : FORMATOS;
-          var det = new window.BarcodeDetector({formats: FORMATOS.filter(function(f){ return sup.indexOf(f)>=0; })});
-          detectar = async function(){ var r = await det.detect(v); return r && r[0] ? String(r[0].rawValue || "") : ""; };
+          var det = new window.BarcodeDetector({formats: FORMATOS.filter(function(f){ return sup.indexOf(f) >= 0; })});
+          detectarImg = async function(img){ var r = await det.detect(img); return r && r[0] ? String(r[0].rawValue || "") : ""; };
         }
-      } catch(x){ detectar = null; }
-      if(!detectar){
+      } catch(x){ detectarImg = null; }
+      if(!detectarImg){
         var lib = await import("@zxing/library");
         var hints = new Map();
         hints.set(lib.DecodeHintType.POSSIBLE_FORMATS, [lib.BarcodeFormat.CODE_128, lib.BarcodeFormat.CODE_39, lib.BarcodeFormat.CODE_93, lib.BarcodeFormat.EAN_13, lib.BarcodeFormat.EAN_8, lib.BarcodeFormat.UPC_A, lib.BarcodeFormat.ITF, lib.BarcodeFormat.CODABAR]);
         hints.set(lib.DecodeHintType.TRY_HARDER, true);
         var leitor = new lib.MultiFormatReader(); leitor.setHints(hints);
-        var cv = document.createElement("canvas"), cvG = document.createElement("canvas"), volta = 0;
-        // A biblioteca só lê listras na horizontal; a tag do colar tem as listras na vertical. Por isso, a cada quadro ela tenta a imagem como está e, no quadro seguinte, girada 90 graus.
-        detectar = async function(){
-          if(!v.videoWidth) return "";
-          volta++;
-          var alvo = cv;
-          cv.width = v.videoWidth; cv.height = v.videoHeight; cv.getContext("2d", {willReadFrequently:true}).drawImage(v, 0, 0);
-          if(volta%2===0){
-            cvG.width = v.videoHeight; cvG.height = v.videoWidth;
-            var g = cvG.getContext("2d", {willReadFrequently:true}); g.translate(cvG.width, 0); g.rotate(Math.PI/2); g.drawImage(cv, 0, 0); alvo = cvG;
-          }
-          try { return leitor.decode(new lib.BinaryBitmap(new lib.HybridBinarizer(new lib.HTMLCanvasElementLuminanceSource(alvo)))).getText(); } catch(x){ return ""; }
-        };
+        detectarImg = async function(img){ try { return leitor.decode(new lib.BinaryBitmap(new lib.HybridBinarizer(new lib.HTMLCanvasElementLuminanceSource(img)))).getText(); } catch(x){ return ""; } };
       }
+      // Cada quadro: recorta o centro (zoom digital) e lê como está; em quadros alternados lê girado 90 graus (a tag do colar tem as listras na vertical).
+      var detectar = async function(){
+        if(!v.videoWidth) return "";
+        volta++;
+        var f = digital, w = Math.round(v.videoWidth / f), h = Math.round(v.videoHeight / f);
+        cv.width = w; cv.height = h;
+        cv.getContext("2d", {willReadFrequently:true}).drawImage(v, Math.round((v.videoWidth - w) / 2), Math.round((v.videoHeight - h) / 2), w, h, 0, 0, w, h);
+        var alvo = cv;
+        if(volta % 2 === 0){
+          cvG.width = h; cvG.height = w;
+          var g = cvG.getContext("2d", {willReadFrequently:true}); g.translate(h, 0); g.rotate(Math.PI / 2); g.drawImage(cv, 0, 0); alvo = cvG;
+        }
+        var r = await detectarImg(alvo);
+        return String(r || "").trim().toUpperCase().replace(/\s+/g, "");
+      };
       if(!vivo){ parar(); return; }
-      setEstado({est:"lendo", msg:""});
+      setEstado({est:"lendo", msg:"", zoom:digital, flash:0});
       var laco = async function(){
         if(!vivo) return;
         try {
           var cod = await detectar(), agora = Date.now();
-          if(cod && (cod!==ultimo.cod || agora-ultimo.ts>ENTRE_LEITURAS)){ ultimo = {cod:cod, ts:agora}; avisar(); lerRef.current(cod); }
-          else if(cod) ultimo.ts = agora;   // continua na mira: segura a trava
+          if(cod && valido(cod)){
+            // exige a mesma leitura em 2 quadros seguidos (tira leitura torta); depois o mesmo número só conta outra vez se sair da mira e voltar
+            if(cod === previo){
+              if(cod !== ultimo.cod || agora - ultimo.ts > ENTRE_LEITURAS){
+                ultimo = {cod:cod, ts:agora}; avisar();
+                setEstado(function(x){ return Object.assign({}, x, {flash:agora}); });
+                setTimeout(function(){ if(vivo) setEstado(function(x){ return Object.assign({}, x, {flash:0}); }); }, 700);
+                lerRef.current(cod);
+              } else ultimo.ts = agora;
+            }
+            previo = cod;
+          } else previo = "";
         } catch(x){}
-        if(vivo) timer = setTimeout(laco, 160);
+        if(vivo) timer = setTimeout(laco, 120);
       };
       laco();
     })();
@@ -80,9 +115,9 @@ function LeitorCamera(p){
     estado.est==="erro"
       ? e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12.5px] font-bold text-[#92400E]"}, estado.msg)
       : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"4 / 3"}},
-          e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover"}),
-          e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 "+(estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
-          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta")),
+          e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
+          e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 " + (estado.flash ? "border-[#22C55E]" : estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
+          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta · zoom 2x")),
     e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera"));
 }
 

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.202", data:"2026-11-24", titulo:"Leitor da câmera: zoom 2x, bip que toca e leitura mais firme", itens:[
+  {tipo:"melhoria", area:"Peças que voltaram", txt:"Zoom 2x ligado ao abrir (da câmera no Android, digital no iPhone), bip e vibração liberados no primeiro toque, borda verde ao ler, e leitura só vale se vier igual em 2 quadros e com formato de código de peça."},
+ ]},
  {v:"0.21.201", data:"2026-11-24", titulo:"Pendente na DevMaster: o que já foi pago entra no pago; Família sem duplicidade; revendedoras do dia", itens:[
   {tipo:"melhoria", area:"Contas a pagar", txt:"Pix pago antes do vencimento (até 35 dias) e Pix de prestador casam com o título da DevMaster e contam como PAGO. Coluna Na DevMaster: Pendente na DevMaster. A baixa conta na data em que o dinheiro saiu."},
   {tipo:"correção", area:"Contas a pagar", txt:"Conta da Família paga no Admin e aberta na DevMaster vira uma linha só (IPTU de R$ 258,40). Compra da fatura do Itaú Black que já é conta da Família fica só na Família (16 linhas, R$ 11.607,91)."},
