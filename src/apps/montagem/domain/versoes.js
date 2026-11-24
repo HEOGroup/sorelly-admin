@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.167", data:"2026-11-24", titulo:"Marcus: vezes que fumou e horário do Vyvanse no Progresso", itens:[
+  {tipo:"novo", area:"Marcus → Progresso", txt:"Nova coluna Fumou (vezes) na tabela e célula Fumou hoje na barra, com a soma no total. Novo botão Registrar na célula Vyvanse: guarda a hora e a dose, aparece na coluna Vyvanse e na janela do dia."}]},
  {v:"0.21.166", data:"2026-11-24", titulo:"Marcus: botões de pausa no Progresso", itens:[
   {tipo:"melhoria", area:"Marcus → Progresso", txt:"Com o dia começado, a barra azul mostra um botão para cada motivo: Fumar, Almoçar, Treinar, Parado e Outro. Em pausa, aparece Voltar ao trabalho. Antes era uma lista escondida."}]},
  {v:"0.21.165", data:"2026-11-24", titulo:"Chaves Pix: a aba é a fonte principal", itens:[
