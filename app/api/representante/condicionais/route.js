@@ -40,17 +40,18 @@ export const GET = rota(async (req, { eu, url }) => {
     const ip = await todasAsPaginas("dmafj", { filtro: { afj_condicional: { in: numeros }, afj_produto: produto }, campos: ["afj_condicional", "afj_quantidade"] });
     ip.forEach((i) => qtdProduto.set(i.afj_condicional, (qtdProduto.get(i.afj_condicional) || 0) + (Number(i.afj_quantidade) || 0)));
   }
-  const prods = [...new Set(itens.map((i) => String(i.afj_produto || "").trim()))], grupoDe = new Map();
+  const prods = [...new Set(itens.map((i) => String(i.afj_produto || "").trim()))], grupoDe = new Map(), barrasDe = new Map();
   for (let i = 0; i < prods.length; i += 100) {
-    const r = await consultarTabela("dmaaa", { registros: 100, filtro: { aaa_codigo: { in: prods.slice(i, i + 100) } }, campos: ["aaa_codigo", "aaa_grupo"] });
-    (r.itens || []).forEach((x) => grupoDe.set(String(x.aaa_codigo).trim(), String(x.aaa_grupo || "").trim()));
+    // aaa_codbarras = número do código de barras da etiqueta (24/11/2026, Marcus: a representante bipa a etiqueta e o sistema acha a peça; conferido em 7 peças)
+    const r = await consultarTabela("dmaaa", { registros: 100, filtro: { aaa_codigo: { in: prods.slice(i, i + 100) } }, campos: ["aaa_codigo", "aaa_grupo", "aaa_codbarras"] });
+    (r.itens || []).forEach((x) => { grupoDe.set(String(x.aaa_codigo).trim(), String(x.aaa_grupo || "").trim()); barrasDe.set(String(x.aaa_codigo).trim(), String(x.aaa_codbarras || "").trim()); });
   }
   const condicionais = kits.sort((a, b) => String(b.afi_data).localeCompare(String(a.afi_data))).map((c) => {
     const por = new Map();
     itens.filter((i) => i.afj_condicional === c.afi_codigo).forEach((i) => {
       const codigo = String(i.afj_produto || "").trim(), g = grupoDe.get(codigo) || "00";
       if (!por.has(g)) por.set(g, { cod: g, nome: GRUPOS[g] || "Grupo " + g, itens: [] });
-      por.get(g).itens.push({ codigo, desc: nomeNormal(String(i.afj_descricao || "").trim()).toUpperCase(), valor: Number(i.afj_valorun) || 0, qtd: Number(i.afj_quantidade) || 0 });
+      por.get(g).itens.push({ codigo, barras: barrasDe.get(codigo) || "", desc: nomeNormal(String(i.afj_descricao || "").trim()).toUpperCase(), valor: Number(i.afj_valorun) || 0, qtd: Number(i.afj_quantidade) || 0 });
     });
     return { numero: c.afi_codigo, emissao: d10(c.afi_data), previsao: d10(c.afi_prevdevol), vendedor: mapa.get(c.afi_vendedor) || c.afi_vendedor, pecas: Number(c.afi_qtditens) || 0, valor: Number(c.afi_valormerc) || 0, produtoQtd: qtdProduto.get(c.afi_codigo) || 0, grupos: [...por.values()].sort((a, b) => a.cod.localeCompare(b.cod)) };
   });

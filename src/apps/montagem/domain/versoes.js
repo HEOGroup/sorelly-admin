@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.197", data:"2026-11-24", titulo:"Conferência das peças: câmera para bipar a etiqueta e campo para digitar o código", itens:[
+  {tipo:"novo", area:"App da representante", txt:"Na conferência das peças a câmera abre sozinha e lê o código de barras da etiqueta; a peça é achada pelo número de barras da DevMaster e recebe o check. Se a etiqueta não ler, tem o campo para digitar o código da peça. Lê também a etiqueta com as listras na vertical (tag do colar)."},
+  {tipo:"melhoria", area:"App da representante", txt:"A bipagem peça a peça voltou a ficar ligada (estava desligada desde 03/11). A peça não é mais marcada só com um toque: só com a câmera ou digitando o código. Peça de fora fica registrada; peça que falta vira erro de quem bipou o kit na empresa."}]},
  {v:"0.21.196", data:"2026-11-24", titulo:"Pix (conferência) saiu do menu e virou bloco no fim do Resumo geral", itens:[
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Resumo geral", txt:"A tabela com todos os Pix lançados e o aviso de duplicado agora fica no fim do Resumo geral, depois do total (bloco Pix lançados · conferência). A tela Pix (conferência) foi retirada do menu, das abas e do endereço."}]},
  {v:"0.21.195", data:"2026-11-24", titulo:"Conferência das peças: resumo das condicionais alinhado", itens:[

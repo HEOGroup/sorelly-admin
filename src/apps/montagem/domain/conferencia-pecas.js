@@ -11,12 +11,19 @@ function totaisDe(c){ var it = itensDe(c); return {modelos:it.length, pecas:it.r
 function totaisKit(conds){ var t = {condicionais:conds.length, modelos:0, pecas:0, valor:0}; conds.forEach(function(c){ var x = totaisDe(c); t.modelos += x.modelos; t.pecas += x.pecas; t.valor += x.valor; }); return t; }
 
 // Uma leitura: o código tem de estar numa das condicionais do kit e ainda faltar unidade dele. Devolve o novo estado da conferência.
+// A leitura pode ser o CÓDIGO escrito na etiqueta (CL2542, digitado) ou o NÚMERO DE BARRAS que a câmera lê (00032358, campo aaa_codbarras da DevMaster, vem em item.barras).
+// O número de barras vale com ou sem zeros na frente. Só vale se for número com 4 dígitos ou mais, para um código curto nunca bater por engano com um número de barras.
+function semZeros(x){ return String(x||"").replace(/^0+/, ""); }
+function bate(i, cod){
+  if(String(i.codigo||"").toUpperCase()===cod) return true;
+  return !!i.barras && /^\d{4,}$/.test(cod) && semZeros(i.barras)!=="" && semZeros(i.barras)===semZeros(cod);
+}
 function bipar(conds, conf, codigo){
   var cod = String(codigo||"").trim().toUpperCase().replace(/\s+/g,""); if(!cod) return conf;
   var lidos = Object.assign({}, conf.lidos), erros = (conf.erros||[]).slice(), achou = null;
-  conds.some(function(c){ return itensDe(c).some(function(i){ if(i.codigo.toUpperCase()===cod && (lidos[c.numero+"|"+i.codigo]||0) < i.qtd){ achou = i; return true; } return false; }); });
+  conds.some(function(c){ return itensDe(c).some(function(i){ if(bate(i, cod) && (lidos[c.numero+"|"+i.codigo]||0) < i.qtd){ achou = i; return true; } return false; }); });
   if(achou){ lidos[achou.cond+"|"+achou.codigo] = (lidos[achou.cond+"|"+achou.codigo]||0)+1; return Object.assign({}, conf, {lidos:lidos, ultimo:{tipo:"ok", codigo:achou.codigo, desc:achou.desc, em:Date.now()}}); }
-  var existe = null; conds.some(function(c){ return itensDe(c).some(function(i){ if(i.codigo.toUpperCase()===cod){ existe = i; return true; } return false; }); });
+  var existe = null; conds.some(function(c){ return itensDe(c).some(function(i){ if(bate(i, cod)){ existe = i; return true; } return false; }); });
   if(existe) return Object.assign({}, conf, {ultimo:{tipo:"repetida", codigo:existe.codigo, desc:existe.desc, em:Date.now()}});   // já conferida: não conta de novo
   erros.push({codigo:cod, em:Date.now()});
   return Object.assign({}, conf, {erros:erros, ultimo:{tipo:"fora", codigo:cod, em:Date.now()}});

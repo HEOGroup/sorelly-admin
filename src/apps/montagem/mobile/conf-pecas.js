@@ -6,6 +6,7 @@
 import { condicionaisDoKit, itensDe, resultado, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { useCondsReais } from "@/apps/montagem/mobile/conds-reais";
+import { LeitorCamera } from "@/apps/montagem/mobile/leitor-camera";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
@@ -14,7 +15,8 @@ import React from "react";
 var BR = function(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); };
 var BTN = "h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40";
 // 03/11/2026 (Marcus): ainda não dá para bipar. Por enquanto a representante só CONFIRMA A QUANTIDADE de peças de cada condicional. Quando a bipagem estiver pronta, trocar para true (o código de bipar continua abaixo).
-var BIPAR_ATIVO = false;
+// 24/11/2026 (Marcus: "precisa ter a câmera para bipar; se não bipar, digita o código"): bipagem LIGADA de novo, com a câmera (mobile/leitor-camera.js) e o campo para digitar o código. A peça não se marca mais só com um toque.
+var BIPAR_ATIVO = true;
 var CARD = "rounded-2xl bg-white p-3 ring-1 ring-[#E5E7EB]";
 
 function ConfPecas(p){
@@ -25,6 +27,7 @@ function ConfPecas(p){
   var nt = useState(""), notaTxt = nt[0], setNotaTxt = nt[1];   // peças que faltaram, anotadas pela representante (opcional)
   var qt = useState({}), contadas = qt[0], setContadas = qt[1];   // quantidade contada de cada condicional (sem bipagem)
   var ab = useState(null), aberta = ab[0], setAberta = ab[1], cf = useState(false), confirmar = cf[0], setConfirmar = cf[1];
+  var cm = useState(true), camera = cm[0], setCamera = cm[1];   // a câmera abre sozinha ao começar a bipar; "Fechar a câmera" deixa só o campo de digitar
   var bipadora = k.bipId ? nomeDe(k.bipId) : "—", montadora = k.montId ? nomeDe(k.montId) : "—";
   var lido = function(c, i){ return Math.min(i.qtd, (conf.lidos||{})[c.numero+"|"+i.codigo]||0); };
   var lidas = conds.reduce(function(t,c){ return t+itensDe(c).reduce(function(x,i){ return x+lido(c,i); },0); },0);
@@ -96,10 +99,12 @@ function ConfPecas(p){
     e("div",{className:"flex flex-col gap-1"},
       e("div",{className:"flex items-center justify-between text-[12.5px] font-bold text-[#111827]"}, e("span",null,"Conferidas "+lidas+" de "+tot.pecas), e("span",{className:MONO},pct+"%")),
       e("span",{className:"h-2 overflow-hidden rounded-full bg-[#E5E7EB]"}, e("span",{className:"block h-full rounded-full bg-[#16A34A]", style:{width:pct+"%"}}))),
-    e("p",{className:"text-[12px] text-[#6B7280]"},"Toque em cada peça para marcar OK ou digite o código. Peça que não é deste kit: pode deixar com a revendedora, só fica registrado."),
+    camera ? e(LeitorCamera,{aoLer:bipar, aoFechar:function(){ setCamera(false); }})
+      : e("button",{type:"button", onClick:function(){ setCamera(true); }, className:BTN},"Abrir a câmera para bipar"),
+    e("p",{className:"text-[12px] text-[#6B7280]"},"Aponte a câmera para as listras da etiqueta de cada peça. Se a etiqueta não ler, digite o código da peça (ex.: CL2542). Peça que não é deste kit: pode deixar com a revendedora, só fica registrado."),
     e("form",{onSubmit:function(ev){ ev.preventDefault(); bipar(codigo); setCodigo(""); }, className:"flex gap-1.5"},
-      e("input",{value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"digite o código da peça", autoCapitalize:"characters", className:"h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-black/10"}),
-      e("button",{type:"submit", className:"h-10 shrink-0 rounded-lg bg-[#111827] px-3 text-[12.5px] font-bold txt-branco"},"Bipar")),
+      e("input",{value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"ou digite o código da peça", autoCapitalize:"characters", className:"h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-black/10"}),
+      e("button",{type:"submit", className:"h-10 shrink-0 rounded-lg bg-[#C9A13B] px-4 text-[12.5px] font-bold txt-branco"},"Bipar")),
     aviso && e("p",{className:"rounded-xl px-3 py-2 text-[12.5px] font-bold", style:{background:aviso[0], color:aviso[1]}}, aviso[2]),
     conds.map(function(c){ var its = itensDe(c), feitas = its.reduce(function(t,i){ return t+lido(c,i); },0), tp = its.reduce(function(t,i){ return t+i.qtd; },0), on = aberta===c.numero || (aberta===null && conds.length===1);
       return e("div",{key:c.numero, className:CARD+" flex flex-col gap-1.5 p-2!"},
@@ -110,7 +115,7 @@ function ConfPecas(p){
           return e("div",{key:g.cod, className:"flex flex-col gap-1"},
             e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#6B7280]"}, e("span",null,g.cod+" · "+g.nome), e("span",{className:MONO}, gf+"/"+gt)),
             g.itens.map(function(i){ var l = lido(c,i), ok = l>=i.qtd;
-              return e("button",{key:i.codigo, onClick:function(){ bipar(i.codigo); }, title:"Toque para marcar OK",
+              return e("div",{key:i.codigo,
                 className:"flex items-start gap-2 rounded-lg px-2 py-1.5 text-left "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white ring-1 ring-[#F3F4F6]")},
                 e("span",{className:"mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-black "+(ok ? "bg-[#16A34A] txt-branco" : "bg-[#E5E7EB] text-[#9CA3AF]")}, ok ? "✓" : ""),
                 e("span",{className:"min-w-0 flex-1"}, e("b",{className:MONO+" block text-[12px] text-[#111827]"}, i.codigo), e("span",{className:"block text-[10.5px] leading-tight text-[#6B7280]"}, i.desc)),
