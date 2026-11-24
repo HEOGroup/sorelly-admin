@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.174", data:"2026-11-24", titulo:"Fatura do Itaú Black de novembro: os gastos reais no lugar da previsão (também no número oficial)", itens:[
+  {tipo:"correção", area:"Financeiro › Faturas", txt:"Fatura de novembro do Itaú Black importada do PDF: R$ 28.887,26 (vence 25/11), 56 linhas, no lugar da prévia de R$ 13.332,13."},
+  {tipo:"correção", area:"Contas a pagar e Resultado do mês", txt:"As contas do mês usam a fatura real: sem a PREVISÃO de R$ 24.000 e sem as 31 compras estimadas da DevMaster do mesmo vencimento. Coluna Origem = Fatura Itaú Black. Só no Admin: o financeiro ajusta a DevMaster."},
+  {tipo:"correção", area:"Faturamento ao vivo", txt:"Recolocada a ligação que soma as contas do mês ao vivo (Faturamento, Dashboard e previsões)."},
+  {tipo:"correção", area:"Contas a pagar", txt:"Bônus do Nickolas repetidos tirados do Admin (os mesmos pagamentos já estavam na DevMaster); fica só o de 10/10, pago em dinheiro."}]},
  {v:"0.21.173", data:"2026-11-24", titulo:"Painel das representantes retirado do menu", itens:[
   {tipo:"melhoria", area:"Representantes & Kits → Representantes", txt:"O Painel das representantes saiu do menu (não ligava com o fluxo). O Consolidado continua. A tela ainda abre pelo endereço /painel-representantes."}]},
  {v:"0.21.172", data:"2026-11-23", titulo:"Consolidado dos representantes: nomes sem maiúsculas, condicional sem campo preto e colunas abertas", itens:[

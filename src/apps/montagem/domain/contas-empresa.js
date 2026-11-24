@@ -8,6 +8,7 @@ import { globLocal } from "@/lib/glob-local";
 import { parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { funcionarios } from "@/apps/montagem/domain/pessoas";
 import { casarPagos, cobertoAte, tipoDaParcela, tipoDoTitulo } from "@/apps/montagem/domain/casar-pagos";
+import { definirContasAoVivo } from "@/apps/montagem/domain/financeiro";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
 var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
@@ -154,7 +155,7 @@ function setLancamentos(l){
   var h = new Date(), hj = h.getFullYear()+"-"+String(h.getMonth()+1).padStart(2,"0")+"-"+String(h.getDate()).padStart(2,"0");
   LANC_ITENS = (l||[]).map(function(x){
     var ap = x.status!=="pago", atraso = ap && x.venc<hj ? Math.round((new Date(hj+"T12:00:00")-new Date(x.venc+"T12:00:00"))/86400000) : 0;
-    return {id:"l"+x.id, status:ap ? "apagar" : "pago", filial:x.filial, nat:x.nat, natNome:x.natNome, pref:x.pref||"", num:"", parc:"", forn:x.forn||"", nome:x.nome, baixa:x.baixa||null, venc:x.venc, valor:x.valor, valorTitulo:x.valor, atraso:atraso, grupo:grupoDe(x.nat, String(x.natNome).toUpperCase(), x.nome), pessoalPadrao:!!x.fam, mes:(ap ? x.venc : (x.baixa||x.venc)).slice(0,7), outroMes:false, chave:"l|"+x.id, manual:true};
+    return {id:"l"+x.id, status:ap ? "apagar" : "pago", filial:x.filial, nat:x.nat, natNome:x.natNome, pref:x.pref||"", num:"", parc:"", forn:x.forn||"", nome:x.nome, baixa:x.baixa||null, venc:x.venc, valor:x.valor, valorTitulo:x.valor, atraso:atraso, grupo:grupoDe(x.nat, String(x.natNome).toUpperCase(), x.nome), pessoalPadrao:!!x.fam, mes:(ap ? x.venc : (x.baixa||x.venc)).slice(0,7), outroMes:false, chave:"l|"+x.id, manual:true, fatura:x.fatura||""};
   }).map(decora);
 }
 // Pix revendedora lançado pela equipe em Pagamentos a fornecedores (Point, Pontual, MegaSul...): entra dentro do fornecedor e já conta como PAGO.
@@ -295,6 +296,9 @@ function aplicarPf(l){
 }
 function itensEmpresa(){
   var l = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens();
+  // FATURA DO CARTÃO = OS GASTOS DA FATURA (Marcus, 24/11/2026): havendo linhas da fatura real lançadas no Admin (lanc com campo fatura), saem os títulos CCI em aberto da DevMaster do mesmo vencimento (a PREVISÃO e as compras estimadas). Só aqui na lista; a DevMaster não é mexida.
+  var fv = {}; LANC_ITENS.forEach(function(i){ if(i.fatura) fv[i.venc] = 1; });
+  if(Object.keys(fv).length) l = l.filter(function(i){ return i.manual || !(i.pref==="CCI" && i.status!=="pago" && fv[i.venc]); });
   return comFilial(aplicarPf(casarPagos(comBaixas(l), PF_PARC)));
 }
 // CNPJ trocado à mão (Nayale, 02/11/2026): guardado em CLASSE com a chave "fil|<conta>"; vale também para a conta já paga
@@ -306,7 +310,8 @@ function comFilial(l){
 function bonusNickolas(){
   // combinado do Marcus (20/10/2026): R$ 2.000 por mês, R$ 1.000 no dia 10 e R$ 1.000 no dia 23, de outubro a dezembro; o de 10/10 foi pago em dinheiro. Em janeiro vê novas condições.
   var l = [];
-  ["2026-10","2026-11","2026-12"].forEach(function(m){ ["10","23"].forEach(function(d){
+  // 24/11/2026: só o de 10/10 (dinheiro) é exclusivo do Admin; 23/10, 10/11, 23/11, 10/12 e 23/12 eram o mesmo pagamento dos títulos da DevMaster (30/10, 16/11, 30/11, 15/12, 30/12) e foram tirados.
+  ["2026-10"].forEach(function(m){ ["10"].forEach(function(d){
     var pago = m==="2026-10" && d==="10";
     l.push(Object.assign({id:"nick2-"+m+"-"+d, filial:"fora", nat:"3.01.01.12", natNome:"Bônus", pref:pago ? "DIN" : "BON", nome:"Nickolas Leal · bônus mensal dia "+d+(pago ? " (dinheiro)" : ""), venc:m+"-"+d, valor:1000, status:pago ? "pago" : "apagar"}, pago ? {baixa:m+"-"+d} : {}));
   }); });
@@ -385,4 +390,9 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
+// Faturamento e Resultado do mês (22/11/2026): pago e a pagar do mês vêm desta MESMA lista (DevMaster + Pix lançado no admin + lançamentos à mão, já cruzados e sem duplicar), a empresa e a família juntas.
+// Só vale quando a DevMaster já respondeu (servidorEm); sem ela, as telas seguem com os números lançados.
+// Antes de somar, liga a esta lista o que está no estado (classes, lançamentos à mão, baixas e Pix do admin): sem isso, a tela de Faturamento aberta sozinha somaria menos que a tela Contas a pagar.
+// NÃO APAGAR: esta ligação sumiu na junção de 22/11/2026 (commit 4926fb71) e o Dashboard, o Consolidado do faturamento e as previsões ficaram dois dias com o número lançado à mão; recolocada em 24/11/2026. Guarda: node scripts/testar-contas-ao-vivo.mjs
+definirContasAoVivo(function(ym, s){ if(!SERV) return null; if(s){ setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf); } var t = totais(filtrar(ym, "", "", "", "", "")); return {pago:t.pago, apagar:t.apagar}; });
 export { extrasDevmaster, parcelasBaixadasDm, definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
