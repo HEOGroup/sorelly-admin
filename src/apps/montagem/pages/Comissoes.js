@@ -8,7 +8,7 @@
 // Em cada data: combustível (km × gasolina do dia), ajuste do fechamento anterior e o pagamento, tudo ali do lado.
 // VISUAL (23/11/2026, padrão da Contas a pagar): bloco azul (BlocoPainel), menus na barra (BarraTabela + CampoMini), toda tabela é a TabelaPlanilha (filtro no nome da coluna),
 // total na última linha da tabela, letra de 11 e 13 px e nada em caixa alta. As regras e os valores continuam vindo do domínio (domain/comissoes.js): esta tela só desenha.
-import { relatorioTaxas, chaveFech, comisEfetiva, corteDe, datasDoMes, dataHora, faltaDe, janelaDe, fmtDataBR, grupoDaRep, itensComissao, pagoDe, pctDaRep, quemNome, r2, repsEfetivas, resumoSituacao } from "@/apps/montagem/domain/comissoes";
+import { unico, relatorioTaxas, chaveFech, comisEfetiva, corteDe, datasDoMes, dataHora, faltaDe, janelaDe, fmtDataBR, grupoDaRep, itensComissao, pagoDe, pctDaRep, quemNome, r2, repsEfetivas, resumoSituacao } from "@/apps/montagem/domain/comissoes";
 import { podeConfigComissao, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { AbaConfigComissoes } from "@/apps/montagem/pages/ConfigComissoes";
 import { ComissoesKitNovo } from "@/apps/montagem/pages/ComissoesKitNovo";
@@ -339,7 +339,7 @@ function ResumoMes(p){
   }, [c, itens, agora, todasReps, anoSel, mesN, mesAtual]);
   var mediaDe = function(nomesM){ var k0 = 0, at = 0; nomesM.forEach(function(n){ if(km[n]){ k0 += km[n].km; at += km[n].at; } }); return at>0 ? k0/at : null; };
   var mediaGeral = mediaDe(todasReps);
-  var repDe = function(r){ return r.rep || SEM_REP; };
+  var repDe = function(r){ return unico(c, r.rep) || SEM_REP; };   // cadastros do mesmo grupo (Thalita: BI, CU, CV) = uma representante
   var doMes = (s.acertosConsignado||[]).filter(function(r){ return r.tipo==="acerto" && noPeriodo(r.data); });
   var grupos = {}, ordem = [];
   doMes.forEach(function(r){ var k = repDe(r); if(!grupos[k]){ grupos[k] = {id:k, rep:k, n:0, vendido:0, acerto:0, pago:0, inad:0}; ordem.push(k); }
@@ -375,10 +375,10 @@ function ResumoMes(p){
     return ["Total", n, ls.reduce(function(t, l){ return t+l.pagas; }, 0), nao, n>0 ? Math.round(nao/n*100)+"%" : "—", BK(ls.reduce(function(t, l){ return t+l.valor; }, 0)), BK(ls.reduce(function(t, l){ return t+l.aberto; }, 0))]; };
   // erros que o financeiro registrou nos pagamentos (divergência de valor, conta errada, pagamento não identificado)
   var erros = [];
-  (s.acertosConsignado||[]).filter(function(r){ return r.divs && todasReps.indexOf(r.rep)>=0 && ehVis(r.rep); }).forEach(function(r){ Object.keys(r.divs).forEach(function(i){ erros.push({r:r, i:i, dv:r.divs[i]}); }); });
+  (s.acertosConsignado||[]).filter(function(r){ return r.divs && todasReps.indexOf(unico(c, r.rep))>=0 && ehVis(unico(c, r.rep)); }).forEach(function(r){ Object.keys(r.divs).forEach(function(i){ erros.push({r:r, i:i, dv:r.divs[i]}); }); });
   erros.sort(function(a,b){ return (b.dv.ts||"").localeCompare(a.dv.ts||""); });
   var erroTxt = function(dv){ return dv.tipo==="valor" ? "Valor diferente: lançou "+BK(dv.valorErrado)+", entrou "+BK(dv.valorCerto) : dv.tipo==="conta" ? "Conta errada: "+dv.contaErrada+" → "+dv.contaCerta : "Pagamento não identificado / sem comprovante"; };
-  var linhasErro = erros.map(function(x){ return {id:x.r.id+"|"+x.i, quando:dataHora(x.dv.ts), rep:x.r.rep, rev:x.r.rev, erro:erroTxt(x.dv), por:quemNome(x.dv.por)}; });
+  var linhasErro = erros.map(function(x){ return {id:x.r.id+"|"+x.i, quando:dataHora(x.dv.ts), rep:unico(c, x.r.rep), rev:x.r.rev, erro:erroTxt(x.dv), por:quemNome(x.dv.por)}; });
   var nCom = linhasRep.length;
   return e(React.Fragment,null,
     e(BlocoPainel,{titulo:"Resumo por representante · "+p.rotulo, compacto:true, dir:todasReps.length+" no cadastro · "+nCom+" com acerto"},

@@ -21,8 +21,17 @@ var COMIS0 = {pctPadrao:8, reps:[], ciclos:{A:[1,11,21], B:[6,16,26]}, corteHora
   nf:{ativo:false, entrega:25, pctKitNovo:2, pctAcerto1:6, revs:[]},   // TESTE do novo fluxo (26/10/2026, Curitiba, 60 dias): Representante Kit Novo entrega (R$ 25 + gasolina) e leva 2% do 1º acerto; a Rep. Acerto leva 6% no 1º acerto e 8% depois. Só vale para as revendedoras marcadas em nf.revs.
   kitNovo:20, kitNovoExpo:35, reposicao:15, exigirProm:true, termos:{}, kmPorLitro:11, combSemEnvio:200, fixoV:2, gasolinaPR:null, gasolina:{}, fech:{}, kmDia:{}};
 
+// MAIS DE UM CADASTRO = UMA PESSOA (24/11/2026, Marcus: tudo da Thalita em BI, CU e CV é da mesma pessoa; o mesmo para a Anne em E2, EE e EX).
+// Os cadastros que o Agendamento marcou com o mesmo GRUPO viram uma representante só em Comissões: o nome que vale é o do primeiro cadastro do grupo na configuração (Thalita Torazzi, Anne Asley).
+function mapaUnico(s){
+  var reps = (s && s.agend && s.agend.config && s.agend.config.representantes) || [], porNome = {}, principal = {};
+  reps.forEach(function(r){ if(!r || !r.nome || !r.grupo) return; if(!principal[r.grupo]) principal[r.grupo] = r.nome; porNome[r.nome] = principal[r.grupo]; (r.apelidos || []).forEach(function(a){ if(a) porNome[a] = principal[r.grupo]; }); });
+  return porNome;
+}
+function unico(c, nome){ return (c && c._unico && nome && c._unico[nome]) || nome; }
 function comisEfetiva(s){
   var c = Object.assign({}, COMIS0, s.comis || {});
+  c._unico = mapaUnico(s);
   c.ciclos = Object.assign({}, COMIS0.ciclos, c.ciclos || {});
   if(!c.v2){ c.corteHora = 13; c.kmPorLitro = 11; }   // regra de 06/10/2026: km até 13h e 11 km por litro (vale até alguém salvar a configuração)
   c.nf = Object.assign({}, COMIS0.nf, c.nf || {}); c.nf.revs = c.nf.revs || [];
@@ -60,9 +69,9 @@ function repsEfetivas(s){
   var c = comisEfetiva(s), nomes = [];
   var add = function(n){ if(n && n!=="Atendimento interno" && nomes.indexOf(n)<0) nomes.push(n); };
   REPS_AVAL.forEach(add);                                              // as representantes que temos até agora
-  c.reps.forEach(function(x){ add(x.nome); });
-  (s.listagens||[]).forEach(function(l){ add(l.rep); });
-  (s.acertosConsignado||[]).forEach(function(r){ if(!ehInterno(r)) add(r.rep); });
+  c.reps.forEach(function(x){ add(unico(c, x.nome)); });
+  (s.listagens||[]).forEach(function(l){ add(unico(c, l.rep)); });
+  (s.acertosConsignado||[]).forEach(function(r){ if(!ehInterno(r)) add(unico(c, r.rep)); });
   return nomes.sort().map(function(n){ var x = c.reps.find(function(y){ return y.nome===n; });
     return {nome:n, pct:x && x.pct!=null ? x.pct : c.pctPadrao, grupo:x && x.grupo ? x.grupo : "A", salva:!!x}; });
 }
@@ -101,10 +110,11 @@ function taxaDe(r){
 }
 // Relatório de taxas por representante (quantas teve, quantas a revendedora não pagou): quem "não cobra direito" aparece com percentual alto
 function relatorioTaxas(s, filtro){
-  var por = {};
+  var por = {}, um = mapaUnico(s);
   (s.acertosConsignado||[]).filter(function(r){ return r.tipo==="acerto" && !ehInterno(r) && (!filtro || filtro(r)); }).forEach(function(r){
     var x = taxaDe(r); if(!(x.taxa>0)) return;
-    var o = por[r.rep] = por[r.rep] || {rep:r.rep, n:0, pagas:0, naoPagas:0, valor:0, aberto:0, lista:[]};
+    var nm = um[r.rep] || r.rep;
+    var o = por[nm] = por[nm] || {rep:nm, n:0, pagas:0, naoPagas:0, valor:0, aberto:0, lista:[]};
     o.n++; o.valor = r2(o.valor+x.taxa); if(x.paga) o.pagas++; else { o.naoPagas++; o.aberto = r2(o.aberto+x.aberta); }
     o.lista.push({r:r, taxa:x.taxa, paga:x.paga, aberta:x.aberta}); });
   return Object.keys(por).map(function(k){ var o = por[k]; o.pct = o.n>0 ? Math.round(o.naoPagas/o.n*100) : 0; return o; }).sort(function(a,b){ return b.pct-a.pct || b.aberto-a.aberto; });
@@ -143,7 +153,7 @@ function totalDividaAnterior(lista, rev, exceto){ return r2(dividasAnteriores(li
 
 function analisar(c, r){
   var nfp = c._nfPrim && c._nfPrim[r.id];   // 1º acerto do novo fluxo: a Rep. Acerto leva só a parte dela (6%); a Rep. Kit Novo leva 2% num item à parte
-  var rec = r.recebimento || {}, pct = ehInterno(r) ? 0 : (nfp ? c.nf.pctAcerto1 : pctDaRep(c, r.rep))/100, ehAcerto = r.tipo==="acerto";
+  var rec = r.recebimento || {}, pct = ehInterno(r) ? 0 : (nfp ? c.nf.pctAcerto1 : pctDaRep(c, unico(c, r.rep)))/100, ehAcerto = r.tipo==="acerto";
   var semCond = !!rec.semCond, promPrec = ehAcerto && !!c.exigirProm && !semCond && r.tipoKit!=="saiu", prom = rec.prom || {};
   var promOk = !promPrec || !!prom.ok, conferido = !!rec.ok;
   var restante = r.valorAcerto||0, linhas = [];
@@ -167,6 +177,7 @@ function itensComissao(c, s, agora){
   var poe = function(it){
     it.confirmado = it.libera!=null;
     it.pagoDireto = !!it.pixRep && !!it.fin;                              // Pix representante: o Pix foi direto para ela = PAGAMENTO feito (só depende do OK do financeiro)
+    it.rep = unico(c, it.rep); it.repAcerto = unico(c, it.repAcerto);   // BI, CU e CV (e E2, EE e EX) são a mesma pessoa
     it.dest = it.rep;                                                    // quem recebe: no Pix representante é a escolhida pelo financeiro
     if(it.dest){ var g = grupoDaRep(c, it.dest); it.grupo = g; it.dataRem = remessaPorData(c, g, it.data); }   // cada atendimento cai no pagamento cuja janela o contém
     itens.push(it); };
@@ -247,7 +258,7 @@ function chaveKmDia(rep, dia){ return rep+"|"+dia; }
 function resumoKmDia(c, s, rep, dia){
   var k = c.kmDia[chaveKmDia(rep, dia)] || {}, ini = k.ini, fim = k.fim;
   var rodados = ini!=null && fim!=null && fim>=ini ? r2(fim-ini) : null;
-  var n = (s.acertosConsignado||[]).filter(function(r){ return r.origem!=="interno" && r.rep===rep && r.data===dia; }).length;
+  var n = (s.acertosConsignado||[]).filter(function(r){ return r.origem!=="interno" && unico(c, r.rep)===rep && r.data===dia; }).length;
   return {dia:dia, ini:ini, fim:fim, tsIni:k.tsIni||null, tsFim:k.tsFim||null, rodados:rodados, atend:n, porAtend:rodados!=null && n>0 ? r2(rodados/n) : null};
 }
 
@@ -256,5 +267,5 @@ function quemNome(v){ return typeof v==="number" ? nomeDe(v) : (v || "—"); }
 function dataHora(x){ var t = typeof x==="number" ? x : tsIso(x); return t ? new Date(t).toLocaleString("pt-BR",{day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) : "—"; }
 function fmtDataBR(iso){ return iso ? iso.split("-").reverse().join("/") : ""; }
 
-export { nfDe, nfPrimeiros, taxaDe, relatorioTaxas, remessaPorData, janelaDe, valorLinha, ehLoja, chaveKmDia, resumoKmDia, quemNome, dataHora, fmtDataBR, COMIS0, STATUS_LISTA, statusDe, comisEfetiva, repsEfetivas, pctDaRep, grupoDaRep, corteDe, remessaDe, datasDoGrupo, datasDoMes, proximasDatas,
+export { unico, nfDe, nfPrimeiros, taxaDe, relatorioTaxas, remessaPorData, janelaDe, valorLinha, ehLoja, chaveKmDia, resumoKmDia, quemNome, dataHora, fmtDataBR, COMIS0, STATUS_LISTA, statusDe, comisEfetiva, repsEfetivas, pctDaRep, grupoDaRep, corteDe, remessaDe, datasDoGrupo, datasDoMes, proximasDatas,
   pagoDe, devidoDe, faltaDe, prazoPendente, dividasAnteriores, totalDividaAnterior, analisar, itensComissao, chaveFech, resumoSituacao, ehInterno, tsDe, r2 };
