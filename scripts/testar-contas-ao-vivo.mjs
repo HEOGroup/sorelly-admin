@@ -46,13 +46,17 @@ const lm2 = fin.contasDoMes(sBase({ cpe:{ lanc:lancX } }), ano, mes);
 t("ler de novo o lançamento não duplica", Math.abs(lm2.apagar-1250)<0.01, lm2.apagar);
 const sem = fin.contasDoMes(sBase({ cpe:{ lanc:[] } }), ano, mes);
 t("tirar o lançamento do estado tira da soma", Math.abs(sem.apagar-1000)<0.01, sem.apagar);
-// 6) Pix lançado no admin: só conta depois da última baixa da DevMaster, uma vez só (também vindo só do estado)
+// 6) Pix lançado no admin (cenário refeito em 24/11/2026 para a regra que vale desde 21/11, aplicarPf): o Pix só entra quando o MESMO fornecedor tem título de Pix em aberto na DevMaster,
+//    abate esse título, e só conta o Pix lançado DEPOIS da última baixa de Pix dele na DevMaster. Uma vez só, vindo só do estado.
+const pixRow = (status, data, valor) => status==="pago" ? ["01", "5.01.01", "Fornecedores Pix", "PIX", "2", "01", "000111", "POINT PIX", data, data, valor] : ["01", "5.01.01", "Fornecedores Pix", "PIX", "1", "01", "000111", "POINT PIX", ontem, data, valor, valor, 0];
+ce.definirContasServidor({ apagar:[pixRow("apagar", hojeIso, 1000)], pagas:[pixRow("pago", ontem, 500)], geradoEm:"teste" });
 const pf = { fornecedores:[{id:1, nome:"Point", tipo:"fornecedor"}], pedidos:[], lancamentos:[
   { id:1, fornId:1, valor:400, data:anteontem, revendedora:"Ana" },
   { id:2, fornId:1, valor:300, data:hojeIso, revendedora:"Bia" } ] };
 const px = fin.contasDoMes(sBase({ pf }), ano, mes);
-t("Pix do admin depois da última baixa soma uma vez", Math.abs(px.pago-800)<0.01, px.pago);
+t("Pix do admin depois da última baixa soma uma vez (R$ 500,00 da DevMaster + R$ 300,00 de hoje)", Math.abs(px.pago-800)<0.01, px.pago);
+t("o Pix de hoje abate o título em aberto do mesmo fornecedor (R$ 1.000,00 - R$ 300,00)", Math.abs(px.apagar-700)<0.01, px.apagar);
 const px2 = fin.contasDoMes(sBase({ pf }), ano, mes);
-t("ler de novo não duplica", Math.abs(px2.pago-800)<0.01, px2.pago);
+t("ler de novo não duplica", Math.abs(px2.pago-800)<0.01 && Math.abs(px2.apagar-700)<0.01, px2.pago+" / "+px2.apagar);
 console.log("\n"+ok+" ok, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

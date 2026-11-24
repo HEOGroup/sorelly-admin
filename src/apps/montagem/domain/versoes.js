@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.183", data:"2026-11-24", titulo:"Dashboard volta a somar as contas ao vivo; teste de ponta a ponta com 5 revendedoras", itens:[
+  {tipo:"correção", area:"Dashboard", txt:"O pago e o a pagar do mês no bloco Faturamento do Dashboard voltam a vir ao vivo da lista de contas (DevMaster, Pix do admin e lançamentos). Vale também para o pago de período das Contas bancárias em mês sem pagamento lançado dia a dia. A ligação tinha sumido na junção de 22/11. Resultado do mês, Faturamento e Contas bancárias já somavam direto e não mudaram."},
+  {tipo:"novo", area:"Tecnologia", txt:"Teste novo com 5 revendedoras de mentira, da listagem à comissão (47 verificações): node scripts/testar-fluxo-5-revendedoras.mjs. Roda na memória, sem banco."}]},
  {v:"0.21.182", data:"2026-11-24", titulo:"Acesso total sem o RH (Priscila e Amanda de Miranda)", itens:[
   {tipo:"melhoria", area:"RH › Acessos e autorizações", txt:"Priscila e Amanda de Miranda têm Acesso total, mas não abrem o setor RH: o menu some, o endereço digitado não abre e o servidor recusa os dados do RH. Encomendas: Castilho, Agatha, Eduarda Gabriela e Elen abrem todas as telas do setor (liberado direto na conta)."}]},
  {v:"0.21.181", data:"2026-11-24", titulo:"App da representante: Agendar com acerto + retirada e kit novo", itens:[
