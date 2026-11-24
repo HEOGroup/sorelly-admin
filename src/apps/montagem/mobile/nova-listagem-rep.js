@@ -8,7 +8,7 @@ import { isoDia } from "@/apps/montagem/lib/format";
 import { e, useState } from "@/shared/react";
 
 var DESTINOS = ["Curitiba"].concat(RMC);
-var HORARIOS = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","14:00","14:30","15:00","15:30","16:00","16:30","17:00"];
+var HORARIOS = (function(){ var l = []; for(var h = 8; h <= 21; h++){ l.push(String(h).padStart(2,"0")+":00"); if(h < 21) l.push(String(h).padStart(2,"0")+":30"); } return l; })();   // 08:00 até 21:00, de meia em meia hora (Thainá, 24/11/2026: a cliente só podia às 19h e não havia essa opção)
 var CAMPO = "h-8 w-full rounded-lg bg-white px-2 text-[13px] text-[#111827] outline-none ring-1 ring-black/10";
 var ROTULO = "flex min-w-0 flex-col gap-1 text-[11px] font-bold uppercase tracking-wide text-[#6B7280]";
 

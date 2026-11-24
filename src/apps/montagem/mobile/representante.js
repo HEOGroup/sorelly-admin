@@ -151,7 +151,7 @@ function AppRepresentante(p){
   var mso = useState(false), mostrarSolicitar = mso[0], setMostrarSolicitar = mso[1];
   var nlA = useState(false), novaListagemAberta = nlA[0], setNovaListagemAberta = nlA[1];
   var lgS = useState({t:"lista", v:"lista", mes:null, dia:null}), lgSub = lgS[0], setLgSub = lgS[1];   // Listagens: lista | dia | excluir | nova (mobile/listagens-rep.js)   // formulário "Nova listagem" (aba Listagens e tela da revendedora)
-  var agA = useState(false), agendarAberto = agA[0], setAgendarAberto = agA[1];
+  var agA = useState(false), agendarAberto = agA[0], setAgendarAberto = agA[1], auA = useState(false), autoAg = auA[0], setAutoAg = auA[1];   // autoAg: criou a listagem dentro do Agendar; a revendedora entra nela sozinha (Thainá, 24/11/2026: "não está salvando")
   var agF = useState({data:"", hora:""}), agendaForm = agF[0], setAgendaForm = agF[1];
   var tpA = useState("acerto_kit"), tipoAgenda = tpA[0], setTipoAgenda = tpA[1];   // Agendar atendimento: acerto + kit ou reposição (05/11/2026, Marcus)
   var lvA = useState(""), lidVista = lvA[0], setLidVista = lvA[1];
@@ -1083,6 +1083,7 @@ function AppRepresentante(p){
   var reposSemana = s.kits.filter(function(k){ if(k.tipoKit!=="reposicao") return false; var lk = s.listagens.find(function(x){ return x.id===k.lid; }); return !!lk && lk.rep===l.rep && inicioSemana(lk.data || isoDia(new Date()))===semanaAgenda; }).length;
   var reposCheia = reposSemana>=limiteReposSemana;
   var listagensNaData = sel && agendaForm.data ?s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada && x.data===agendaForm.data;}) : [];
+  useEffect(function(){ if(!autoAg) return; if(listagensNaData.length>0){ setAutoAg(false); if(!(tipoAgenda==="reposicao" && reposCheia)){ pedir(tipoAgenda, {lid:listagensNaData[0].id, hora:agendaForm.hora||null, ficarNaTela:true}); setAgendarAberto(false); } return; } var tm = setTimeout(function(){ setAutoAg(false); }, 4000); return function(){ clearTimeout(tm); }; }, [autoAg, listagensNaData.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   var blocoAgendaForm = sel && agendarAberto && e("div",{className:"flex flex-col gap-2 rounded-2xl border "+LINHA_CARD+" bg-white p-3 shadow-sm"},
       e("div",{className:"flex gap-2"},
         e("input",{type:"date", value:agendaForm.data, onChange:function(ev){setAgendaForm(Object.assign({}, agendaForm, {data:ev.target.value}));},
@@ -1116,7 +1117,7 @@ function AppRepresentante(p){
             }))
           : e(React.Fragment,null,
               e("p",{className:"text-[12px] text-[#6B7280]"},"Nenhuma listagem aberta para esse dia ainda. Crie uma:"),
-              e(NovaListagemRep,{key:"nl"+agendaForm.data, s:s, d:d, rep:l.rep, data:agendaForm.data, ouro:ouro})));
+              e(NovaListagemRep,{key:"nl"+agendaForm.data, s:s, d:d, rep:l.rep, data:agendaForm.data, ouro:ouro, aoCriar:function(){ setAutoAg(true); }})));
   var blocoSolicitar = sel && !sel.hoje && mostrarSolicitar && e("div",{className:"flex flex-col gap-2 "+blocoClaro},
     e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-[#6B7280]"},"Solicitar kit pra retirada"),
     minhasL.length===0

@@ -3506,3 +3506,6 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 - Resumo geral › detalhe da data: a tabela Parcelas dos pedidos ganhou a coluna **Vencimento**.
 - Enviar acerto ao fornecedor: a página do link e o Baixar HTML (`lib/pf-extrato-html.js`) mostram **Parcelas que compõem este pagamento** (pedido, parcela, vencimento, valor, total), antes dos Pix.
 - Conferido com os dados reais do Pontual 11/11 a 20/11: 15 parcelas, total R$ 60.802,49.
+
+## 24/11/2026 · App da representante: agendar (Thainá)
+- Thainá: cliente agendada para hoje só podia às 19h e não havia a opção; e as informações de agendamento não salvavam. Horários de retirada agora vão até 21:00. Criar listagem dentro do Agendar já coloca a revendedora nela. Prazo (2 dias antes, 07:30, só a Deysiane libera) não foi mudado: cliente agendada para hoje depois do prazo ainda precisa da Deysiane.
