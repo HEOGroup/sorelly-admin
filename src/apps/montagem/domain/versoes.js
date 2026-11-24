@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.191", data:"2026-11-24", titulo:"App da representante no iPhone: sem linha preta ao lado do cabeçalho", itens:[
+  {tipo:"correção", area:"App da representante", txt:"O fundo da tela é um cinza só; a faixa preta que aparecia ao lado dos cantos do cabeçalho saiu."}]},
  {v:"0.21.190", data:"2026-11-24", titulo:"Produção: envio e baixa automáticos, novos produtores externos e Envio e devolução lado a lado", itens:[
   {tipo:"melhoria", area:"Produção › Pagamento por produção", txt:"Sem botões de enviar, reenviar, marcar pago e desfazer: o envio ao Financeiro (pedido, conta a pagar e destino no Direcionar) e a baixa quando o Direcionar paga são automáticos e não duplicam. A produção externa entra no Contas a pagar já. Pessoa tem os grupos Produção externa e Internas."},
   {tipo:"novo", area:"Produção › Produção externa", txt:"Leci, Crisbele, Amanda de Miranda, Michele e Higor entram como produtores externos, cadastrados como prestadores com banco e chave Pix. Lista de 24/11 lançada por notas de saída e de devolução."},
