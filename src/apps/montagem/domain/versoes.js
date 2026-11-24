@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.206", data:"2026-11-24", titulo:"App da representante: avisos obrigatórios antes de abrir", itens:[
+  {tipo:"novo", area:"App da representante → Início", txt:"Aviso obrigatório no meio da tela: faixa OBRIGATÓRIO A LEITURA; o Li e entendi e o OK ficam escuros por 5 segundos; aparece uma vez só por aviso e vai um por um. Grava quem leu e quando (módulo avrep, rota /api/representante/avisos). Avisos: Um recado do Marcus, Atraso do acerto e Mudar a data do acerto."}]},
  {v:"0.21.205", data:"2026-11-24", titulo:"App da representante: quantidade de revendedoras no Início", itens:[
   {tipo:"melhoria", area:"App da representante → Início", txt:"O cartão Revendedoras mostra a quantidade na carteira dela (ex.: 76 revendedoras) no lugar de Veja e acompanhe sua rede."}]},
  {v:"0.21.204", data:"2026-11-24", titulo:"Leitor da câmera: linha de diagnóstico e Ler por foto", itens:[
