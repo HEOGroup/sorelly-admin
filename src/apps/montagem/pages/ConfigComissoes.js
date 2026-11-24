@@ -1,26 +1,45 @@
 // Sorelly Admin — pages/ConfigComissoes.js
-// Kits → Representantes → Configurador de comissões: tudo que mexe no cálculo e nas datas de pagamento das comissões das representantes.
+// Financeiro › Representantes › Comissões › Configurar: tudo que mexe no cálculo e nas datas de pagamento das comissões das representantes.
 //   · Representantes: % de comissão e grupo de pagamento (A: dias 1/11/21 · B: dias 6/16/26), com sorteio e balanceamento pelo volume
-//   · Ciclos: dias de pagamento de cada grupo e o corte (hora e quantos dias antes)
-//   · Kit novo: comissão fixa pela entrega com termo assinado
-//   · Promissória: exigir ou não para liberar a comissão
+//   · Pagamento e corte: dias de pagamento de cada grupo e o corte (hora e quantos dias antes)
+//   · Regras: comissão padrão, kit novo, reposição e promissória
+//   · Novo fluxo (teste de 60 dias), Combustível e Próximas remessas
 // As contas onde o dinheiro entra continuam em Representantes → Configurações → Formas de pagamento.
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { analisar, comisEfetiva, datasDoGrupo, fmtDataBR, proximasDatas, repsEfetivas } from "@/apps/montagem/domain/comissoes";
-import { BK, isoDia } from "@/apps/montagem/lib/format";
+// VISUAL (23/11/2026): blocos azuis (BlocoPainel) e a TabelaPlanilha em tudo; cada configuração é uma linha (nome | valor), campos de 32 px, blocos lado a lado com a mesma altura.
+// A explicação de cada linha aparece ao passar o mouse no nome (nada de parágrafo na tela).
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { analisar, comisEfetiva, fmtDataBR, proximasDatas, repsEfetivas } from "@/apps/montagem/domain/comissoes";
+import { isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
-import { Btn } from "@/apps/montagem/ui/button";
-import { INPUT, MONO, MoneyInput, NumInput } from "@/apps/montagem/ui/input";
-import { PageHead } from "@/apps/montagem/ui/page";
+import { MoneyInput } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
 var copia = function(x){ return JSON.parse(JSON.stringify(x)); };
 var diasTxt = function(v){ return (v||[]).join(", "); };
 var lerDias = function(t){ return String(t).split(/[^0-9]+/).map(Number).filter(function(n){ return n>=1 && n<=31; }).filter(function(n,i,a){ return a.indexOf(n)===i; }).sort(function(a,b){ return a-b; }); };
+var LINHA = "flex min-h-8 flex-wrap items-center justify-center gap-x-3 gap-y-2 px-3 py-2 text-center text-[13px]";
+var LINK = "cursor-pointer whitespace-nowrap font-semibold underline underline-offset-2 hover:text-primary";
+// tela aberta sozinha (endereço próprio): cola nas bordas, linhas brancas dos blocos e nada em caixa alta
+var RAIZ = "-mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3 flex flex-col gap-2.5 [&_*]:!normal-case "+PADRAO_BLOCOS;
+var FAIXA = "grid grid-cols-1 items-stretch gap-2.5 lg:grid-cols-2";
+var TABELA = {chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true};
+var tabela = function(o){ return e(TabelaPlanilha, Object.assign({}, TABELA, o)); };
+// Tabela de configurações: uma linha por configuração (nome | valor). linhas = [{id, nome, dica, campo}]
+var COLS_CFG = [{k:"nome", t:"Configuração", render:function(v, l){ return e("span",{title:l.dica}, v); }}, {k:"campo", t:"Valor", render:function(v, l){ return l.campo; }}];
+var config = function(linhas){ return tabela({cols:COLS_CFG, linhas:linhas, semFiltro:true}); };
+// campos de 32 px, texto no meio
+var numero = function(o){ return e("input",{type:"number", step:o.step||"1", value:o.value, "aria-label":o.label, className:CAMPO+" w-24! text-center tabular-nums", onChange:function(ev){ o.onChange(parseFloat(ev.target.value)||0); }}); };
+var texto = function(o){ return e("input",{value:o.value, "aria-label":o.label, placeholder:o.placeholder, list:o.list, className:CAMPO+" "+(o.w||"w-40!")+" text-center", onChange:function(ev){ o.onChange(ev.target.value); }, onKeyDown:o.onEnter ? function(ev){ if(ev.key==="Enter") o.onEnter(); } : undefined}); };
+var escolha = function(o){ return e("select",{value:o.value, "aria-label":o.label, className:CAMPO+" "+(o.w||"w-24!")+" cursor-pointer text-center", onChange:function(ev){ o.onChange(ev.target.value); }}, o.opcoes.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })); };
+var dinheiro = function(o){ return e(MoneyInput,{value:o.value, label:o.label, sm:true, className:"w-32 text-center!", onChange:o.onChange}); };
+var SIM_NAO = [["sim", "Sim"], ["nao", "Não"]];
 
 function AbaConfigComissoes(props){
-  var embutido = !!(props && props.embutido);   // dentro de Comissões (botão Configurar): sem título de página
+  // embutido: dentro de Comissões (botão Configurar); a tela de fora já traz o título e o botão de voltar
+  var embutido = !!(props && props.embutido);
   var cx = use(), s = cx.state, d = cx.dispatch, atual = comisEfetiva(s);
   var base = function(){ return {reps:repsEfetivas(s).map(function(x){ return {nome:x.nome, pct:x.pct, grupo:x.grupo}; }), pctPadrao:atual.pctPadrao,
     A:diasTxt(atual.ciclos.A), B:diasTxt(atual.ciclos.B), corteHora:atual.corteHora, corteDias:atual.corteDias, kitNovo:atual.kitNovo, kitNovoExpo:atual.kitNovoExpo, reposicao:atual.reposicao, exigirProm:atual.exigirProm, kmPorLitro:atual.kmPorLitro, combSemEnvio:atual.combSemEnvio, gasolina:copia(atual.gasolina||{}), nf:copia(atual.nf)}; };
@@ -32,7 +51,7 @@ function AbaConfigComissoes(props){
     mudaNf({revs:(f.nf.revs||[]).concat([{rev:rv, repKitNovo:kn, desde:isoDia(new Date())}])}); setNovaRev(""); };
   var alterou = JSON.stringify(f) !== JSON.stringify(base());
   var muda = function(patch){ setF(Object.assign({}, f, patch)); };
-  var mudaRep = function(i, patch){ var r = f.reps.slice(); r[i] = Object.assign({}, r[i], patch); muda({reps:r}); };
+  var mudaRep = function(nome, patch){ muda({reps:f.reps.map(function(x){ return x.nome===nome ? Object.assign({}, x, patch) : x; })}); };
   var addRep = function(){ var n = novoNome.trim(); if(!n || f.reps.some(function(x){ return x.nome.toLowerCase()===n.toLowerCase(); })) return; muda({reps:f.reps.concat([{nome:n, pct:f.pctPadrao, grupo:"A"}]).sort(function(a,b){ return a.nome.localeCompare(b.nome); })}); setNovoNome(""); };
   var sortear = function(){ var ord = f.reps.map(function(x,i){ return {i:i, k:Math.random()}; }).sort(function(a,b){ return a.k-b.k; }), r = f.reps.slice();
     ord.forEach(function(o,j){ r[o.i] = Object.assign({}, r[o.i], {grupo: j%2===0 ? "A" : "B"}); }); muda({reps:r}); };
@@ -51,85 +70,58 @@ function AbaConfigComissoes(props){
   };
   var cfgPrev = Object.assign({}, atual, {ciclos:{A:lerDias(f.A), B:lerDias(f.B)}, corteHora:f.corteHora, corteDias:f.corteDias});
   var agora = Date.now(), nA = f.reps.filter(function(x){ return x.grupo==="A"; }).length, nB = f.reps.length-nA;
-  // datas de pagamento próximas (as duas turmas): a Nayale preenche o preço da gasolina de cada dia pago
-  var datasGas = datasDoGrupo(cfgPrev, "A", agora, 1, 1).map(function(x){ return {data:x, g:"A"}; }).concat(datasDoGrupo(cfgPrev, "B", agora, 1, 1).map(function(x){ return {data:x, g:"B"}; }))
-    .filter(function(x){ var t = new Date(x.data+"T12:00:00").getTime(); return t>=agora-35*86400000 && t<=agora+45*86400000; }).sort(function(a,b){ return a.data.localeCompare(b.data); });
-  var lb = function(t, filho){ return e("label",{className:"flex flex-col gap-1.5"}, e("span",{className:"text-[12.5px] font-semibold"}, t), filho); };
-  return e(React.Fragment,null,
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"},
-      embutido ? e("span",null) : e(PageHead,{t:"Configurador de comissões", sub:"% de cada representante, grupos de pagamento, corte e comissão do kit novo. O que muda aqui muda no Consolidado e em Comissões."}),
-      e("div",{className:"flex items-center gap-2"},
-        alterou && e("span",{className:"text-[12.5px] font-semibold text-warning"},"Alterações não salvas"),
-        e(Btn,{v:"ghost", disabled:!alterou, onClick:function(){ setF(base()); }}, "Descartar"),
-        e(Btn,{v:"primary", ic:"save", disabled:!alterou, onClick:salvar}, "Salvar"))),
-    e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-3"},
-      e("div",{className:"xl:col-span-2"},
-        e(BlocoBarra,{t:"Representantes", sub:f.reps.length+" no total · grupo A: "+nA+" · grupo B: "+nB},
-          e("div",{className:"flex flex-col gap-3 p-3"},
-            e("div",{className:"flex flex-wrap items-center gap-2"},
-              e(Btn,{v:"secondary", sm:true, onClick:sortear}, "Sortear A/B"),
-              e(Btn,{v:"secondary", sm:true, onClick:balancear}, "Balancear pelo volume de comissão (60 dias)"),
-              e("span",{className:"text-[12px] text-muted-foreground"},"Os dois botões só preenchem a tabela: vale depois de Salvar.")),
-            e("div",{className:"max-h-[28rem] overflow-y-auto rounded-lg border border-border"},
-              e("table",{className:"w-full border-collapse"},
-                e("thead",{className:"sticky top-0"}, e("tr",{className:"bg-sidebar"}, ["Representante","Comissão %","Grupo",""].map(function(t,i){ return e("th",{key:i, className:"border-b border-border px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-wide"}, t); }))),
-                e("tbody",null, f.reps.length===0 && e("tr",null, e("td",{colSpan:4, className:"px-3 py-4 text-[13px] text-muted-foreground"},"Nenhuma representante ainda. Adicione abaixo.")),
-                  f.reps.map(function(x,i){ return e("tr",{key:x.nome, className:"border-b border-border/60 last:border-0"},
-                    e("td",{className:"px-3 py-1.5 text-sm font-semibold"}, x.nome),
-                    e("td",{className:"px-3 py-1.5"}, e(NumInput,{value:x.pct, step:"0.5", label:"Comissão de "+x.nome, className:"h-9! w-24 text-sm!", onChange:function(v){ mudaRep(i,{pct:v}); }}), e("span",{className:"ml-1 text-sm"},"%")),
-                    e("td",{className:"px-3 py-1.5"}, e("div",{className:"inline-flex overflow-hidden rounded-lg ring-1 ring-border"}, ["A","B"].map(function(g){ return e("button",{key:g, onClick:function(){ mudaRep(i,{grupo:g}); },
-                      className:"h-9 w-12 text-sm font-bold "+(x.grupo===g ? "bg-primary text-primary-foreground" : "hover:bg-muted")}, g); }))),
-                    e("td",{className:"px-3 py-1.5 text-right"}, e("button",{onClick:function(){ muda({reps:f.reps.filter(function(y){ return y.nome!==x.nome; })}); }, "aria-label":"Retirar "+x.nome,
-                      className:"grid size-7 place-items-center rounded-full bg-muted text-sm font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, "×"))); })))),
-            e("div",{className:"flex gap-2"},
-              e("input",{value:novoNome, placeholder:"Nova representante", className:INPUT+" h-9! min-w-0 flex-1 text-sm!", onChange:function(ev){ setNovoNome(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") addRep(); }}),
-              e(Btn,{v:"ghost", sm:true, onClick:addRep}, "+ Adicionar"))))),
-      e("div",{className:"flex flex-col gap-4"},
-        e(BlocoBarra,{t:"Pagamento e corte"},
-          e("div",{className:"flex flex-col gap-3 p-3"},
-            lb("Dias de pagamento do grupo A", e("input",{value:f.A, className:INPUT+" h-9! text-sm! "+MONO, onChange:function(ev){ muda({A:ev.target.value}); }})),
-            lb("Dias de pagamento do grupo B", e("input",{value:f.B, className:INPUT+" h-9! text-sm! "+MONO, onChange:function(ev){ muda({B:ev.target.value}); }})),
-            e("div",{className:"flex flex-wrap items-end gap-3"},
-              lb("Hora do corte", e(NumInput,{value:f.corteHora, label:"Hora do corte", className:"h-9! w-20 text-sm!", onChange:function(v){ muda({corteHora:Math.max(0, Math.min(23, Math.round(v)))}); }})),
-              lb("Dias antes do pagamento", e(NumInput,{value:f.corteDias, label:"Dias antes", className:"h-9! w-20 text-sm!", onChange:function(v){ muda({corteDias:Math.max(0, Math.round(v))}); }}))),
-            e("p",{className:"text-[12px] text-muted-foreground"},"Com 12h e 1 dia antes: o que for liberado até 12h do dia anterior entra no pagamento; depois disso, no próximo."))),
-        e(BlocoBarra,{t:"Regras"},
-          e("div",{className:"flex flex-col gap-3 p-3"},
-            lb("Comissão padrão (% para quem não tem)", e(NumInput,{value:f.pctPadrao, step:"0.5", label:"Comissão padrão", className:"h-9! w-24 text-sm!", onChange:function(v){ muda({pctPadrao:v}); }})),
-            lb("Kit novo com termo assinado", e(MoneyInput,{value:f.kitNovo, label:"Kit novo", sm:true, className:"w-36", onChange:function(v){ muda({kitNovo:v}); }})),
-            lb("Kit novo + expositor", e(MoneyInput,{value:f.kitNovoExpo, label:"Kit novo com expositor", sm:true, className:"w-36", onChange:function(v){ muda({kitNovoExpo:v}); }})),
-            lb("Reposição entregue (com condicional assinada)", e(MoneyInput,{value:f.reposicao, label:"Comissão da reposição", sm:true, className:"w-36", onChange:function(v){ muda({reposicao:v}); }})),
-            e("p",{className:"-mt-1 text-[12px] text-warning"},"R$ 20 e R$ 35 são valores provisórios: confirmar."),
-            e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.exigirProm, className:"size-4", onChange:function(ev){ muda({exigirProm:ev.target.checked}); }}),
-              "Exigir promissória assinada para liberar a comissão"))),
-        e(BlocoBarra,{t:"Novo fluxo (teste de 60 dias)", sub:f.nf.ativo ? (f.nf.revs||[]).length+" revendedoras marcadas" : "desligado"},
-          e("div",{className:"flex flex-col gap-3 p-3"},
-            e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:!!f.nf.ativo, className:"size-4", onChange:function(ev){ mudaNf({ativo:ev.target.checked}); }}), "Ligar o teste do novo fluxo"),
-            lb("Entrega do kit pela Rep. Kit Novo (condicional assinada)", e(MoneyInput,{value:f.nf.entrega, label:"Entrega do kit novo", sm:true, className:"w-36", onChange:function(v){ mudaNf({entrega:v}); }})),
-            e("div",{className:"flex flex-wrap items-end gap-3"},
-              lb("1º acerto · Rep. Kit Novo (%)", e(NumInput,{value:f.nf.pctKitNovo, step:"0.5", label:"Percentual da Rep. Kit Novo", className:"h-9! w-24 text-sm!", onChange:function(v){ mudaNf({pctKitNovo:v}); }})),
-              lb("1º acerto · Rep. Acerto (%)", e(NumInput,{value:f.nf.pctAcerto1, step:"0.5", label:"Percentual da Rep. Acerto no 1º acerto", className:"h-9! w-24 text-sm!", onChange:function(v){ mudaNf({pctAcerto1:v}); }}))),
-            e("p",{className:"text-[12px] text-muted-foreground"},"A gasolina segue o mesmo esquema das outras representantes. Do 2º acerto em diante a Rep. Acerto leva a % normal dela. Sem a revendedora na lista abaixo, nada muda."),
-            e("div",{className:"flex flex-col gap-1.5"},
-              (f.nf.revs||[]).length===0 && e("span",{className:"text-[12.5px] text-muted-foreground"},"Nenhuma revendedora marcada."),
-              (f.nf.revs||[]).map(function(x, i){ return e("div",{key:x.rev, className:"flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5"},
-                e("span",{className:"min-w-0 flex-1 truncate text-[13px]", title:x.rev+" · Rep. Kit Novo: "+x.repKitNovo}, e("b",null, x.rev), " · "+x.repKitNovo),
-                e("button",{type:"button", "aria-label":"Retirar "+x.rev, onClick:function(){ mudaNf({revs:f.nf.revs.filter(function(_, k){ return k!==i; })}); }, className:"grid size-7 place-items-center rounded-full bg-muted text-sm font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, "×")); })),
-            e("div",{className:"flex flex-col gap-2"},
-              e("input",{value:novaRev, list:"nf-revs", placeholder:"Revendedora do teste", className:INPUT+" h-9! text-sm!", onChange:function(ev){ setNovaRev(ev.target.value); }}),
-              e("datalist",{id:"nf-revs"}, revsConhecidas.map(function(n){ return e("option",{key:n, value:n}); })),
-              e("div",{className:"flex gap-2"},
-                e("select",{value:novaKit, "aria-label":"Representante Kit Novo", className:INPUT+" h-9! min-w-0 flex-1 text-sm!", onChange:function(ev){ setNovaKit(ev.target.value); }}, e("option",{value:""}, "Rep. Kit Novo"), f.reps.map(function(x){ return e("option",{key:x.nome, value:x.nome}, x.nome); })),
-                e(Btn,{v:"ghost", sm:true, onClick:addNf}, "+ Marcar"))))),
-        e(BlocoBarra,{t:"Combustível", sub:"Preencher no dia em que a comissão é paga"},
-          e("div",{className:"flex flex-col gap-3 p-3"},
-            lb("Consumo (km por litro)", e(NumInput,{value:f.kmPorLitro, step:"0.5", label:"Km por litro", className:"h-9! w-24 text-sm!", onChange:function(v){ muda({kmPorLitro:v}); }})),
-            e("p",{className:"text-[12px] text-muted-foreground"},"O preço do litro (média da ANP no Paraná) é atualizado por quem paga, na tela Comissões. O combustível sai de km × preço ÷ km por litro."))),
-        e(BlocoBarra,{t:"Próximas remessas"},
-          e("div",{className:"grid grid-cols-2 gap-3 p-3"}, ["A","B"].map(function(g){ return e("div",{key:g, className:"flex flex-col gap-1"},
-            e("b",{className:"text-[12.5px]"},"Grupo "+g),
-            proximasDatas(cfgPrev, g, agora, 4).map(function(x){ return e("span",{key:x, className:MONO+" text-[13px]"}, fmtDataBR(x)); })); }))))),
-    e("p",{className:"text-[12.5px] text-muted-foreground"},"Contas em que o dinheiro entra (PIX, cartão, dinheiro): ficam em Representantes → Configurações → Formas de pagamento, e o financeiro escolhe a conta ao dar o OK em Comissões."));
+  var retirar = function(rotulo, onClick){ return e("button",{type:"button", "aria-label":rotulo, title:rotulo, onClick:onClick, className:LINK}, "Retirar"); };
+  var colsRep = [{k:"nome", t:"Representante"},
+    {k:"pct", t:"Comissão %", render:function(v, l){ return numero({value:v, step:"0.5", label:"Comissão de "+l.nome, onChange:function(n){ mudaRep(l.nome, {pct:n}); }}); }},
+    {k:"grupo", t:"Grupo", render:function(v, l){ return escolha({value:v, label:"Grupo de "+l.nome, opcoes:[["A", "A"], ["B", "B"]], onChange:function(g){ mudaRep(l.nome, {grupo:g}); }}); }},
+    {k:"acao", t:"Retirar", semFiltro:true, render:function(v, l){ return retirar("Retirar "+l.nome, function(){ muda({reps:f.reps.filter(function(y){ return y.nome!==l.nome; })}); }); }}];
+  var linhasRep = f.reps.map(function(x){ return {id:x.nome, nome:x.nome, pct:x.pct, grupo:x.grupo}; });
+  var proxA = proximasDatas(cfgPrev, "A", agora, 4), proxB = proximasDatas(cfgPrev, "B", agora, 4), linhasProx = [];
+  for(var i = 0; i<Math.max(proxA.length, proxB.length); i++) linhasProx.push({id:i, a:proxA[i] ? fmtDataBR(proxA[i]) : "—", b:proxB[i] ? fmtDataBR(proxB[i]) : "—"});
+  var revsNf = (f.nf.revs||[]).map(function(x, k){ return {id:x.rev, k:k, rev:x.rev, rep:x.repKitNovo, desde:x.desde ? fmtDataBR(x.desde) : "—"}; });
+  var corpo = e(React.Fragment,null,
+    e(BlocoPainel,{titulo:embutido ? "Configurações das comissões" : "Configurador de comissões", dir:alterou ? "Alterações não salvas" : ""},
+      e("div",{className:LINHA},
+        e(Botao,{desabilitado:!alterou, onClick:function(){ setF(base()); }}, "Descartar"),
+        e(Botao,{principal:true, desabilitado:!alterou, onClick:salvar}, "Salvar"))),
+    e(BlocoPainel,{titulo:"Representantes", dir:f.reps.length+" no total · grupo A: "+nA+" · grupo B: "+nB},
+      e("div",{className:LINHA+" border-b border-border"},
+        e(Botao,{onClick:sortear, title:"Sorteia os grupos A e B. Só preenche a tabela: vale depois de Salvar."}, "Sortear A/B"),
+        e(Botao,{onClick:balancear, title:"Divide os grupos pelo volume de comissão dos últimos 60 dias. Só preenche a tabela: vale depois de Salvar."}, "Balancear pelo volume"),
+        texto({value:novoNome, label:"Nova representante", placeholder:"Nova representante", w:"w-56!", onChange:setNovoNome, onEnter:addRep}),
+        e(Botao,{onClick:addRep}, "+ Adicionar")),
+      tabela({cols:colsRep, linhas:linhasRep, alturaMax:"28rem", vazio:"Nenhuma representante ainda. Adicione acima."})),
+    e("div",{className:FAIXA},
+      e(BlocoPainel,{titulo:"Pagamento e corte"}, config([
+        {id:"a", nome:"Dias de pagamento do grupo A", campo:texto({value:f.A, label:"Dias de pagamento do grupo A", onChange:function(v){ muda({A:v}); }})},
+        {id:"b", nome:"Dias de pagamento do grupo B", campo:texto({value:f.B, label:"Dias de pagamento do grupo B", onChange:function(v){ muda({B:v}); }})},
+        {id:"h", nome:"Hora do corte", dica:"Com 12h e 1 dia antes: o que for liberado até 12h do dia anterior entra no pagamento; depois disso, no próximo.", campo:numero({value:f.corteHora, label:"Hora do corte", onChange:function(v){ muda({corteHora:Math.max(0, Math.min(23, Math.round(v)))}); }})},
+        {id:"d", nome:"Dias antes do pagamento", dica:"Com 12h e 1 dia antes: o que for liberado até 12h do dia anterior entra no pagamento; depois disso, no próximo.", campo:numero({value:f.corteDias, label:"Dias antes", onChange:function(v){ muda({corteDias:Math.max(0, Math.round(v))}); }})}])),
+      e(BlocoPainel,{titulo:"Próximas remessas"}, tabela({cols:[{k:"a", t:"Grupo A"}, {k:"b", t:"Grupo B"}], linhas:linhasProx, semFiltro:true, vazio:"Sem datas."}))),
+    e("div",{className:FAIXA},
+      e(BlocoPainel,{titulo:"Regras"}, config([
+        {id:"p", nome:"Comissão padrão (%)", dica:"Para a representante que não tem percentual próprio.", campo:numero({value:f.pctPadrao, step:"0.5", label:"Comissão padrão", onChange:function(v){ muda({pctPadrao:v}); }})},
+        {id:"k", nome:"Kit novo com termo assinado", dica:"Valor provisório: confirmar.", campo:dinheiro({value:f.kitNovo, label:"Kit novo", onChange:function(v){ muda({kitNovo:v}); }})},
+        {id:"e", nome:"Kit novo + expositor", dica:"Valor provisório: confirmar.", campo:dinheiro({value:f.kitNovoExpo, label:"Kit novo com expositor", onChange:function(v){ muda({kitNovoExpo:v}); }})},
+        {id:"r", nome:"Reposição entregue (com condicional assinada)", campo:dinheiro({value:f.reposicao, label:"Comissão da reposição", onChange:function(v){ muda({reposicao:v}); }})},
+        {id:"x", nome:"Exigir promissória assinada para liberar a comissão", campo:escolha({value:f.exigirProm ? "sim" : "nao", label:"Exigir promissória", opcoes:SIM_NAO, onChange:function(v){ muda({exigirProm:v==="sim"}); }})}]),
+        e("div",{className:LINHA+" border-t border-border font-semibold text-warning"}, "R$ 20 e R$ 35 são valores provisórios: confirmar.")),
+      e(BlocoPainel,{titulo:"Combustível"}, config([
+        {id:"c", nome:"Consumo (km por litro)", dica:"O preço do litro (média da ANP no Paraná) é atualizado por quem paga, na tela Comissões. O combustível sai de km × preço ÷ km por litro.", campo:numero({value:f.kmPorLitro, step:"0.5", label:"Km por litro", onChange:function(v){ muda({kmPorLitro:v}); }})}]))),
+    e(BlocoPainel,{titulo:"Novo fluxo (teste de 60 dias)", dir:f.nf.ativo ? (f.nf.revs||[]).length+" revendedoras marcadas" : "Desligado"},
+      config([
+        {id:"l", nome:"Teste do novo fluxo", dica:"Sem a revendedora na lista abaixo, nada muda.", campo:escolha({value:f.nf.ativo ? "sim" : "nao", label:"Ligar o teste do novo fluxo", w:"w-32!", opcoes:[["sim", "Ligado"], ["nao", "Desligado"]], onChange:function(v){ mudaNf({ativo:v==="sim"}); }})},
+        {id:"n", nome:"Entrega do kit pela Rep. Kit Novo (condicional assinada)", dica:"A gasolina segue o mesmo esquema das outras representantes.", campo:dinheiro({value:f.nf.entrega, label:"Entrega do kit novo", onChange:function(v){ mudaNf({entrega:v}); }})},
+        {id:"q", nome:"1º acerto · Rep. Kit Novo (%)", campo:numero({value:f.nf.pctKitNovo, step:"0.5", label:"Percentual da Rep. Kit Novo", onChange:function(v){ mudaNf({pctKitNovo:v}); }})},
+        {id:"t", nome:"1º acerto · Rep. Acerto (%)", dica:"Do 2º acerto em diante a Rep. Acerto leva a % normal dela.", campo:numero({value:f.nf.pctAcerto1, step:"0.5", label:"Percentual da Rep. Acerto no 1º acerto", onChange:function(v){ mudaNf({pctAcerto1:v}); }})}]),
+      e("div",{className:LINHA+" border-y border-border"},
+        texto({value:novaRev, label:"Revendedora do teste", placeholder:"Revendedora do teste", list:"nf-revs", w:"w-72!", onChange:setNovaRev}),
+        e("datalist",{id:"nf-revs"}, revsConhecidas.map(function(n){ return e("option",{key:n, value:n}); })),
+        escolha({value:novaKit, label:"Representante Kit Novo", w:"w-56!", opcoes:[["", "Rep. Kit Novo"]].concat(f.reps.map(function(x){ return [x.nome, x.nome]; })), onChange:setNovaKit}),
+        e(Botao,{onClick:addNf}, "+ Marcar")),
+      tabela({cols:[{k:"rev", t:"Revendedora"}, {k:"rep", t:"Rep. Kit Novo"}, {k:"desde", t:"Desde"},
+        {k:"acao", t:"Retirar", semFiltro:true, render:function(v, l){ return retirar("Retirar "+l.rev, function(){ mudaNf({revs:f.nf.revs.filter(function(_, k){ return k!==l.k; })}); }); }}], linhas:revsNf, vazio:"Nenhuma revendedora marcada."})));
+  return embutido ? corpo : e("div",{className:RAIZ}, corpo);
 }
 
 export { AbaConfigComissoes };
