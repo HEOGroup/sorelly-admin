@@ -87,7 +87,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
-  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep")]}
+  {nome:"Representantes", itens:[M("Consolidado","consrep")]}
   // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
@@ -216,7 +216,7 @@ var SETORES = [
   {id:"pontual", nome:"Pontual", ic:"caixa", cor:"#C98B2C", menu:MENU_PONTUAL, semAbas:true, areas:[
     {nome:"Pontual", telas:[T("pontclientes","Clientes"), T("pontprecos","Tabelas de preço"), T("pontinad","Inadimplência"), T("pontposvenda","Pós-venda"), T("pontregras","Regras")]}]},   // admin do Valdir (empresa de banho), dados de demonstração; só a supervisão abre (06/11/2026)
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
-    {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante")]},
+    {nome:"Representantes", telas:[T("consrep","Consolidado Representante")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
       T("consolidado"), T("regras"),

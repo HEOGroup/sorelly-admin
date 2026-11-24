@@ -3468,3 +3468,6 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 
 ## 24/11/2026 · Aba Chaves Pix é a fonte principal das chaves
 Pedido do Marcus: a aba Financeiro > Pagamentos > Chaves Pix é a tela principal. Fase 1: `lib/chave-central.js` procura primeiro lá (por nome) e só depois nas cópias (prestador da Família, conta do prestador, destino do Direcionar); `lib/chave-do-destino.js` usa essa busca. Fase 2: `scripts/copiar-chaves-para-aba.mjs` copiou 7 chaves (68 Gang, Greicy x3, Diego, Truck Plaza, Dávila) para `cp.chaves`, com cópia de segurança. Nada foi apagado. Fase 3 (campos das outras telas só leitura): ainda não autorizada.
+
+## 24/11/2026 · Painel das representantes retirado do menu
+- Marcus: o Painel das representantes (Representantes & Kits › Representantes › Painel) "não tem nada a ver". Saiu do menu; o Consolidado continua. A tela abre ainda por /painel-representantes.
