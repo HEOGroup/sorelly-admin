@@ -276,7 +276,7 @@ var SETORES = [
   {id:"diretoria", grupo:"geral", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", menu:MENU_DIRETORIA, semAbas:true, areas:[
     {nome:"Central de controle", telas:[T("mapa","Mapa do sistema")]}]},
   // Setor MARCUS (23/11/2026, pedido do Marcus: "o Admin Marcus não pode ficar separado"): setor comum do menu lateral, grupo Geral. Só o Marcus (16) e o Leonardo (44) abrem; telas e dados são os de antes (ficam só neste navegador).
-  {id:"marcus", grupo:"geral", nome:"Marcus", ic:"escudo", cor:"#D9A63A", menu:MENU_MARCUS, semAbas:true, areas:[
+  {id:"marcus", nome:"Marcus", ic:"escudo", cor:"#D9A63A", menu:MENU_MARCUS, semAbas:true, areas:[
     {nome:"Atividades", telas:[T("marcusativ","Atividades")]},
     {nome:"Acessos e senhas", telas:[T("marcusacessos","Acessos e senhas")]},
     {nome:"Dados", telas:[T("marcusdados","Dados")]},
