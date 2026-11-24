@@ -212,6 +212,7 @@ function AppRepresentante(p){
     e("b",{className:"text-[16px]"}, TITULO[tela]));
   var PCT_COMISSAO_REP_CARD = (function(){ var c = comisEfetiva(s), reps = c.reps||[], x = reps.find(function(y){ return y.nome===l.rep; }) || reps.find(function(y){ return y.nome===String(l.rep||"").trim().split(/ +/)[0]; }); return (x && x.pct!=null ? x.pct : c.pctPadrao)/100; })();   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
   var LINHA_CARD = "border-[#E9DDBB]";
+  var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };   // coluna Vendido/Acerto/Comissão (a ficha da revendedora usa; a lista nova não): sem ela, tocar numa revendedora dava erro (24/11/2026)
   var cartao = function(r){
     // mês atual, ainda sem acerto: vale o que ela vendeu no APP desde o último acerto (é o que vai virar o acerto); sem venda no app, a última venda da DevMaster
     var doApp = mes===0 && !r.realizado && r.vendaApp>0;
