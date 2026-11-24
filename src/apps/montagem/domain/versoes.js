@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.194", data:"2026-11-24", titulo:"App da representante no iPhone: a tela cobre os dois lados", itens:[
+  {tipo:"correção", area:"App da representante", txt:"O app passa 6 px para cada lado (margem negativa) para cobrir a borda que o iPhone deixava; cabeçalho e cartões ocupam a tela toda."}]},
  {v:"0.21.193", data:"2026-11-24", titulo:"Direcionar: todos os pagamentos lançados na lista Direcionados", itens:[
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Direcionar", txt:"A lista Direcionados passou a mostrar também os pagamentos que não passam pela fila: dinheiro, cartão na maquininha única, Pix pela conta fixa ou por regra (Quem direcionou = Automático) e os resolvidos direto no Controle de pagamentos. Linha que já está na fila ou direcionada não repete."}]},
  {v:"0.21.192", data:"2026-11-24", titulo:"Pagamentos: botão Lançar pagamento e comprovante em uma coluna", itens:[
