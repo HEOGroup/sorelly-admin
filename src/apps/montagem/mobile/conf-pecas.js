@@ -3,7 +3,7 @@
 // "Liberar kit", vê o resumo (condicionais, peças e valor) e "Começar a bipar". Cada peça lida ganha o OK; código que não é do kit dá erro.
 // Ao finalizar, o que faltou (ou veio a mais) sobe como erro de quem bipou o kit na empresa. No computador não há leitor de código de barras:
 // ficam o campo para digitar o código e o botão de simular a leitura (para testar).
-import { condicionaisDoKit, itensDe, resultado, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
+import { condicionaisDoKit, descBonita, itensDe, resultado, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { useCondsReais } from "@/apps/montagem/mobile/conds-reais";
 import { LeitorCamera } from "@/apps/montagem/mobile/leitor-camera";
@@ -92,7 +92,7 @@ function ConfPecas(p){
     e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12px] font-semibold text-[#6B7280]"},"Contar de novo")); }
   // 3) bipando
   var ult = conf.ultimo, pct = tot.pecas ? Math.round(lidas/tot.pecas*100) : 0, falta = tot.pecas-lidas;
-  var aviso = !ult ? null : ult.tipo==="ok" ? ["#DCFCE7","#15803D","✓ OK · "+ult.codigo+" · "+ult.desc]
+  var aviso = !ult ? null : ult.tipo==="ok" ? ["#DCFCE7","#15803D","✓ OK · "+ult.codigo+" · "+descBonita(ult.desc)]
     : ult.tipo==="repetida" ? ["#FEF3C7","#92400E","Já conferida: "+ult.codigo+". Peça lida de novo, não conta."]
     : ["#FEF3C7","#92400E","Peça "+ult.codigo+" não é deste kit. Pode deixar com a revendedora: fica só registrado."];
   return e("div",{className:"flex flex-col gap-2.5"},
@@ -113,12 +113,12 @@ function ConfPecas(p){
           e(Icon,{n:on ? "chevrondown" : "chevron", s:14, className:"text-[#6B7280]"})),
         on && c.grupos.map(function(g){ var gf = g.itens.reduce(function(t,i){ return t+lido(c,i); },0), gt = g.itens.reduce(function(t,i){ return t+i.qtd; },0);
           return e("div",{key:g.cod, className:"flex flex-col gap-1"},
-            e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-[#6B7280]"}, e("span",null,g.cod+" · "+g.nome), e("span",{className:MONO}, gf+"/"+gt)),
+            e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold text-[#6B7280]"}, e("span",null,g.nome), e("span",{className:MONO}, gf+"/"+gt)),
             g.itens.map(function(i){ var l = lido(c,i), ok = l>=i.qtd;
               return e("div",{key:i.codigo,
                 className:"flex items-start gap-2 rounded-lg px-2 py-1.5 text-left "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white ring-1 ring-[#F3F4F6]")},
                 e("span",{className:"mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-black "+(ok ? "bg-[#16A34A] txt-branco" : "bg-[#E5E7EB] text-[#9CA3AF]")}, ok ? "✓" : ""),
-                e("span",{className:"min-w-0 flex-1"}, e("b",{className:MONO+" block text-[12px] text-[#111827]"}, i.codigo), e("span",{className:"block text-[10.5px] leading-tight text-[#6B7280]"}, i.desc)),
+                e("span",{className:"min-w-0 flex-1"}, e("b",{className:MONO+" block text-[12px] text-[#111827]"}, i.codigo), e("span",{className:"block text-[11px] leading-tight text-[#6B7280]"}, descBonita(i.desc))),
                 e("span",{className:"flex shrink-0 flex-col items-end"}, e("b",{className:MONO+" text-[11.5px] "+(ok ? "text-[#15803D]" : "text-[#6B7280]")}, l+"/"+i.qtd), e("span",{className:MONO+" text-[10.5px] text-[#6B7280]"}, BR(i.valor)))); })); })); }),
     (conf.erros||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#FEF3C7] px-3 py-2"},
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças de outro kit — pode deixar, só registrado ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),

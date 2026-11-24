@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.199", data:"2026-11-24", titulo:"Acerto: bipar as peças que voltaram, com as condicionais marcadas juntas", itens:[
+  {tipo:"novo", area:"App da representante", txt:"Na calculadora de acertos, depois de marcar as condicionais da revendedora aparece o botão \"Bipar as peças que voltaram\". Ele junta todas as condicionais marcadas num kit só, abre a câmera para ler a etiqueta de cada peça (ou digitar o código) e mostra quantas voltaram, quantas não voltaram (vendidas) e o valor. Tem Desfazer. O resultado fica guardado no acerto."}]},
  {v:"0.21.198", data:"2026-11-24", titulo:"App da representante: acerto sem assinatura, só com autorização", itens:[
   {tipo:"novo", area:"App da representante → Assinatura do acerto", txt:"Passo Revendedora não atendeu: libera o Finalizar sem a assinatura, só com quem autorizou (Marcus, Nickolas ou Lucas), quem entregou a maleta, o nome e o motivo. Fica gravado no acerto. Com kit novo confirmado a opção fica travada. O mínimo de acertos anteriores é cfg.minAcertosSemAssinatura (padrão 0, sem trava)."}]},
  {v:"0.21.197", data:"2026-11-24", titulo:"Conferência das peças: câmera para bipar a etiqueta e campo para digitar o código", itens:[

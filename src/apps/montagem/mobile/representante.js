@@ -23,6 +23,7 @@ import { CampoReaisAuto, CampoReais, rotuloPagamento } from "@/apps/montagem/mob
 import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
 import { EntregaKNRep } from "@/apps/montagem/mobile/kn-entrega-rep";
 import { ConfPecas, ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
+import { ConfDevolucao } from "@/apps/montagem/mobile/conf-devolucao";
 import { nomeDe, REPRESENTANTES_VER } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
@@ -531,6 +532,12 @@ function AppRepresentante(p){
               e("span",{className:"relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors "+(on ? "bg-[#C9A13B]" : "bg-[#D9CFB3]")}, e("span",{className:"absolute top-[3px] size-4 rounded-full bg-white transition-all "+(on ? "left-[19px]" : "left-[3px]")})),
               e("b",{className:"min-w-0 flex-1"}, "Condicional "+c.numero),
               e("span",{className:MONO+" text-[13px] font-bold"}, c.pecas+" peças")); })),
+        // Bipar as peças que voltaram (Marcus, 24/11/2026): marcou as condicionais, o botão junta todas num kit só e abre a câmera (mobile/conf-devolucao.js)
+        acertoForm.condicionaisSelecionadas.length>0 && codDm && e("div",{key:"cb", className:"flex flex-col gap-1.5 border-t border-white/10 pt-2"},
+          acertoForm.devolucaoBip && acertoForm.devolucaoBip.resumo && e("p",{className:"text-center text-[13px] font-semibold text-amber-200"},
+            "Bipadas: "+acertoForm.devolucaoBip.resumo.voltaram+" de "+acertoForm.devolucaoBip.resumo.saiu+" voltaram · "+acertoForm.devolucaoBip.resumo.vendidas+" vendidas"),
+          e("button",{onClick:function(){ setTela("confdev"); }, className:"h-10 w-full rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}},
+            acertoForm.devolucaoBip && acertoForm.devolucaoBip.resumo ? "Continuar bipando as peças que voltaram" : "Bipar as peças que voltaram")),
         expositoresRev.length>0 && e("div",{key:"cx", className:"flex flex-col gap-1.5 border-t border-white/10 pt-2"},
           e("p",{className:"text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]"},"Expositores com a revendedora"),
           expositoresRev.map(function(x){ var on = (acertoForm.expositoresMarcados||[]).indexOf(x.id)>=0;
@@ -1347,7 +1354,7 @@ function AppRepresentante(p){
           return linha("pf"+i, prox ? BK0(f.min).replace(",00","")+" a "+BK0(prox.min-0.01) : BK0(f.min).replace(",00","")+" ou mais", f.pct+"%", "R$ "+f.bn, "R$ "+f.bb); }))
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
-  var telaPropria = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","assinarrepos","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
+  var telaPropria = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","confdev","assinarrepos","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
   return e(IPhone17ProMax,{semMoldura:p.semMoldura || false},
     tela==="preacerto" && kitSel && e(PreAcertoRep,{key:"pre"+kitSel.id, kit:kitSel, versao:versaoSel || versaoVigente(s), rev:sel.rev, prevista:previstaTxt, d:d,
       onVoltar:function(){ setTela("rev"); }, onSalvar:function(){ abrirAcertoNovo(); }, textoSalvar:"Salvar e ir para o acerto"}),
@@ -1406,6 +1413,13 @@ function AppRepresentante(p){
           e("b",{className:"min-w-0 flex-1 text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Conferir as peças")),
         e("p",{className:"text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfPecas,{s:s, d:d, k:kitSel, onContinuar:function(){ setTela(confVolta); }}))),
+    tela==="confdev" && kitSel && e(React.Fragment,{key:"cdv"},
+      e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1 bg-[#0B0B0D] px-4 pb-3 pt-4"},
+        e("div",{className:"flex items-center gap-2"}, e("button",{onClick:function(){ setTela("calcacerto"); }, "aria-label":"Voltar ao acerto", className:"grid size-8 shrink-0 place-items-center rounded-full bg-amber-200/10 text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
+          e("b",{className:"min-w-0 flex-1 text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Peças que voltaram")),
+        e("p",{className:"text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
+      e("div",{className:"mt-3 pb-4"}, e(ConfDevolucao,{key:kitSel.id, cod:codDm, numeros:acertoForm.condicionaisSelecionadas, inicial:acertoForm.devolucaoBip||{},
+        aoSalvar:function(dados){ setAcertoForm(function(f){ return Object.assign({}, f, {devolucaoBip:Object.assign({}, f.devolucaoBip||{}, dados)}); }); }, aoVoltar:function(){ setTela("calcacerto"); }}))),
     tela==="pedidodata" && sel && e(PedidoDataRep,{key:"pd"+sel.id, s:s, d:d, l:l, rev:sel, onVoltar:function(){ setTela("rev"); }}),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
     tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(""); setTela(volta || "inicio"); }}),
