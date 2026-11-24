@@ -5,11 +5,12 @@
 // Previsto do dia = acertos feitos + Carregar + a realizar daquele dia (s.restanteDia); sem registro no dia, vale o último previsto anterior do mês, ou o do fechamento do mês (s.fechaMes).
 // Faturamento previsto = média do dia × acertos previstos a X% (X = meta do mês, s.metaPct). Valor do dia = acumulado do dia − acumulado do dia anterior.
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { COR, Segmentado, corSinal, brl } from "@/apps/montagem/components/padrao-fin";
+import { COR, corSinal, brl } from "@/apps/montagem/components/padrao-fin";
 import { contasDoMes, fatEfetivo } from "@/apps/montagem/domain/financeiro";
 import { filtrar, servidorEm, setBaixas, setClasse, setLancamentos, setPf, totais } from "@/apps/montagem/domain/contas-empresa";
 import { BKC } from "@/apps/montagem/lib/format";
-import { e, useState } from "@/shared/react";
+import { CLS_FINA_ESPACO } from "@/apps/montagem/components/planilha-cheia";
+import { e, useEffect, useState } from "@/shared/react";
 
 var SEMANA = ["dom","seg","ter","qua","qui","sex","sáb"];
 var p2 = function(n){ return String(n).padStart(2,"0"); };
@@ -22,9 +23,13 @@ function montar(s, ano, mes){
   var fd = fatEfetivo(s), dias = new Date(ano, mes+1, 0).getDate(), regs = [];
   for(var d=1; d<=dias; d++){ if(fd[ymd(ano, mes, d)]) regs.push(d); }
   if(regs.length<3) return null;
-  var ult = regs[regs.length-1], cpd = s.contasPagasDiario || {}, rd = s.restanteDia || {}, fm = (s.fechaMes || {})[ano+"-"+p2(mes+1)] || {};
+  var ult = regs[regs.length-1], ym0 = ano+"-"+p2(mes+1), cpd = s.contasPagasDiario || {}, rd = s.restanteDia || {}, fm = (s.fechaMes || {})[ano+"-"+p2(mes+1)] || {};
   var pct = (s.metaPct || 98)/100, prevAnt = null, ini = ((((s.metaMensal || {})[ano] || {})[mes]) || {}).inicio || null;   // previsto do INÍCIO do mês (não muda): a coluna Diferença mostra quanto o previsto mudou desde então
   var pagoReal = function(iso){ var x = cpd[iso]; if(!x) return 0; return r2(Object.keys(x.cnpjs||{}).reduce(function(t, k){ return t+(x.cnpjs[k]||0); }, 0)+(x.contasPorFora||0)); };
+  // CONTAS DE CADA DIA (Marcus, 23/11/2026: "tem que puxar direto da DevMaster, não tirar do ar"): as mesmas contas da tela Contas a pagar (títulos da DevMaster com a baixa, o que o Admin já pagou e a DevMaster ainda não baixou, Pix de Point e dos sócios), cada uma no dia da baixa.
+  //   Conta paga sem data de baixa no mês entra no último dia lançado. Sem dados do servidor, vale o que foi lançado à mão em Contas a pagar → Diário.
+  var contasReais = null;
+  if(servidorEm() && filtrar(ym0, "", "", "", "", "").length>0){ contasReais = {}; filtrar(ym0, "", "", "pago", "", "").forEach(function(i){ var k = (i.baixa && String(i.baixa).slice(0, 7)===ym0) ? String(i.baixa).slice(0, 10) : ymd(ano, mes, ult); contasReais[k] = r2((contasReais[k] || 0)+i.valor); }); }
   var linhas = [], cumR = 0, cumA = 0;
   for(var dia=1; dia<=ult; dia++){
     var iso = ymd(ano, mes, dia), x = fd[iso], tem = x && x.recebido!==undefined;
@@ -34,15 +39,24 @@ function montar(s, ano, mes){
     if(dia===ult && !rs && (fm.aRealizar || fm.carregar)) prev = cumA+(fm.carregar||0)+(fm.aRealizar||0);   // 19/11/2026: o último dia vale o Carregar e o a realizar do fechamento do mês (gravados no servidor), não um previsto antigo guardado só neste navegador
     if(prev!==null) prevAnt = prev;
     var prevPct = prev ? Math.round(prev*pct) : null, media = cumA>0 ? Math.round(cumR/cumA*100+1e-6)/100 : 0;   // arredonda a metade para cima, como o relatório do Marcus (R$ 648,195 vira R$ 648,20)
-    linhas.push({id:iso, dia:p2(dia)+"/"+p2(mes+1)+" · "+SEMANA[new Date(ano, mes, dia).getDay()]+(parcial ? " · hoje" : ""), da:da, dr:dr, a:cumA, r:cumR, media:media, mdia:(da>0 ? Math.round(dr/da*100+1e-6)/100 : 0), ini:ini, prev:prev, dif:(prev!==null && ini) ? prev-ini : null, prevPct:prevPct, fatPrev:prevPct ? r2(((dia===ult && fm.mediaPrev>0) ? fm.mediaPrev : media)*prevPct) : null, crA:(x && x.cr!==undefined ? x.cr : null), inaA:(x && x.ina!==undefined ? x.ina : null), contas:pagoReal(iso), car:(s.carregarDia||{})[iso], carr:(rs ? (rs.carregar||0) : ((s.carregarDia||{})[iso]||0)), arz:(prev===null ? null : Math.max(0, prev-cumA-(rs ? (rs.carregar||0) : ((s.carregarDia||{})[iso]||0))))});   // carr e arz: Carregar e A realizar do dia (aba Acertos)
+    linhas.push({id:iso, dia:p2(dia)+"/"+p2(mes+1)+" · "+SEMANA[new Date(ano, mes, dia).getDay()]+(parcial ? " · hoje" : ""), da:da, dr:dr, a:cumA, r:cumR, media:media, mdia:(da>0 ? Math.round(dr/da*100+1e-6)/100 : 0), ini:ini, prev:prev, dif:(prev!==null && ini) ? prev-ini : null, prevPct:prevPct, fatPrev:prevPct ? r2(((dia===ult && fm.mediaPrev>0) ? fm.mediaPrev : media)*prevPct) : null, crA:(x && x.cr!==undefined ? x.cr : null), inaA:(x && x.ina!==undefined ? x.ina : null), contas:(contasReais ? (contasReais[iso] || 0) : pagoReal(iso)), car:(s.carregarDia||{})[iso], carr:(rs ? (rs.carregar||0) : ((s.carregarDia||{})[iso]||0)), arz:(prev===null ? null : Math.max(0, prev-cumA-(rs ? (rs.carregar||0) : ((s.carregarDia||{})[iso]||0))))});   // carr e arz: Carregar e A realizar do dia (aba Acertos)
   }
   return {linhas:linhas, ult:ult, pct:Math.round(pct*100)};
+}
+
+// Marcus, 23/11/2026: o Resultado do mês mostra só até o dia de hoje; as linhas previstas dos dias que faltam (24 em diante) saíram. O Previsto final do mês continua nas três colunas da direita.
+var CLS_FAT = CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px]";   // letra de 11 px e linhas finas, como a Home da Família e Negociações
+
+// Guarda no servidor o total de contas do mês de HOJE (a cada mudança), para a coluna Previsto final mostrar o total de cada dia.
+function GravaContasPrev(p){
+  useEffect(function(){ var v = Math.round(p.total*100)/100; if(v>0 && ((p.s.contasPrevDia||{})[p.hoje])!==v && p.d) p.d({type:"CONTAS_PREV_DIA", mapa:(function(){ var o = {}; o[p.hoje] = v; return o; })()}); }, [p.total, p.hoje]);   // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
 }
 
 var VISOES = [["fat","Faturamento"],["contas","Contas pagas"],["vs","Saldo"]];
 
 function DiaADia(p){
-  var sbase = useState("nf"), base = sbase[0], setBase = sbase[1], spanRes = 3;
+  var sbase = useState("nf"), base = p.base!==undefined ? p.base : sbase[0], setBase = sbase[1], spanRes = 3;   // p.base vem da barra de cima (Faturamento.js); sem ela, a faixa Recebido por fica aqui dentro
   var cpeS = (p.s && p.s.cpe) || {}; setClasse(cpeS.classe); setLancamentos(cpeS.lanc); setBaixas(cpeS.baixas); setPf(p.s && p.s.pf);   // as mesmas contas da tela Contas a pagar: baixas do Admin e Pix de Pagamentos a fornecedores (20/11/2026)
   var dados = montar(p.s, p.ano, p.mes), visao = p.visao || "fat";
   if(!dados) return e("p",{className:"px-4 py-6 text-center text-[13px] text-foreground"}, "Este mês só tem o fechamento (total do mês), sem o dia a dia.");
@@ -55,40 +69,17 @@ function DiaADia(p){
   } else if(visao==="res"){
     // RESULTADO DO MÊS (Marcus, 16/11/2026; 19/11/2026): três blocos por dia, cada um com Recebido · Contas · Resultado: DIA, MÊS CONSOLIDADO e PREVISTO FINAL DO MÊS.
     // Base do Recebido (botão em cima da tabela): Notas fiscais (relatório de notas fiscais) ou Contas a receber (o que a revendedora pagou na hora, sem acerto-loja); em Contas a receber entra a coluna Inadimplência (acerto-loja ainda em aberto) e o resultado é o valor real que bate com o saldo das contas.
-    var cm = contasDoMes(p.s, String(p.ano), p.mes), tCm = totais(filtrar(p.ano+"-"+p2(p.mes+1), "", "", "", "", "")), totalContas = (!!servidorEm() && tCm.n>0) ? r2(tCm.total) : r2((cm.pago || 0)+(cm.apagar || 0)), ca = 0, crPrev = 0, inaPrev = 0, temCr = L.some(function(l){ return l.crA!==null; }), cr = base==="cr" && temCr, razCr = 1;
+    var cm = contasDoMes(p.s, String(p.ano), p.mes), tCm = totais(filtrar(p.ano+"-"+p2(p.mes+1), "", "", "", "", "")), totalContas = (!!servidorEm() && tCm.n>0) ? r2(tCm.total) : r2((cm.pago || 0)+(cm.apagar || 0)), ca = 0, crPrev = 0, inaPrev = 0, prevDia = function(iso){ var v = ((p.s.contasPrevDia || {})[iso]); return v>0 ? v : totalContas; }, temCr = L.some(function(l){ return l.crA!==null; }), cr = base==="cr" && temCr, razCr = 1;
     var linhasB = L.map(function(l){ var crAc = l.crA!==null ? l.crA : crPrev, inaAc = l.inaA!==null ? l.inaA : inaPrev, drCr = r2(Math.max(0, crAc-crPrev)), diCr = r2(Math.max(0, inaAc-inaPrev)); crPrev = crAc; inaPrev = inaAc;
       return Object.assign({}, l, {drB:cr ? drCr : l.dr, rB:cr ? crAc : l.r, inaD:diCr, inaM:inaAc}); });
     var ultB = linhasB[linhasB.length-1]; razCr = (cr && ultB && ultB.r>0) ? ultB.rB/ultB.r : 1;
-    linhas = linhasB.map(function(l){ ca = r2(ca+l.contas); var fp = (cr && l.fatPrev>0) ? r2(l.fatPrev*razCr) : l.fatPrev; return Object.assign({}, l, {cacum:ca, fatPrev:fp, falta:Math.max(0, r2(totalContas-ca)), contasPrev:!(l.fatPrev>0) ? 0 : totalContas, resD:r2(l.drB-l.contas), res:r2(l.rB-ca), resPrev:!(l.fatPrev>0) ? 0 : r2(fp-totalContas)}); });
+    linhas = linhasB.map(function(l){ ca = r2(ca+l.contas); var fp = (cr && l.fatPrev>0) ? r2(l.fatPrev*razCr) : l.fatPrev; return Object.assign({}, l, {cacum:ca, fatPrev:fp, falta:Math.max(0, r2(totalContas-ca)), contasPrev:!(l.fatPrev>0) ? 0 : prevDia(l.id), resD:r2(l.drB-l.contas), res:r2(l.rB-ca), resPrev:!(l.fatPrev>0) ? 0 : r2(fp-prevDia(l.id))}); });
     var colDia = [{k:"drB", t:"Recebido", fmt:BKC, sep:true, cor:function(l){ return l.drB>0 ? COR.entra : ""; }}].concat(cr ? [{k:"inaD", t:"Inadimplência", fmt:function(v){ return mostra(v, BKC); }, cor:function(l){ return l.inaD>0 ? COR.sai : ""; }}] : [], [{k:"contas", t:"Contas", fmt:BKC, cor:function(l){ return l.contas>0 ? COR.sai : ""; }}, {k:"resD", t:"Resultado", fmt:brl, cor:function(l){ return corSinal(l.resD); }}]);
     var colMes = [{k:"rB", t:"Recebido", fmt:BKC, sep:true, cor:function(l){ return l.rB>0 ? COR.entra : ""; }}].concat(cr ? [{k:"inaM", t:"Inadimplência", fmt:function(v){ return mostra(v, BKC); }, cor:function(l){ return l.inaM>0 ? COR.sai : ""; }}] : [], [{k:"cacum", t:"Contas", fmt:BKC, cor:function(l){ return l.cacum>0 ? COR.sai : ""; }}, {k:"res", t:"Resultado", fmt:brl, cor:function(l){ return corSinal(l.res); }}]);
     cols = [{k:"dia", t:"Dia"}].concat(colDia, colMes, [
       {k:"fatPrev", t:"Recebido", faixa:"#C4B5FD", fmt:function(v){ return mostra(v, BKC); }, sep:true, cor:function(l){ return l.fatPrev>0 ? COR.entra : ""; }}, {k:"contasPrev", t:"Contas", faixa:"#C4B5FD", fmt:BKC, cor:function(l){ return l.contasPrev>0 ? COR.sai : ""; }}, {k:"resPrev", t:"Resultado final", faixa:"#C4B5FD", fmt:function(v){ return mostra(v, brl); }, cor:function(l){ return l.resPrev===null ? "" : corSinal(l.resPrev); }}]);
     spanRes = cr ? 4 : 3;
-    // DIAS QUE FALTAM (Marcus, 19/11/2026): linhas PREVISTAS até o fim do mês. Dia útil = segunda a sexta, menos feriado nacional: conta e recebimento NÃO andam em sábado, domingo e feriado.
-    //   Recebido: o que falta para o faturamento previsto (média × acertos previstos), repartido pelo desenho do MÊS PASSADO (peso de cada dia da semana no recebimento do mês anterior).
-    //   Contas: as contas em aberto, cada uma no seu vencimento; os Pix de revendedora a fornecedor e prestador (a revendedora paga direto, sem data certa) acompanham o ritmo do recebimento; vencimento em dia sem expediente passa para o próximo dia útil, e o que já venceu e segue aberto cai no primeiro dia útil que falta. A última linha fecha igual ao Previsto final.
-    var ult0 = linhas[linhas.length-1], totDias = new Date(p.ano, p.mes+1, 0).getDate();
-    if(ult0 && ult0.fatPrev>0 && dados.ult<totDias){
-      var FER = ["01-01", "04-21", "05-01", "09-07", "10-12", "11-02", "11-15", "11-20", "12-25"], ehUtil = function(a, m0, d0){ var w = new Date(a, m0, d0).getDay(); return w>0 && w<6 && FER.indexOf(p2(m0+1)+"-"+p2(d0))<0; };
-      var fut = [], proximoUtil = function(d0){ var q = d0; while(q<=totDias && !ehUtil(p.ano, p.mes, q)) q++; return q; };
-      for(var dd=dados.ult+1; dd<=totDias; dd++) fut.push({iso:ymd(p.ano, p.mes, dd), dd:dd, dow:new Date(p.ano, p.mes, dd).getDay(), util:ehUtil(p.ano, p.mes, dd)});
-      var utilFut = fut.filter(function(f){ return f.util; });
-      var ma = p.mes===0 ? p.ano-1 : p.ano, mm0 = p.mes===0 ? 11 : p.mes-1, dAnt = montar(p.s, ma, mm0), pesoW = {1:0, 2:0, 3:0, 4:0, 5:0}, nW = {1:0, 2:0, 3:0, 4:0, 5:0};
-      if(dAnt) dAnt.linhas.forEach(function(l2){ var w2 = new Date(l2.id+"T12:00:00").getDay(); if(w2>=1 && w2<=5 && l2.dr>0){ pesoW[w2] += l2.dr; nW[w2]++; } });
-      var mediaW = {}; [1, 2, 3, 4, 5].forEach(function(w){ mediaW[w] = nW[w]>0 ? pesoW[w]/nW[w] : 0; });
-      var semHist = [1, 2, 3, 4, 5].every(function(w){ return !(mediaW[w]>0); }), somaW = utilFut.reduce(function(t, f){ return t+(semHist ? 1 : (mediaW[f.dow] || 0)); }, 0);
-      var primeiroUtil = utilFut.length ? utilFut[0].iso : null, apItens = filtrar(p.ano+"-"+p2(p.mes+1), "", "", "apagar", "", ""), pesoC = {}, somaPeso = 0;
-      var pixTot = 0; apItens.forEach(function(it){ if(/^pix/i.test(String(it.nome || "")) || /^pix/i.test(String(it.natNome || ""))){ pixTot += it.valor; return; } var dv = it.venc || "", dN = (dv && dv.slice(0, 7)===p.ano+"-"+p2(p.mes+1)) ? Number(dv.slice(8, 10)) : 0, kF = (dN>dados.ult) ? ymd(p.ano, p.mes, proximoUtil(dN)) : primeiroUtil; if(!kF) return; pesoC[kF] = (pesoC[kF] || 0)+it.valor; somaPeso += it.valor; });
-      // 20/11/2026 (Marcus: "não tem R$ 316 mil de conta na segunda, os salários foram pagos hoje"): as contas dos dias que faltam são as contas EM ABERTO de verdade (DevMaster + Admin), cada uma no seu vencimento (passado para o próximo dia útil), sem esticar nada. O total previsto de contas = o que já foi pago + o que está em aberto.
-      var restoR = Math.max(0, r2(ult0.fatPrev-ult0.rB)), cumR2 = ult0.rB, cumC2 = ult0.cacum, ultimoUtil = utilFut.length ? utilFut[utilFut.length-1].iso : null, totalProj = r2(ult0.cacum+somaPeso+pixTot), pixResta = r2(pixTot);
-      fut.forEach(function(f){ var dr2 = 0, ct = r2(pesoC[f.iso] || 0), pxd = 0;
-        if(f.util && pixTot>0){ pxd = f.iso===ultimoUtil ? pixResta : r2(pixTot*(semHist ? 1 : (mediaW[f.dow] || 0))/(somaW || 1)); pixResta = r2(pixResta-pxd); ct = r2(ct+pxd); }
-        if(f.util) dr2 = f.iso===ultimoUtil ? Math.max(0, r2(ult0.fatPrev-cumR2)) : r2(restoR*(semHist ? 1 : (mediaW[f.dow] || 0))/(somaW || 1));
-        cumR2 = r2(cumR2+dr2); cumC2 = r2(cumC2+ct);
-        linhas.push({id:f.iso, dia:p2(f.dd)+"/"+p2(p.mes+1)+" · "+SEMANA[f.dow]+(f.util ? "" : " · sem expediente")+" · previsto", drB:dr2, inaD:null, inaM:null, contas:ct, resD:r2(dr2-ct), rB:cumR2, cacum:cumC2, res:r2(cumR2-cumC2), fatPrev:ult0.fatPrev, contasPrev:totalProj, resPrev:r2(ult0.fatPrev-totalProj), proj:true}); });
-      linhas.forEach(function(l3){ if(l3.fatPrev>0){ l3.contasPrev = totalProj; l3.resPrev = r2(l3.fatPrev-totalProj); } });
-    }
+    // Previsto final do mês = faturamento previsto menos o TOTAL de contas do mês da tela Contas a pagar (o que já foi pago + o que está em aberto, DevMaster e Admin); sobe quando entra título novo na DevMaster.
   } else if(visao==="contas"){
     cols = [{k:"dia", t:"Dia"}, {k:"contas", t:"Contas pagas", fmt:BKC, cor:function(l){ return l.contas>0 ? COR.sai : ""; }}, {k:"acum", t:"Acumulado", fmt:BKC, cor:function(l){ return l.acum>0 ? COR.sai : ""; }}];
     linhas = L.map(function(l){ ac = r2(ac+l.contas); return Object.assign({}, l, {acum:ac}); });
@@ -98,9 +89,11 @@ function DiaADia(p){
   }
   // barra de grupos em cima do cabeçalho (Marcus, 16/11/2026): acertos e valor juntos, primeiro o ACUMULADO do mês e depois o do DIA
   var cab = visao==="fat" ? [[{t:"", span:1}, {t:"Acumulado do mês", span:3, sep:true}, {t:"No dia", span:3, sep:true}, {t:"Previsto", span:2, sep:true}, {t:"Previsão do mês", span:2}]] : visao==="res" ? [[{t:"", span:1}, {t:"Dia", span:spanRes, sep:true}, {t:"Mês consolidado", span:spanRes, sep:true}, {t:"Previsto final do mês", span:3, sep:true}]] : undefined;
-  var tab = e(TabelaPlanilha,{key:visao+base, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, cabAcima:cab, linhaCls:function(l){ return l.proj ? "italic" : ""; }, vazio:"Nenhum dia lançado."});
-  if(visao!=="res") return tab;
-  return e("div",{className:"flex flex-col"}, e("div",{className:"flex items-center justify-center gap-2 border-b border-white/30 bg-[#17181c] px-2 py-1"}, e("span",{className:"text-[11px] font-semibold uppercase"}, "Recebido por"), e(Segmentado,{atual:base, onMudar:setBase, opcoes:[["nf", "Notas fiscais"], ["cr", "Contas a receber"]]})), tab);
+  var agoraG = new Date(), gravar = (visao==="res" && p.d && p.ano===agoraG.getFullYear() && p.mes===agoraG.getMonth()) ? e(GravaContasPrev,{key:"gcp", s:p.s, d:p.d, hoje:ymd(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), total:totalContas}) : null;
+  var tab = e(TabelaPlanilha,{key:visao+base, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, cabAcima:cab, linhaCls:function(l){ return l.proj ? "italic" : ""; }, vazio:"Nenhum dia lançado."});
+  if(visao!=="res") return e("div",{className:CLS_FAT}, tab);   // (visao res devolve mais abaixo)
+  if(p.base!==undefined) return e("div",{className:CLS_FAT}, gravar, tab);
+  return e("div",{className:"flex flex-col "+CLS_FAT}, gravar, e("div",{className:"flex items-center justify-center gap-2 border-b border-white/30 bg-[var(--bloco-titulo)] px-2 py-0.5"}, e("span",{className:"text-[10px] font-semibold uppercase leading-3 tracking-[.04em]"}, "Recebido por"), e("div",{className:"inline-flex overflow-hidden rounded-md border border-white/50"}, [["nf", "Notas fiscais"], ["cr", "Contas a receber"]].map(function(o, i){ var on = base===o[0]; return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ setBase(o[0]); }, className:"h-6 whitespace-nowrap px-2 text-[11px] font-semibold "+(i ? "border-l border-white/50 " : "")+(on ? "bg-white text-[#14233f]" : "text-white hover:bg-white/15")}, o[1]); }))), tab);   // padrao-ok: faixa compacta pedida pelo Marcus em 23/11/2026 ("diminui as fontes"); só aparece quando a tela não passa a base
 }
 
 // ACERTOS do mês dia a dia (Marcus, 16/11/2026: "no mesmo padrão do Faturamento"): feitos (acumulado e no dia), Carregar, A realizar e a meta do mês. Mesma tabela de planilha, com barra de grupos.
@@ -112,7 +105,7 @@ function DiaAcertos(p){
   var cols = [{k:"dia", t:"Dia"}, {k:"a", t:"Feitos acumulado", fmt:n0, sep:true}, {k:"da", t:"Feitos no dia", fmt:n0}, {k:"carr", t:"Vendas no Carregar", fmt:n0, sep:true}, {k:"arz", t:"A realizar", fmt:function(v){ return mostra(v, n0); }, sep:true},
     {k:"prev", t:"Previstos", fmt:function(v){ return mostra(v, n0); }, sep:true}, {k:"prevPct", t:dados.pct+"% do previsto", fmt:function(v){ return mostra(v, n0); }}, {k:"falta", t:"Falta para a meta", fmt:function(v){ return mostra(v, n0); }, cor:function(l){ return l.falta===null ? "" : l.falta>0 ? COR.sai : COR.entra; }}];
   var cab = [[{t:"", span:1}, {t:"Acertos feitos", span:2, sep:true}, {t:"Carregar", span:1, sep:true}, {t:"A realizar", span:1, sep:true}, {t:"Meta do mês", span:3, sep:true}]];
-  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, cabAcima:cab, vazio:"Nenhum dia lançado."});
+  return e("div",{className:CLS_FAT}, e(TabelaPlanilha,{fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, cabAcima:cab, vazio:"Nenhum dia lançado."}));
 }
 
 export { DiaADia, DiaAcertos, montar, VISOES };

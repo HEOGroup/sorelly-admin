@@ -118,7 +118,8 @@ function contasDoMes(s, anoStr, mes){
 // só para acompanhar e atualizar média/previsão. No dia seguinte o de hoje deixa de valer e entra o oficial.
 function fatEfetivo(s){
   var fd = Object.assign({}, s.faturamentoDiario), h = s.fatHoje, hoje = isoDia0(new Date());
-  if(h && h.data===hoje){ var revs = Object.keys(s.revendedorasDiario||{}).sort(); fd[hoje] = {loja:(fd[hoje]||{}).loja||0, recup:(fd[hoje]||{}).recup||0, nf:(fd[hoje]||{}).nf||0, recebido:h.recebido||0, acertos:h.acertos||0, revendedoras:revs.length ? s.revendedorasDiario[revs[revs.length-1]] : 0, parcial:true}; }
+  if(h && h.data===hoje){ var revs = Object.keys(s.revendedorasDiario||{}).sort(); fd[hoje] = {loja:(fd[hoje]||{}).loja||0, recup:(fd[hoje]||{}).recup||0, nf:(fd[hoje]||{}).nf||0, recebido:h.recebido||0, acertos:h.acertos||0, revendedoras:revs.length ? s.revendedorasDiario[revs[revs.length-1]] : 0, parcial:true};
+    if(h.cr!==undefined) fd[hoje].cr = h.cr; if(h.ina!==undefined) fd[hoje].ina = h.ina; }   // 23/11/2026: Contas a receber e Inadimplência também valem para o dia de hoje (ainda aberto)
   return fd;
 }
 function isoDia0(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }

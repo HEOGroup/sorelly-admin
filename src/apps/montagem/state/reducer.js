@@ -172,8 +172,10 @@ function reducer(s, a){
     }
     // Faturamento de HOJE (acumulado do mês até agora), só para acompanhar durante o dia: atualiza média e previsão, mas NÃO mexe no
     // registro oficial do dia anterior. No dia seguinte deixa de valer (ver fatEfetivo em financeiro.js).
+    // TOTAL DE CONTAS DO MÊS EM CADA DIA (Marcus, 23/11/2026): começa com o que a DevMaster tinha no primeiro dia e vai subindo com o que foi lançado depois. mapa = {"2026-11-23": 1507399.54, ...}; só entra o que mudou.
+    case "CONTAS_PREV_DIA": { var cpv = Object.assign({}, s.contasPrevDia||{}), mud = false; Object.keys(a.mapa||{}).forEach(function(k){ var v = Math.round((Number(a.mapa[k])||0)*100)/100; if(v>0 && cpv[k]!==v){ cpv[k] = v; mud = true; } }); return mud ? com(s, {contasPrevDia:cpv}, "Total de contas do mês guardado") : s; }
     case "FAT_HOJE":
-      return com(s, {fatHoje:{data:a.data, recebido:a.recebido||0, acertos:a.acertos||0, em:agora}}, "Faturamento de hoje atualizado");
+      return com(s, {fatHoje:Object.assign({data:a.data, recebido:a.recebido||0, acertos:a.acertos||0, em:agora}, a.cr!==undefined ? {cr:a.cr, ina:a.ina||0} : {})}, "Faturamento de hoje atualizado");
     // Lançamento diário da quantidade de revendedoras (total geral), sempre referente ao dia anterior. Fonte: DevMaster/admin.
     case "REV_LANCAR": {
       // a.unico: atualização do dia, só UMA por dia (a segunda é ignorada)
@@ -328,7 +330,7 @@ function reducer(s, a){
             if(!crS[rp] || (exS.auto && !exL.auto)){ crS[rp] = dA.contasRep[rp]; if((dA.contasRepExtra||{})[rp]) cxS[rp] = dA.contasRepExtra[rp]; else delete cxS[rp]; } });
           dN.contasRep = crS; dN.contasRepExtra = cxS; }
         return Object.assign({}, s, {dp:dN, dpcSrv:true}); }
-      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
+      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct", "contasPrevDia"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="lst"){   // listagens de retirada e os kits delas vindos do servidor (05/11/2026): as duas listas entram inteiras, não se misturam com as do navegador
         var pLst = {}; if(a.conteudo && Array.isArray(a.conteudo.listagens)) pLst.listagens = a.conteudo.listagens; if(a.conteudo && Array.isArray(a.conteudo.kits)) pLst.kits = a.conteudo.kits;

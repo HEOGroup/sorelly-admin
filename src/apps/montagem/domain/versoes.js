@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.177", data:"2026-11-24", titulo:"Faturamento: tela compacta, contas do dia como estavam e dias futuros fora", itens:[
+  {tipo:"melhoria", area:"Financeiro › Receber › Faturamento", txt:"Uma barra azul só (visão, mês, ano e os campos do dia), tabela fina no fundo azul da Home da família, letra menor, sem os dias que ainda não aconteceram."},
+  {tipo:"correção", area:"Financeiro › Receber › Faturamento", txt:"Contas a pagar de cada dia guardam o total que valia naquele dia (contasPrevDia) e as contas pagas usam a data da baixa; Recebido por Notas fiscais ou Contas a receber."}]},
  {v:"0.21.176", data:"2026-11-24", titulo:"Pagamentos: vencimento das parcelas no Resumo e no acerto do fornecedor", itens:[
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Resumo geral", txt:"No detalhe de cada data, as Parcelas dos pedidos ganharam a coluna Vencimento (pedido, parcela, vencimento, valor), em ordem de vencimento."},
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Enviar acerto ao fornecedor", txt:"A página do link (e o Baixar HTML) mostra a tabela Parcelas que compõem este pagamento: pedido, parcela, vencimento, valor e o total."}]},
