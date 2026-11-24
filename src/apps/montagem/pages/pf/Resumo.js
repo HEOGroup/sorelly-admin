@@ -9,21 +9,24 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { FORMAS, janelaPorChave, pagoJanela } from "@/apps/montagem/domain/pf";
 import { nomeJanela } from "@/apps/montagem/domain/pf-mes";
+import { baixaDividas, prazoDaDivida } from "@/apps/montagem/domain/financeiro-familiar";
 import { obterArquivo } from "@/apps/montagem/lib/arquivos";
-import { buscarAnexo } from "@/apps/montagem/lib/anexo";
+import { buscarAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { cicloDe, contaForn, ehPrestador, hojeIso, janelasDoForn, lancDaJanela, mesAtual, mesLabel, mqAplicado, mqBruto, mqDescontoNoMes, mqOrigensDoMes, mqPassadasDoMes, mqParcela, pagoPix, statusConta } from "@/apps/montagem/domain/pf";
 import { limiteDe, usoMes } from "@/apps/montagem/domain/pf-limite";
 import { LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { BarraTabela, BuscaMini, CampoMini, CelulaBarra, CLS_FINA_ESPACO, PAGINA_CHEIA } from "@/apps/montagem/components/planilha-cheia";
-import { COR, Chip, Etiqueta, Sel, corForn, TD, Tile, brl, dbr, th, usePf } from "@/apps/montagem/pages/pf/ui";
+import { COR, Chip, Etiqueta, Sel, aviso, corForn, TD, Tile, brl, dbr, op, th, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { JanelaPedido, pedidoNovo } from "@/apps/montagem/pages/pf/Negociacoes";
 import { ModalForn } from "@/apps/montagem/pages/pf/Fornecedores";
 import { LimiteAno } from "@/apps/montagem/pages/pf/Limite";
 import { e, useEffect, useRef, useState } from "@/shared/react";
-import { BotaoMini, COMPACTA } from "./Lancamentos";
+import { AcoesLanc, BotaoMini, COMPACTA } from "./Lancamentos";
+import { JanelaLancarPag } from "./JanelaLancarPag";
 
+var COMP_SOBE = {};   // comprovantes já tentados nesta sessão (não repete)
 var tdn = TD+" text-right font-mono whitespace-nowrap";
 var ANO = 2026;
 var EST_DESC = 0.05, EST_PARC = 3;   // estimativa do cartão do mês que ainda não fechou: passou -5%, em 3 parcelas (a confirmar com o Marcus)
@@ -447,14 +450,26 @@ var ddmm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : ""
 // ordem da planilha: quem vem primeiro (o resto entra por valor, do maior ao menor)
 var ORD_FORN = [/pontual/i, /office|edson/i, /^point/i, /dev ?master/i, /mega ?sul/i, /ellos?/i, /art ello/i], ORD_PREST = [/lucas castilho/i, /priscil/i, /madeira/i, /higor/i];
 function ResumoGeral(){
-  var c = usePf(), pf = c.pf, hoje = hojeIso(), sm = useState(mesAtual()), mes = sm[0], setMes = sm[1], sdt = useState(null), detId = sdt[0], setDetId = sdt[1], refRaiz = useRef(null), sv = useState("sep"), vista = sv[0], setVista = sv[1], sbu = useState(""), buscaTxt = sbu[0], setBuscaTxt = sbu[1], sti = useState(""), tipoSel = sti[0], setTipoSel = sti[1], ssi = useState(""), sitSel = ssi[0], setSitSel = ssi[1], sed = useState(""), editando = sed[0], setEditando = sed[1], svc = useState(null), verComp = svc[0], setVerComp = svc[1], szm = useState(0), zoomComp = szm[0], setZoomComp = szm[1];
+  var c = usePf(), pf = c.pf, hoje = hojeIso(), sm = useState(mesAtual()), mes = sm[0], setMes = sm[1], sdt = useState(null), detId = sdt[0], setDetId = sdt[1], refRaiz = useRef(null), sv = useState("sep"), vista = sv[0], setVista = sv[1], sbu = useState(""), buscaTxt = sbu[0], setBuscaTxt = sbu[1], sti = useState(""), tipoSel = sti[0], setTipoSel = sti[1], ssi = useState(""), sitSel = ssi[0], setSitSel = ssi[1], sed = useState(""), editando = sed[0], setEditando = sed[1], svc = useState(null), verComp = svc[0], setVerComp = svc[1], szm = useState(0), zoomComp = szm[0], setZoomComp = szm[1], sla = useState(null), lancando = sla[0], setLancando = sla[1];   // lancando = chave da data ("novo" = escolher fornecedor e data) da janela Lançar pagamento
   // CARD DO DETALHE (Marcus, 20/11/2026): clicar numa linha abre um card grande no meio da tela, com botão Fechar (Esc também fecha); só um por vez.
   useEffect(function(){ if(!detId && !verComp) return undefined; var f = function(ev){ if(ev.key!=="Escape") return; if(verComp){ if(verComp.url && !verComp.servidor) URL.revokeObjectURL(verComp.url); setVerComp(null); setZoomComp(0); } else setDetId(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [detId, verComp]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // COMPROVANTE EM QUALQUER COMPUTADOR (Marcus, 24/11/2026: "não pode ter anexado em outro computador"): o que ficou guardado só neste navegador sobe para o servidor, um por vez, uma vez por sessão
+  useEffect(function(){
+    if(!c.edita || !pf || !pf.lancamentos) return;
+    var fila = pf.lancamentos.filter(function(l){ return l.arqId && !l.arqKey && !COMP_SOBE[l.id]; }); if(!fila.length) return;
+    var feitos = [], pr = Promise.resolve();
+    fila.forEach(function(l){ COMP_SOBE[l.id] = true; pr = pr.then(function(){
+      return obterArquivo(l.arqId).then(function(blob){ if(!blob) return null; var arq = new File([blob], l.arqNome || "comprovante", {type:blob.type || l.arqTipo || ""}); return lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ feitos.push({id:l.id, arqKey:sv.key}); }); }).catch(function(){ return null; });
+    }); });
+    pr.then(function(){ if(feitos.length) op(c, "lanc_comp_srv", {itens:feitos}); });
+  }, [pf && pf.lancamentos ? pf.lancamentos.length : 0]);   // eslint-disable-line react-hooks/exhaustive-deps
   if(!pf || !pf.fornecedores) return e("p",{className:"p-6"}, "Carregando…");
   // 1) janelas de cada fornecedor: as do mês viram linhas; o que ficou em aberto de meses antigos entra na primeira janela do mês (ou, se o mês não tem janela, vira uma linha só)
   var grupos = [];
+  // DATA DA LINHA (Marcus, 24/11/2026: "a Dávila é paga toda quinta, o prazo está errado"): prestador que se paga por vencimento (Dávila e Leci, da Produção externa) mostra o PRÓXIMO vencimento em aberto; sem nada em aberto, o último vencimento. Os demais seguem a data da janela.
+  var dataVenc = function(f0, j0){ if(cicloDe(f0).periodicidade!=="venc") return j0.limite; var its = (j0.itens || []).filter(function(it){ return it.p && it.p.venc; }); if(!its.length) return j0.limite; var ab = its.filter(function(it){ return it.p.status!=="Pago"; }).map(function(it){ return it.p.venc; }).sort(); return ab.length ? ab[0] : its.map(function(it){ return it.p.venc; }).sort().pop(); };
   pf.fornecedores.forEach(function(f){
-    var tipo = ehPrestador(f) ? "Prestador" : "Fornecedor", atuais = [], antigas = [];
+    var tipo = f.cat==="Produção externa" ? "Produção externa" : ehPrestador(f) ? "Prestador" : "Fornecedor", atuais = [], antigas = [];
     janelasDoForn(pf, f.id).forEach(function(j){
       if(j.mes>mes) return;
       var pg = Math.min(pagoJanela(pf, j.chave), j.total), ab = Math.max(0, j.total-pg);
@@ -470,21 +485,39 @@ function ResumoGeral(){
     if(atuais.length){
       atuais.forEach(function(x, i){
         var extra = i===0 ? oldAb : 0, ch = "j|"+x.j.chave;
-        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
+        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:dataVenc(f, x.j), nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
       });
     } else {
       antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
     }
     grupos.push({nome:bonito(f.nome), tipo:tipo, linhas:linhas, total:linhas.reduce(function(t, l){ return t+l.total; }, 0)});
   });
-  var pos = function(g){ var lista = g.tipo==="Prestador" ? ORD_PREST : ORD_FORN, i = lista.findIndex(function(r){ return r.test(g.nome); }); return i<0 ? 100 : i; };
-  grupos.sort(function(a, b){ return (a.tipo===b.tipo ? 0 : a.tipo==="Fornecedor" ? -1 : 1) || pos(a)-pos(b) || b.total-a.total; });
+  var pos = function(g){ var lista = g.tipo==="Fornecedor" ? ORD_FORN : ORD_PREST, i = lista.findIndex(function(r){ return r.test(g.nome); }); return i<0 ? 100 : i; };
+  // PRESTADORES DA FAMÍLIA (Marcus, 24/11/2026: "os prestadores da família são separados"; 68 Gang, Greicy, Rebel Mode, Show, Truck Plaza...): vêm do Financeiro familiar (dívidas e repasses), uma linha por prestador. Prestador da Sorelly (Madeira Cor, Priscila, Dávila, Leci, Confraternização...) fica no bloco da Sorelly.
+  var ffP = c.s.ff || {}, ffRep = ffP.repasses || [], ffDiv = ffP.dividas || [];
+  // O mês começa com o que cada prestador DEVIA em 31/10 (Marcus, 24/11/2026: "só entra quem tinha dívida no início do mês"; "68 Gang: devia R$ 7.063,10 no início de novembro, pagou R$ 4.766,20, deve R$ 2.296,90"):
+  // A pagar = saldo do começo do mês + dívida nova do mês; Pago = Pix repassados e descontos do mês; só prestador ativo (quem já saiu só aparece se for pedido).
+  var iniMes = (function(){ var d0 = new Date(parseInt(mes.slice(0, 4), 10), parseInt(mes.slice(5, 7), 10)-1, 0); return d0.getFullYear()+"-"+String(d0.getMonth()+1).padStart(2, "0")+"-"+String(d0.getDate()).padStart(2, "0"); })(), fimMesF = ULTDIA(mes);
+  var persNome = {}; (ffP.personas || []).forEach(function(x){ persNome[x.id] = x.nome; });
+  (ffP.prest || []).forEach(function(pr){
+    if(pr.ativo===false) return;
+    var bxI = baixaDividas({dividas:ffDiv.filter(function(d){ return String(d.data || "")<=iniMes; }), repasses:ffRep.filter(function(r){ return String(r.data || "")<=iniMes; })}, pr.id), inicio = Math.round((bxI.falta || 0)*100)/100;
+    if(!(inicio>0.005)) return;
+    var novas = ffDiv.filter(function(d){ return d.prestId===pr.id && d.valor>0 && String(d.data || "")>iniMes && String(d.data || "")<=fimMesF; }).reduce(function(t, d){ return t+d.valor; }, 0);
+    var noMes = function(dt){ return String(dt || "")>iniMes && String(dt || "")<=fimMesF; };
+    var pgRep = ffRep.filter(function(r){ return r.prestId===pr.id && noMes(r.data); }).reduce(function(t, r){ return t+(Number(r.valor) || 0); }, 0), pgDesc = ffDiv.filter(function(d){ return d.prestId===pr.id && d.valor<0 && noMes(d.data); }).reduce(function(t, d){ return t-d.valor; }, 0);
+    var tot = Math.round((inicio+novas)*100)/100, pg = Math.round((pgRep+pgDesc)*100)/100;
+    var linhaF = {id:"fp|"+pr.id, prestId:pr.id, dono:pr.responsavelId, donoNome:persNome[pr.responsavelId] || "", data:fimMesF, nome:pr.nome, tipo:"Prestador "+(persNome[pr.responsavelId] || ""), total:tot, pago:pg, aberto:Math.max(0, Math.round((tot-pg)*100)/100), sobra:Math.max(0, Math.round((pg-tot)*100)/100), info:""};
+    grupos.push({nome:pr.nome, tipo:linhaF.tipo, linhas:[linhaF], total:tot});
+  });
+  var rankT = function(t){ return t==="Fornecedor" ? 0 : t==="Prestador" ? 1 : t==="Produção externa" ? 1.5 : 2; };
+  grupos.sort(function(a, b){ return (rankT(a.tipo)-rankT(b.tipo)) || (a.tipo<b.tipo ? -1 : a.tipo>b.tipo ? 1 : 0) || pos(a)-pos(b) || b.total-a.total; });
   // 2) sócios (meta de Pix do Financeiro familiar, só leitura)
   var ffS = c.s.ff || {}, metaPix = ffS.pixMeta || {}, pixFam = ffS.pix || [], soc = [];
   [["marcus", "Marcus"], ["anamaria", "Anamaria"], ["marco", "Marco Antonio"], ["anabeatriz", "Ana Beatriz"], ["lucas", "Lucas"], ["familia", "Casa"]].forEach(function(s0){
     var meta = Number(metaPix[s0[0]+"|"+mes] || 0), pg = Math.round(pixFam.filter(function(x){ return x.personaId===s0[0] && String(x.data || "").slice(0, 7)===mes; }).reduce(function(t, x){ return t+(Number(x.valor) || 0); }, 0)*100)/100;
-    if(meta<=0.005 && pg<=0.005) return;
-    soc.push({id:"socio:"+s0[0]+"|"+mes, pessoa:s0[0], data:ULTDIA(mes), nome:s0[1], tipo:"Sócio", total:meta, pago:pg, aberto:Math.max(0, Math.round((meta-pg)*100)/100), info:""});
+    if(meta<=0.005) return;   // sem previsão no mês não entra (só quem tinha a pagar no início do mês)
+    soc.push({id:"socio:"+s0[0]+"|"+mes, pessoa:s0[0], dono:s0[0], donoNome:s0[1], data:ULTDIA(mes), nome:s0[1], tipo:"Sócio", total:meta, pago:pg, aberto:Math.max(0, Math.round((meta-pg)*100)/100), sobra:Math.max(0, Math.round((pg-meta)*100)/100), info:""});
   });
   if(soc.length) grupos.push({nome:"Sócios", tipo:"Sócio", linhas:soc, total:0, socios:true});
   // 3) lista final: um fornecedor embaixo do outro; linha de TOTAL quando há mais de uma linha
@@ -514,7 +547,11 @@ function ResumoGeral(){
     if(vista==="com" && g.linhas.length>1) todas.push({id:"sub|"+g.nome, sub:true, nome:g.socios ? "Total sócios" : g.nome+" total", tipo:g.tipo, data:g.linhas.map(function(l){ return l.data; }).sort().pop(), total:soma(g.linhas, "total"), pago:soma(g.linhas, "pago"), aberto:soma(g.linhas, "aberto"), info:""});
   });
   // DOIS BLOCOS (Marcus, 20/11/2026): em cima os fornecedores da Sorelly; embaixo os prestadores da família (prestadores de serviço e sócios). O filtro fica no cabeçalho das colunas.
-  var visF = todas.filter(function(l){ return l.tipo==="Fornecedor"; }), visP = todas.filter(function(l){ return l.tipo!=="Fornecedor"; });
+  var ehFamTipo = function(t){ return t!=="Fornecedor" && t!=="Prestador" && t!=="Produção externa" && t!=="Sócio"; };
+  var visF = todas.filter(function(l){ return l.tipo==="Fornecedor" || l.tipo==="Prestador" || l.tipo==="Produção externa"; }), visP = todas.filter(function(l){ return l.tipo!=="Fornecedor" && l.tipo!=="Prestador" && l.tipo!=="Produção externa"; });
+  var ORD_DONO = ["marcus", "anamaria", "anabeatriz", "marco"], idxDono = function(l){ var i = ORD_DONO.indexOf(l.dono); return i<0 ? 99 : i; };   // Marcus, 24/11/2026: um bloco só; a família vem na ordem Marcus, Anamaria, Ana Beatriz, Marco Antonio (o Tipo diz de quem é: "Prestador Marcus", "Sócio")
+  visP = visP.map(function(l, i){ return {l:l, i:i}; }).sort(function(a, b){ return idxDono(a.l)-idxDono(b.l) || (a.l.pessoa ? 1 : 0)-(b.l.pessoa ? 1 : 0) || a.i-b.i; }).map(function(x){ return x.l; });
+  visP.forEach(function(l, i){ l.novoDono = i>0 && visP[i-1].dono!==l.dono; });   // linha branca entre um sócio e outro (Marcus, 24/11/2026)
   var salvaAna = function(chave, txt){ c.d({type:"PF", op:"mut", fn:function(p0){ p0.obsResumo = p0.obsResumo || {}; var t = String(txt || "").trim(); if(t) p0.obsResumo[chave] = t; else delete p0.obsResumo[chave]; return "Observação salva"; }}); };
   // OBSERVAÇÕES (Marcus, 16/11/2026): sem traço. Linha vazia mostra só UM botãozinho apagado no meio (lápis); clicar abre o campo; com texto, mostra o texto (clicar edita). Sai do campo = salva.
   var campoAna = function(v, l){
@@ -532,7 +569,7 @@ function ResumoGeral(){
     e("span",{tabIndex:0, role:"img", "aria-label":l.info, className:"group relative inline-flex size-4 shrink-0 cursor-help items-center justify-center text-warning outline-none focus-visible:ring-2 focus-visible:ring-primary"},
       e("svg",{viewBox:"0 0 24 24", width:16, height:16, fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true"}, e("circle",{cx:12, cy:12, r:9.5}), e("path",{d:"M12 11v5.5"}), e("circle",{cx:12, cy:7.6, r:0.9, fill:"currentColor", stroke:"none"})),
       e("span",{role:"tooltip", className:"pointer-events-none absolute left-full top-1/2 z-30 ml-2 hidden w-max max-w-[20rem] -translate-y-1/2 whitespace-normal rounded-md border border-border bg-card px-3 py-2 text-left text-[13px] font-normal text-foreground shadow-lg group-hover:block group-focus-visible:block"}, l.info))); };
-  var mkCols = function(comTipo){ return (comTipo ? [{k:"tipo", t:"Tipo", w:"6.5rem"}] : []).concat([{k:"nome", t:"Nome", w:"15rem", render:celulaNome}, {k:"total", t:"A pagar", w:"8rem", fmt:brl}, {k:"pago", t:"Pago", w:"8rem", fmt:brl, cor:function(l){ return l.pago>0.005 ? "text-emerald-400" : ""; }}, {k:"aberto", t:"Saldo", w:"8rem", fmt:brl, cor:function(l){ return l.aberto>0.005 ? "text-red-400" : "text-emerald-400"; }}, {k:"data", t:"Data", w:"4.5rem", fmt:ddmm, cor:function(l){ return l.data && l.data<hoje && l.aberto>0.005 ? "text-warning" : ""; }}]); };   // sem a coluna Observações (Marcus, 20/11/2026); o que já foi escrito continua guardado em pf.obsResumo
+  var mkCols = function(comTipo, fam){ return (comTipo ? [fam ? {k:"donoNome", t:"Sócio", w:"7.5rem"} : {k:"tipo", t:"Tipo", w:"6.5rem"}] : []).concat([{k:"nome", t:"Nome", w:"15rem", render:celulaNome}, {k:"total", t:"A pagar", w:"8rem", fmt:brl}, {k:"pago", t:"Pago", w:"8rem", fmt:brl, cor:function(l){ return l.pago>0.005 ? "text-emerald-400" : ""; }}, {k:"aberto", t:"Saldo", w:"8rem", fmt:brl, render:function(v, l){ return l && l.sobra>0.005 ? brl(l.sobra) : brl(v); }, cor:function(l){ return l.sobra>0.005 ? "text-emerald-400" : l.aberto>0.005 ? "text-red-400" : "text-emerald-400"; }}, {k:"data", t:"Data", w:"4.5rem", fmt:ddmm, cor:function(l){ return l.data && l.data<hoje && l.aberto>0.005 ? "text-warning" : ""; }}]); };   // sem a coluna Observações (Marcus, 20/11/2026); o que já foi escrito continua guardado em pf.obsResumo
   // contas do mesmo fornecedor: o nome cortado ("Maiara Paola Confferi") vira o completo ("Maiara Paola Confferi Dal Sant")
   var contaFinal = function(c0){ var base = contaPadrao(c0), nb = norm(base), melhor = base; if(base==="—") return base; (pf.lancamentos || []).forEach(function(x){ var o = contaPadrao(x.conta), no = norm(o); if(o.length>melhor.length && no.indexOf(nb+" ")===0) melhor = o; }); return melhor; };
   var detalhe = function(l){
@@ -541,14 +578,17 @@ function ResumoGeral(){
     var fo0 = l.fid ? pf.fornecedores.find(function(f){ return f.id===l.fid; }) : null, chvs0 = (c.s.cp || {}).chaves || {}, cad = fo0 ? (chvs0["forn|"+fo0.nome] || chvs0["prest|"+fo0.nome] || null) : null;
     var chvs = l.chvs || (l.chv ? [l.chv] : []);
     if(chvs.length){
-      chvs.forEach(function(chv0){ lancDaJanela(pf, chv0).forEach(function(x){ lista.push({id:"l"+x.id, data:x.data, quem:x.revendedora || "—", valor:x.valor, conta:contaFinal(x.conta), sit:x.conferido ? "Conferido" : (x.arqKey || x.arqId || x.arqNome) ? "Com comprovante" : "Sem comprovante", chavePix:c.edita ? (x.chavePix || (cad && cad.chave) || "—") : "—", tipoChave:c.edita ? tipoChave(x.chavePix || (cad && cad.chave), cad) : "—", arqKey:x.arqKey, arqId:x.arqId, arqNome:x.arqNome, comp:(x.arqKey || x.arqId) ? "Ver" : x.arqNome ? "Anexado em outro computador" : "—"}); }); });   // com comprovante anexado o pagamento já vale (Marcus, 16/11/2026); sem comprovante, falta anexar
+      chvs.forEach(function(chv0){ lancDaJanela(pf, chv0).forEach(function(x){ lista.push({id:"l"+x.id, lanc:x, data:x.data, quem:x.revendedora || "—", valor:x.valor, conta:contaFinal(x.conta), sit:x.conferido ? "Conferido" : (x.arqKey || x.arqId) ? "Com comprovante" : x.arqNome ? "Sem arquivo" : "Sem comprovante", chavePix:c.edita ? (x.chavePix || (cad && cad.chave) || "—") : "—", tipoChave:c.edita ? tipoChave(x.chavePix || (cad && cad.chave), cad) : "—", arqKey:x.arqKey, arqId:x.arqId, arqNome:x.arqNome, comp:(x.arqKey || x.arqId) ? "Ver" : "Anexar"}); }); });   // com comprovante anexado o pagamento já vale (Marcus, 16/11/2026); sem comprovante, falta anexar
       var mq = chvs.reduce(function(t, chv0){ return t+mqAplicado(pf, chv0); }, 0); if(mq>0.005) lista.push({id:"mq", data:"", quem:"Desconto da maquininha", valor:mq, conta:"—", sit:"Aplicado"});
+    } else if(l.prestId){
+      ffRep.filter(function(r){ return r.prestId===l.prestId && String(r.data || "")>iniMes && String(r.data || "")<=fimMesF; }).forEach(function(r){ var px = r.origemPixLancId ? pixFam.find(function(q){ return q.id===r.origemPixLancId; }) : null, ck = r.compKey || (px && px.compKey) || "", cn = r.compNome || (px && px.compNome) || ""; lista.push({id:"r"+r.id, data:r.data, quem:(px && px.origem) || r.origem || "—", valor:Number(r.valor) || 0, conta:r.conta || "—", sit:ck ? "Com comprovante" : "Sem comprovante", arqKey:ck, arqNome:cn, comp:ck ? "Ver" : "—"}); });
     } else if(l.pessoa){
       pixFam.filter(function(x){ return x.personaId===l.pessoa && String(x.data || "").slice(0, 7)===mes; }).forEach(function(x, i){ lista.push({id:"p"+(x.id || i), data:x.data, quem:x.origem || "—", valor:Number(x.valor) || 0, conta:"—", sit:x.auditoria || "—"}); });
     }
     lista.sort(function(a, b){ return String(b.data).localeCompare(String(a.data)); });
     var parcelas = [];
     chvs.forEach(function(chv0, k){ var jn = janelaPorChave(pf, chv0); ((jn && jn.itens) || []).forEach(function(it, i){ var pd = it.pd || {}; parcelas.push({id:"pc"+k+"_"+i, ped:fmtPed(pd.numero), parc:(it.idx+1)+" de "+((pd.parcelas || []).length || 1), venc:it.p.venc, forma:(FORMAS[it.p.forma] || {}).label || it.p.forma || "—", valor:it.p.valor, sit:it.p.status || "—"}); }); });
+    if(l.prestId){ var bxD = baixaDividas({dividas:ffP.dividas || [], repasses:ffRep}, l.prestId); (bxD.lista || []).forEach(function(d, i){ var b = bxD.porId[d.id] || {falta:d.valor}, fl = Math.max(0, Math.round((b.falta || 0)*100)/100); parcelas.push({id:"dv"+i, ped:d.titulo || d.descricao || d.codigo || "Dívida", parc:fl>0.005 ? "Falta "+brl(fl) : "Quitada", venc:prazoDaDivida(d, hoje), forma:"—", valor:d.valor, sit:fl>0.005 ? "Aberta" : "Quitada"}); }); }
     parcelas.sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)) || String(a.ped).localeCompare(String(b.ped)); });
     var totP = parcelas.reduce(function(t, x){ return t+x.valor; }, 0);
     var tot = lista.reduce(function(t, x){ return t+x.valor; }, 0);
@@ -559,20 +599,20 @@ function ResumoGeral(){
       if(x.arqKey) buscarAnexo(x.arqKey).then(function(r){ setVerComp({dono:l.id, nome:r.nome || nome, url:r.url, tipo:r.mime || "", servidor:true}); }, function(){ setVerComp({dono:l.id, nome:nome, erro:"Não consegui abrir o comprovante."}); });
       else obterArquivo(x.arqId).then(function(b){ if(!b){ falha(); return; } setVerComp({dono:l.id, nome:nome, url:URL.createObjectURL(b), tipo:b.type || ""}); }).catch(falha);
     };
-    var cols2 = [{k:"data", t:"Data", fmt:dbr}, {k:"quem", t:l.pessoa ? "Origem do Pix" : "Nome da revendedora"}, {k:"valor", t:"Valor", fmt:brl}, {k:"comp", t:"Comprovante", render:function(v, r){ return (r.arqKey || r.arqId) ? e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abre(r); }, className:"text-[13px] font-semibold underline hover:text-primary"}, "Ver") : v; }}, {k:"sit", t:"Situação"}];
+    var cols2 = [{k:"data", t:"Data", fmt:dbr}, {k:"quem", t:l.pessoa ? "Origem do Pix" : "Nome da revendedora"}, {k:"valor", t:"Valor", fmt:brl}, {k:"comp", t:"Comprovante", render:function(v, r){ if(r.arqKey || r.arqId) return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abre(r); }, className:"text-[13px] font-semibold underline hover:text-primary"}, "Ver"); if(!r.lanc || !c.edita) return v==="Anexar" ? "—" : v; return e("label",{title:"Escolha a foto ou o PDF do comprovante: ele sobe para o servidor e abre em qualquer computador", className:"cursor-pointer text-[13px] font-semibold text-warning underline hover:brightness-125", onClick:function(ev){ ev.stopPropagation(); }}, "Anexar", e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!arq) return; lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:r.lanc.id, arqNome:arq.name, arqTipo:arq.type, arqKey:sv.key}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui anexar o comprovante.", "alerta"); }); }})); }}, {k:"sit", t:"Situação"}, {k:"acoes", t:"Ações", render:function(v, r){ return r.lanc ? e(AcoesLanc,{c:c, l:r.lanc}) : null; }}];   // Editar e Pedido saem da própria tela Lançamento (Marcus, 24/11/2026: lançar e editar integrado no Geral)
     return e("div",{className:"flex min-h-0 flex-1 items-stretch gap-2 px-2 py-1"},
       e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col [&_td]:!h-[18px] [&_td]:!py-0 [&_td]:!text-[10px] [&_th]:!h-4 [&_th]:!text-[10px]"},   // padrao-ok: letra de 10 px, igual à Contas a receber (Marcus, 20/11/2026)
         // DETALHE (Marcus, 20/11/2026): dois blocos. 1) os Pix que compõem o total (data, nome da revendedora, valor, comprovante, situação); 2) embaixo, só as parcelas dos pedidos (número do pedido, parcela, valor). Um Pix não paga uma parcela: ele paga o total, por isso as duas listas ficam separadas.
-        parcelas.length>0 && e("p",{className:"mb-1 shrink-0 text-[10px] font-semibold uppercase"}, "Parcelas dos pedidos"),   // padrao-ok: letra de 10 px, igual à Contas a receber (Marcus, 20/11/2026)
-        parcelas.length>0 && e("div",{className:"mb-1.5 shrink-0 bg-card"}, e(TabelaPlanilha,{key:"p"+l.id, cols:[{k:"ped", t:"Número do pedido"}, {k:"parc", t:"Parcela"}, {k:"venc", t:"Vencimento", fmt:dbr}, {k:"valor", t:"Valor", fmt:brl}], linhas:parcelas, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, totalRodape:function(){ return ["Total", "", "", brl(totP)]; }})),
+        parcelas.length>0 && e("p",{className:"mb-1 shrink-0 text-[10px] font-semibold uppercase"}, l.prestId ? "Dívidas" : "Parcelas dos pedidos"),   // padrao-ok: letra de 10 px, igual à Contas a receber (Marcus, 20/11/2026)
+        parcelas.length>0 && e("div",{className:"mb-1.5 shrink-0 bg-card"}, e(TabelaPlanilha,{key:"p"+l.id, cols:[{k:"ped", t:l.prestId ? "Dívida" : "Número do pedido"}, {k:"parc", t:l.prestId ? "Situação" : "Parcela"}, {k:"venc", t:"Vencimento", fmt:dbr}, {k:"valor", t:"Valor", fmt:brl}], linhas:parcelas, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, totalRodape:function(){ return ["Total", "", "", brl(totP)]; }})),
         e("p",{className:"mb-1 shrink-0 text-[10px] font-semibold uppercase"}, l.pessoa ? "Pix recebidos no mês" : "Pagamentos"),   // padrao-ok: letra de 10 px, igual à Contas a receber (Marcus, 20/11/2026)
-        e("div",{className:"min-h-0 flex-1 overflow-y-auto bg-card [&_table]:!border-separate [&_table]:![border-spacing:0] [&_table_td]:!border-l-0 [&_table_th]:!border-l-0 [&_table]:!border-y-0 [&_thead_th]:!border-t [&_thead_th]:!border-t-white [&_tfoot_td]:!border-b [&_tfoot_td]:!border-b-white [&_.overflow-x-auto]:!overflow-visible [&_thead_th]:!sticky [&_thead_th]:!top-0 [&_thead_th]:!z-[5] [&_tfoot_td]:!sticky [&_tfoot_td]:!bottom-0 [&_tfoot_td]:!z-[5]"}, e(TabelaPlanilha,{key:"d"+l.id, cols:cols2, linhas:lista, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, vazio:"Nenhum Pix lançado.", totalRodape:lista.length ? function(){ return ["Total", "", brl(tot), "", ""]; } : undefined}))));
+        e("div",{className:"min-h-0 flex-1 overflow-y-auto bg-card [&_table]:!border-separate [&_table]:![border-spacing:0] [&_table_td]:!border-l-0 [&_table_th]:!border-l-0 [&_table]:!border-y-0 [&_thead_th]:!border-t [&_thead_th]:!border-t-white [&_tfoot_td]:!border-b [&_tfoot_td]:!border-b-white [&_.overflow-x-auto]:!overflow-visible [&_thead_th]:!sticky [&_thead_th]:!top-0 [&_thead_th]:!z-[5] [&_tfoot_td]:!sticky [&_tfoot_td]:!bottom-0 [&_tfoot_td]:!z-[5]"}, e(TabelaPlanilha,{key:"d"+l.id, cols:cols2, linhas:lista, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, vazio:"Nenhum Pix lançado.", totalRodape:lista.length ? function(){ return ["Total", "", brl(tot), "", "", ""]; } : undefined}))));
   };
   var meses = []; for(var mm = 1; mm<=12; mm++) meses.push(ANO+"-"+String(mm).padStart(2, "0"));
-  var tabela = function(chaveBloco, lista, comTipo, rotuloTotal){
+  var tabela = function(chaveBloco, lista, comTipo, rotuloTotal, fam){
     var dados = lista.filter(function(l){ return !l.sub; });
     var rodape = function(){ return (comTipo ? [""] : []).concat([rotuloTotal, brl(soma(dados, "total")), brl(soma(dados, "pago")), brl(soma(dados, "aberto")), ""]); };
-    return e(TabelaPlanilha,{key:chaveBloco+mes, cols:mkCols(comTipo), linhas:lista, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semMao:true, aoClicar:function(l){ if(!l.sub) setDetId(l.id); }, linhaCls:function(l){ return l.sub ? "rg-sub font-bold" : l.id===detId ? "rg-sel font-semibold !cursor-pointer" : "!cursor-pointer"; }, totalRodape:rodape, vazio:"Nada a pagar neste mês."});
+    return e(TabelaPlanilha,{key:chaveBloco+mes, cols:mkCols(comTipo, fam), linhas:lista, chave:"id", grade:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semMao:true, aoClicar:function(l){ if(!l.sub) setDetId(l.id); }, linhaCls:function(l){ return (l.sub ? "rg-sub font-bold" : l.id===detId ? "rg-sel font-semibold !cursor-pointer" : "!cursor-pointer")+(l.novoDono ? " rg-dono" : ""); }, totalRodape:rodape, vazio:"Nada a pagar neste mês."});
   };
   // BLOCO DE SOMA (Marcus, 20/11/2026): embaixo das duas tabelas, a soma de cada bloco e o total geral (já com os filtros da barra)
   var somaLinha = function(id, tipo, nome, lista){ var d = lista.filter(function(l){ return !l.sub; }); return {id:id, tipo:tipo, nome:nome, total:soma(d, "total"), pago:soma(d, "pago"), aberto:soma(d, "aberto"), data:""}; };
@@ -596,22 +636,24 @@ function ResumoGeral(){
         : e("iframe",{src:verComp.url, title:verComp.nome, style:{width:Math.min(maxLarg, 900)+"px", height:maxAlt+"px"}, className:"block bg-white"})))) : null;
   var subTitulo = function(t){ return e("div",{className:"flex min-h-6 items-center justify-center border-y border-white/25 bg-[var(--bloco-titulo)] px-4 py-0.5 text-center text-[13px] font-bold uppercase leading-tight text-white"}, t); };   // faixa de título do bloco no mesmo tamanho da barra azul padrão do Financeiro (13 px)
   // TELA (Marcus, 20/11/2026): linha 1 = título RESUMO PAGAMENTOS; linha 2 = barra em tabela igual à Contas a pagar (busca, mês, vista, tipo, situação); embaixo os dois blocos.
-  return e("div",{ref:refRaiz, className:PAGINA_CHEIA+" [&_*]:!normal-case [&_table_tbody_tr:last-child_td]:!border-b [&_table]:!border [&_table]:!border-solid [&_table]:!border-white [&_tbody_td]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,transparent)] [&_tr.rg-sub_td]:!bg-[var(--bloco-colunas)] [&_tr.rg-sel_td]:!bg-[var(--bloco-titulo)] [&_table_tfoot_td]:!bg-[var(--bloco-titulo)] "+CLS_FINA_ESPACO},   // padrao-ok: letra de 10 px da tela Contas a receber (Marcus, 20/11/2026)
+  return e("div",{ref:refRaiz, className:PAGINA_CHEIA+" [&_*]:!normal-case [&_table_tbody_tr:last-child_td]:!border-b [&_table]:!border [&_table]:!border-solid [&_table]:!border-white [&_tbody_td]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,transparent)] [&_tr.rg-sub_td]:!bg-[var(--bloco-colunas)] [&_tr.rg-sel_td]:!bg-[var(--bloco-titulo)] [&_tr.rg-dono_td]:!border-t-2 [&_tr.rg-dono_td]:!border-t-white [&_table_tfoot_td]:!bg-[var(--bloco-titulo)] "+CLS_FINA_ESPACO},   // padrao-ok: letra de 10 px da tela Contas a receber (Marcus, 20/11/2026)
     e(BlocoPainel,{titulo:"Resumo - Pagamentos", compacto:true},
       e(BarraTabela,null,
+        c.edita && e(CelulaBarra,{rotulo:"Pagamento"}, e("button",{type:"button", title:"Lançar um pagamento (escolhe o fornecedor e a data)", onClick:function(){ setLancando("novo"); }, style:{height:"18px"}, className:"cursor-pointer whitespace-nowrap rounded bg-[#E8B84B] px-3 text-[10px] font-semibold leading-none text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "+ Lançar pagamento")),   // padrao-ok: botão da barra compacta (18 px / 10 px), do tamanho da célula Situação
         e(CelulaBarra,{rotulo:"Buscar"}, e(BuscaMini,{valor:buscaTxt, aoMudar:setBuscaTxt, ph:"Nome, data, valor...", rotulo:"Buscar no resumo"})),
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:meses.map(function(m){ return [m, mesLabel(m+"-01")]; })})),
         e(CelulaBarra,{rotulo:"Vista"}, e(CampoMini,{valor:vista, aoMudar:setVista, rotulo:"Fornecedor com mais de uma janela no mês", ops:[["sep", "Separado"], ["com", "Com total"], ["tot", "Só total"]]})),
-        e(CelulaBarra,{rotulo:"Tipo"}, e(CampoMini,{valor:tipoSel, aoMudar:setTipoSel, rotulo:"Tipo", ops:[["", "Todos"], ["Fornecedor", "Fornecedores"], ["Prestador", "Prestadores"], ["Sócio", "Sócios"]]})),
+        e(CelulaBarra,{rotulo:"Tipo"}, e(CampoMini,{valor:tipoSel, aoMudar:setTipoSel, rotulo:"Tipo", ops:[["", "Todos"], ["Fornecedor", "Fornecedores"], ["Prestador", "Prestadores"], ["Produção externa", "Produção externa"], ["Sócio", "Sócios"]].concat(Object.keys(persNome).filter(function(id){ return (ffP.prest || []).some(function(x){ return x.ativo!==false && x.responsavelId===id; }); }).map(function(id){ return ["Prestador "+persNome[id], "Prestador "+persNome[id]]; }))})),
         e(CelulaBarra,{rotulo:"Situação"}, e(CampoMini,{valor:sitSel, aoMudar:setSitSel, rotulo:"Situação", ops:[["", "Todas"], ["aberto", "Em aberto"], ["atraso", "Em atraso"], ["quitado", "Quitadas"]]}))),
-      (!tipoSel || tipoSel==="Fornecedor") && subTitulo("Fornecedores e prestadores de serviços - Sorelly"),
-      (!tipoSel || tipoSel==="Fornecedor") && tabela("f", visF, true, "Total fornecedores"),
-      (!tipoSel || tipoSel!=="Fornecedor") && subTitulo("Prestadores de serviços família"),
-      (!tipoSel || tipoSel!=="Fornecedor") && tabela("p", visP, true, "Total prestadores e sócios"),
+      (!tipoSel || tipoSel==="Fornecedor" || tipoSel==="Prestador" || tipoSel==="Produção externa") && subTitulo("Fornecedores e prestadores de serviços - Sorelly"),
+      (!tipoSel || tipoSel==="Fornecedor" || tipoSel==="Prestador" || tipoSel==="Produção externa") && tabela("f", visF, true, "Total fornecedores e prestadores"),
+      (!tipoSel || ehFamTipo(tipoSel) || tipoSel==="Sócio") && subTitulo("Prestadores de serviços família"),
+      (!tipoSel || ehFamTipo(tipoSel) || tipoSel==="Sócio") && tabela("p", visP, true, "Total prestadores e sócios", true),
       subTitulo("Sorelly + Família"),
       tabelaSoma),
     modalDet,
-    modalComp);
+    modalComp,
+    lancando && e(JanelaLancarPag,{key:"lanc-"+lancando, c:c, chave:lancando==="novo" ? "" : lancando, fechar:function(){ setLancando(null); }}));
 }
 function AbaPfResumo(){ return e(ResumoGeral, null); }
 export { AbaPfResumo, Geral, PainelPontual };

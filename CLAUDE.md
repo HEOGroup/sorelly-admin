@@ -46,6 +46,7 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 
 ## Pastas por setor (01/11/2026, teste com Representantes)
 `docs/setores/<setor>/` = `LEIA-ME.md` (resumo), `decisoes.md` (cópia das decisões do setor, o diário geral `docs/DECISOES.md` continua), `pendencias.md` e `pessoas.local.md` (ficha de cada pessoa, DADOS REAIS, fora do Git). Ao falar de um setor, leia primeiro o `LEIA-ME.md` dele. Decisão nova entra no diário geral E no `decisoes.md` do setor, no mesmo dia. Pronto: `docs/setores/representantes/`. Não existe pasta por funcionário.
+- **FICHA POR PESSOA (24/11/2026, pedido do Marcus: "tem que ter um .md para cada pessoa"):** quem recebe dinheiro de mais de um jeito tem `docs/pessoas/<nome>.local.md` (dados reais, fora do Git; índice e regras em `docs/pessoas/LEIA-ME.md`). **Ler a ficha antes de mexer em tela, conta ou pagamento dessa pessoa.** Pronta: Higor (recebe da Sorelly por folha e Pix por fora, e do Marcus como prestador da família: aparecer nos dois blocos do Resumo de pagamentos NÃO é erro; nunca somar nem apagar um por "duplicado"). Pasta por setor continua valendo; a ficha de pessoa é à parte.
 
 ## Regras detalhadas (carregadas só quando você trabalha na pasta)
 - `src/apps/montagem/domain/CLAUDE.md`: faturamento, acerto, brindes, taxas, Kit 100% Prata, peças do próximo mês.

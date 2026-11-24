@@ -16,6 +16,7 @@ import { COR, Campo, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/
 import { INPUT } from "@/apps/montagem/ui/input";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { BarraTabela, CampoMini, CelulaBarra } from "@/apps/montagem/components/planilha-cheia";
+import { JanelaEditarPag } from "@/apps/montagem/pages/pf/JanelaEditarPag";
 import { e, useEffect, useState } from "@/shared/react";
 import { lerAlocs, porPedidoAtivo } from "@/apps/montagem/domain/pf";
 import { nomeJanela } from "@/apps/montagem/domain/pf-mes";
@@ -82,7 +83,8 @@ function comprovanteEl(c, l){
       : l.arqNome ? e("span",{className:"inline-flex items-center gap-1", title:l.arqNome}, e(Ph,{n:"paperclip", s:10}), "Comprovante anexado")
       : e("span",null, "---");
   // Pix vindo do Direcionar (17/11/2026): só conta como pago depois de anexar o comprovante
-  if(l.aguardaComp) comp = e("label",{title:"Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago.", className:BTN_COMP+" cursor-pointer !border-warning/70 !text-warning", onClick:function(ev){ ev.stopPropagation(); }}, e(Ph,{n:"paperclip", s:10}), "Anexar",
+  var semArquivo = !l.arqKey && !l.arqId && String(l.arqData||"").indexOf("data:")!==0;   // só o nome, sem o arquivo: anexa de novo e sobe para o servidor
+  if(l.aguardaComp || (semArquivo && c.edita)) comp = e("label",{title:l.aguardaComp ? "Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago." : "Escolha a foto ou o PDF do comprovante: ele sobe para o servidor e abre em qualquer computador", className:BTN_COMP+" cursor-pointer !border-warning/70 !text-warning", onClick:function(ev){ ev.stopPropagation(); }}, e(Ph,{n:"paperclip", s:10}), "Anexar",
     e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return;
       lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:l.id, arqNome:arq.name, arqTipo:arq.type, arqKey:sv.key}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); }); }}));
   return comp;
@@ -97,7 +99,7 @@ function AcoesLanc(p){
     // Conferir voltou (Lucas, 23/11/2026): o financeiro confere à mão se está tudo certo; dá para desfazer
     !l.auto && e(BtL,{ic:l.conferido ? "arrow-counter-clockwise" : "check", tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Desfazer a conferência deste pagamento" : "Marcar este pagamento como conferido",
       onClick:function(){ if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return; op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),
-    editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
+    editando && e(JanelaEditarPag,{c:c, l:l, fechar:function(){ setEditando(false); }}),   // janela azul no padrão da Lançar recebimento, com a venda da revendedora (Marcus, 24/11/2026)
     // Estornar voltou (Lucas, 23/11/2026): apaga o Pix lançado errado, com confirmação; Pix dividido sai com todas as partes
     !l.auto && e(BtL,{ic:"trash", tipo:"perigo", disabled:!c.edita, titulo:c.edita ? "Estornar este pagamento" : "Só financeiro e diretoria", onClick:function(){
       if(!window.confirm("Estornar este pagamento de "+brl(l.valor)+" ("+(l.revendedora||"sem nome")+", "+dbr(l.data)+")?")) return;
@@ -394,4 +396,4 @@ function AbaPfLanc(){
     modalAcerto && e(ModalAcerto,{c:c, chave:modalAcerto, fechar:function(){ setModalAcerto(null); }}));
 }
 
-export { AbaPfLanc, BotaoMini, COMPACTA };
+export { AbaPfLanc, AcoesLanc, BotaoMini, COMPACTA };

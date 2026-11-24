@@ -13,6 +13,7 @@ Documento de memória. Reúne o desenho do setor (CNPJs, contas bancárias, cont
 | [04-pessoas-prestadores-e-quem-faz.md](04-pessoas-prestadores-e-quem-faz.md) | Prestadores e fornecedores no cérebro; quem faz o quê |
 | [05-dados-e-qualidade.md](05-dados-e-qualidade.md) | Erros achados na DevMaster, estornos, extrato |
 | [06-perguntas-e-respostas.md](06-perguntas-e-respostas.md) | As 12 perguntas da vistoria com as respostas do Marcus e o que ainda está aberto |
+| [07-como-funciona-a-devmaster.md](07-como-funciona-a-devmaster.md) | Título real x PREVISÃO, cartão Itaú, "CCI" (prefixo x numerário), Pix de revendedora, diarista e lançamento em dobro |
 
 Outros documentos do assunto: `../CAIXA-FINANCEIRO.md`, `../FLUXO-DE-PAGAMENTOS.md`, `../REGRAS-DE-PIX.md`, `../RESULTADO-DO-MES.md`, `../../setores/financeiro/chaves-pix/LEIA-ME.md`.
 

@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.188", data:"2026-11-24", titulo:"Pagamentos: lançar e editar no padrão azul, Família por sócio", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos › Geral", txt:"Botão amarelo \"+ Lançar pagamento\" com a janela igual à Lançar recebimento (Empresa ou Sócios; o prestador da família já traz o sócio dono dele) e aviso de pagamento repetido."},
+  {tipo:"novo", area:"Financeiro › Pagamentos › Geral", txt:"A janela Editar pagamento ganhou o padrão azul e mostra a venda da revendedora (valor de venda, comissão e acerto, da DevMaster)."},
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Geral", txt:"A família vem embaixo, na ordem Marcus, Anamaria, Ana Beatriz e Marco Antonio, só com quem devia no início do mês. Dávila e Leci aparecem como Produção externa, com o próximo vencimento de quinta."},
+  {tipo:"correção", area:"Financeiro › Pagamentos", txt:"Comprovante nunca fica \"anexado em outro computador\": sem arquivo aparece Anexar e o arquivo sobe para o servidor."},
+ ]},
  {v:"0.21.187", data:"2026-11-24", titulo:"App da representante no iPhone: topo e fundo respeitam o notch e a linha", itens:[
   {tipo:"correção", area:"App da representante", txt:"A conta da representante usa a tela toda do iPhone: a faixa do relógio fica preta (cor do cabeçalho) e a faixa de baixo, onde fica a linha do iPhone, fica branca. Antes o fundo de baixo aparecia escuro."}]},
  {v:"0.21.186", data:"2026-11-24", titulo:"Fila de resgates: agenda das retiradas à mão", itens:[

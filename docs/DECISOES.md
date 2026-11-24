@@ -3532,3 +3532,15 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 
 ## 24/11/2026 · Acerto sem agendamento (app da representante)
 - Marcus: a representante precisa poder fazer acerto sem ter agendamento. Botão cria o atendimento de hoje sem prazo, marcado `semAgendamento` (listagem e kit, com hora e quem criou). Falta: selo no Consolidado e decidir como a Montagem trata esse kit.
+
+## 24/11/2026 · Ficha por pessoa e Higor nos dois blocos
+Pedido do Marcus: cada pessoa com mais de uma forma de receber tem um `.md` só dela em `docs/pessoas/` (dados reais em `.local.md`, fora do Git). Higor aparece na Sorelly (folha e Pix por fora, prestador da Sorelly) e na Família (prestador Marcus): são contas diferentes, nunca se soma nem se apaga uma por causa da outra. Lucas Castilho e a produção externa também têm dois registros (pagamento da empresa, que não aparece no Resumo, e Pix de revendedora, que aparece).
+
+## 24/11/2026 · Cérebro do financeiro: como a DevMaster funciona
+Novo `docs/negocio/cerebro-financeiro/07-como-funciona-a-devmaster.md`: título real x PREVISÃO (a previsão é um tampão e diminui quando o real entra; senão soma dobrado), cartão Itaú Black (fatura real = compras avulsas + previsão restante), "CCI" é prefixo (conta a pagar) e numerário (forma de recebimento), Pix de revendedora (um título por data; a DevMaster dá a baixa no dia 31), diarista (R$ 212,00 na Sorelly 1 vez por semana, na quinta, em dinheiro; R$ 312,00 por dia na casa, 2 vezes por semana).
+
+## 24/11/2026 · Resumo - Pagamentos: botão Lançar, janelas azuis, Família por sócio
+Tela Pagamentos › Geral: botão amarelo "+ Lançar pagamento" na barra (primeira célula), janela igual à Lançar recebimento da Contas a receber (menu Empresa / Sócios; o sócio vem do prestador, não se escolhe) e janela Editar pagamento no mesmo padrão, com a VENDA da revendedora lida da DevMaster (`src/server/venda-revendedora.js`, rota `/api/contas-receber/venda-revendedora`). Aviso de pagamento repetido na janela nova. Blocos: Sorelly em cima (fornecedores, prestadores e Produção externa, com Tipo "Produção externa"); família embaixo, coluna Sócio na ordem Marcus, Anamaria, Ana Beatriz, Marco Antonio, linha branca entre eles, só quem devia no início do mês e está ativo, saldo pago a mais em verde. Prestador da família lançado pela janela entra em Família › PIX revendedoras e vira repasse. Dávila e Leci mostram o próximo vencimento em aberto (quinta). Comprovante: nunca "anexado em outro computador"; sem arquivo aparece "Anexar" e o arquivo sobe para o servidor; o que ficou só num navegador sobe sozinho.
+
+## 24/11/2026 · Diarista da casa: uma conta só, paga por dia
+As 3 contas Diarista da Casa (R$ 315, R$ 315 e R$ 312 por mês) viraram uma, paga por dia (R$ 312,00, 2 vezes por semana). Previsão = quintas do mês x R$ 624,00, de nov/2026 a dez/2027 (`scripts/trocar-diarista-casa.mjs`). Lucas Castilho provisionado até dez/2027, R$ 2.000,00 no dia 10 e R$ 2.500,00 no dia 23 (`scripts/provisionar-lucas-castilho-2027.mjs`).
