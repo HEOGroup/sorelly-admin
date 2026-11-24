@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.155", data:"2026-11-23", titulo:"App da representante: Listagens com calendário, menu da conta e foto maior", itens:[
+  {tipo:"melhoria", area:"App da representante → Listagens", txt:"A primeira tela é o calendário do mês (feriados em roxo, dias com kits em dourado) e o dia tocado abre logo abaixo, compacto e sem frases."},
+  {tipo:"melhoria", area:"App da representante → Início", txt:"Menu da conta menor, logo abaixo do nome, sem empurrar os totais; foto maior."}]},
  {v:"0.21.154", data:"2026-11-23", titulo:"Marcus: cronômetro dentro da tela Progresso", itens:[
   {tipo:"melhoria", area:"Marcus → Progresso", txt:"O cronômetro saiu do menu lateral e fica no alto da tela Progresso, compacto e alinhado (sem letra maiúscula). Nada do Marcus fica mais no lado: tudo abre pelo menu do setor, no topo."}]},
  {v:"0.21.153", data:"2026-11-23", titulo:"Marcus: tela Contas do mês excluída", itens:[

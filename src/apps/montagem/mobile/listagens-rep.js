@@ -48,31 +48,36 @@ function BlocoDia(p){
     e("span",{className:"text-[13px] text-[#6B7280]"}, "▸"));
 }
 
+// FERIADOS 2026 (nacionais e de Curitiba): o dia aparece em roxo no calendário e a tela avisa (Marcus, 23/11/2026: "os dias que são feriado")
+var FERIADOS = {"2026-01-01":"Confraternização Universal", "2026-02-16":"Carnaval", "2026-02-17":"Carnaval", "2026-04-03":"Sexta-feira Santa", "2026-04-21":"Tiradentes", "2026-05-01":"Dia do Trabalho", "2026-06-04":"Corpus Christi", "2026-09-07":"Independência", "2026-09-08":"Nossa Senhora da Luz (Curitiba)", "2026-10-12":"Nossa Senhora Aparecida", "2026-11-02":"Finados", "2026-11-15":"Proclamação da República", "2026-11-20":"Consciência Negra", "2026-12-25":"Natal"};
+
+// CALENDÁRIO DA PRIMEIRA TELA (modelo 2 aprovado): mês compacto no topo; o dia tocado abre logo abaixo, na mesma tela
 function Calendario(p){
-  var s = p.s, minhas = p.minhas, hojeIso = isoDia(new Date()), mes = p.mes || hojeIso.slice(0,7), ano = +mes.slice(0,4), m = +mes.slice(5,7)-1;
+  var s = p.s, minhas = p.minhas, hojeIso = isoDia(new Date()), mes = p.mes || (p.sel ? p.sel.slice(0,7) : hojeIso.slice(0,7)), ano = +mes.slice(0,4), m = +mes.slice(5,7)-1;
   var primeiro = new Date(ano, m, 1), vazios = (primeiro.getDay()+6)%7, ultimo = new Date(ano, m+1, 0).getDate();
   var opcoes = []; for(var i=-1;i<=3;i++){ var dm = new Date(+hojeIso.slice(0,4), +hojeIso.slice(5,7)-1+i, 1); opcoes.push([isoDeData(dm).slice(0,7), NOMES_MES[dm.getMonth()]+" de "+dm.getFullYear()]); }
-  var cab = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"].map(function(x){ return e("div",{key:x, className:"py-0.5 text-center text-[8px] font-extrabold uppercase text-[#B8862B]"}, x); });
+  var idx = opcoes.findIndex(function(o){ return o[0]===mes; });
+  var seta = function(rot, alvo){ return e("button",{type:"button", disabled:!alvo, onClick:function(){ if(alvo) p.aoMes(alvo[0]); }, className:"grid size-8 shrink-0 place-items-center rounded-full bg-white text-[13px] font-extrabold text-[#111827] ring-1 ring-black/10 "+(alvo ? "" : "opacity-30")}, rot); };
+  var cab = ["SEG","TER","QUA","QUI","SEX","SÁB","DOM"].map(function(x){ return e("div",{key:x, className:"py-0.5 text-center text-[11px] font-extrabold text-[#A67C12]"}, x); });
   var cels = []; for(var v=0; v<vazios; v++) cels.push(e("div",{key:"v"+v}));
   for(var n=1;n<=ultimo;n++){ (function(n){
-    var iso = mes+"-"+String(n).padStart(2,"0"), dia = doDia(s, minhas, iso), tem = dia.ls.length>0, passado = iso<hojeIso;
-    var fundo = dia.fechou && tem ? "#ECECEE" : dia.cheia ? "#FFF5F5" : "#FFFFFF", borda = dia.cheia ? "#FCA5A5" : "#E5E7EB", barra = dia.cheia ? "#DC2626" : dia.fechou ? "#9CA3AF" : "#C9A13B";
-    var pct = tem && !dia.viagem ? Math.min(100, Math.round(dia.kits.length/dia.cap*100)) : 0;
-    cels.push(e("button",{key:iso, type:"button", onClick:function(){ p.aoEscolher(iso); }, disabled:false, className:"flex h-[46px] flex-col items-center justify-between rounded-xl px-0.5 py-0.5 text-[12px] font-extrabold "+(iso===hojeIso ? "text-[#B8862B]" : passado ? "text-[#9CA3AF]" : "text-[#111827]"), style:{background:fundo, border:"1px solid "+borda}},
-      n, e("span",{className:"min-h-[11px] text-[9px] font-bold text-[#4B5563]"}, tem ? (dia.cheia ? "cheia" : dia.vagas) : ""),
-      e("span",{className:"h-1 w-[70%] overflow-hidden rounded bg-[#E5E7EB]"}, e("i",{className:"block h-full", style:{width:pct+"%", background:barra}}))));
+    var iso = mes+"-"+String(n).padStart(2,"0"), dia = doDia(s, minhas, iso), tem = dia.ls.length>0, dow = new Date(ano, m, n).getDay(), fer = !!FERIADOS[iso], sel = iso===p.sel;
+    var passadoSem = !tem && (iso<hojeIso || dia.fechou), fundo = sel ? "#C9A13B" : fer ? "#EDE9FE" : dia.cheia ? "#FEE2E2" : tem ? "#FBF5E3" : dow===0 || passadoSem ? "#F3F4F6" : "#FFFFFF";
+    var cor = sel ? "#FFFFFF" : fer ? "#6D28D9" : dow===0 || passadoSem ? "#9CA3AF" : "#111827";
+    var nota = fer ? "" : tem ? (dia.cheia ? "cheia" : dia.kits.length+(dia.kits.length===1 ? " kit" : " kits")) : "";
+    cels.push(e("button",{key:iso, type:"button", onClick:function(){ p.aoEscolher(iso); }, className:"flex h-10 flex-col items-center justify-center rounded-lg text-[13px] font-extrabold "+(iso===hojeIso ? "ring-2 ring-[#C9A13B]" : "ring-1 ring-black/5"), style:{background:fundo, color:cor}},
+      n, nota && e("span",{className:"text-[11px] font-bold leading-none", style:{color:sel ? "#FFFFFF" : fer ? "#6D28D9" : "#8A6A12"}}, nota)));
   })(n); }
-  return e("div",{className:"flex flex-col gap-2"},
-    e("label",{className:ROTULO}, "Mês", e("select",{value:mes, onChange:function(ev){ p.aoMes(ev.target.value); }, className:CAMPO}, opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
-    e("div",{className:CARD+" p-2"},
-      e("div",{className:"grid grid-cols-7 gap-[3px]"}, cab.concat(cels)),
-      e("div",{className:"mt-1.5 flex justify-between px-1 text-[11px] font-semibold text-[#4B5563]"}, e("span",null,"● Aberta"), e("span",{style:{color:"#DC2626"}},"● Cheia"), e("span",{style:{color:"#9CA3AF"}},"● Prazo encerrado"))));
+  return e("div",{className:CARD+" flex flex-col gap-2 p-2.5"},
+    e("div",{className:"flex items-center justify-between gap-2"}, seta("‹", opcoes[idx-1]),
+      e("select",{value:mes, onChange:function(ev){ p.aoMes(ev.target.value); }, className:CAMPO+" text-center"}, opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })), seta("›", opcoes[idx+1])),
+    e("div",{className:"grid grid-cols-7 gap-1"}, cab.concat(cels)));
 }
 
 function TelaDia(p){
   var s = p.s, dia = doDia(s, p.minhas, p.iso), hojeIso = isoDia(new Date());
   var sem = dia.ls.length===0, podeCriar = sem && p.iso>=hojeIso && !passouPrazo({data:p.iso}, Date.now(), s.cfg);
-  var tabela = dia.kits.length===0 ? e("p",{className:"px-3 py-2 text-[13px] font-semibold text-[#4B5563]"}, sem ? "Nenhuma listagem neste dia." : "Nenhuma revendedora na listagem ainda.")
+  var tabela = dia.kits.length===0 ? (sem ? null : e("p",{className:"px-3 py-2 text-[13px] font-semibold text-[#4B5563]"}, "Nenhuma revendedora na listagem ainda."))
     : dia.kits.map(function(k){ return e("button",{key:k.id, type:"button", onClick:function(){ if(p.abrirRev) p.abrirRev(k); }, className:"flex w-full items-center gap-2 border-t border-[#F3E8C8] px-3 py-1.5 text-left first:border-t-0"},
         e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[13px] text-[#111827]"}, k.rev), e("span",{className:"block text-[11px] font-medium text-[#4B5563]"}, (TIPO_NOME[k.tipoKit]||"Kit")+(k.horaAtend ? " · "+k.horaAtend : ""))),
         e("span",{className:"flex shrink-0 flex-col items-end gap-0.5"}, e("b",{className:MONO+" text-[12px] text-[#8A6A12]", title:"Venda da revendedora"}, reais((k.vendas||[])[0])), e(Situacao,{status:k.status}))); });
@@ -82,13 +87,13 @@ function TelaDia(p){
   if(dia.kits.length>0) acoes.push(["excluir","Excluir uma revendedora…"]);
   var aviso = dia.fechou && !sem ? "Prazo encerrado: só a Deysiane inclui mais revendedoras." : dia.cheia ? "Listagem cheia ("+dia.vagas.replace("/"," de ")+"). Crie outra listagem em outro dia." : "";
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"rounded-2xl bg-[#202023] p-3 text-white"},
-      e("b",{className:"mb-1.5 block text-[15px]", style:{color:"#FFFFFF"}}, tituloDoDia(p.iso)),
+    e("div",{className:"rounded-2xl bg-[#202023] px-3 py-2.5 text-white"},
+      e("b",{className:"block text-[15px]", style:{color:"#FFFFFF"}}, tituloDoDia(p.iso)),
       !sem && e("div",{className:"flex items-baseline justify-between py-0.5 text-[12px] text-[#E5E7EB]"}, e("span",null,"Retirada"), e("b",{className:MONO+" text-[14px]", style:{color:"#FFFFFF"}}, horarios(dia.ls))),
       !sem && e("div",{className:"flex items-baseline justify-between py-0.5 text-[12px] text-[#E5E7EB]"}, e("span",null,"Kits"), e("b",{className:MONO+" text-[14px]", style:{color:"#FFFFFF"}}, dia.vagas.replace("/"," / "))),
       !sem && dia.ls[0] && e("div",{className:"mt-1.5 flex items-baseline justify-between gap-2 border-t border-[#C9A13B] pt-1.5"}, e("span",{className:"text-[12px] font-bold text-[#F0D58A]"}, dia.fechou ? "Prazo" : "Incluir até"), e("b",{className:MONO+" text-right text-[13px]", style:{color:"#F0D58A"}}, dia.fechou ? "encerrado" : dia.prazo.texto)),
-      sem && e("p",{className:"text-[12px] text-[#E5E7EB]"}, podeCriar ? "Você ainda não tem listagem neste dia." : "Não dá para criar listagem neste dia (prazo encerrado ou dia passado).")),
-    e("div",{className:CARD+" overflow-hidden"}, e("div",{className:"border-[#F3E8C8]"}, tabela)),
+      null),
+    !sem && e("div",{className:CARD+" overflow-hidden"}, e("div",{className:"border-[#F3E8C8]"}, tabela)),
     temBipado && dia.ls[0] && e("div",{className:CARD+" flex items-center justify-between gap-2 px-3 py-2"}, e("span",{className:"text-[13px] font-semibold text-[#111827]"}, "Código de retirada"), e("b",{className:MONO+" text-[20px] tracking-[.3em] text-[#8A6A12]"}, codigoRetirada(dia.ls[0]))),
     aviso && e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12px] font-semibold text-[#92400E]"}, aviso),
     acoes.length>1 && e("select",{value:"", "aria-label":"Ações da listagem", onChange:function(ev){ var v = ev.target.value; if(v==="add") p.irAdicionar(dia.ls[0].id); else if(v==="excluir") p.irExcluir(p.iso); }, className:CAMPO}, acoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
@@ -124,18 +129,13 @@ function ListagensRep(p){
   var s = p.s, sub = p.sub, setSub = p.setSub, minhas = p.minhas;
   var vai = function(patch){ setSub(Object.assign({}, sub, patch)); };
   if(sub.t==="nova") return e(NovaListagemRep,{s:s, d:p.d, rep:p.rep, ouro:p.ouro, data:sub.dia || undefined, aoCancelar:function(){ setSub({t:sub.dia ? "dia" : "lista", v:sub.v, mes:sub.mes, dia:sub.dia}); }, aoCriar:function(f){ setSub({t:"dia", v:sub.v, mes:sub.mes, dia:f.data}); }});
-  if(sub.t==="dia") return e(TelaDia,{s:s, d:p.d, minhas:minhas, iso:sub.dia, abrirRev:p.abrirRev, irAdicionar:p.irAdicionar, irExcluir:function(iso){ vai({t:"excluir", dia:iso}); }, irNova:function(iso){ vai({t:"nova", dia:iso}); }});
   if(sub.t==="excluir") return e(TelaExcluir,{s:s, d:p.d, rep:p.rep, minhas:minhas, iso:sub.dia, voltar:function(){ vai({t:"dia"}); }});
-  // Lista ou Calendário
-  var hojeIso = isoDia(new Date()), proximos = [], dt = dataDe(hojeIso);
-  for(var q=0;q<14;q++){ if(dt.getDay()!==0) proximos.push(isoDeData(dt)); dt.setDate(dt.getDate()+1); }
-  var datas = Array.from(new Set(minhas.filter(function(x){ return !x.fechada; }).map(function(x){ return x.data; }).concat(proximos))).sort(), comListagem = datas.filter(function(iso){ return minhas.some(function(x){ return x.data===iso && !x.fechada; }); }).length;
-  var botao = function(v, rot){ var on = sub.v===v; return e("button",{type:"button", onClick:function(){ vai({v:v}); }, className:"flex h-8 items-center whitespace-nowrap rounded-xl px-2.5 text-[12px] font-extrabold ring-1 "+(on ? "bg-[#C9A13B] txt-branco ring-[#C9A13B]" : "bg-white text-[#111827] ring-black/10")}, rot); };
+  // PRIMEIRA TELA: calendário do mês + o dia escolhido logo abaixo (modelo 2, Marcus 23/11/2026)
+  var hojeIso = isoDia(new Date()), selIso = sub.dia || hojeIso;
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"flex items-center justify-between gap-2"}, e("b",{className:"text-[13px] text-[#111827]"}, "Próximos 14 dias · "+comListagem+(comListagem===1 ? " com listagem" : " com listagem")), e("div",{className:"flex gap-1.5"}, botao("lista","☰ Lista"), botao("cal","📅 Calendário"))),
-    sub.v==="cal" ? e(Calendario,{s:s, minhas:minhas, mes:sub.mes, aoMes:function(m){ vai({mes:m}); }, aoEscolher:function(iso){ vai({t:"dia", dia:iso}); }})
-            : datas.map(function(iso){ return e(BlocoDia,{key:iso, dia:doDia(s, minhas, iso), onClick:function(){ vai({t:"dia", dia:iso}); }}); }),
     e("button",{type:"button", onClick:function(){ vai({t:"nova", dia:null}); }, className:BT_OURO}, "+ Nova listagem"),
+    e(Calendario,{s:s, minhas:minhas, mes:sub.mes || selIso.slice(0,7), sel:selIso, aoMes:function(m){ vai({mes:m}); }, aoEscolher:function(iso){ vai({t:"lista", dia:iso, mes:iso.slice(0,7)}); }}),
+    e(TelaDia,{s:s, d:p.d, minhas:minhas, iso:selIso, abrirRev:p.abrirRev, irAdicionar:p.irAdicionar, irExcluir:function(iso){ vai({t:"excluir", dia:iso}); }, irNova:function(iso){ vai({t:"nova", dia:iso}); }}),
     e("button",{type:"button", onClick:function(){ p.irAdicionar(""); }, className:BT_BRANCO}, "+ Adicionar revendedora numa listagem"));
 }
 
