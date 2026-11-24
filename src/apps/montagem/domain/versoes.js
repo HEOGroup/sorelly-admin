@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.178", data:"2026-11-24", titulo:"Contas bancárias › Caixa: Pix sem baixa deixou de ser descontado duas vezes", itens:[
+  {tipo:"correção", area:"Financeiro › Contas bancárias › Caixa", txt:"No resumo do mês, o resultado pela DevMaster passou a ser recebido − pagas. O Pix de revendedora pago a fornecedor e lançado no Admin já está dentro das contas pagas; antes era descontado de novo e a divergência saía maior."}]},
  {v:"0.21.177", data:"2026-11-24", titulo:"Faturamento: tela compacta, contas do dia como estavam e dias futuros fora", itens:[
   {tipo:"melhoria", area:"Financeiro › Receber › Faturamento", txt:"Uma barra azul só (visão, mês, ano e os campos do dia), tabela fina no fundo azul da Home da família, letra menor, sem os dias que ainda não aconteceram."},
   {tipo:"correção", area:"Financeiro › Receber › Faturamento", txt:"Contas a pagar de cada dia guardam o total que valia naquele dia (contasPrevDia) e as contas pagas usam a data da baixa; Recebido por Notas fiscais ou Contas a receber."}]},
