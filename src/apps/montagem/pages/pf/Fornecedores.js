@@ -8,7 +8,7 @@ import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
 import { CARD, Chip, Modal, Sel, TD, brl, dbr, op, th, usePf } from "./ui";
 
-var PERS = [["d10","A cada 10 dias","3 acertos no mês"], ["d15","A cada 15 dias","2 acertos no mês"], ["mensal","Mensal","1 acerto no mês"], ["custom","Livre","datas manuais"]];
+var PERS = [["d10","A cada 10 dias","3 acertos no mês"], ["d15","A cada 15 dias","2 acertos no mês"], ["mensal","Mensal","1 acerto no mês"], ["custom","Livre","datas manuais"], ["venc","No vencimento","data da parcela"]];
 var PRAZOS = [[0,"No próprio dia do corte"], [1,"1 dia após"], [2,"2 dias após"], [3,"3 dias após"], [5,"5 dias após"], [7,"7 dias após"], [10,"10 dias após"]];
 var LBL = "text-[12px] font-semibold";
 var BTN = "inline-flex items-center gap-1.5 rounded-lg bg-linear-to-br from-[#3B82F6] to-[#1D4ED8] px-4 py-2 text-[13px] font-bold text-white";
@@ -18,7 +18,7 @@ function ModalForn(p){
   var c = p.c, f = p.f, prest = !!p.prest, QUEM = prest ? "prestador" : "fornecedor", cats = prest ? PREST_CATS : FORN_CATS, ini = f ? cicloDe(f) : {periodicidade:"mensal", cortes:[31], prazoDias:0};
   var sNome = useState(f ? f.nome : ""), sCat = useState(f ? f.cat : cats[0]), sVin = useState(f && f.vinculo ? f.vinculo : "externo"), sPer = useState(ini.periodicidade), sCor = useState(ini.cortes.map(String)), sPrazo = useState(ini.prazoDias||0);
   var nome = sNome[0], cat = sCat[0], vinc = sVin[0], per = sPer[0], cortes = sCor[0], prazo = sPrazo[0];
-  var setPer = function(pp){ sPer[1](pp); if(pp!=="custom") sCor[1](cortesDoPreset(pp, mesAtual()).map(String)); };   // ao escolher um ciclo pronto, preenche os cortes; "Livre" mantém os atuais
+  var setPer = function(pp){ sPer[1](pp); if(pp!=="custom" && pp!=="venc") sCor[1](cortesDoPreset(pp, mesAtual()).map(String)); };   // ao escolher um ciclo pronto, preenche os cortes; "Livre" mantém os atuais
   var setCorte = function(i, v){ var n = cortes.slice(); n[i] = v; sCor[1](n); sPer[1]("custom"); };
   var limpos = limpaCortes(cortes), prev = limpos.length ? previewCiclo(limpos, prazo) : [];
   var salvar = function(){
@@ -45,11 +45,13 @@ function ModalForn(p){
 
     e("div",{className:"mt-1 flex items-center gap-2 border-t border-border pt-3 text-[11px] font-bold uppercase tracking-[.12em] text-primary"}, e(Ph,{n:"calendar-blank", s:15}), "Ciclo de acerto — como este fornecedor é pago"),
     e("span",{className:LBL}, "Periodicidade"),
-    e("div",{className:"grid grid-cols-2 gap-2 sm:grid-cols-4"}, PERS.map(function(x){
+    e("div",{className:"grid grid-cols-2 gap-2 sm:grid-cols-5"}, PERS.map(function(x){
       var on = per===x[0];
       return e("button",{key:x[0], type:"button", onClick:function(){ setPer(x[0]); }, className:"rounded-xl px-3 py-2 text-center text-[13px] font-bold ring-1 "+(on ? "bg-linear-to-br from-[#3B82F6]/50 to-[#1D4ED8]/40 text-white ring-[#3B82F6]" : "bg-muted/40 text-white ring-border hover:bg-white/10")},
         x[1], e("span",{className:"block text-[11.5px] font-medium opacity-80"}, x[2])); })),
 
+    // "No vencimento" (Lucas, 24/11/2026): cada parcela é paga na própria data de vencimento; não usa dias de corte e vale mais que as datas feitas à mão
+    per==="venc" ? e("div",{className:"rounded-xl bg-background/40 p-3 text-center text-[13px] font-semibold ring-1 ring-white/10"}, "Cada parcela é paga na data de vencimento lançada no pedido.") :
     e("div",{className:"flex flex-col gap-2 rounded-xl bg-background/40 p-3 ring-1 ring-white/10"},
       e("span",{className:LBL}, "Dias de corte no mês — cada corte fecha uma janela e gera um PIX"),
       e("div",{className:"grid grid-cols-2 gap-2 sm:grid-cols-4"}, cortes.map(function(v, i){

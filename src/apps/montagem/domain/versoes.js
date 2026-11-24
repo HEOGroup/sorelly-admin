@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.175", data:"2026-11-24", titulo:"Fornecedores e prestadores: pagar no vencimento da parcela", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos a fornecedores › Fornecedores e Prestadores", txt:"Ciclo novo \"No vencimento\" no cadastro: cada parcela é paga na própria data de vencimento lançada no pedido (sem dias de corte). Vale mais que as datas de novembro feitas à mão. Os Pix já lançados seguem na data deles."}]},
  {v:"0.21.174", data:"2026-11-24", titulo:"Fatura do Itaú Black de novembro: os gastos reais no lugar da previsão (também no número oficial)", itens:[
   {tipo:"correção", area:"Financeiro › Faturas", txt:"Fatura de novembro do Itaú Black importada do PDF: R$ 28.887,26 (vence 25/11), 56 linhas, no lugar da prévia de R$ 13.332,13."},
   {tipo:"correção", area:"Contas a pagar e Resultado do mês", txt:"As contas do mês usam a fatura real: sem a PREVISÃO de R$ 24.000 e sem as 31 compras estimadas da DevMaster do mesmo vencimento. Coluna Origem = Fatura Itaú Black. Só no Admin: o financeiro ajusta a DevMaster."},

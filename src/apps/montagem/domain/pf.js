@@ -28,7 +28,8 @@ var PERIODICIDADES = {
   d10:    {label:"A cada 10 dias", cortes:function(m){ return [10,20,ultDia(m)]; }},
   d15:    {label:"A cada 15 dias", cortes:function(m){ return [15,ultDia(m)]; }},
   mensal: {label:"Mensal",         cortes:function(m){ return [ultDia(m)]; }},
-  custom: {label:"Livre",          cortes:function(m){ return [ultDia(m)]; }}
+  custom: {label:"Livre",          cortes:function(m){ return [ultDia(m)]; }},
+  venc:   {label:"No vencimento da parcela", cortes:function(m){ return [ultDia(m)]; }}   // Lucas, 24/11/2026: cada parcela é paga na própria data de vencimento
 };
 var F_TIPO = [["tudo","Tudo"],["sem","Só SEM NF (o que pagamos)"],["com","Só COM NF (controle)"]];
 var F_PER  = [["3","3 meses"],["6","6 meses"],["12","12 meses"],["all","Todos"]];
@@ -286,10 +287,12 @@ function cicloDe(f){
 }
 function cicloLabel(f){
   var c = cicloDe(f), base = (PERIODICIDADES[c.periodicidade]||PERIODICIDADES.custom).label;
+  if(c.periodicidade==="venc") return base+(c.prazoDias>0 ? " +"+c.prazoDias+"d" : "");
   return base+" · "+c.cortes.join("/")+(c.prazoDias>0 ? " +"+c.prazoDias+"d" : "");
 }
 function cicloCor(f){ var p = cicloDe(f).periodicidade; return p==="d10" ? "purple" : p==="d15" ? "cyan" : p==="mensal" ? "blue" : "yellow"; }
 function blocosDoMes(pf, fornId, mes){   // sobrescrita manual em `acertos` vale mais que o ciclo
+  if(cicloDe(forn(pf, fornId)).periodicidade==="venc") return blocosDoVenc(pf, fornId, mes);   // "no vencimento": vale mais que as datas feitas à mão
   var ov = pf.acertos[fornId+"|"+mes];
   if(ov && ov.length) return ov.map(function(b){ return Object.assign({}, b); });
   var c = cicloDe(forn(pf, fornId));
@@ -298,7 +301,14 @@ function blocosDoMes(pf, fornId, mes){   // sobrescrita manual em `acertos` vale
     return {fim:fim, limite: c.prazoDias>0 ? addDias(fim, c.prazoDias) : fim};
   });
 }
-function temOverride(pf, fornId, mes){ var o = pf.acertos[fornId+"|"+mes]; return !!(o && o.length); }
+// ciclo "No vencimento da parcela" (Lucas, 24/11/2026): uma data de pagamento para cada vencimento do mês (+ o último dia, para o que vier adiado)
+function blocosDoVenc(pf, fornId, mes){
+  var pz = cicloDe(forn(pf, fornId)).prazoDias||0, vs = {};
+  pf.pedidos.forEach(function(pd){ if(pd.fornId!==fornId) return; pd.parcelas.forEach(function(p){ if(p.venc && p.venc.slice(0,7)===mes) vs[p.venc] = 1; }); });
+  vs[diaISO(mes, ultDia(mes))] = 1;
+  return Object.keys(vs).sort().map(function(fim){ return {fim:fim, limite: pz>0 ? addDias(fim, pz) : fim}; });
+}
+function temOverride(pf, fornId, mes){ if(cicloDe(forn(pf, fornId)).periodicidade==="venc") return false; var o = pf.acertos[fornId+"|"+mes]; return !!(o && o.length); }
 function distribuir(blocos, linhas){   // cada parcela cai na 1ª janela cujo corte >= vencimento; depois do último corte vai para a última
   var out = blocos.map(function(b){ return Object.assign({}, b, {itens:[]}); });
   if(!out.length) return out;
