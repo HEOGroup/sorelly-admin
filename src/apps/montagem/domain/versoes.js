@@ -6,6 +6,8 @@ var VERSOES = [
  {v:"0.21.151", data:"2026-11-23", titulo:"App da representante: novo Início com foto, totais do app e menu da conta", itens:[
   {tipo:"melhoria", area:"App da representante", txt:"Início: foto grande dela (por cima das ondas), logo maior, menu no nome com Trocar foto e Sair da conta, sem meses, sino, Desempenho, Indique e SorellyChat, botões e ícones maiores."},
   {tipo:"correção", area:"App da representante", txt:"Vendido Total e Acerto Total vêm do app das revendedoras (antes ficavam em R$ 0,00 na conta dela); Comissão Rep. = % dela sobre o Acerto Total (Vanessa 10%)."}]},
+ {v:"0.21.152", data:"2026-11-23", titulo:"Marcus virou um setor do menu", itens:[
+  {tipo:"melhoria", area:"Marcus", txt:"O sistema pessoal do Marcus deixou de ser uma visão separada: agora é o setor Marcus no menu lateral (grupo Geral), com o menu do setor e as telas Resumo, Faturamento, Patrimônio e dívidas, Contas do mês, Extratos, Atividades, Acessos e senhas, Dados e Progresso. Só o Marcus e o Leonardo abrem; o endereço digitado também fica fechado para as demais pessoas."}]},
  {v:"0.21.150", data:"2026-11-23", titulo:"App da representante: carteira grande, % de cada uma, ficha e pedido de data no servidor", itens:[
   {tipo:"correção", area:"App da representante", txt:"Carteira grande (Veridiana, 202 revendedoras) aparecia só com 1: a busca estourava o tempo. Servidor com 60 s, venda do app em paralelo e nova tentativa no app."},
   {tipo:"correção", area:"App da representante", txt:"O cartão da revendedora mostra a % de comissão de cada representante (antes, 8% para todas)."},

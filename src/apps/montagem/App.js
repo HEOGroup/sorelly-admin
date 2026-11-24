@@ -238,6 +238,7 @@ function App(){
   if(srv.apiAtiva() && PESSOAS_DENUNCIAS.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="denuncias"; });
   if(srv.apiAtiva() && PESSOAS_CLIMA.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="clima"; });   // Pesquisa de clima (18/11/2026): só Marcus e Maria (RH)
   if(srv.apiAtiva() && PESSOAS_ATIVIDADES_FIN.indexOf(Number(srv.pessoaDaConta()))<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k!=="finativ"; });   // Financeiro › Atividades (18/11/2026): só o Marcus
+  if(srv.apiAtiva() && ["16","44"].indexOf(srv.pessoaDaConta())<0) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return k.indexOf("marcus")!==0; });   // setor Marcus (23/11/2026): o endereço digitado também fecha; só o Marcus (16) e o Leonardo (44) abrem
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
@@ -260,15 +261,15 @@ function App(){
   var donoTitulo = aba==="breve" ? null : setorDaAba(aba), setorTitulo = donoTitulo ? donoTitulo.nome : "Sorelly Admin";
   useEffect(function(){ document.title = titulo+" · "+setorTitulo; }, [titulo, setorTitulo]);   // título da aba do navegador: Tela · Setor (pedido do Marcus, 28/10/2026)
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
-  var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
+  var visao = "admin";   // 23/11/2026 (Marcus): a visão separada "Marcus" acabou; ele é um setor comum do menu (id "marcus").   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if((t.aba==="ctafam" || t.aba==="ctafamp") && !temAutorizacao("financeiro_familia", s.usuario)) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffcasas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","fffaturas","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16 && s.usuario!==44) return false;   /* setor Marcus: só o Marcus (16) e o Leonardo (44) */ if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if((t.aba==="ctafam" || t.aba==="ctafamp") && !temAutorizacao("financeiro_familia", s.usuario)) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffcasas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","fffaturas","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);
-    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : visao==="pontual" ? st.id==="pontual" : (st.id.indexOf("marcus")!==0 && st.id!=="pontual"); }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || visao==="pontual" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
+    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="pontual" ? st.id==="pontual" : st.id!=="pontual"; }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="pontual" || st.id==="marcus" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
   definirSetoresInicio(setoresV.filter(function(st){ return st.id!=="inicio"; }));   // a página inicial mostra os mesmos setores do menu lateral
   useEffect(function(){ if(s.logado) registrarVisita(s.usuario, aba); }, [aba]);   // telas visitadas recentemente (página inicial)
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
@@ -304,7 +305,7 @@ function App(){
   var entradaSt = entradaId ? setoresV.find(function(x){ return x.id===entradaId && !x.direto; }) : null;
   if(entradaSt){ setorAtual = {st:comoSetor(entradaSt), ar:{nome:entradaSt.nome}}; titulo = entradaSt.nome.replace(/\n/g," "); }
   // tela que não está em nenhum setor (ex.: Configurador, Painel dos acertos): entra na faixa de telas abertas como "Sistema"
-  if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba) && (visao==="pontual")===/^pont/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
+  if(!setorAtual && aba && aba!=="breve" && (visao==="pontual")===/^pont/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
   setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
   var navPerg = !!(setorAtual && setorAtual.st.menu);
   // caminho no topo = o caminho REAL do menu (ex.: Financeiro / Contas / Fornecedores / Cadastro), não a organização antiga das áreas
@@ -345,12 +346,11 @@ function App(){
       // 16/11/2026 (Marcus: "compacte"): busca, conta, Sair e situação num bloco só, em 2 linhas de 32 px (Sair e situação viraram só ícone)
       e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"},
         e(IrPara,{larga:true, navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
-        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
+        /^marcus/.test(aba) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
         e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}))),   // sem o botão de situação (Disponível) para ninguém: online já é disponível (Marcus, 21/11/2026)
       // 13/11/2026 (Marcus): o seletor Admin / Marcus / Pontual saiu do alto do menu. O Pontual foi tirado e o Marcus virou um setor logo abaixo de Diretoria.
       // 13/11/2026 (Marcus): o nome com o nível de acesso, o Sair e a situação (Disponível) saíram da barra de cima e ficam num bloquinho aqui, entre a logo e o GERAL
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-2 pb-2 pt-1.5"},
-        visao==="marcus" && s.usuario===16 && e("button",{key:"voltar-admin", title:"Voltar para o sistema da Sorelly", onClick:function(){ d({type:"VISAO_MENU", v:"admin"}); navigate(caminhoDaAba("visaogeral")); setMenu(false); }, className:"mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-white/10 px-2.5 text-left text-[13px] font-semibold leading-tight hover:bg-white/15"}, "← Sorelly Admin"),
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
           // título do grupo vira botão de abrir e fechar (Marcus, 20/11/2026; antes, 02/11/2026, era só um rótulo). Fechado mostra só a tela aberta, se ela for do grupo.
@@ -360,7 +360,7 @@ function App(){
               className:"mt-1 flex h-[22px] w-full items-center justify-between rounded-md bg-white/5 px-2 text-[11px] font-bold uppercase tracking-wider text-foreground hover:bg-white/10 first:mt-0"},   // padrao-ok: título de grupo de 22 px na barra lateral (20/11/2026)
               e("span",null, g[1]+(fechado ? " · "+lst.length : "")), e(Icon,{n:fechado ? "chevron" : "chevrondown", s:11})),
             visiveis.map(linhaSetor),
-            !fechado && g[0]==="geral" && !permitidas && s.usuario===16 && visao==="admin" && e("button",{key:"marcus-modo", title:"Meu sistema particular", onClick:function(){ d({type:"VISAO_MENU", v:"marcus"}); navigate(caminhoDaAba("marcus")); setMenu(false); }, className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight text-foreground/85 hover:bg-white/5"}, tileSetor({id:"marcus-modo", ic:"escudo", cor:"#D9A63A"}, false), e("span",{className:"min-w-0 flex-1"}, "Marcus"))); }),
+            ); }),
         !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && visao!=="pontual" && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
         visao!=="pontual" && urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),

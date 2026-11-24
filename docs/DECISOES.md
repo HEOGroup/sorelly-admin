@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 23/11/2026 (Marcus virou um setor do menu)
+- **Pedido do Marcus:** "O Admin Marcus não pode ficar separado. Quero como um SETOR dentro do Sorelly" (e não dentro do RH).
+- A visão separada (botão Marcus / "← Sorelly Admin") acabou. Existe um setor `marcus` no grupo Geral, com `MENU_MARCUS` (9 telas) em `navigation/setores.js`.
+- **Privacidade:** só a pessoa 16 (Marcus) e a 44 (Leonardo) abrem; as demais não veem no menu e, com o servidor ligado, o endereço digitado também cai fora (`App.js`). Os dados das telas ficam só no navegador (`localStorage`), nada no servidor nem no Git.
+
 ## 23/11/2026 (App da representante: carteira grande, ficha e pedido de data no servidor)
 - **Carteira grande:** `/api/representante/revendedoras` ganhou `maxDuration = 60` e busca a venda do app junto com a DevMaster (a base fria leva ~22 s); o app tenta 3 vezes e não guarda a falha. Antes a Veridiana (202) via só 1 revendedora.
 - **% no cartão:** `pctDaRep` (Dayanne, Lysie e Vanessa 10%; as demais 8%, no módulo `comis` do servidor).
