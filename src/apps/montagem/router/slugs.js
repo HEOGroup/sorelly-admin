@@ -56,6 +56,7 @@ export const SLUG_DA_ABA = {
   cfregras: "cobranca-regras",
   pfresumo: "pf-resumo",
   pflanc: "pf-lancamento",
+  pfpix: "pf-pix-conferencia",
   pfneg: "pf-negociacoes",
   pfmaq: "pf-maquininha",
   pfforn: "pf-fornecedores",

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.134b", data:"2026-11-23", titulo:"Pix (conferência): todos os Pix lançados, com aviso de duplicado", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos › Pix (conferência)", txt:"Tela nova com todos os Pix lançados em Pagamentos a fornecedores, filtro e ordem em cada coluna, e aviso de duplicado provável (mesmo fornecedor, data, valor e revendedora)."},
+  {tipo:"novo", area:"Financeiro › Pagamentos › Pix (conferência)", txt:"Quem confere os pagamentos apaga o duplicado na própria linha. A tela diz qual dos dois apagar."}]},
  {v:"0.21.162", data:"2026-11-23", titulo:"Marcus: Progresso na mesma estrutura do Acessos e senhas", itens:[
   {tipo:"melhoria", area:"Marcus → Progresso", txt:"A tela Progresso ganhou a estrutura da Contas a pagar: barra azul (Mês, Agora, Hoje, Média do mês), botão Começar/Encerrar o dia no canto e tabela fina com uma linha por dia (início, fim, trabalhado, pausas e academia). Clicar no dia abre os trechos e a academia."}]},
  {v:"0.21.161", data:"2026-11-23", titulo:"Marcus: senha sempre visível", itens:[
