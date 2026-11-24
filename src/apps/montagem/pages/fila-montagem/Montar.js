@@ -109,7 +109,7 @@ function ConcluirMontagem(p){
       .catch(function(x){ se[1](x.message || "Não foi possível registrar a montagem."); })
       .finally(function(){ sv[1](false); });
   };
-  if(resumo) return e(Janela,{t:"Montagem registrada", sub:"Kit de "+p.rev.nome+" registrado na Fila de montagem.", fechar:p.concluido,
+  if(resumo) return e(Janela,{t:"Montagem registrada", sub:"Kit de "+p.rev.nome+" registrado nas Listagens.", fechar:p.concluido,
     colunas:[e(Bloco,{key:"r", t:"Resumo", cls:"col-span-full"},
       e(Linha,{r:"Montado por"}, resumo.staffNome),
       dinheiro && e(Linha,{r:"Valor do kit"}, brl(resumo.valorKit)),
@@ -148,8 +148,8 @@ function MontarKit(p){
   useEffect(function(){ if(!nomeRev) return undefined; var vivo = true; chamar("GET", "/montagem/revendedoras/"+p.id+"/aneis?nome="+encodeURIComponent(nomeRev)).then(function(j){ if(vivo) sa2[1](j || {erro:true}); }).catch(function(){ if(vivo) sa2[1]({erro:true}); }); return function(){ vivo = false; }; }, [nomeRev, p.id]);   // eslint-disable-line react-hooks/exhaustive-deps -- sa2 é estado fixo
   useEffect(function(){ if(!dinheiro || !nomeRev) return undefined; var vivo = true; chamar("GET", "/montagem/revendedoras/"+p.id+"/vendas?nome="+encodeURIComponent(nomeRev)).then(function(j){ if(vivo) sv[1](j || {}); }).catch(function(){ if(vivo) sv[1]({erro:true}); }); return function(){ vivo = false; }; }, [dinheiro, nomeRev, p.id]);   // eslint-disable-line react-hooks/exhaustive-deps -- sv é estado fixo
 
-  if(det.erro && !d) return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:"Montar kit"}, e(Botao,{onClick:p.voltar}, p.kitId ? "Voltar para as listagens" : "Voltar para a fila")), e(Aviso,{tom:"vermelho"}, "Não foi possível carregar a revendedora: "+det.erro));
-  if(!d) return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:"Montar kit", sub:"Lendo as preferências no app…"}, e(Botao,{onClick:p.voltar}, p.kitId ? "Voltar para as listagens" : "Voltar para a fila")));
+  if(det.erro && !d) return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:"Montar kit"}, e(Botao,{onClick:p.voltar}, "Voltar para as listagens")), e(Aviso,{tom:"vermelho"}, "Não foi possível carregar a revendedora: "+det.erro));
+  if(!d) return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:"Montar kit", sub:"Lendo as preferências no app…"}, e(Botao,{onClick:p.voltar}, "Voltar para as listagens")));
 
   var pf = d.preferencias || {}, m = (pf.resumoGeral || [])[0], ans = pf.answers || {}, temPrefs = !!pf.temPreferencias;
   var regiao = [d.regiao && d.regiao.cidade, d.regiao && d.regiao.estado].filter(Boolean).join(" / ") || "Região não informada";
@@ -173,9 +173,9 @@ function MontarKit(p){
   var nFotos = function(bl){ var r = pkExibirResposta(bl, ans[bl.key]); return r.vazio ? 0 : r.imagens.length; };
   var aviso = d.doCache ? "O app não respondeu agora: as preferências são a última cópia guardada." : d.configSync===false ? "A configuração do kit não respondeu: as respostas podem incluir blocos já removidos." : "";
 
-  var painelRev = e(Painel,{t:"Revendedora", s:p.kitId ? "Listagens" : "Fila de montagem"},
+  var painelRev = e(Painel,{t:"Revendedora", s:"Listagens"},
     e(Corpo,null,
-      e("button",{type:"button", onClick:p.voltar, className:BTN}, p.kitId ? "‹ Voltar para as listagens" : "‹ Voltar para a fila"),
+      e("button",{type:"button", onClick:p.voltar, className:BTN}, "‹ Voltar para as listagens"),
       e("div",{className:"flex items-center gap-3"},
         e("div",{className:"flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e8b84b] font-bold text-[#111] "+G15}, iniciais),
         e("div",{className:"min-w-0"}, e("div",{className:G15+" font-semibold leading-tight"}, d.nome), e("div",{className:"text-[13px] "+MUT}, regiao))),

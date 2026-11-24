@@ -193,7 +193,6 @@ export const SLUG_DA_ABA = {
   cpdev: "cadastro-de-pecas-devmaster",
   cpcfg: "cadastro-de-pecas-configuracoes",
   prefkit: "preferencias-do-kit",
-  filamont: "fila-de-montagem",   // Fila de montagem (migrada do admin antigo, 18/11/2026)
   prodmont: "produtividade-da-montagem",   // bônus, regras e equipe da montagem (18/11/2026)
   desempenhocad: "desempenho-do-cadastro",
   celfunc: "app-funcionarias",

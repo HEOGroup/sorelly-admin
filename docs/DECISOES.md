@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Fila de montagem removida)
+- **Marcus: "essa tela Fila de montagem eu já falei que não pode existir".** A tela saiu: item do menu em Representantes & Kits, endereço `/fila-de-montagem`, página `FilaMontagem.js`, botão Análise geral e acesso da montadora. **A ficha Montar kit abre só pelas Listagens** (botão Montar na linha do kit) e o Voltar leva às Listagens. Ficam: Preferências do kit, Produtividade da montagem e as rotas do servidor `/api/montagem/*` (a ficha ainda lê delas). Não recriar a Fila de montagem.
+
 ## 24/11/2026 (Ficha Montar kit: visual de sistema, anéis por tamanho e vendas)
 - **Marcus aprovou a versão B do desenho** (`docs/ideias/montar-kit-visual-sistema.html`): quatro painéis claros e separados (Revendedora | Categorias | Fotos | Respostas dela) dentro de uma moldura **dourada que cobre todo o espaço em volta**, sem borda arredondada, até o fim da tela. Círculo de marcar em cada categoria com barra de progresso; "Marcar como montado" fixo embaixo das fotos e passa para a próxima.
 - **Fotos:** duas lado a lado, três = duas em cima e uma embaixo; cada borda do tamanho exato da foto, sem cortar.

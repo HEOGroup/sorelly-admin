@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.210", data:"2026-11-24", titulo:"Fila de montagem removida: a ficha Montar kit abre só pelas Listagens", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits", txt:"A tela Fila de montagem saiu do sistema (menu, endereço, página, botão Análise geral e acesso da montadora). A ficha Montar kit abre só pelo botão Montar das Listagens, e o botão Voltar para as listagens leva de volta a elas. Preferências do kit e Produtividade da montagem continuam."}]},
  {v:"0.21.209", data:"2026-11-24", titulo:"App da representante: o atendimento não se perde quando o sistema atualiza", itens:[
   {tipo:"melhoria", area:"App da representante", txt:"Se o app recarregar no meio de um atendimento (atualização do sistema, aba fechada, erro de arquivo novo), a representante volta na mesma tela, com o acerto, as peças bipadas e os brindes como estavam. O rascunho fica só no aparelho, vale 12 horas e some quando ela sai do atendimento de propósito ou termina o acerto."},
  ]},

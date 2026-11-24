@@ -220,7 +220,7 @@ var SETORES = [
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
       T("consolidado"), T("regras"),
-      T("prefkit","Preferências do kit"), T("filamont","Fila de montagem"), T("prodmont","Produtividade da montagem"),
+      T("prefkit","Preferências do kit"), T("prodmont","Produtividade da montagem"),
       T("equipe"), T("registros"), T("relatorios")]},
   ]},
   // Produção de peças: setor próprio (16/11/2026, pedido do Marcus). Saiu de Representantes & Kits › Montagem; a tela e os dados são os mesmos (`pages/Producao.js`, `domain/producao.js`).
