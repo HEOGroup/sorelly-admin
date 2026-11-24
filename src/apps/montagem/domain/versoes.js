@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.182", data:"2026-11-24", titulo:"Acesso total sem o RH (Priscila e Amanda de Miranda)", itens:[
+  {tipo:"melhoria", area:"RH › Acessos e autorizações", txt:"Priscila e Amanda de Miranda têm Acesso total, mas não abrem o setor RH: o menu some, o endereço digitado não abre e o servidor recusa os dados do RH. Encomendas: Castilho, Agatha, Eduarda Gabriela e Elen abrem todas as telas do setor (liberado direto na conta)."}]},
  {v:"0.21.181", data:"2026-11-24", titulo:"App da representante: Agendar com acerto + retirada e kit novo", itens:[
   {tipo:"novo", area:"App da representante → Revendedoras → Agendar atendimento", txt:"O tipo vira um menu com Acerto + kit, Acerto + retirada (saída), Kit novo e Reposição. Acerto + retirada não tem kit para montar, então o prazo da montagem (2 dias antes, 07:30) não vale. Falta: Entrega de reposição."}]},
  {v:"0.21.180", data:"2026-11-24", titulo:"App da representante: horários até 21:00 e agendar salva a revendedora na listagem", itens:[

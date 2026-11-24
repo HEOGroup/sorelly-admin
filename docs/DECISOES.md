@@ -3512,3 +3512,7 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 
 ## 24/11/2026 · Agendar no app: tipos
 - Marcus (caso da Thainá): o Agendar precisa ter Kit novo, Acerto + kit, Acerto + retirada, Reposição e Entrega de reposição. Feitos os quatro primeiros (Acerto + retirada = tipo saiu, sem prazo da montagem). Entrega de reposição aguarda definição de como é gravada.
+
+## 24/11/2026 · Acesso total sem o RH (Marcus)
+- Priscila (37) e Amanda de Miranda (32) têm Acesso total (ADMIN), menos o RH. Código: `PESSOAS_SEM_RH` em `src/server/permissoes.js` (módulos `rh` e `eq`) e o filtro das telas do RH em `App.js`. Para liberar o RH de novo, tirar o id das duas listas.
+- Encomendas liberado em 24/11/2026 para Castilho (47) e para Agatha, Eduarda Gabriela e Elen (`set_encomendas` nas abas da conta).

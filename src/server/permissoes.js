@@ -54,9 +54,13 @@ export const SETORES_DO_MODULO = {
 // Módulos que uma PESSOA específica abre além da Diretoria e dos setores da lista (Marcus, 12/11/2026): Castilho (47, Marketing) abre Modelos e Metas.
 export const PESSOAS_DO_MODULO = { mod: [47, 61], metas: [47] };
 
+// Acesso total SEM o RH (Marcus, 24/11/2026): Priscila (37) e Amanda de Miranda (32) abrem tudo, menos os dados do RH (cadastro, folha, equipes).
+export const PESSOAS_SEM_RH = [37, 32];
+const MODULOS_DO_RH = ["rh", "eq"];
+
 export function podeModulo(usuario, modulo) {
   if (usuario?.repCod) return MODULOS_REP.includes(modulo);   // conta de representante (rep_cod): só rpo e rpf (filtrados por ela no servidor), comunicados e a marca do Kit Prata
-  if (usuario?.perfil === "ADMIN") return true;
+  if (usuario?.perfil === "ADMIN") return !(PESSOAS_SEM_RH.includes(usuario.pessoaId) && MODULOS_DO_RH.includes(modulo));   // Acesso total, menos o RH (Marcus, 24/11/2026)
   if ((PESSOAS_DO_MODULO[modulo] || []).includes(usuario?.pessoaId)) return true;
   const lista = SETORES_DO_MODULO[modulo];
   if (!lista) return false;

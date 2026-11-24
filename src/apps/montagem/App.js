@@ -250,6 +250,8 @@ function App(){
   if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return srv.repCodDaConta() ? k==="inicio" : abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","regrasguias","segdocs"].indexOf(k)>=0; });   // conta de representante: só Início e as telas dela (sem Chat, Chamados, Aulas e Regras gerais)
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
+  // Acesso total SEM o RH (Marcus, 24/11/2026): Priscila (37) e Amanda de Miranda (32) não abrem nenhuma tela do setor RH (nem digitando o endereço)
+  if(srv.apiAtiva() && [37, 32].indexOf(Number(srv.pessoaDaConta()))>=0){ var abasRh = abasDoSetor("rh"); permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return abasRh.indexOf(k)<0; }); }
   var abas = ABAS.filter(function(a){ return a[0]==="entradasetor" || !permitidas || permitidas.indexOf(a[0])>=0; });   // a entrada do setor (22/11/2026) é de todos; a lista de telas dentro dela já vem filtrada pelo acesso
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   var entradaId = aba==="entradasetor" ? new URLSearchParams(loc.search).get("setor") : null;   // entrada do setor (22/11/2026): qual setor mostrar
