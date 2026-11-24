@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.192", data:"2026-11-24", titulo:"Pagamentos: botão Lançar pagamento e comprovante em uma coluna", itens:[
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Geral", txt:"O botão amarelo Lançar pagamento ocupa a célula inteira da barra, sem rótulo. No card do fornecedor o comprovante é uma coluna só (Ver ou Anexar) e a Situação mostra só A conferir ou Conferido."},
+ ]},
  {v:"0.21.191", data:"2026-11-24", titulo:"App da representante no iPhone: sem linha preta ao lado do cabeçalho", itens:[
   {tipo:"correção", area:"App da representante", txt:"O fundo da tela é um cinza só; a faixa preta que aparecia ao lado dos cantos do cabeçalho saiu."}]},
  {v:"0.21.190", data:"2026-11-24", titulo:"Produção: envio e baixa automáticos, novos produtores externos e Envio e devolução lado a lado", itens:[
