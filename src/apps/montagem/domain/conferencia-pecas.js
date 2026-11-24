@@ -22,9 +22,9 @@ function bipar(conds, conf, codigo){
   var cod = String(codigo||"").trim().toUpperCase().replace(/\s+/g,""); if(!cod) return conf;
   var lidos = Object.assign({}, conf.lidos), erros = (conf.erros||[]).slice(), achou = null;
   conds.some(function(c){ return itensDe(c).some(function(i){ if(bate(i, cod) && (lidos[c.numero+"|"+i.codigo]||0) < i.qtd){ achou = i; return true; } return false; }); });
-  if(achou){ lidos[achou.cond+"|"+achou.codigo] = (lidos[achou.cond+"|"+achou.codigo]||0)+1; return Object.assign({}, conf, {lidos:lidos, ultimo:{tipo:"ok", codigo:achou.codigo, desc:achou.desc, em:Date.now()}}); }
+  if(achou){ lidos[achou.cond+"|"+achou.codigo] = (lidos[achou.cond+"|"+achou.codigo]||0)+1; return Object.assign({}, conf, {lidos:lidos, ultimo:{tipo:"ok", codigo:achou.codigo, desc:achou.desc, valor:achou.valor, cond:achou.cond, em:Date.now()}}); }
   var existe = null; conds.some(function(c){ return itensDe(c).some(function(i){ if(bate(i, cod)){ existe = i; return true; } return false; }); });
-  if(existe) return Object.assign({}, conf, {ultimo:{tipo:"repetida", codigo:existe.codigo, desc:existe.desc, em:Date.now()}});   // já conferida: não conta de novo
+  if(existe) return Object.assign({}, conf, {ultimo:{tipo:"repetida", codigo:existe.codigo, desc:existe.desc, valor:existe.valor, cond:existe.cond, em:Date.now()}});   // já conferida: não conta de novo
   erros.push({codigo:cod, em:Date.now()});
   return Object.assign({}, conf, {erros:erros, ultimo:{tipo:"fora", codigo:cod, em:Date.now()}});
 }

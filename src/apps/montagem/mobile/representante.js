@@ -212,7 +212,6 @@ function AppRepresentante(p){
     e("b",{className:"text-[16px]"}, TITULO[tela]));
   var PCT_COMISSAO_REP_CARD = (function(){ var c = comisEfetiva(s), reps = c.reps||[], x = reps.find(function(y){ return y.nome===l.rep; }) || reps.find(function(y){ return y.nome===String(l.rep||"").trim().split(/ +/)[0]; }); return (x && x.pct!=null ? x.pct : c.pctPadrao)/100; })();   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
   var LINHA_CARD = "border-[#E9DDBB]";
-  var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };
   var cartao = function(r){
     // mês atual, ainda sem acerto: vale o que ela vendeu no APP desde o último acerto (é o que vai virar o acerto); sem venda no app, a última venda da DevMaster
     var doApp = mes===0 && !r.realizado && r.vendaApp>0;
@@ -223,28 +222,24 @@ function AppRepresentante(p){
     // endereço favorito (estrela na ficha da revendedora): é onde ela prefere ser atendida no acerto, e é o que aparece na lista
     var pf = s.perfisRev[r.rev] || {}, fav = pf.enderecoFavorito;
     var endCard = fav==="trabalho" ? (pf.enderecoTrabalho || r.bairro) : fav==="casa" ? (pf.enderecoCasa!==undefined ? pf.enderecoCasa : r.bairro) : r.bairro;
+    // cartão no formato A (Marcus, 24/11/2026): mesmas cores de antes (fundo dourado claro, números verde, azul e dourado, data com a cor do estado), uma fonte, sem botão Copiar
+    var num = function(lb, v, cor, esq){ var t = String(v); return e("div",{key:lb, className:"min-w-0 flex-1 px-1 pb-1.5 pt-1 text-center "+(esq ? "border-r "+LINHA_CARD : "")}, e("p",{className:"text-[11px] font-semibold leading-tight text-[#7A6B3F]"}, lb), e("p",{className:"whitespace-nowrap font-bold leading-tight tabular-nums "+(t.length>11 ? "text-[11px]" : "text-[13px]"), style:{color:cor}}, t)); };
     return e("div",{key:r.id, onClick:function(){ setSel(r.id); setTela("rev"); }, role:"button", tabIndex:0,
-        className:"block w-full cursor-pointer overflow-hidden rounded-2xl border "+LINHA_CARD+" text-left shadow-sm transition-transform active:scale-[.99]",
+        className:"block w-full cursor-pointer overflow-hidden rounded-xl border "+LINHA_CARD+" text-left shadow-sm transition-transform active:scale-[.99]",
         style:{background:"#F6EBCB"}},
-      e("div",{className:"flex items-center justify-between gap-2 px-2.5 py-2"},
-        e("div",{className:"flex min-w-0 items-center gap-1.5"},
-          e("b",{className:"min-w-0 text-[13px] leading-tight text-[#111827]"}, r.rev),   // nome inteiro, em até 2 linhas (nada abreviado, 23/11/2026)
-          modalidadeDe(s, r.rev)==="prata" && e("span",{className:"shrink-0 rounded-full bg-slate-700 px-1.5 py-px text-[9px] font-black tracking-wider "+BR}, "100% PRATA")),
-        e("div",{className:"flex shrink-0 items-center gap-1.5"},
-          e("span",{className:"text-[13px] font-medium text-[#4B5563]"}, r.fone||"—"),
-          r.fone && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abrirChat(r.rev); }, "aria-label":"Conversar com "+r.rev+" no chat", title:"Conversar no chat", className:"grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:12})))),
-      !(tipoHoje && tk!=="reposicao") && e("div",{className:"grid grid-cols-3 divide-x divide-[#E9DDBB] border-t "+LINHA_CARD+" py-2 text-center"},
-        col(doApp ? "VENDIDO NO APP" : "VENDIDO", BK(vd), "#15803D"), col("ACERTO", BK(acerto), "#2563EB"), col("COMISSÃO", BK(comissaoRep), "#A67C12")),
-      e("div",{className:"flex items-start justify-between gap-2 border-t "+LINHA_CARD+" px-2.5 py-1.5"},
-        e("p",{className:"min-w-0 flex-1 text-[11px] leading-snug text-[#6B7280]"},
-          fav && e("span",{className:"mr-1 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-px align-middle text-[9.5px] font-bold text-amber-800"},
-            e(Icon,{n:"star", s:9, peso:"fill"}), fav==="trabalho" ? "Trabalho" : "Casa"),
-          endCard||"—"),
-        endCard && e("button",{onClick:function(ev){ ev.stopPropagation(); copiarEndereco(r.id, endCard); }, "aria-label":"Copiar endereço de "+r.rev,
-          className:"flex shrink-0 items-center gap-1 rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-[#4B5563]"},
-          e(Icon,{n:"copiar", s:11}), copiadoId===r.id ? "Copiado" : "Copiar")),
-      e("div",{className:"flex items-center justify-between border-t "+LINHA_CARD+" px-2.5 py-1.5 text-[11.5px] font-semibold", style:{color:estado.cor}},
-        e("span",null, estado.lb), e("span",null, r.realizado ? r.realizado.data : r.data+(r.hora ? " · "+r.hora : ""))));
+      e("div",{className:"flex items-center justify-between gap-2 px-3 pb-1.5 pt-2"},
+        e("div",{className:"min-w-0"},
+          e("div",{className:"flex min-w-0 items-center gap-1.5"},
+            e("b",{className:"min-w-0 text-[13px] font-bold leading-tight text-[#111827]"}, r.rev),   // nome inteiro (nada abreviado, 23/11/2026)
+            modalidadeDe(s, r.rev)==="prata" && e("span",{className:"shrink-0 rounded-md bg-slate-700 px-1.5 py-px text-[11px] font-semibold "+BR}, "100% prata")),
+          e("p",{className:"mt-0.5 text-[11px] leading-snug text-[#4B5563]"},
+            [r.fone, endCard].filter(Boolean).join(" · ") || "—")),
+        r.fone && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); var d = String(r.fone||"").replace(/D/g, ""); if(d) window.open("https://wa.me/"+(d.length>11 && d.indexOf("55")===0 ? d : "55"+d), "_blank", "noopener"); }, "aria-label":"Abrir o WhatsApp de "+r.rev, title:"Abrir o WhatsApp", className:"grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:15}))),
+      e("div",{className:"flex border-t "+LINHA_CARD},
+        !(tipoHoje && tk!=="reposicao") && num(doApp ? "Vendido no app" : "Vendido", BK(vd), "#15803D", true),
+        !(tipoHoje && tk!=="reposicao") && num("Acerto", BK(acerto), "#2563EB", true),
+        !(tipoHoje && tk!=="reposicao") && num("Comissão", BK(comissaoRep), "#A67C12", true),
+        e("div",{className:"min-w-0 flex-1 px-1 pb-1.5 pt-1 text-center"}, e("p",{className:"text-[11px] font-semibold leading-tight", style:{color:estado.cor}}, estado.lb), e("p",{className:"whitespace-nowrap text-[13px] font-bold leading-tight tabular-nums", style:{color:estado.cor}}, r.realizado ? r.realizado.data : r.data), !r.realizado && r.hora && e("p",{className:"text-[11px] font-semibold leading-tight", style:{color:estado.cor}}, r.hora))));
   };
   // Revendedora aberta: contatos de referência e pedidos (kit, reposição, saiu = só retirar a condicional)
   // 05/11/2026: ao AGENDAR, a revendedora da carteira (id "R"+código) vira o kit da listagem (id novo). O id guardado deixava de existir e o celular ficava em branco:
@@ -1229,7 +1224,12 @@ function AppRepresentante(p){
   var faltasDe = function(k){ return (notas[k.id]||{}).faltas || 0; };
   var mudaFalta = function(k, dlt){ var o = Object.assign({}, notas); var at = Object.assign({nota:0, faltas:0}, o[k.id]); at.faltas = Math.max(0, at.faltas+dlt); o[k.id] = at; setNotas(o); };
   var dataChave = function(r){ var p = (r.data||"").split("/"); return p.length===2 ? (+p[1])*100+(+p[0]) : 0; };
-  var filtradas = cart.filter(function(r){ return !busca || r.rev.toLowerCase().indexOf(busca.toLowerCase())>=0; }).sort(function(a,b){
+  var nrmBusca = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };   // busca sem acento e sem maiúscula: nome, telefone e cidade/endereço (Marcus, 24/11/2026)
+  var filtradas = cart.filter(function(r){
+    if(!busca) return true;
+    var q = nrmBusca(busca), dq = busca.replace(/\D/g, ""), pf = s.perfisRev[r.rev] || {};
+    return nrmBusca(r.rev).indexOf(q)>=0 || nrmBusca(r.bairro).indexOf(q)>=0 || nrmBusca(pf.enderecoCasa).indexOf(q)>=0 || nrmBusca(pf.enderecoTrabalho).indexOf(q)>=0 || (dq.length>=3 && String(r.fone||"").replace(/\D/g, "").indexOf(dq)>=0);
+  }).sort(function(a,b){
     if(sortBy==="vendasMais") return vendMes(b)-vendMes(a);
     if(sortBy==="vendasMenos") return vendMes(a)-vendMes(b);
     var ph = (a.hoje?0:1)-(b.hoje?0:1); if(ph) return ph;
@@ -1440,7 +1440,8 @@ function AppRepresentante(p){
       e("div",{className:"flex items-center gap-2"},
         e("button",{onClick:function(){setTela("inicio");}, "aria-label":"Voltar ao início", className:douradoArrow},
           e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
-        e("b",{className:douradoTitulo}, "Revendedoras")),
+        e("b",{className:douradoTitulo}, "Revendedoras"),
+        e("span",{className:"ml-auto whitespace-nowrap text-[13px] font-semibold tabular-nums text-amber-200"}, reais===null ? "Carregando…" : (busca && filtradas.length!==cart.length ? filtradas.length+" de "+cart.length : String(cart.length))+(cart.length===1 && !busca ? " revendedora" : " revendedoras"))),
       e("div",{className:"flex items-center gap-2"},
         e("input",{value:busca, onChange:function(ev){setBusca(ev.target.value);}, placeholder:"Buscar revendedora",
           className:"h-10 flex-1 rounded-xl bg-white px-3 text-sm text-[#111827] outline-none ring-1 ring-black/5 placeholder:text-[#9CA3AF]"}),

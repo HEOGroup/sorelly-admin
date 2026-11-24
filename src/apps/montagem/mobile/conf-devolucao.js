@@ -4,6 +4,7 @@
 // que voltou, campo para digitar o código quando a etiqueta não lê. O que não voltou é o que a revendedora vendeu. O resultado fica no acerto (acertoForm.devolucaoBip);
 // nada é gravado como erro de ninguém aqui: peça de fora só fica registrada. As peças vêm da DevMaster (rota /representante/condicionais, com o número de barras).
 import { bipar, descBonita, itensDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
+import { FAIXAS_OFICIAIS } from "@/apps/montagem/domain/consignado";
 import { chamar } from "@/apps/montagem/lib/api";
 import { LeitorCamera } from "@/apps/montagem/mobile/leitor-camera";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -16,7 +17,9 @@ var BR = function(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumF
 var BTN = "h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40";
 var CARD = "rounded-2xl bg-white p-3 ring-1 ring-[#E5E7EB]";
 // linha padrão da tela: rótulo à esquerda, valor à direita, uma linha só, separadas por um fio; usada no topo e no resumo de baixo
-var linha = function(rot, val, i, forte){ return e("div",{key:rot, className:"flex min-h-8 items-center justify-between gap-3 text-[13px] text-[#111827] "+(i ? "border-t border-[#E5E7EB]" : "")}, e("span",{className:"whitespace-nowrap"}, rot), e("b",{className:MONO+" whitespace-nowrap text-right "+(forte||"")}, val)); };
+var linha = function(rot, val, i, forte){ return e("div",{key:rot, className:"flex h-11 items-center justify-between gap-3 text-[13px] text-[#111827] "+(i ? "border-t border-[#E5E7EB]" : "")}, e("span",{className:"whitespace-nowrap"}, rot), e("b",{className:MONO+" whitespace-nowrap text-right text-[16px] "+(forte||"")}, val)); };
+// comissão da faixa (régua do Kit Padrão) para o valor vendido
+var faixaDe = function(v){ var f = null; FAIXAS_OFICIAIS.forEach(function(x){ if(v>=x.min) f = x; }); return f ? f.pct : 0; };
 
 function ConfDevolucao(p){
   var es = useState({est:"carregando", msg:"", conds:[]}), carga = es[0], setCarga = es[1];
@@ -26,7 +29,8 @@ function ConfDevolucao(p){
   var ab = useState(null), aberta = ab[0], setAberta = ab[1];
   var nt = useState(0), tentativa = nt[0], setTentativa = nt[1];
   var inf0 = useState(null), info = inf0[0], setInfo = inf0[1];   // alerta de baixo: peça que NÃO é das condicionais marcadas (e o histórico dela com esta revendedora)
-  var dsp = useState(""), dispensado = dsp[0], setDispensado = dsp[1];
+  var dsp = useState(""), dispensado = dsp[0], setDispensado = dsp[1];   // o bloco de baixo da câmera troca sozinho a cada peça
+  var dc = useState(""), descAberta = dc[0], setDescAberta = dc[1];   // peça da lista com a descrição aberta
   var ultimoLido = conf.ultimo;
   useEffect(function(){
     if(!ultimoLido || ultimoLido.tipo!=="fora") return;
@@ -67,9 +71,21 @@ function ConfDevolucao(p){
     guardar(Object.assign({}, conf, {lidos:l, hist:h, ultimo:null}));
   };
   var ult = conf.ultimo;
-  var aviso = !ult ? null : ult.tipo==="ok" ? ["#DCFCE7","#15803D","✓ Voltou · "+ult.codigo+" · "+descBonita(ult.desc)]
-    : ult.tipo==="repetida" ? ["#FEF3C7","#92400E","Já conferida: "+ult.codigo+". Peça lida de novo, não conta."]
-    : null;
+  var pctCom = faixaDe(valorVendido), comissao = valorVendido*pctCom/100, valorAcerto = valorVendido-comissao;
+  // bloco de baixo da câmera: o que acabou de ser bipado (código e preço) ou "não é do kit"
+  var bloco = (function(){
+    var neutro = {fundo:"#F3F4F6", borda:"#E5E7EB", cor:"#374151", t:"Bipe a primeira peça", d:"", linhas:[]};
+    if(!ult) return neutro;
+    if(ult.tipo==="ok") return {fundo:"#DCFCE7", borda:"#86EFAC", cor:"#14532D", t:"✓ "+ult.codigo+" · "+BR(ult.valor), d:descBonita(ult.desc), linhas:[]};
+    if(ult.tipo==="repetida") return {fundo:"#FEF3C7", borda:"#FCD34D", cor:"#78350F", t:"Já bipada · "+ult.codigo+" · "+BR(ult.valor), d:"Lida de novo, não conta outra vez.", linhas:[]};
+    var dd = (info && info.dados) || {}, hist = dd.historico || [], linhas = [];
+    if(!info || info.est==="carregando") linhas.push("Procurando na DevMaster...");
+    else if(info.est==="erro") linhas.push("Não consegui consultar o histórico dela.");
+    else if(!dd.achou) linhas.push("Esse código não existe na DevMaster. Confira a etiqueta.");
+    else if(!hist.length) linhas.push("Não achei essa peça em nenhuma condicional dessa revendedora.");
+    else hist.slice(0, 2).forEach(function(h){ linhas.push(h.status==="aberta" ? "Está na condicional "+h.numero+" (aberta), não marcada neste acerto." : "Já foi dela: condicional "+h.numero+" de "+dataBR(h.emissao)+" ("+h.status+")."); });
+    return {fundo:"#FEE2E2", borda:"#FCA5A5", cor:"#7F1D1D", t:(dd.codigo || ult.codigo)+(dd.valor ? " · "+BR(dd.valor) : "")+" · não é do kit", d:dd.desc ? descBonita(dd.desc) : "", linhas:linhas};
+  })();
   if(carga.est==="carregando") return e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-3 text-center text-[13px] font-bold text-[#92400E]"},"Buscando as peças das condicionais na DevMaster...");
   if(carga.est!=="ok") return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"rounded-xl bg-[#FEE2E2] px-3 py-2 text-[13px] font-bold text-[#991B1B]"}, carga.msg),
@@ -77,49 +93,41 @@ function ConfDevolucao(p){
     e("button",{onClick:p.aoVoltar, className:"h-10 rounded-xl bg-[#F3F4F6] text-[13px] font-semibold text-[#374151]"},"Voltar ao acerto"));
   var pct = tot.pecas ? Math.round(voltaram/tot.pecas*100) : 0;
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:CARD+" flex flex-col"},
-      linha("Voltaram", voltaram+" de "+tot.pecas+" peças", 0, "text-[#15803D]"),
-      e("span",{className:"my-1.5 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"}, e("span",{className:"block h-full rounded-full bg-[#16A34A]", style:{width:pct+"%"}})),
-      linha("Faltam voltar", (tot.pecas-voltaram)+" peças", 1),
-      linha("Condicionais juntas", conds.map(function(c){ return c.numero; }).join(" · "), 1)),
-    camera ? e(LeitorCamera,{aoLer:ler, aoFechar:function(){ setCamera(false); }})
-      : e("button",{type:"button", onClick:function(){ setCamera(true); }, className:BTN},"Abrir a câmera para bipar"),
-    e("p",{className:"text-[12px] text-[#6B7280]"},"Aponte a câmera para as listras da etiqueta de cada peça que voltou. Se a etiqueta não ler, digite o código da peça (ex.: CL2542)."),
-    e("form",{onSubmit:function(ev){ ev.preventDefault(); ler(codigo); setCodigo(""); }, className:"flex gap-1.5"},
-      e("input",{value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"ou digite o código da peça", autoCapitalize:"characters", className:"h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-black/10"}),
-      e("button",{type:"submit", className:"h-10 shrink-0 rounded-lg bg-[#C9A13B] px-4 text-[12.5px] font-bold txt-branco"},"Bipar")),
-    aviso && e("p",{className:"rounded-xl px-3 py-2 text-[12.5px] font-bold", style:{background:aviso[0], color:aviso[1]}}, aviso[2]),
-    (conf.hist||[]).length>0 && e("button",{type:"button", onClick:desfazer, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"},"Desfazer a última peça"),
+    e("div",{className:CARD+" flex flex-col px-4 py-1"},
+      linha("Vendeu", BR(valorVendido), 0),
+      linha("Comissão "+pctCom+"%", BR(comissao), 1),
+      linha("Valor do acerto", BR(valorAcerto), 1, "text-[#8A6A12]")),
+    e("div",{className:"relative h-8 overflow-hidden rounded-full bg-[#D9DCE1]"},
+      e("span",{className:"absolute inset-y-0 left-0 rounded-full bg-[#C9A13B]", style:{width:pct+"%"}}),
+      e("span",{className:"absolute inset-0 flex items-center justify-between px-4 text-[13px] font-semibold text-[#111827]"}, e("span",null,"Voltaram "+voltaram+" de "+tot.pecas), e("span",null,"Faltam "+(tot.pecas-voltaram)))),
+    e(LeitorCamera,{aoLer:ler}),
+    e("div",{className:"flex flex-col gap-0.5 rounded-2xl px-3 py-2.5", style:{background:bloco.fundo, color:bloco.cor, boxShadow:"inset 0 0 0 1px "+bloco.borda}},
+      e("b",{className:MONO+" text-[16px]"}, bloco.t),
+      bloco.d && e("span",{className:"text-[13px]"}, bloco.d),
+      bloco.linhas.map(function(l, i){ return e("span",{key:i, className:"text-[13px]"}, l); })),
+    e("form",{onSubmit:function(ev){ ev.preventDefault(); if(codigo.trim()) ler(codigo); setCodigo(""); }, className:"flex flex-col gap-1.5"},
+      e("b",{className:"text-[13px] text-[#111827]"},"Bipe a peça ou digite o código"),
+      e("div",{className:"flex gap-2"},
+        e("input",{value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"Código da peça", autoCapitalize:"characters", className:"h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[13px] text-[#111827] outline-none ring-1 ring-black/15"}),
+        e("button",{type:"submit", className:"h-12 flex-1 rounded-2xl bg-[#C9A13B] text-[16px] font-bold text-[#1F1B0E]"},"Bipar")),
+      e("button",{type:"button", onClick:desfazer, className:"h-12 w-full rounded-2xl bg-white text-[13px] font-bold text-[#111827] ring-1 ring-black/15"},"Desfazer a última peça")),
     conds.map(function(c){ var its = itensDe(c), feitas = its.reduce(function(t, i){ return t+lido(c, i); }, 0), tp = its.reduce(function(t, i){ return t+i.qtd; }, 0), on = aberta===c.numero || (aberta===null && conds.length===1);
-      return e("div",{key:c.numero, className:CARD+" flex flex-col gap-1.5 p-2!"},
+      return e("div",{key:c.numero, className:CARD+" flex flex-col gap-1 p-2!"},
         e("button",{onClick:function(){ setAberta(on ? "" : c.numero); }, className:"flex items-center gap-2 px-1 py-1 text-left"},
-          e("b",{className:"flex-1 text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[12px] font-bold "+(feitas===tp ? "text-[#15803D]" : "text-[#6B7280]")}, feitas+"/"+tp),
-          e(Icon,{n:on ? "chevrondown" : "chevron", s:14, className:"text-[#6B7280]"})),
+          e("b",{className:"flex-1 text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[13px] font-bold "+(feitas===tp ? "text-[#15803D]" : "text-[#374151]")}, feitas+"/"+tp),
+          e(Icon,{n:on ? "chevrondown" : "chevron", s:14, className:"text-[#374151]"})),
         on && c.grupos.map(function(g){ var gf = g.itens.reduce(function(t, i){ return t+lido(c, i); }, 0), gt = g.itens.reduce(function(t, i){ return t+i.qtd; }, 0);
-          return e("div",{key:g.cod, className:"flex flex-col gap-1"},
-            e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold text-[#6B7280]"}, e("span",null,g.nome), e("span",{className:MONO}, gf+"/"+gt)),
-            g.itens.map(function(i){ var l = lido(c, i), ok = l>=i.qtd;
-              return e("div",{key:i.codigo, className:"flex items-start gap-2 rounded-lg px-2 py-1.5 "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white ring-1 ring-[#F3F4F6]")},
-                e("span",{className:"mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-black "+(ok ? "bg-[#16A34A] txt-branco" : "bg-[#E5E7EB] text-[#9CA3AF]")}, ok ? "✓" : ""),
-                e("span",{className:"min-w-0 flex-1"}, e("b",{className:MONO+" block text-[12px] text-[#111827]"}, i.codigo), e("span",{className:"block text-[11px] leading-tight text-[#6B7280]"}, descBonita(i.desc))),
-                e("span",{className:"flex shrink-0 flex-col items-end"}, e("b",{className:MONO+" text-[11.5px] "+(ok ? "text-[#15803D]" : "text-[#6B7280]")}, l+"/"+i.qtd), e("span",{className:MONO+" text-[10.5px] text-[#6B7280]"}, BR(i.valor)))); })); })); }),
+          return e("div",{key:g.cod, className:"flex flex-col"},
+            e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold text-[#374151]"}, e("span",null,g.nome), e("span",{className:MONO}, gf+"/"+gt)),
+            g.itens.map(function(i){ var l = lido(c, i), ok = l>=i.qtd, ch = c.numero+"|"+i.codigo, abre = descAberta===ch;
+              return e("button",{type:"button", key:i.codigo, onClick:function(){ setDescAberta(abre ? "" : ch); }, className:"flex flex-col rounded-lg px-2 py-1.5 text-left "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white")},
+                e("span",{className:"flex items-center gap-2"},
+                  e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-black "+(ok ? "bg-[#16A34A] txt-branco" : "bg-[#E5E7EB] text-[#E5E7EB]")}, ok ? "✓" : "·"),
+                  e("b",{className:MONO+" flex-1 text-[13px] text-[#111827]"}, i.codigo+(i.qtd>1 ? "  "+l+"/"+i.qtd : "")),
+                  e("b",{className:MONO+" text-[13px] text-[#111827]"}, BR(i.valor))),
+                abre && e("span",{className:"pl-7 pt-0.5 text-[13px] text-[#374151]"}, descBonita(i.desc))); })); })); }),
     (conf.erros||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#FEF3C7] px-3 py-2"},
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças que não são destas condicionais ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),
-    e("div",{className:CARD+" flex flex-col"},
-      linha("Voltaram", voltaram+" peças", 0), linha("Não voltaram (vendidas)", vendidas+" peças", 1), linha("Valor do que não voltou", BR(valorVendido), 2)),
-    info && info.chave!==dispensado && (function(){
-      var dd = info.dados || {}, cod = dd.codigo || info.lido, hist = dd.historico || [], linhas = [];
-      if(info.est==="carregando") linhas.push("Procurando essa peça na DevMaster...");
-      else if(info.est==="erro") linhas.push("Não consegui consultar o histórico dessa peça. Ela fica registrada como peça de fora.");
-      else if(!dd.achou) linhas.push("Esse código não existe na DevMaster. Confira a etiqueta.");
-      else if(!hist.length) linhas.push("Não achei essa peça em nenhuma condicional dessa revendedora.");
-      else hist.slice(0, 3).forEach(function(h){ linhas.push((h.status==="aberta" ? "Está na condicional "+h.numero+" (aberta), que não foi marcada neste acerto." : "Já foi dela: condicional "+h.numero+" de "+dataBR(h.emissao)+" ("+h.status+"): "+h.enviada+" enviada, "+h.vendida+" vendida, "+h.devolvida+" devolvida.")); });
-      return e("div",{key:"alerta", className:"sticky bottom-2 z-10 flex flex-col gap-1 rounded-2xl bg-[#FEF3C7] px-3 py-2.5 shadow-lg ring-1 ring-[#F59E0B]"},
-        e("b",{className:"text-[13px] text-[#92400E]"}, "Peça "+cod+" não está nas condicionais marcadas"),
-        dd.desc && e("span",{className:"text-[12px] text-[#92400E]"}, descBonita(dd.desc)),
-        linhas.map(function(l, i){ return e("span",{key:i, className:"text-[12px] text-[#92400E]"}, l); }),
-        e("button",{type:"button", onClick:function(){ setDispensado(info.chave); }, className:"mt-1 h-9 rounded-xl bg-white text-[12.5px] font-bold text-[#92400E] ring-1 ring-[#F59E0B]"},"Entendi"));
-    })(),
     e("button",{onClick:function(){ p.aoSalvar({lidos:conf.lidos||{}, erros:conf.erros||[], hist:conf.hist||[], ultimo:null, resumo:{voltaram:voltaram, saiu:tot.pecas, vendidas:vendidas, valorVendido:Math.round(valorVendido*100)/100, conds:conds.map(function(c){ return c.numero; }), em:Date.now()}}); p.aoVoltar(); }, className:BTN},"Concluir e voltar ao acerto"));
 }
 

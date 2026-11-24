@@ -132,15 +132,14 @@ function LeitorCamera(p){
   return e("div",{className:"flex flex-col gap-1.5"},
     estado.est==="erro"
       ? e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12.5px] font-bold text-[#92400E]"}, estado.msg)
-      : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"4 / 3"}},
+      : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"16 / 10"}},
           e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
           e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 " + (estado.flash ? "border-[#22C55E]" : estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
-          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta"+(estado.luz ? " · luz ligada" : ""))),
-    estado.est!=="erro" && estado.diag ? e("p",{className:"px-1 text-center text-[11px] text-[#6B7280]"}, estado.diag) : null,
+          estado.est==="abrindo" && e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, "Abrindo a câmera..."),
+          e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"absolute bottom-2 right-2 h-8 rounded-lg bg-black/55 px-3 text-[12px] font-semibold txt-branco"}, "Ler por foto"),
+          fotoMsg && e("p",{className:"absolute inset-x-2 bottom-12 rounded-lg bg-black/65 px-2 py-1 text-center text-[12px] font-semibold txt-branco"}, fotoMsg)),
     e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}),
-    e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"h-10 rounded-xl bg-[#C9A63B] text-[13px] font-bold text-[#1F1B0E]"}, "Ler por foto (câmera do celular)"),
-    fotoMsg ? e("p",{className:"px-1 text-center text-[12px] font-semibold text-[#374151]"}, fotoMsg) : null,
-    e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera"));
+    p.aoFechar && p.mostrarFechar ? e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera") : null);
 }
 
 export { LeitorCamera };
