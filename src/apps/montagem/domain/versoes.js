@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.205", data:"2026-11-24", titulo:"App da representante: quantidade de revendedoras no Início", itens:[
+  {tipo:"melhoria", area:"App da representante → Início", txt:"O cartão Revendedoras mostra a quantidade na carteira dela (ex.: 76 revendedoras) no lugar de Veja e acompanhe sua rede."}]},
  {v:"0.21.204", data:"2026-11-24", titulo:"Leitor da câmera: linha de diagnóstico e Ler por foto", itens:[
   {tipo:"melhoria", area:"Peças que voltaram", txt:"Linha pequena embaixo da câmera mostra o motor, a luz, o zoom, quantas leituras e o último código visto. Botão Ler por foto abre a câmera do celular (foco automático, foto inteira) e lê o código da foto. Aceita mais tipos de código de barras. Lê a imagem inteira em resolução alta (sem corte digital), para ler de mais longe."},
  ]},

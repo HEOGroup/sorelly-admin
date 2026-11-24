@@ -202,7 +202,7 @@ function AppRepresentante(p){
   var aceitouKitNovo = function(n, texto){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(n.nome); if(!cr) return; var conv = api.openChannel(rv, "r_rep", [cr]); api.sendMessage({conv:conv, eu:cr, texto:texto}); efem({conversaSel:conv}); setTela("mensagens"); };
   var LISTA_INICIO = [
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
-    {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
+    {tela:"revs", titulo:"Revendedoras", sub: reais===null ? "Carregando…" : cart.length+(cart.length===1 ? " revendedora" : " revendedoras"), icone:"users", cor:"#EA580C", ativo:true},
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
     {tela:"comissoes", titulo:"Comissões", sub: nPagNI ? "⚠ "+nPagNI+(nPagNI===1 ? " pagamento não identificado" : " pagamentos não identificados") : "Minhas comissões e quilometragem", icone:"coins", cor:"#CA8A04", ativo:true},
     {tela:"regrascom", titulo:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", icone:"book", cor:"#B8862B", ativo:true},
