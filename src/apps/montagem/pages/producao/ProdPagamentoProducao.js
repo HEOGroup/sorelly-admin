@@ -4,9 +4,9 @@
 // (4) Pagamentos da produção por ciclo (enviar ao Financeiro). INTERNAS (Marcus, 22/11/2026: "teria que ter a parte de pagamento por produção das internas, e no filtro alteraria para cada funcionária interna"): a mesma tela vale para cada funcionária interna; aí cada dia mostra o BÔNUS do dia (R$ 15, R$ 20 ou R$ 25, meta de 300 peças) e NÃO existe "bônus do mês": cada dia vale por si e a soma dos dias é o que ela recebe, EM DINHEIRO, no dia 12 do mês seguinte (ou segunda-feira, se cair no fim de semana); o bloco "Pagamentos da produção" envia isso ao Contas a pagar (forma Dinheiro). O ciclo de quinta-feira é só da produção externa. SEM botão "Marcar pago" (Marcus, 22/11/2026): o pago vem do Contas a pagar; a situação aqui só lê o que já estava baixado em pr.diasPagos. Só a diretoria.
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { CASA_PECA_DESDE, CASA_POR_PECA, diaDaSemana, faixasDe, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, dataPagBonus, listaExternas, nomeMes, premiacaoDoMes, quartaDaSemana, resumoExterna, somaDias, valorDiaCasa } from "@/apps/montagem/domain/producao";
+import { CASA_PECA_DESDE, CASA_POR_PECA, diaDaSemana, faixasDe, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, dataPagBonus, ehExterna, listaExternas, nomeMes, premiacaoDoMes, quartaDaSemana, resumoExterna, somaDias, valorDiaCasa } from "@/apps/montagem/domain/producao";
 import { AbaProdPagamentos } from "@/apps/montagem/pages/producao/ProdPagamentos";
-import { Aviso, CAMPO_FAIXA, FaixaAzul, MIUDA, Raiz, usePr } from "@/apps/montagem/pages/producao/visualProd";
+import { Aviso, FaixaAzul, MenuFaixa, MIUDA, Raiz, usePr } from "@/apps/montagem/pages/producao/visualProd";
 import { e, useState } from "@/shared/react";
 
 var cols0 = function(cols, f){ return cols.map(f); };
@@ -14,12 +14,19 @@ var cap = function(t){ return t ? t.charAt(0).toUpperCase()+t.slice(1) : t; };
 var n0 = function(v){ return formatarInteiro(v); };
 
 function AbaProdPagamentoProducao(){
-  var x = usePr(), pr = x.pr, hoje = hojeSP(), sP = useState("Davila Aline"), sM = useState(hoje.slice(0, 7));
+  var x = usePr(), pr = x.pr, hoje = hojeSP(), sP = useState("e|Davila Aline"), sM = useState(hoje.slice(0, 7));
   if(!x.admin && !x.leitura) return e(Raiz,null, e(BlocoPainel,{titulo:"Pagamento por produção", compacto:true}, e(Aviso,null, "Somente a diretoria acessa.")));
   var externas = listaExternas(pr), mes = sM[0], ym = mes.split("-").map(Number), pm = premiacaoDoMes(pr, ym[0], ym[1]);
-  var internas = (pr.funcionarias || []).filter(function(f){ return f.ativa; }).sort(function(x1, x2){ return x1.posicao-x2.posicao; }).map(function(f){ return f.nome; }).filter(function(n){ return externas.indexOf(n)<0; });   // as funcionárias internas ativas do Cadastro (não os nomes soltos dos lançamentos)
-  var pessoas = externas.concat(internas), func = pessoas.indexOf(sP[0])>=0 ? sP[0] : pessoas[0], interna = internas.indexOf(func)>=0;
-  var opcoes = [e("optgroup",{key:"ext", label:"Produção externa"}, externas.map(function(n){ return e("option",{key:n, value:n}, n); })), internas.length>0 && e("optgroup",{key:"int", label:"Internas"}, internas.map(function(n){ return e("option",{key:n, value:n}, n); }))];
+  var internas = (pr.funcionarias || []).filter(function(f){ return f.ativa; }).sort(function(x1, x2){ return x1.posicao-x2.posicao; }).map(function(f){ return f.nome; }).filter(function(n){ return !ehExterna(n); });   // as funcionárias internas ativas do Cadastro (sem a Dávila, a Leci e o Didi, que só têm produção externa) (não os nomes soltos dos lançamentos); quem também faz produção externa (Crisbele...) aparece nos dois grupos
+  // a chave tem o grupo na frente porque a mesma pessoa pode estar nos dois; "t|" = visão do TOTAL de todas (Marcus, 24/11/2026: "coloca também por total")
+  var grupos = [{t:"Total", itens:[["t|ext", "Total · Produção externa"], ["t|int", "Total · Internas"]]}, {t:"Produção externa", itens:externas.map(function(n){ return ["e|"+n, n]; })}, internas.length>0 && {t:"Internas", itens:internas.map(function(n){ return ["i|"+n, n]; })}].filter(Boolean);
+  var chaves = []; grupos.forEach(function(g){ g.itens.forEach(function(o){ chaves.push(o[0]); }); });
+  var chave = chaves.indexOf(sP[0])>=0 ? sP[0] : chaves[2], func = chave.slice(2), interna = chave.charAt(0)==="i", total = chave.charAt(0)==="t";
+  var meses = [], my = Number(hoje.slice(0, 4)), mm = Number(hoje.slice(5, 7));   // últimos 12 meses, do mais novo para o mais antigo
+  for(var im=0; im<12; im++){ meses.push([my+"-"+(mm<10 ? "0" : "")+mm, cap(nomeMes(my, mm))]); mm--; if(mm<1){ mm = 12; my--; } }
+  var faixa = e(FaixaAzul,null,
+    e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Pessoa", e(MenuFaixa,{aria:"Pessoa", valor:chave, grupos:grupos, onChange:function(v){ sP[1](v); }})),
+    e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e(MenuFaixa,{aria:"Mês", valor:mes, grupos:[{t:"", itens:meses}], larg:"w-36", onChange:function(v){ sM[1](v); }})));
   var iv = intervaloPeriodo("mes", mes+"-01"), dp = pr.diasPagos || {}, porDia = {};
   linhasDoPeriodo(pr, iv.from, iv.to, null).filter(eCasa).forEach(function(l){ var q = Number(l.qtd) || 0; if(q>0 && String(l.func).trim().toLowerCase()===String(func).trim().toLowerCase()) porDia[l.dia] = (porDia[l.dia] || 0)+q; });
   var linhas = Object.keys(porDia).sort().map(function(d){
@@ -39,10 +46,23 @@ function AbaProdPagamentoProducao(){
   // três resumos (vieram da Produção externa em 22/11/2026): cor só no estado (verde recebeu, amarelo falta)
   var r = resumoExterna(pr, ym[0], ym[1], func), nome = nomeMes(ym[0], ym[1]).toLowerCase()+" · "+func.split(" ")[0];
   var bloco = function(chave, titulo, itens){ return e(BlocoPainel,{key:chave, titulo:titulo, compacto:true}, e(TabelaPlanilha,{fina:true, cols:[{k:"r", t:"Item"}, {k:"v", t:"Valor", cor:function(l){ return l.cor || ""; }}], linhas:itens.map(function(l, i){ return {id:chave+i, r:l[0], v:l[1], cor:l[2]}; }), chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true})); };
-  var barra = e(BlocoPainel,{key:"barra", titulo:"Pagamento por produção · "+nomeMes(ym[0], ym[1]), dir:func, compacto:true},
-      e(FaixaAzul,null,
-        e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Pessoa", e("select",{value:func, "aria-label":"Pessoa", onChange:function(ev){ sP[1](ev.target.value); }, className:CAMPO_FAIXA+" w-48 cursor-pointer"}, opcoes)),
-        e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sM[1](ev.target.value); }, className:CAMPO_FAIXA}))));
+  var barra = e(BlocoPainel,{key:"barra", titulo:"Pagamento por produção · "+nomeMes(ym[0], ym[1]), dir:total ? "Total" : func, compacto:true}, faixa);
+  if(total){
+    // TOTAL de todas as pessoas do grupo no mês: uma linha por pessoa (Marcus, 24/11/2026)
+    var ehExtT = func==="ext", linhasT, colsT;
+    if(ehExtT){
+      linhasT = externas.map(function(n){ var rt = resumoExterna(pr, ym[0], ym[1], n); return {id:n, pessoa:n, pecas:rt.pecas, valor:rt.valor, recebido:rt.recebido, aReceber:rt.aReceber, comEla:rt.comEla}; }).filter(function(l){ return l.pecas>0 || l.valor>0 || l.comEla>0; });
+      colsT = [{k:"pessoa", t:"Pessoa"}, {k:"pecas", t:"Peças feitas", fmt:formatarInteiro}, {k:"valor", t:"Valor do mês", fmt:formatarReais}, {k:"recebido", t:"Já recebeu", fmt:formatarReais, cor:function(){ return "text-success"; }}, {k:"aReceber", t:"A receber", fmt:formatarReais, cor:function(r){ return r.aReceber>0 ? "text-warning" : "text-success"; }}, {k:"comEla", t:"Com ela agora", fmt:formatarInteiro}];
+    } else {
+      linhasT = pm.linhas.filter(function(l){ return internas.indexOf(l.nome)>=0 && ((l.pecas || 0)>0 || (l.valor || 0)>0); }).map(function(l){ return {id:l.nome, pessoa:l.nome, pecas:l.pecas || 0, valor:l.valor || 0}; });
+      colsT = [{k:"pessoa", t:"Pessoa"}, {k:"pecas", t:"Peças do mês", fmt:formatarInteiro}, {k:"valor", t:"Valor dos dias", fmt:formatarReais}];
+    }
+    var somaT = function(ls, k){ return ls.reduce(function(t, r){ return t+(Number(r[k]) || 0); }, 0); };
+    var rodapeT = function(ls){ return colsT.map(function(c, i){ return i===0 ? "TOTAL · "+ls.length : c.k==="pecas" || c.k==="comEla" ? formatarInteiro(somaT(ls, c.k)) : c.fmt ? formatarReais(somaT(ls, c.k)) : ""; }); };
+    return e(Raiz,{cls:MIUDA}, barra,
+      e(BlocoPainel,{titulo:ehExtT ? "Total da produção externa" : "Total das internas", compacto:true},
+        e(TabelaPlanilha,{key:"tt"+func+mes, fina:true, cols:colsT, linhas:linhasT, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeT, vazio:"Nenhuma produção neste mês."})));
+  }
   if(interna){
     var li = pm.linhas.filter(function(l){ return l.nome===func; })[0] || {porDia:{}, bonusDia:{}, pecas:0, valor:0, f15:0, f20:0, f25:0};
     var dataPag = dataPagBonus(ym[0], ym[1]), mesFechado = mes<hoje.slice(0, 7);   // as internas recebem EM DINHEIRO, dia 12 do mês seguinte (segunda-feira se cair no fim de semana)
@@ -60,19 +80,16 @@ function AbaProdPagamentoProducao(){
         bloco("c", "Dias que valeram", [["Dias de R$ 15,00", n0(li.f15 || 0)], ["Dias de R$ 20,00", n0(li.f20 || 0)], ["Dias de R$ 25,00", n0(li.f25 || 0)], ["Situação", situBonus, situBonus==="Pago" ? "text-success" : situBonus==="A pagar" ? "text-warning" : ""]])),
       e(BlocoPainel,{titulo:"Dias produzidos", compacto:true},
         e(TabelaPlanilha,{key:"pi"+func+mes, fina:true, cols:colsI, linhas:linhasI, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalI, vazio:"Nenhuma produção neste mês."})),
-      e(AbaProdPagamentos,{key:"gi"+func, func:func, interna:true, semRaiz:true}));
+      e(AbaProdPagamentos,{key:"gi"+func, func:func, interna:true, modo:"int", semRaiz:true}));
   }
   return e(Raiz,{cls:MIUDA},
-    e(BlocoPainel,{titulo:"Pagamento por produção · "+nomeMes(ym[0], ym[1]), dir:func, compacto:true},
-      e(FaixaAzul,null,
-        e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Pessoa", e("select",{value:func, "aria-label":"Pessoa", onChange:function(ev){ sP[1](ev.target.value); }, className:CAMPO_FAIXA+" w-48 cursor-pointer"}, opcoes)),
-        e("label",{className:"flex items-center gap-2 text-[13px] font-semibold text-white"}, "Mês", e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) sM[1](ev.target.value); }, className:CAMPO_FAIXA})))),
+    barra,
     e("div",{className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
       bloco("d", "Dinheiro de "+nome, [["Valor do mês", formatarReais(r.valor)], ["Já recebeu", formatarReais(r.recebido), "text-success"], ["A receber", formatarReais(r.aReceber), r.aReceber>0 ? "text-warning" : "text-success"], ["Enviado ao Financeiro", formatarReais(r.enviadoFin)]]),
       bloco("p", "Peças de "+nome, [["Peças feitas e devolvidas", n0(r.pecas)], ["Dias com produção", n0(r.diasPecas)], ["Média por dia", r.diasPecas ? n0(Math.round(r.pecas/r.diasPecas)) : "—"], ["Valor por peça", formatarReais(CASA_POR_PECA)]]),
       bloco("c", "Com ela agora", [["Enviadas a ela", n0(r.enviadoPecas)], ["Devolvidas à Sorelly", n0(r.devolvidoPecas), "text-success"], ["Com ela agora", n0(r.comEla), r.comEla>0 ? "text-warning" : "text-success"], ["Códigos com ela", n0(r.codigosComEla)]])),
     e(BlocoPainel,{titulo:"Dias produzidos", compacto:true},
       e(TabelaPlanilha,{key:"pp"+func+mes, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhuma produção externa neste mês."})),
-    e(AbaProdPagamentos,{key:"g"+func, func:func, semRaiz:true}));
+    e(AbaProdPagamentos,{key:"g"+func, func:func, modo:"ext", semRaiz:true}));
 }
 export { AbaProdPagamentoProducao };

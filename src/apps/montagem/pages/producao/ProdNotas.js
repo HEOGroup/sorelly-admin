@@ -61,7 +61,9 @@ function AbaProdNotas(){
       x.admin && e("button",{type:"button", onClick:function(){ if(window.confirm("Apagar a nota "+r.n.numero+" e o que ela criou (estoque ou lançamentos)?")) x.exec("nota_apagar", {id:r.n.id}); }, className:"text-[11px] font-semibold underline hover:text-danger"}, "Apagar")); }}];
 
   return e(Raiz,{cls:MIUDA},
-    pode && e(BlocoPainel,{key:"env", titulo:"Envio · produção externa", dir:sMsg[0] || "", compacto:true},
+    // Envio e Devolução LADO A LADO (Marcus, 24/11/2026: "não deixe um bloco embaixo do outro"): duas colunas a partir da tela média; empilham só em tela estreita
+    pode && e("div",{key:"par", className:"grid grid-cols-1 items-start gap-0 lg:grid-cols-2"},
+    e(BlocoPainel,{key:"env", titulo:"Envio · produção externa", dir:sMsg[0] || "", compacto:true},
       e(FaixaAzul,null,
         campoTxt("Data do envio", env.dia, function(v){ sEnv[1](Object.assign({}, env, {dia:v})); }, "date"),
         campoPessoa("Nome de quem está levando", env.func, function(v){ sEnv[1](Object.assign({}, env, {func:v})); }),
@@ -69,14 +71,14 @@ function AbaProdNotas(){
         e("span",{className:"flex-1"}),
         e(BtFaixa,{onClick:function(){ add(sEnv, env, linhaEnv); }}, "+ Linha"), e(BtFaixa,{onClick:enviar}, "Registrar envio")),
       e(TabelaPlanilha,{key:"tenv"+env.linhas.length, fina:true, cols:colsEnv, linhas:linhasEnv, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:rodEnv})),
-    pode && e(BlocoPainel,{key:"dev", titulo:"Devolução · produção externa", compacto:true},
+    e(BlocoPainel,{key:"dev", titulo:"Devolução · produção externa", compacto:true},
       e(FaixaAzul,null,
         campoTxt("Data da devolução", dev.dia, function(v){ sDev[1](Object.assign({}, dev, {dia:v})); }, "date"),
         campoPessoa("Nome de quem está devolvendo", dev.func, function(v){ sDev[1](Object.assign({}, dev, {func:v})); }),
         campoTxt("Responsável pelo recebimento", dev.resp, function(v){ sDev[1](Object.assign({}, dev, {resp:v})); }, "text", "Quem recebeu"),
         e("span",{className:"flex-1"}),
         e(BtFaixa,{onClick:function(){ add(sDev, dev, linhaDev); }}, "+ Linha"), e(BtFaixa,{onClick:devolver}, "Registrar devolução")),
-      e(TabelaPlanilha,{key:"tdev"+dev.linhas.length, fina:true, cols:colsDev, linhas:linhasDev, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:rodDev})),
+      e(TabelaPlanilha,{key:"tdev"+dev.linhas.length, fina:true, cols:colsDev, linhas:linhasDev, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, totalRodape:rodDev}))),
     e(BlocoPainel,{key:"notas", titulo:"Notas registradas", dir:notas.length+(notas.length===1 ? " nota" : " notas"), compacto:true},
       e(TabelaPlanilha,{key:"tnotas", fina:true, cols:colsNotas, linhas:notas, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhuma nota registrada ainda."})));
 }

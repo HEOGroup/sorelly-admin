@@ -242,7 +242,7 @@ function premiacaoDoMes(pr, ano, mes){
 // ---------- estado ----------
 /** Valor de um dia trabalhado na produção em casa: antes de 16/11/2026 = R$ 130,00 por dia; de 16/11/2026 em diante = peças do dia × R$ 0,45. */
 function valorDiaCasa(pr, func, dia){
-  if(dia<CASA_PECA_DESDE) return CASA_DIARIA;
+  if(dia<CASA_PECA_DESDE){ var gP = (pr.diasPagos||{})[func+"|"+dia]; return gP && gP.valor!==undefined ? r2(num(gP.valor)) : CASA_DIARIA; }   // dia da diária: vale o que foi pago de verdade (o dia pode ter valor 0: Marcus, 24/11/2026, a Dávila recebeu exatamente R$ 520,00)
   var q = ((pr.lancamentos||{})[dia]||[]).filter(function(l){ return l.func===func && eCasa(l); }).reduce(function(t2, l){ return t2+num(l.qtd); }, 0);
   return r2(q*CASA_POR_PECA);
 }
@@ -576,12 +576,16 @@ function prReduz(s, a){
     case "dia_pago": {   // um dia da produção em casa pago (ou desfeito), pelo nome e pela data do dia trabalhado
       var fnm = trim(a.func); if(!fnm || !ehDia(a.dia)) return recusa("Dia ou nome inválido.");
       pr.diasPagos = pr.diasPagos || {};
-      if(a.pago===false) delete pr.diasPagos[fnm+"|"+a.dia]; else pr.diasPagos[fnm+"|"+a.dia] = {em:agora, por:por, valor:valorDiaCasa(pr, fnm, a.dia)};
+      if(a.pago===false) delete pr.diasPagos[fnm+"|"+a.dia]; else pr.diasPagos[fnm+"|"+a.dia] = {em:agora, por:por, valor:(a.valor!==undefined && a.valor!=="") ? r2(num(a.valor)) : valorDiaCasa(pr, fnm, a.dia)};
       log("dia_pago", fnm+" · "+a.dia+" · "+(a.pago===false ? "desfeito" : "pago")); return ok(a.pago===false ? "Dia voltou para a pagar." : "Dia marcado como pago.");
     }
     case "pag_enviado": {   // guarda que o valor já foi enviado ao Financeiro (Prestadores de serviço) e qual pedido nasceu lá
       if(!a.id) return recusa("Pagamento não informado.");
       pr.envios = pr.envios || {}; pr.envios[a.id] = {em:agora, por:por, valor:r2(num(a.valor)), pedId:a.pedId||null, numero:a.numero||""}; log("pag_enviado", String(a.id)+" · "+r2(num(a.valor))); return ok("Envio registrado.");
+    }
+    case "pag_envio_apagar": {   // tira o registro de envio de um pagamento (usado quando o envio automático nasceu errado)
+      if(!pr.envios || !pr.envios[a.id]) return recusa("Envio não encontrado.");
+      delete pr.envios[a.id]; log("pag_envio_apagar", String(a.id)); return ok("Envio desfeito.");
     }
     case "pag_desmarcar": {
       if(!pr.pagos || !pr.pagos[a.id]) return recusa("Pagamento não está marcado como pago.");

@@ -13,6 +13,7 @@ import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { formatarInteiro, prMigrar, prReduz } from "@/apps/montagem/domain/producao";
 import { use } from "@/apps/montagem/state/context";
 import { e } from "@/shared/react";
+import React from "react";
 
 var COR = "#14B8A6";
 var VAZIO_PR = null;
@@ -65,6 +66,29 @@ function BtFaixa(p){
 // 18/11/2026 (Marcus: "os filtros mais claros, mais junto sem encostar e menores"): fundo claro (branco a 20% sobre o azul), 30 px de altura e letra de 11 px
 var CAMPO_FAIXA = "h-[30px] rounded-md border border-white/60 bg-white/20 px-2 text-center text-[11px] font-semibold text-white [color-scheme:dark] placeholder:text-white/70";
 
+// MENU SUSPENSO DA FAIXA com o fundo da própria tela (Marcus, 24/11/2026: "não quero fundo preto, padroniza com a tela"): o <select> nativo e o calendário nativo abrem pretos e não dá para pintar;
+// este abre uma lista com o azul dos blocos. grupos = [{t:"Título do grupo", itens:[[chave, texto], ...]}]; valor = chave marcada; larg = largura do campo
+function MenuFaixa(p){
+  var st = React.useState(false), aberto = st[0], setAberto = st[1], ref = React.useRef(null), pos = React.useState(null), posicao = pos[0], setPosicao = pos[1];
+  React.useEffect(function(){
+    if(!aberto) return undefined;
+    var fora = function(ev){ if(ref.current && !ref.current.contains(ev.target)) setAberto(false); };
+    var fecha = function(){ setAberto(false); };
+    document.addEventListener("mousedown", fora); window.addEventListener("resize", fecha);
+    return function(){ document.removeEventListener("mousedown", fora); window.removeEventListener("resize", fecha); };
+  }, [aberto]);
+  // a lista abre em posição fixa, para o bloco (overflow escondido) não cortar
+  var alterna = function(){ if(!aberto && ref.current){ var r = ref.current.getBoundingClientRect(); setPosicao({left:r.left, top:r.bottom+4, minWidth:r.width}); } setAberto(!aberto); };
+  var rotulo = ""; p.grupos.forEach(function(g){ g.itens.forEach(function(o){ if(o[0]===p.valor) rotulo = o[1]; }); });
+  return e("div",{ref:ref, className:"relative"},
+    e("button",{type:"button", "aria-label":p.aria, "aria-expanded":aberto, onClick:alterna, className:CAMPO_FAIXA+" flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap "+(p.larg || "w-48")}, e("span",null, rotulo), e("span",{"aria-hidden":"true"}, aberto ? "▴" : "▾")),
+    aberto && e("div",{style:posicao, className:"fixed z-50 max-h-72 overflow-y-auto rounded-md border border-white/60 bg-[var(--bloco-colunas)] p-1 shadow-lg"},
+      p.grupos.map(function(g){ return e("div",{key:g.t},
+        g.t && e("div",{className:"px-2 pb-0.5 pt-1.5 text-[11px] font-semibold text-white/70"}, g.t),   // padrao-ok: título do grupo de 11 px
+        g.itens.map(function(o){ var on = o[0]===p.valor;
+          return e("button",{key:o[0], type:"button", onClick:function(){ p.onChange(o[0]); setAberto(false); }, className:"flex w-full items-center justify-center whitespace-nowrap rounded px-2 text-[11px] text-white hover:bg-white/15 "+(on ? "bg-white/25 font-semibold" : "")}, o[1]); })); })));
+}
+
 // linha formal para quem não tem acesso (sem dados)
 function Aviso(p){
   return e("div",{className:"flex items-center justify-center px-4 py-8 text-center text-[13px] font-semibold"}, p.children || "Somente a diretoria acessa.");
@@ -80,4 +104,4 @@ var VISOES_PREMIO = [["premio", "Premiação"], ["func", "Funcionárias"], ["cod
 // fundo igual em todas as células (a coluna do nome deixa de ter outro tom), total um tom acima e sem as barras brancas grossas que a coluna travada desenhava. Vai numa div em volta do bloco.
 var GRADE_LIMPA = "";   // aposentado em 22/11/2026: o visual plano (PLANA, em Raiz) cuida das cores; fica vazio para não quebrar quem ainda importa
 
-export { COR, MIUDA, GRADE_LIMPA, VISOES_PREMIO, usePr, Raiz, casca, FaixaAzul, grupoBtn, BtFaixa, CAMPO_FAIXA, Aviso, pc };
+export { COR, MIUDA, GRADE_LIMPA, VISOES_PREMIO, usePr, Raiz, casca, FaixaAzul, grupoBtn, BtFaixa, CAMPO_FAIXA, MenuFaixa, Aviso, pc };

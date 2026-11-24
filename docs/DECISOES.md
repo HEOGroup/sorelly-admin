@@ -3,6 +3,13 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Produção: envio e baixa automáticos, novos produtores externos)
+- **Marcus: "não precisa clicar em enviar ao financeiro, é tudo automático".** Saíram os botões Enviar, Reenviar, Marcar pago e Desfazer. O sistema cria sozinho o pedido do prestador, a conta a pagar e o destino no Direcionar (e atualiza o valor enquanto nada foi pago). Quando o Direcionar paga, dá a baixa. Roda em segundo plano para a Diretoria (`AutoProducao` no App). Não duplica: se já existe pedido do mesmo prestador, vencimento e valor, adota esse.
+- **A Dávila recebeu exatamente R$ 520,00** (12 a 15/11, R$ 130 por dia). O dia 11/11 vale R$ 0.
+- **Novos produtores externos:** Leci, Crisbele, Amanda de Miranda, Michele e Higor (R$ 0,45 por peça, ciclo terça a segunda, pago na quinta). Cada um é prestador no Financeiro com banco e chave Pix. Crisbele aparece nos dois grupos (externa e interna); o bônus por dia segue separado.
+- **Correção do estoque da Dávila (24/11/2026, Marcus):** a lista de 24/11 (BB1513 146, I0767 229, I0768 483) é da DÁVILA, não do Higor (Higor sem produção nesse dia; notas NS-0005 e ND-0005 apagadas, pedido e conta dele de R$ 386,10 apagados; a Dávila ganhou o pagamento de R$ 386,10 em 03/12). BB1517: 682 eram unidades, 341 pares. O envio de 230 estava com o código I0763 e o certo é I0767. Envio de I0768 (483) reconstruído. Sobra de 35 peças pequenas com ela (2B0133 14, BB1538 5...).
+- Lista de 24/11 lançada por notas NS/ND. O envio foi reconstruído (produzidas + sem produzir + defeito), porque o envio real não estava anotado.
+
 ## 24/11/2026 · Fila de resgates: agenda das retiradas (setor de Indicações, pedido via Leonardo)
 - **Pedido:** "consegue fazer a agenda, como no outro admin? Assim não consigo verificar quantas tem agendadas no dia."
 - **Situação:** a agenda já existia (dias da semana com o número de retiradas e a lista do dia), mas na tela "Retiradas", nome que ninguém associa à agenda. No admin antigo a tela se chamava "Agendamentos".
