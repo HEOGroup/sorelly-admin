@@ -22,7 +22,8 @@ import { ACESSO_FF, CASAS_PIX, baixaDividas, contaDePrestador, diasEntre, parcel
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
 import { orientacaoDoDia } from "@/apps/montagem/domain/cerebro-financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
-import { FORMA_LABEL } from "@/apps/montagem/domain/consignado";   // nomes das formas de pagamento como foram cadastradas
+import { FORMA_LABEL } from "@/apps/montagem/domain/consignado";
+import { contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";   // nomes das formas de pagamento como foram cadastradas
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
@@ -457,12 +458,12 @@ function AbaDirecionar(){
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
     // 19/11/2026 (Marcus): o bloco "Pagamentos da Família" saiu do Direcionar da Sorelly (Financeiro familiar e empresa ficam separados; a família fica só no Financeiro familiar)
     // ── feitos
-    feitos.length>0 && (function(){
+    (function(){
       // DIRECIONADOS no padrão (Marcus, 12/11/2026): só o título, uma linha por destino, revendedora (4 primeiros nomes), conta escrita pela regra única e Reabrir pequeno, só até o pagamento ser conferido
       var lancs = s.lancFin || [], conferido = function(x){ var l = lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0]; return !!(l && l.conferido); };
       // SITUAÇÃO (Marcus, 12/11/2026: "ali não é só direcionar, é direcionar, confirmar e receber o comprovante"): o pedido só sai de pendente quando o financeiro confere o pagamento
       // SITUAÇÃO (Marcus, 12/11/2026): palavra curta, uma cor para cada etapa, e a coluna Com diz quem tem de agir. Só sai de pendente quando o financeiro confere.
-      var situ = function(x){ var l = lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0];
+      var situ = function(x){ var l = lfDe(x);
         if(l && l.conferido) return ["Conferido", "—"];
         if(x.internoId){ if(!l) return ["Comprovante", "Atendente"];
           var temComp = (l.linhas||[]).filter(function(q){ return q.tipo==="pagamento" && !q.isento; }).every(function(q){ return (q.partes||[]).every(function(p){ return !!p.comprovante; }); });
@@ -473,7 +474,7 @@ function AbaDirecionar(){
       var COR_SIT = {"Comprovante":"#F87171", "Aguarda OK":"#FACC15", "Finalizar":"#38BDF8", "Conferir":"#E879F9", "Conferido":"#4ADE80"};   // cinco cores bem diferentes só na letra (vermelho, amarelo, azul, magenta, verde); Marcus, 12/11/2026: nada de bloco por fora
       var dtx = function(ts){ var q = new Date(ts); return String(q.getDate()).padStart(2, "0")+"/"+String(q.getMonth()+1).padStart(2, "0")+"/"+q.getFullYear(); };
       // uma linha por pedido (o destino pode ser vários, então não entra aqui): data, hora, revendedora, valor, quem direcionou, situação e com quem está
-      var lfDe = function(x){ return lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0] || null; };
+      var lfDe = function(x){ if(x.lf) return x.lf; return lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0] || null; };
       var pagLinhas = function(l){ return l.linhas.filter(function(q){ return q.tipo==="pagamento" && !q.isento; }); };
       var compsDe = function(x){ var l = lfDe(x), out = []; if(!l) return out; pagLinhas(l).forEach(function(q){ (q.partes||[]).forEach(function(p){ if(p.comprovante) out.push(Object.assign({}, p.comprovante, {conta:p.descricao||"", valor:p.valor||0})); }); }); return out; };   // um por conta: o Pix pode ter vários comprovantes (um para cada conta)
       var tudoComComp = function(x){ var l = lfDe(x); if(!l) return false; var ps = pagLinhas(l); return ps.length>0 && ps.every(function(q){ return (q.partes||[]).length>0 && (q.partes||[]).every(function(p){ return !!p.comprovante; }); }); };
@@ -497,7 +498,23 @@ function AbaDirecionar(){
       var formasDir = function(x){ var ord = [], soma = {}; (x.divisoes||[]).forEach(function(d){ var f = formaDiv(x, d); if(!f) return; if(!(f in soma)){ ord.push(f); soma[f] = 0; } soma[f] += Number(d.valor)||0; });
         if(!ord.length) return "—"; if(ord.length===1) return ord[0];
         return ord.map(function(f){ return f+" "+BKC(soma[f]); }).join(" + "); };
-      var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), forma:formasDir(x), conta:contasDir(x), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
+      var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), forma:formasDir(x), conta:contasDir(x), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x, ts:x.confirmadoEm||0}; });
+      // AUTOMÁTICOS (Lucas, 24/11/2026: "nem tudo que é lançado aparece"): o que o sistema resolveu sozinho (dinheiro, maquininha única, Pix por conta fixa ou regra)
+      // e o que o Financeiro resolveu direto no Controle de pagamentos não passa pela fila; entra aqui com "Automático" em Quem direcionou. Linha que já está na fila ou nos direcionados não repete.
+      var cobertos = {}; dp.pix.forEach(function(x){ if(x.status!=="fila" && x.status!=="direcionado") return;
+        if(x.internoId){ if(Array.isArray(x.linhas)) x.linhas.forEach(function(i){ cobertos[x.internoId+"#"+i] = 1; }); else cobertos[x.internoId+"#*"] = 1; }
+        if(x.pid) cobertos["pid#"+x.pid] = 1; });
+      var contaAuto = function(t){ return nomePropio(String(t||"").replace(/\s*-\s*/g, " · ")); };
+      lancs.forEach(function(lf){ if(!lf || lf.cancelado || !Array.isArray(lf.linhas) || (lf.internoId && cobertos[lf.internoId+"#*"])) return;
+        var ls = lf.linhas.filter(function(q, i){ return q && q.tipo==="pagamento" && !q.isento && contasDefinidas(q) && !(lf.internoId && cobertos[lf.internoId+"#"+i]) && !(q.pid && cobertos["pid#"+q.pid]); });
+        if(!ls.length) return;
+        var x = {id:"AUTO_"+lf.id, lf:lf, internoId:lf.internoId, origem:lf.origem || "interno"}, st = situ(x), ts = lf.enviadoTs || 0, ord = [], soma = {}, cts = [];
+        ls.forEach(function(q){ var f = FORMA_LABEL[q.forma] || q.forma || "Pix"; if(!(f in soma)){ ord.push(f); soma[f] = 0; } soma[f] += Number(q.valor)||0; (q.partes||[]).forEach(function(p){ if(p.descricao) cts.push(contaAuto(p.descricao)); }); });
+        linhas.push({id:x.id, sit:st[0], com:st[1], comp:compsDe(x).length>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" ? "Desfazer" : "—"), data:ts ? dtx(ts) : "—", hora:ts ? hm(ts) : "—", rev:ateNomes(lf.nome || "", 4),
+          valor:BKC(r2(ls.reduce(function(t, q){ return t+(Number(q.valor)||0); }, 0))), forma:ord.length===1 ? ord[0] : ord.map(function(f){ return f+" "+BKC(soma[f]); }).join(" + "), conta:unicos(cts),
+          quem:ls.every(function(q){ return q.auto; }) ? "Automático" : "Controle de pagamentos", reabre:"", x:x, ts:ts}); });
+      linhas.sort(function(a, b){ return b.ts-a.ts; });
+      if(!linhas.length) return null;
       // as linhas ficam sempre no mesmo lugar (mais novo em cima): conferir não muda a linha de posição (Marcus, 12/11/2026: "clicou e sumiu")
       var desfazerAqui = function(x){ var l = lfDe(x); if(!l) return;   // volta a conferência para pendente (o comprovante e as etapas da atendente ficam)
         l.linhas.forEach(function(q, i){ if(q.tipo!=="pagamento" || q.isento) return; c.d({type:"FIN_LINHA", id:l.id, i:i, patch:{partes:(q.partes||[]).map(function(p){ return Object.assign({}, p, {ok:false}); })}, por:c.por}); }); };
