@@ -40,7 +40,7 @@ export const GET = rota(async (req, { eu, params, url }) => {
   if (q !== null && !/^-?\d+$/.test(q)) throw invalido("desde");
   const desde = q === null ? undefined : Number(q);
   if (!podeModulo(eu, modulo)) return nega();
-  if (eu.repCod) return json(modulo === "comis" ? await respostaComisRep(desde, eu.repCod) : modulo === "pag" ? await respostaPagRep(desde, eu.repCod) : await respostaItensRep(modulo, desde, eu.repCod));   // conta de representante: só o que é dela
+  if (eu.repCod) return json(modulo === "comis" ? await respostaComisRep(desde, eu.repCods) : modulo === "pag" ? await respostaPagRep(desde, eu.repCods) : await respostaItensRep(modulo, desde, eu.repCods));   // conta de representante: só o que é dela
   if (ehModuloItens(modulo)) return getItens(modulo, desde);
   const v = await consulta("select versao from sorelly.estado_modulo where modulo = $1", [modulo]);
   const versao = v.rows[0] ? v.rows[0].versao : 0;

@@ -12,13 +12,14 @@ const obj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const KIT = /^[A-Za-z0-9_-]{1,64}$/;
 
 // ids dos kits dela (kit do app com o código dela, ou kit da equipe numa listagem dela)
-async function kitsDaRep(cod) {
+async function kitsDaRep(codigos) {
+  const cods = [].concat(codigos).map(String);   // conta com mais de um cadastro: kit de qualquer um deles
   const rpo = await lerPrefixos("rpo", ["l_", "k_", "kx_"]);
-  const minhas = {}; Object.keys(rpo).forEach((c) => { if (c.startsWith("l_") && vivo(rpo[c]) && String(rpo[c].repCod || "") === cod) minhas[c.slice(2)] = 1; });
+  const minhas = {}; Object.keys(rpo).forEach((c) => { if (c.startsWith("l_") && vivo(rpo[c]) && cods.includes(String(rpo[c].repCod || ""))) minhas[c.slice(2)] = 1; });
   const ids = {};
   Object.keys(rpo).forEach((c) => {
     const v = rpo[c]; if (!vivo(v)) return;
-    if (c.startsWith("k_") && (String(v.repCod || "") === cod || minhas[v.lid])) ids[c.slice(2)] = 1;
+    if (c.startsWith("k_") && (cods.includes(String(v.repCod || "")) || minhas[v.lid])) ids[c.slice(2)] = 1;
     if (c.startsWith("kx_") && v._full && minhas[v.lid]) ids[c.slice(3)] = 1;
   });
   return ids;
@@ -28,7 +29,7 @@ const ehDela = (k, v, kits) => obj(v) && v.origem === "rep" && !!kits[kitDaChave
 
 // leitura: só os pedidos dos kits dela
 export async function respostaPagRep(desde, repCod) {
-  const cod = String(repCod);
+  const cod = [].concat(repCod).map(String);
   const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'pag'");
   const l = r.rows[0], versao = l ? Number(l.versao) : 0;
   if (desde !== undefined && versao > 0 && versao === desde) return { modulo: "pag", versao, igual: true };
@@ -40,9 +41,9 @@ export async function respostaPagRep(desde, repCod) {
 const definida = (linha) => (linha.partes || []).some((q) => q && (q.descricao || q.ok));   // o Financeiro já mexeu nesta linha
 // gravação: {versao, aceitas, devolver, avisos}
 export async function gravarPagRep(chaves, eu) {
-  const cod = String(eu.repCod || "").trim();
+  const cod = String(eu.repCod || "").trim();   // principal (carimbo e nome)
   const nome = (await nomeDaRep(cod)) || String(eu.nome || "").trim().split(/ +/)[0] || cod;
-  const kits = await kitsDaRep(cod);
+  const kits = await kitsDaRep(eu.repCods && eu.repCods.length ? eu.repCods : cod);
   const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'pag'");
   const at = (r.rows[0] && r.rows[0].conteudo) || {};
   const gravar = {}, devolver = {}, avisos = [];

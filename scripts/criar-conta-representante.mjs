@@ -16,6 +16,16 @@ if (args[0] === "--desligar") {
   console.log(r.rowCount ? "Conta desligada." : "Nenhuma conta de representante com esse login.");
   process.exit(0);
 }
+// Mais de um cadastro (24/11/2026): node ... --codigos <login> <código principal> <extras separados por vírgula>   ex.: --codigos thalita BI CU,CV
+// Só grava os códigos; a senha e o resto da conta não mudam. Extras ficam em rep_extra (código antigo ignora e continua vendo só o principal).
+if (args[0] === "--codigos") {
+  await consulta("alter table sorelly.conta add column if not exists rep_extra text");
+  const lg = String(args[1] || "").toLowerCase(), principal = String(args[2] || "").trim().toUpperCase(), extra = String(args[3] || "").split(",").map((x) => x.trim().toUpperCase()).filter((x) => x && x !== principal).join(",");
+  if (!lg || !principal) { console.log("Uso: --codigos <login> <principal> <extras separados por vírgula>"); process.exit(1); }
+  const r = await consulta("update sorelly.conta set rep_cod = $2, rep_extra = $3 where login = $1 and rep_cod is not null returning login, rep_cod, rep_extra", [lg, principal, extra]);
+  console.log(r.rowCount ? "Códigos gravados: " + JSON.stringify(r.rows[0]) : "Nenhuma conta de representante com esse login.");
+  process.exit(0);
+}
 const [login0, senha, cod0, nome] = args;
 if (!login0 || !senha || !cod0 || !nome) { console.log('Uso: criar-conta-representante.mjs <login> <senha> <código> "<Nome completo>"'); process.exit(1); }
 const login = login0.toLowerCase().replace(/[^a-z0-9._-]/g, ""), cod = cod0.trim().toUpperCase();

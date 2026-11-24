@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { consulta } from "./db.js";
 import { bloqueiaEscrita } from "./permissoes.js";
 import { rotaPermitidaRep } from "./rep-filtro.js";
+import { listaCodigos } from "./rep-codigos.js";
 
 export const json = (corpo, status = 200) => Response.json(corpo, { status });
 export const erro = (msg, status) => json({ erro: msg }, status);
@@ -32,7 +33,7 @@ export async function usuarioDe(req) {
       if (hit && Date.now() - hit.em < 30000) r = hit.r;
       else { r = (await consulta("select * from sorelly.conta where id::text = $1", [ck])).rows[0]; if (cache.size > 500) cache.clear(); cache.set(ck, { r, em: Date.now() }); }
       if (!r || r.status !== "ativo") return null;
-      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null, repCod: r.rep_cod || "" };
+      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null, repCod: r.rep_cod || "", repCods: listaCodigos(r.rep_cod, r.rep_extra) };
     }
     return { id: payload.id, nome: payload.nome, email: payload.email, perfil: payload.perfil, setores: payload.setores || [], pessoaId: payload.pessoaId ?? null };
   }

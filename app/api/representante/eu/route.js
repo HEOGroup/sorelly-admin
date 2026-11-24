@@ -7,6 +7,7 @@ import { erro, json, rota } from "@/server/http";
 import { nomeDaRep } from "@/server/rep-filtro";
 import { consulta } from "@/server/db";
 import { ler } from "@/server/representantes-app";
+import { codigosDe } from "@/server/rep-codigos";
 
 export const GET = rota(async (req, { eu }) => {
   if (!eu.repCod) return erro("Esta conta não é de representante.", 404);
@@ -14,6 +15,12 @@ export const GET = rota(async (req, { eu }) => {
   const f = await consulta("select foto from sorelly.conta where id = $1", [eu.id]);
   // totais DELA vindos do app das revendedoras (Vendido Total e Acerto Total do Início); só a conta dela, nunca de outra representante
   let painel = null;
-  try { const h = await ler("/representantes/home-summary?representativeCod=" + encodeURIComponent(eu.repCod) + "&incluirInativas=true"); const n = (v) => { const x = Number(v); return Number.isFinite(x) ? x : 0; }; painel = { vendido: n(h.totalSales), valorAcerto: n(h.settlementValue), pecas: n(h.piecesSold), revendedorasNoApp: n(h.revendedorasCount) }; } catch { painel = null; }
+  // mais de um cadastro (Thalita: BI, CU, CV): o painel soma os totais de todos
+  try {
+    const n = (v) => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
+    const hs = await Promise.all(codigosDe(eu).map((c) => ler("/representantes/home-summary?representativeCod=" + encodeURIComponent(c) + "&incluirInativas=true").catch(() => null)));
+    if (!hs.some(Boolean)) throw new Error("sem painel");
+    painel = hs.filter(Boolean).reduce((a, h) => ({ vendido: a.vendido + n(h.totalSales), valorAcerto: a.valorAcerto + n(h.settlementValue), pecas: a.pecas + n(h.piecesSold), revendedorasNoApp: a.revendedorasNoApp + n(h.revendedorasCount) }), { vendido: 0, valorAcerto: 0, pecas: 0, revendedorasNoApp: 0 });
+  } catch { painel = null; }
   return json({ cod: eu.repCod, nome, foto: (f.rows[0] && f.rows[0].foto) || "", painel });
 });

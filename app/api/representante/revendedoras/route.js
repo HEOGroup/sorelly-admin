@@ -7,6 +7,7 @@ export const maxDuration = 60;
 // O código do vendedor sai do NOME da representante (tabela de vendedores da DevMaster). Hoje a Diretoria vê qualquer representante; a representante só vê a si mesma (nome da conta).
 import { erro, json, rota } from "@/server/http";
 import { listaAgenda, listaRevendedoras, vendedores } from "@/server/revendedoras";
+import { codigosDe } from "@/server/rep-codigos";
 import { ler as lerApp } from "@/server/representantes-app";   // GET no backend do app, com as autoridades do sistema (antivírus do Windows)
 
 // VENDA DO APP DA REVENDEDORA (23/11/2026, Marcus: "ela vê a revendedora já com a venda do app dela?"): o backend do app guarda, por revendedora da carteira,
@@ -37,14 +38,17 @@ export const GET = rota(async (req, { eu, url }) => {
   if (!eu.repCod && eu.perfil !== "ADMIN" && sem(eu.nome).split(" ")[0] !== sem(pedida).split(" ")[0]) return erro("A representante só vê as próprias revendedoras.", 403);
   const mapa = await vendedores();
   const alvo = sem(pedida).split(" ")[0];
-  const forcado = eu.repCod || url.searchParams.get("vendedor");   // quando há vários vendedores com o mesmo primeiro nome (Jessica, Thalita), a Diretoria diz o código
-  const achados = [...mapa.entries()].filter(([c, nome]) => forcado ? c === forcado : sem(nome).split(" ")[0] === alvo);
-  if (achados.length !== 1) return json({ rep: pedida, vendedor: null, total: 0, itens: [], candidatos: achados.map(([c, n]) => ({ cod: c, nome: n })), aviso: achados.length ? "Mais de um vendedor com esse nome na DevMaster: passe ?vendedor=código." : "Nenhum vendedor da DevMaster com esse nome." });
-  const cod = achados[0][0];
-  const [dados, app] = await Promise.all([listaRevendedoras(), vendasDoApp(achados[0][0])]);   // a venda do app corre junto com a DevMaster (antes uma esperava a outra)
+  // MAIS DE UM CADASTRO (24/11/2026): a conta da Thalita traz BI, CU e CV; a carteira é a soma dos três.
+  const meus = eu.repCod ? codigosDe(eu).filter((c) => mapa.has(c)) : [];
+  const forcado = eu.repCod ? null : url.searchParams.get("vendedor");   // quando há vários vendedores com o mesmo primeiro nome (Jessica, Thalita), a Diretoria diz o código
+  const achados = eu.repCod ? meus.map((c) => [c, mapa.get(c)]) : [...mapa.entries()].filter(([c, nome]) => forcado ? c === forcado : sem(nome).split(" ")[0] === alvo);
+  if (eu.repCod ? !achados.length : achados.length !== 1) return json({ rep: pedida, vendedor: null, total: 0, itens: [], candidatos: achados.map(([c, n]) => ({ cod: c, nome: n })), aviso: achados.length ? "Mais de um vendedor com esse nome na DevMaster: passe ?vendedor=código." : "Nenhum vendedor da DevMaster com esse nome." });
+  const cod = achados[0][0], codigos = achados.map(([c]) => c);
+  const [dados, apps] = await Promise.all([listaRevendedoras(), Promise.all(codigos.map((c) => vendasDoApp(c)))]);   // a venda do app corre junto com a DevMaster (antes uma esperava a outra)
+  const app = apps.some(Boolean) ? new Map(apps.flatMap((m) => (m ? [...m.entries()] : []))) : null;
   // Data do acerto (05/11/2026, Marcus): a lista de revendedoras não traz a data; ela vem da AGENDA: a atividade ACERTOS marcada na DevMaster (vale a data dela) ou, sem atividade, a devolução prevista do kit (afi_prevdevol).
   const agenda = await listaAgenda().catch(() => null), quando = new Map(((agenda && agenda.itens) || []).map((a) => [a.cod, a.agendaEm || a.prev || null]));
-  const itens = dados.itens.filter((i) => i.conds.some((c) => c.vd === cod && c.d)).map((i) => ({ cod: i.cod, nome: i.nome, celular: i.celular || "", cidade: i.cidade || "", prevDevol: quando.get(i.cod) || i.prevDevol || null, vendas: i.vendas || [] }));
+  const itens = dados.itens.filter((i) => i.conds.some((c) => codigos.includes(c.vd) && c.d)).map((i) => ({ cod: i.cod, nome: i.nome, celular: i.celular || "", cidade: i.cidade || "", prevDevol: quando.get(i.cod) || i.prevDevol || null, vendas: i.vendas || [] }));
   if (app) itens.forEach((i) => { const a = app.get(String(i.cod).padStart(6, "0")); if (a) { i.vendaApp = a.venda; i.pecasApp = a.pecas; i.vendaAppEm = a.em; } });
   return json({ rep: pedida, vendedor: cod, total: itens.length, comVendaDoApp: !!app, itens });
 });

@@ -39,8 +39,8 @@ export const GET = rota(async (req, { eu, url }) => {
       r.rows.forEach((l) => { modulos[l.modulo] = { versao: l.versao, conteudo: l.conteudo || {} }; });
     }
   }
-  if (eu.repCod && normais.includes("pag")) modulos.pag = await respostaPagRep(desde.pag > 0 ? desde.pag : undefined, eu.repCod);   // conta de representante: só os pedidos de conta dos kits dela
-  if (eu.repCod && normais.includes("comis")) modulos.comis = await respostaComisRep(desde.comis > 0 ? desde.comis : undefined, eu.repCod);   // conta de representante: só a comissão dela
-  for (const m of itens) modulos[m] = eu.repCod ? await respostaItensRep(m, desde[m] > 0 ? desde[m] : undefined, eu.repCod) : await respostaItens(m, desde[m] > 0 ? desde[m] : undefined);   // conta de representante: só o que é dela
+  if (eu.repCod && normais.includes("pag")) modulos.pag = await respostaPagRep(desde.pag > 0 ? desde.pag : undefined, eu.repCods);   // conta de representante: só os pedidos de conta dos kits dela
+  if (eu.repCod && normais.includes("comis")) modulos.comis = await respostaComisRep(desde.comis > 0 ? desde.comis : undefined, eu.repCods);   // conta de representante: só a comissão dela
+  for (const m of itens) modulos[m] = eu.repCod ? await respostaItensRep(m, desde[m] > 0 ? desde[m] : undefined, eu.repCods) : await respostaItens(m, desde[m] > 0 ? desde[m] : undefined);   // conta de representante: só o que é dela
   return json({ modulos, semAcesso });
 });

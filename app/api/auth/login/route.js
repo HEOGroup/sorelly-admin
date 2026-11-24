@@ -6,6 +6,7 @@ import { json, erro, rota, corpo, assinar, invalido } from "@/server/http";
 import { consulta } from "@/server/db";
 import { conferirSenha } from "@/server/senha";
 import { contaPorIdentificador } from "@/server/contas";
+import { listaCodigos } from "@/server/rep-codigos";
 
 export const POST = rota(async (req) => {
   const b = await corpo(req);
@@ -16,7 +17,7 @@ export const POST = rota(async (req) => {
     if (!(await conferirSenha(b.senha, c.senha_hash))) return erro("Usuário ou senha incorretos.", 401);
     if (c.status === "aguardando") return erro("Sua conta aguarda a liberação da Diretoria. Assim que liberar, é só entrar.", 403);
     if (c.status === "bloqueado") return erro("Sua conta está bloqueada. Fale com a Diretoria.", 403);
-    const usuario = { id: c.id, nome: c.nome, email: c.email, perfil: c.perfil, setores: c.setores || [], pessoaId: c.pessoa_id, conta: true, login: c.login || "", abas: c.abas || null, ocultar: c.ocultar || null, grupo: c.grupo || null, cid: c.cid || null, repCod: c.rep_cod || "" };
+    const usuario = { id: c.id, nome: c.nome, email: c.email, perfil: c.perfil, setores: c.setores || [], pessoaId: c.pessoa_id, conta: true, login: c.login || "", abas: c.abas || null, ocultar: c.ocultar || null, grupo: c.grupo || null, cid: c.cid || null, repCod: c.rep_cod || "", repCods: listaCodigos(c.rep_cod, c.rep_extra) };
     return json({ token: await assinar({ id: c.id, conta: true }), usuario });
   }
   // 2) acesso antigo (tabela "user" do banco)

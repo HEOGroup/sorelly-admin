@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 import { erro, json, rota } from "@/server/http";
 import { consultarTabela, todasAsPaginas } from "@/server/devmaster2";
 import { nomeNormal, vendedores } from "@/server/revendedoras";
+import { codigosDe } from "@/server/rep-codigos";
 
 const GRUPOS = { "01": "Anéis", "02": "Brincos", "04": "Colares", "06": "Pulseiras", "07": "Tornozeleiras", "08": "Suporte", "11": "Religiosos", "14": "Material de uso geral", "16": "Sorelly Premium", "19": "Brincos Select", "30": "Brinco Duo", "42": "Anéis Select", "45": "Bracelete", BD: "Collection" };
 const sem = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -27,7 +28,7 @@ export const GET = rota(async (req, { eu, url }) => {
   const kits = cods.filter((x) => x.afi_vendedor !== "04" && x.afi_vendedor !== "91" && Number(String(x.afi_prevdevol || "0").slice(0, 4)) < 2100);
   const mapa = await vendedores();
   // A representante só vê revendedora com condicional no vendedor dela; a Diretoria vê todas.
-  if (eu.repCod ? (kits.length && !kits.some((x) => x.afi_vendedor === eu.repCod)) : (eu.perfil !== "ADMIN" && kits.length && !kits.some((x) => sem(mapa.get(x.afi_vendedor)).split(" ")[0] === sem(eu.nome).split(" ")[0]))) return erro("Essa revendedora não é da sua carteira.", 403);
+  if (eu.repCod ? (kits.length && !kits.some((x) => codigosDe(eu).includes(x.afi_vendedor))) : (eu.perfil !== "ADMIN" && kits.length && !kits.some((x) => sem(mapa.get(x.afi_vendedor)).split(" ")[0] === sem(eu.nome).split(" ")[0]))) return erro("Essa revendedora não é da sua carteira.", 403);
   // ?recente=1: só o kit mais novo (o que está sendo ENTREGUE). A revendedora costuma ter o kit anterior ainda aberto até o acerto; esse não entra na conferência do kit novo.
   if (url.searchParams.get("recente") === "1") { kits.sort((a, b) => String(b.afi_data).localeCompare(String(a.afi_data))); kits.splice(1); }
   const numeros = kits.map((x) => x.afi_codigo);

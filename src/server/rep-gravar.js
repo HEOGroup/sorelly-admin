@@ -28,7 +28,8 @@ async function usarCreditos(ids, acertoId, kitId) {
 
 // {versao, aceitas:[chaves], devolver:{chave: valor que vale no servidor}, avisos:[frases]}
 export async function gravarItensRep(modulo, chaves, eu) {
-  const cod = String(eu.repCod || "").trim();
+  const cod = String(eu.repCod || "").trim();   // código PRINCIPAL: carimba o que ela cria
+  const cods = eu.repCods && eu.repCods.length ? eu.repCods.map(String) : [cod];   // todos os cadastros dela (Thalita: BI, CU, CV): mexe no que é de qualquer um
   if (!cod || !PREFIXOS[modulo]) return { versao: await versaoItens(modulo), aceitas: [], devolver: {}, avisos: [] };
   const nome = (await nomeDaRep(cod)) || String(eu.nome || "").trim().split(/ +/)[0] || cod;
   const pedidas = Object.keys(chaves).filter((k) => PREFIXOS[modulo].includes(prefixo(k)) && ID.test(idDaChave(k)))
@@ -39,7 +40,8 @@ export async function gravarItensRep(modulo, chaves, eu) {
     const at = await lerPrefixosCli(cli, modulo, LER[modulo]);
     const gravar = {}, devolver = {}, avisos = [];
     const vale = (k) => (k in gravar ? gravar[k] : at[k]);
-    const minha = (v) => vivo(v) && String(v.repCod || "") === cod;
+    const minha = (v) => vivo(v) && cods.includes(String(v.repCod || ""));
+    const dono = (v) => (v && cods.includes(String(v.repCod || "")) ? String(v.repCod) : cod);   // registro que já existe mantém o código dele
     const listagemMinha = (lid) => minha(vale("l_" + lid));
     const kitMeu = (id) => { const k = vale("k_" + id); if (k) return minha(k); const kx = at["kx_" + id]; return !!(kx && kx._full && !kx._apagado && listagemMinha(kx.lid)); };
     const nega = (k, frase) => { devolver[k] = at[k] === undefined ? LAPIDE("recusado") : at[k]; if (frase && !avisos.includes(frase)) avisos.push(frase); };
@@ -51,7 +53,7 @@ export async function gravarItensRep(modulo, chaves, eu) {
         if (existe !== undefined && !minha(existe)) { nega(k); continue; }
         if (v._apagado) { if (!existe) { nega(k); continue; } gravar[k] = LAPIDE("apagada pela representante"); continue; }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v.data || "")) || !/^\d{2}:\d{2}$/.test(String(v.horario || ""))) { nega(k, "Listagem sem data ou horário válido."); continue; }
-        gravar[k] = Object.assign({}, v, { repCod: cod, rep: nome, origem: "app", fechada: existe ? !!existe.fechada : false, retiradas: existe ? existe.retiradas || [] : [], criadoEm: (existe && existe.criadoEm) || v.criadoEm || new Date().toISOString() });
+        gravar[k] = Object.assign({}, v, { repCod: dono(existe), rep: nome, origem: "app", fechada: existe ? !!existe.fechada : false, retiradas: existe ? existe.retiradas || [] : [], criadoEm: (existe && existe.criadoEm) || v.criadoEm || new Date().toISOString() });
       } else if (p === "k") {
         if (existe !== undefined && !minha(existe)) { nega(k); continue; }
         if (v._apagado) {
@@ -65,18 +67,19 @@ export async function gravarItensRep(modulo, chaves, eu) {
         const l = vale("l_" + v.lid), lx = vivo(at["lx_" + v.lid]) ? at["lx_" + v.lid] : {};
         if (l.fechada || lx.fechada) { nega(k, "Essa listagem já foi concluída."); continue; }
         if (!String(v.rev || "").trim()) { nega(k); continue; }
-        gravar[k] = Object.assign({}, v, { repCod: cod, rep: nome, origem: "app", porApp: true, criadoEm: v.criadoEm || new Date().toISOString(),
+        gravar[k] = Object.assign({}, v, { repCod: dono(l), rep: nome, origem: "app", porApp: true, criadoEm: v.criadoEm || new Date().toISOString(),
           // o que é da equipe nasce zerado, venha o que vier da tela
           valor: null, valorReal: null, manual: false, defPor: null, defEm: null, montId: null, iniM: null, fimM: null, tempoM: null, bipId: null, iniB: null, fimB: null, retEm: null, retPor: null, divReg: false, corrigido: false,
           status: v.status === "condicional" ? "condicional" : "semvalor" });
       } else if (p === "pr") {   // ficha da revendedora: qualquer representante preenche a das revendedoras dela; nunca troca a de quem já é de outra
         if (!/^\d{6,10}$/.test(id) || v._apagado) { nega(k); continue; }
-        if (existe && vivo(existe) && existe.repCod && String(existe.repCod) !== cod) { nega(k, "Essa ficha já é de outra representante."); continue; }
-        gravar[k] = Object.assign({}, v, { revCod: id, repCod: cod, rep: nome, em: new Date().toISOString() });
+        if (existe && vivo(existe) && existe.repCod && !cods.includes(String(existe.repCod))) { nega(k, "Essa ficha já é de outra representante."); continue; }
+        gravar[k] = Object.assign({}, v, { revCod: id, repCod: dono(existe), rep: nome, em: new Date().toISOString() });
       } else if (p === "pd") {   // pedido de nova data do acerto: chave pd_<código dela>-<id>; a Diretoria decide em Agendamento > Plano 45/60 > Aprovação
-        if (!id.startsWith(cod + "-") || v._apagado) { nega(k); continue; }
-        if (existe && vivo(existe) && String(existe.repCod || "") !== cod) { nega(k); continue; }
-        gravar[k] = Object.assign({}, existe && vivo(existe) ? existe : {}, v, { repCod: cod, rep: nome, id: id.slice(cod.length + 1) });
+        const cp = cods.find((c) => id.startsWith(c + "-"));   // o código do pedido tem que ser de um dos cadastros dela
+        if (!cp || v._apagado) { nega(k); continue; }
+        if (existe && vivo(existe) && String(existe.repCod || "") !== cp) { nega(k); continue; }
+        gravar[k] = Object.assign({}, existe && vivo(existe) ? existe : {}, v, { repCod: cp, rep: nome, id: id.slice(cp.length + 1) });
       } else if (p === "ke" || p === "en") {
         if (!kitMeu(id)) { nega(k); continue; }
         if (p === "en") { gravar[k] = v; continue; }
@@ -89,7 +92,7 @@ export async function gravarItensRep(modulo, chaves, eu) {
         if (existe && ax && ax.recebimento && ax.recebimento.ok) { nega(k, "Esse atendimento já foi conferido pelo agendamento e não muda mais."); continue; }
         if (v._apagado) { nega(k); continue; }
         if (!String(v.rev || "").trim() || !/^\d{4}-\d{2}-\d{2}$/.test(String(v.data || ""))) { nega(k); continue; }
-        gravar[k] = Object.assign({}, v, { repCod: cod, rep: nome, origem: "app", recebimento: existe ? existe.recebimento || null : null, fin: existe ? existe.fin : undefined, recebidoEm: (existe && existe.recebidoEm) || new Date().toISOString() });
+        gravar[k] = Object.assign({}, v, { repCod: dono(existe), rep: nome, origem: "app", recebimento: existe ? existe.recebimento || null : null, fin: existe ? existe.fin : undefined, recebidoEm: (existe && existe.recebidoEm) || new Date().toISOString() });
         if (!existe && Array.isArray(v.creditosGarantiaUsados) && v.creditosGarantiaUsados.length) creditos.push({ ids: v.creditosGarantiaUsados.map(String), acertoId: id, kitId: v.kitId || null });
       } else if (p === "ar") {
         if (!minha(vale("a_" + id))) { nega(k); continue; }
@@ -98,10 +101,10 @@ export async function gravarItensRep(modulo, chaves, eu) {
         gravar[k] = { din: v.din || null, cond: v.cond || null };
       } else if (p === "km") {
         const m = /^(\d{4}-\d{2}-\d{2})_(.+)$/.exec(id), km = Number(v.km);
-        if (!m || m[2] !== cod || !(km >= 0 && km <= 20000)) { nega(k, "Km inválido."); continue; }
-        gravar[k] = { data: m[1], rep: nome, repCod: cod, km: Math.round(km * 100) / 100, kmPor: "rep", kmTs: new Date().toISOString(), kmModo: "total" };   // a hora que vale é a do servidor
+        if (!m || !cods.includes(m[2]) || !(km >= 0 && km <= 20000)) { nega(k, "Km inválido."); continue; }
+        gravar[k] = { data: m[1], rep: nome, repCod: m[2], km: Math.round(km * 100) / 100, kmPor: "rep", kmTs: new Date().toISOString(), kmModo: "total" };   // a hora que vale é a do servidor
       } else if (p === "gv") {
-        if (id !== cod) { nega(k); continue; }
+        if (!cods.includes(id)) { nega(k); continue; }
         gravar[k] = { em: v.em || null, rep: nome, ts: Date.now() };
       }
     }
