@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.160", data:"2026-11-23", titulo:"App da representante: bloco do dia mais compacto em Listagens", itens:[
+  {tipo:"melhoria", area:"App da representante → Listagens", txt:"O bloco escuro do dia ficou em duas linhas: data, horário e kits em cima; prazo embaixo."}]},
  {v:"0.21.159", data:"2026-11-23", titulo:"Marcus: Acessos e senhas no visual da Contas a pagar", itens:[
   {tipo:"melhoria", area:"Marcus → Acessos e senhas", txt:"A tela ganhou o mesmo visual da Contas a pagar do Financeiro: barra azul com Buscar e Mostrar, tabela fina com filtro no nome de cada coluna, linha de total e botão no canto da barra. Atividades e Dados foram excluídas."}]},
  {v:"0.21.158", data:"2026-11-23", titulo:"Direcionar lança o Pix do sócio na Família, com a casa", itens:[

@@ -87,12 +87,10 @@ function TelaDia(p){
   if(dia.kits.length>0) acoes.push(["excluir","Excluir uma revendedora…"]);
   var aviso = dia.fechou && !sem ? "Prazo encerrado: só a Deysiane inclui mais revendedoras." : dia.cheia ? "Listagem cheia ("+dia.vagas.replace("/"," de ")+"). Crie outra listagem em outro dia." : "";
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"rounded-2xl bg-[#202023] px-3 py-2.5 text-white"},
-      e("b",{className:"block text-[15px]", style:{color:"#FFFFFF"}}, tituloDoDia(p.iso)),
-      !sem && e("div",{className:"flex items-baseline justify-between py-0.5 text-[12px] text-[#E5E7EB]"}, e("span",null,"Retirada"), e("b",{className:MONO+" text-[14px]", style:{color:"#FFFFFF"}}, horarios(dia.ls))),
-      !sem && e("div",{className:"flex items-baseline justify-between py-0.5 text-[12px] text-[#E5E7EB]"}, e("span",null,"Kits"), e("b",{className:MONO+" text-[14px]", style:{color:"#FFFFFF"}}, dia.vagas.replace("/"," / "))),
-      !sem && dia.ls[0] && e("div",{className:"mt-1.5 flex items-baseline justify-between gap-2 border-t border-[#C9A13B] pt-1.5"}, e("span",{className:"text-[12px] font-bold text-[#F0D58A]"}, dia.fechou ? "Prazo" : "Incluir até"), e("b",{className:MONO+" text-right text-[13px]", style:{color:"#F0D58A"}}, dia.fechou ? "encerrado" : dia.prazo.texto)),
-      null),
+    e("div",{className:"rounded-xl bg-[#202023] px-3 py-1.5 text-white"},   // bloco do dia compacto (Marcus, 23/11/2026)
+      e("div",{className:"flex items-baseline justify-between gap-2"}, e("b",{className:"text-[13px]", style:{color:"#FFFFFF"}}, tituloDoDia(p.iso)),
+        !sem && e("span",{className:MONO+" text-[12px] text-[#E5E7EB]"}, horarios(dia.ls)+" · "+dia.vagas.replace("/","/")+" kits")),
+      !sem && dia.ls[0] && e("div",{className:"flex items-baseline justify-between gap-2 text-[11px]"}, e("span",{className:"font-bold text-[#F0D58A]"}, dia.fechou ? "Prazo" : "Incluir até"), e("b",{className:MONO+" text-right text-[11px]", style:{color:"#F0D58A"}}, dia.fechou ? "encerrado" : String(dia.prazo.texto).replace(/([A-Za-zÀ-ú]{3})[A-Za-zÀ-ú]*-feira, /,"$1 ")))),
     !sem && e("div",{className:CARD+" overflow-hidden"}, e("div",{className:"border-[#F3E8C8]"}, tabela)),
     temBipado && dia.ls[0] && e("div",{className:CARD+" flex items-center justify-between gap-2 px-3 py-2"}, e("span",{className:"text-[13px] font-semibold text-[#111827]"}, "Código de retirada"), e("b",{className:MONO+" text-[20px] tracking-[.3em] text-[#8A6A12]"}, codigoRetirada(dia.ls[0]))),
     aviso && e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12px] font-semibold text-[#92400E]"}, aviso),
