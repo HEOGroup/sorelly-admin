@@ -3521,3 +3521,6 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 ## 24/11/2026 · Acesso total sem o RH (Marcus)
 - Priscila (37) e Amanda de Miranda (32) têm Acesso total (ADMIN), menos o RH. Código: `PESSOAS_SEM_RH` em `src/server/permissoes.js` (módulos `rh` e `eq`) e o filtro das telas do RH em `App.js`. Para liberar o RH de novo, tirar o id das duas listas.
 - Encomendas liberado em 24/11/2026 para Castilho (47) e para Agatha, Eduarda Gabriela e Elen (`set_encomendas` nas abas da conta).
+
+## 24/11/2026 · Kit apoio bolsinhas (MP0063)
+- Marcus: o kit apoio é o produto MP0063 (500 em estoque, R$ 10,00, sem comissão) que vem na condicional. O app lê pela DevMaster (só leitura, `?produto=MP0063`) e mostra o bloco só quando há MP0063; a representante marca vendidos (pacote aberto = vendido) e o que voltou sem extravio. Soma só no valor a pagar, fora de venda líquida, faixa, comissão, brinde, taxa e meta. Preço em `domain/kit-apoio.js`.

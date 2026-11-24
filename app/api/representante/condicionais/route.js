@@ -33,6 +33,12 @@ export const GET = rota(async (req, { eu, url }) => {
   const numeros = kits.map((x) => x.afi_codigo);
   const resumo = url.searchParams.get("resumo") === "1";   // ?resumo=1: só número, peças, valor e previsão (sem a lista de peças): é o que o acerto usa para saber quais condicionais voltam
   const itens = numeros.length && !resumo ? await todasAsPaginas("dmafj", { filtro: { afj_condicional: { in: numeros } }, campos: ["afj_condicional", "afj_produto", "afj_descricao", "afj_quantidade", "afj_valorun"] }) : [];
+  // ?produto=MP0063: quantas unidades desse produto há em cada condicional aberta (kit apoio de Natal, 24/11/2026); só leitura
+  const produto = String(url.searchParams.get("produto") || "").trim().toUpperCase(), qtdProduto = new Map();
+  if (/^[A-Z0-9]{3,12}$/.test(produto) && numeros.length) {
+    const ip = await todasAsPaginas("dmafj", { filtro: { afj_condicional: { in: numeros }, afj_produto: produto }, campos: ["afj_condicional", "afj_quantidade"] });
+    ip.forEach((i) => qtdProduto.set(i.afj_condicional, (qtdProduto.get(i.afj_condicional) || 0) + (Number(i.afj_quantidade) || 0)));
+  }
   const prods = [...new Set(itens.map((i) => String(i.afj_produto || "").trim()))], grupoDe = new Map();
   for (let i = 0; i < prods.length; i += 100) {
     const r = await consultarTabela("dmaaa", { registros: 100, filtro: { aaa_codigo: { in: prods.slice(i, i + 100) } }, campos: ["aaa_codigo", "aaa_grupo"] });
@@ -45,7 +51,7 @@ export const GET = rota(async (req, { eu, url }) => {
       if (!por.has(g)) por.set(g, { cod: g, nome: GRUPOS[g] || "Grupo " + g, itens: [] });
       por.get(g).itens.push({ codigo, desc: nomeNormal(String(i.afj_descricao || "").trim()).toUpperCase(), valor: Number(i.afj_valorun) || 0, qtd: Number(i.afj_quantidade) || 0 });
     });
-    return { numero: c.afi_codigo, emissao: d10(c.afi_data), previsao: d10(c.afi_prevdevol), vendedor: mapa.get(c.afi_vendedor) || c.afi_vendedor, pecas: Number(c.afi_qtditens) || 0, valor: Number(c.afi_valormerc) || 0, grupos: [...por.values()].sort((a, b) => a.cod.localeCompare(b.cod)) };
+    return { numero: c.afi_codigo, emissao: d10(c.afi_data), previsao: d10(c.afi_prevdevol), vendedor: mapa.get(c.afi_vendedor) || c.afi_vendedor, pecas: Number(c.afi_qtditens) || 0, valor: Number(c.afi_valormerc) || 0, produtoQtd: qtdProduto.get(c.afi_codigo) || 0, grupos: [...por.values()].sort((a, b) => a.cod.localeCompare(b.cod)) };
   });
   return json({ cod, total: condicionais.length, condicionais });
 });

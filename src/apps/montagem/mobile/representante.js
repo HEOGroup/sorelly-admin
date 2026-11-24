@@ -47,6 +47,7 @@ import { reduzirFoto } from "@/apps/montagem/lib/perfil";
 import { fotoPequena } from "@/apps/montagem/lib/comprovante";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
+import { AVISO_KIT_APOIO, KIT_APOIO } from "@/apps/montagem/domain/kit-apoio";
 import React from "react";
 
 // Moeda com centavos (,00) sempre visíveis: usada só no app da representante — o BK() global (lib/format) fica arredondado pras outras telas do admin.
@@ -310,9 +311,9 @@ function AppRepresentante(p){
     if(!sel || !kitSel || !codDm || !apiAtiva() || kitSel.tipoKit!=="acerto_kit" || condCarregada.current[kitSel.id]) return;
     if((s.acertosConsignado||[]).some(function(r){ return r.kitId===kitSel.id && r.tipo==="acerto"; })) return;   // acerto já feito: não mexe
     condCarregada.current[kitSel.id] = true; var nomeRev = sel.rev;
-    chamar("GET", "/representante/condicionais?resumo=1&cod="+encodeURIComponent(codDm)).then(function(r){
+    chamar("GET", "/representante/condicionais?resumo=1&produto="+KIT_APOIO.codigo+"&cod="+encodeURIComponent(codDm)).then(function(r){
       var abertas = (r.condicionais||[]).slice();   // todas as abertas (kit e reposição; expositor e encomenda a rota já tira). O kit novo só é emitido na DevMaster depois do acerto.
-      var reais = abertas.map(function(c){ return {numero:c.numero, pecas:c.pecas, valor:c.valor, previsao:c.previsao, devmaster:true}; });
+      var reais = abertas.map(function(c){ return {numero:c.numero, pecas:c.pecas, valor:c.valor, previsao:c.previsao, apoioQtd:c.produtoQtd||0, devmaster:true}; });
       var manuais = ((s.perfisRev[nomeRev]||{}).condicionaisAbertas||[]).filter(function(c){ return c.manual && !reais.some(function(x){ return x.numero===c.numero; }); });
       d({type:"REV_COND_DEFINIR", rev:nomeRev, lista:reais.concat(manuais)});
     }).catch(function(){ condCarregada.current[kitSel.id] = false; });
@@ -320,6 +321,7 @@ function AppRepresentante(p){
   // Depois de registrado, o acerto deste kit NÃO conta como dívida anterior (senão o pendente é contado duas vezes e a mensagem de fechamento sai errada)
   var regDoKit = kitSel ? (s.acertosConsignado||[]).find(function(r0){ return r0.kitId===kitSel.id && r0.tipo==="acerto"; }) : null;
   var dv = derivarAcerto({finalizado:!!jaAcertado, versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
+  var apoioDisp = condicionaisRev.filter(function(c){ return (acertoForm.condicionaisSelecionadas||[]).indexOf(c.numero)>=0; }).reduce(function(t0,c){ return t0+(c.apoioQtd||0); }, 0);   // kit apoio (MP0063) que veio nas condicionais deste acerto
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
   // Contexto do acerto para o Direcionar (Financeiro): vendas, valor a pagar e todos os pagamentos lançados (igual ao Interno); lista = pagamentos do acerto, com ou sem o que acabou de lançar
@@ -498,7 +500,7 @@ function AppRepresentante(p){
   var payloadAcerto = function(extra){
     return Object.assign({type:"ACERTO_REGISTRAR", id:kitSel.id, motivoVendaBaixa:motivoVB, vendaBruta:dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta, vendaDigitada:acertoForm.vendaBruta, trocas:acertoForm.trocas||[], tagsDanificadas:acertoForm.tagsDanificadas||0, tagsValor:dv.tagsValor, devolvida:0, garantia:acertoForm.garantia||0,
       valorPago: acordoValido ? previaBase.valorDevido : totalPagoAtual, pagamentos:acertoForm.pagamentos, acordo: acordoExistente ? acertoForm.acordoParcelas : null,
-      recusouNegociar:acertoForm.recusouNegociar, brindesLancados:acertoForm.brindes, excedenteBrinde:excedenteBrinde,
+      recusouNegociar:acertoForm.recusouNegociar, brindesLancados:acertoForm.brindes, excedenteBrinde:excedenteBrinde, kitApoio:Object.assign({}, dv.kitApoio, {disponivel:apoioDisp}),
       pecasVendidas:acertoForm.pecasVendidas, pecasBrinde:acertoForm.brindes.length, pecasTrocas:(acertoForm.trocas||[]).length,
       pecasADevolver:pecasADevolver, condicionaisSelecionadas:acertoForm.condicionaisSelecionadas,
       modalidade:modalidadeKit, atrasoDias:(ehPrata || dv.novas) ? (acertoForm.atrasoDias||0) : 0, diasQuitacao:acertoForm.diasQuitacao||0,
@@ -657,6 +659,15 @@ function AppRepresentante(p){
             e("span",{className:"text-[13px] font-semibold"}, "Ajuste na venda"),
             e("b",{className:MONO+" text-[13px] text-amber-200"}, sinalT(dv.trocasAjuste)))];
       })()),
+    (apoioDisp>0 || dv.kitApoio.qtd>0) && blocoAcordeao(9, "presente", "#CA8A04", "Kit apoio bolsinhas",
+      apoioDisp>0 ? "Veio "+apoioDisp+(apoioDisp===1 ? " kit" : " kits")+" na condicional · marque os vendidos" : dv.kitApoio.qtd+(dv.kitApoio.qtd===1 ? " kit vendido" : " kits vendidos"),
+      (acertoForm.kitApoio && (acertoForm.kitApoio.marcado || acertoForm.kitApoio.qtd>0)) ? checkOk : badgeTxt("Marcar","#D97706"),
+      [e("p",{key:"ka0", className:"text-[12px] text-amber-200"}, KIT_APOIO.codigo+" · "+KIT_APOIO.nome+" · "+BK(KIT_APOIO.valorUnit)+" cada · sem comissão. Pacote aberto conta como vendido."),   // vem da condicional (Marcus, 24/11/2026): a representante marca o que voltou sem extravio e o que foi vendido
+        e("div",{key:"ka1", className:"flex items-center gap-2"},
+          e("select",{value:(acertoForm.kitApoio && acertoForm.kitApoio.marcado) || dv.kitApoio.qtd>0 ? dv.kitApoio.qtd : "", "aria-label":"Kits de apoio vendidos", onChange:function(ev){ if(ev.target.value==="") return; setAcertoForm(Object.assign({}, acertoForm, {kitApoio:{qtd:Number(ev.target.value), marcado:true}})); }, className:"h-8 min-w-0 flex-1 rounded-lg bg-white px-2 text-[13px] font-semibold text-[#111827] outline-none"},
+            [e("option",{key:"x", value:""}, "Marcar vendidos")].concat(Array.from({length:Math.max(apoioDisp, dv.kitApoio.qtd)+1}, function(_, n){ return e("option",{key:n, value:n}, n===0 ? "Nenhum vendido (todos voltaram)" : n+(n===1 ? " vendido" : " vendidos")); }))),
+          e("b",{className:MONO+" shrink-0 text-[13px] text-amber-200"}, "+ "+BK(dv.kitApoio.valor))),
+        apoioDisp>0 && acertoForm.kitApoio && acertoForm.kitApoio.marcado && e("p",{key:"ka2", className:"text-[12px] text-amber-200"}, "Voltaram sem extravio: "+Math.max(0, apoioDisp-dv.kitApoio.qtd)+" · vendidos: "+dv.kitApoio.qtd)]),
     blocoAcordeao(3, "grafico", "#2563EB", "Vendas e pagamentos",
       !previaBase ? "Preencha o valor vendido" : quitado ? BK(acertoForm.vendaBruta)+" · quitado" : BK(acertoForm.vendaBruta)+" · restante "+BK(restanteTotal),
       !previaBase ? badgeTxt("Pendente","#64748B") : quitado ? checkOk : acertoForm.recusouNegociar || acordoValido ? checkOk : badgeTxt("","#64748B"),
@@ -668,6 +679,7 @@ function AppRepresentante(p){
           previaAcerto && linhaFech("cm","t2","Comissão", e("span",{className:"flex items-center gap-3"}, e("b",{className:MONO+" text-[13px]"}, (previaAcerto.semFaixa ? 0 : previaAcerto.comissaoPct)+"%"), e("b",{className:MONO+" text-[13px]"}, "− "+BK(previaAcerto.comissao)))),
           previaAcerto && previaAcerto.taxaDeslocamento>0 && linhaFech("tx","t2","Taxa de deslocamento", valorFech("+", BK(previaAcerto.taxaDeslocamento))),
           previaAcerto && excedenteBrinde>0 && linhaFech("ex","t2","Brinde a mais", valorFech("+", BK(excedenteBrinde))),
+          previaAcerto && dv.kitApoio.valor>0 && linhaFech("ka","t2","Kit apoio bolsinhas", valorFech("+", BK(dv.kitApoio.valor))),
           previaAcerto && (acertoForm.tagsDanificadas||0)>0 && linhaFech("tg","t2","Tags riscadas ("+acertoForm.tagsDanificadas+")", e("span",{className:"flex items-center gap-1"}, valorFech("+", BK(dv.tagsValor)),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {tagsDanificadas:Math.max(0,(acertoForm.tagsDanificadas||0)-1)})); }, "aria-label":"Tirar uma tag", className:"grid size-8 place-items-center text-[13px]"}, "×"))),
           previaAcerto && linhaFech("pg","t3","Valor a pagar", valorFech("", BK(totalAPagar))),
@@ -857,9 +869,9 @@ function AppRepresentante(p){
               : "Kit novo não liberado — "+N1(pctPagoAcerto)+"% pago. Precisa de autorização do financeiro (mínimo "+kitNovoMin+"%)."),
       dv.novas && previaBase && dv.minimo.regra && e("div",{key:"kmed", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
         e("p",{className:"text-[12px] font-semibold text-white"},"Média das últimas 4 vendas"),
-        [["Antepenúltima venda",0],["Penúltima venda",1],["Última venda",2]].map(function(r){ var ant = acertoForm.vendasAnteriores||[];
-          return e("div",{key:"ka"+r[1], className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,r[0]), e("b",{className:MONO+" whitespace-nowrap"}, ant[r[1]]>0 ? BK(ant[r[1]]) : "—")); }),
         e("div",{key:"kh", className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,"Venda de hoje"), e("b",{className:MONO+" whitespace-nowrap"}, BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta))),
+        [["Última venda",2],["Penúltima venda",1],["Antepenúltima venda",0]].map(function(r){ var ant = acertoForm.vendasAnteriores||[];   // ordem: hoje, última, penúltima, antepenúltima (Marcus, 24/11/2026)
+          return e("div",{key:"ka"+r[1], className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,r[0]), e("b",{className:MONO+" whitespace-nowrap"}, ant[r[1]]>0 ? BK(ant[r[1]]) : "—")); }),
         e("div",{className:"flex min-h-8 items-center justify-between gap-2 rounded-lg bg-[#C9A13B]/20 px-2 text-[13px] font-bold"},
           e("span",null,"Média · mínimo "+BK(dv.minimo.ref)),
           e("b",{className:MONO+" whitespace-nowrap text-[15px]"}, BK(dv.minimo.media)))),

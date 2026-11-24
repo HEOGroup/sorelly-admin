@@ -2,11 +2,12 @@
 // Tudo que a Calculadora de acertos DERIVA do que foi digitado (prévia da comissão, quanto falta, acordo, brindes liberados, kit novo, valor restante).
 // É a mesma conta para o app da representante (celular) e para a Calculadora de acertos do atendimento interno (desktop):
 // as duas telas só desenham o resultado, nenhuma refaz regra.
+import { kitApoioDoForm } from "@/apps/montagem/domain/kit-apoio";
 import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva, versaoComissaoAntiga, avaliarMinimo, kitNovoLiberado as kitNovoLiberado2 } from "@/apps/montagem/domain/consignado";
 import { BK } from "@/apps/montagem/lib/format";
 
 var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas:null, pecasBrinde:null, pecasTrocas:null, trocas:[], tagsDanificadas:0,
-  motivoProxRemarcacao:"", condicionaisSelecionadas:[], pagamentos:[], acordoParcelas:[], acordoSalvo:false, recusouNegociar:false, brindes:[], atrasoDias:0, diasQuitacao:0, vendasAnteriores:[], motivoVendaBaixa:"", motivoVendaBaixaTexto:"", novaChance:false, pecasProxCodigos:[], kitNovoOk:false, expositoresMarcados:[], fechado:false};
+  motivoProxRemarcacao:"", condicionaisSelecionadas:[], pagamentos:[], acordoParcelas:[], acordoSalvo:false, recusouNegociar:false, brindes:[], atrasoDias:0, diasQuitacao:0, kitApoio:{qtd:0}, vendasAnteriores:[], motivoVendaBaixa:"", motivoVendaBaixaTexto:"", novaChance:false, pecasProxCodigos:[], kitNovoOk:false, expositoresMarcados:[], fechado:false};
 
 // versaoBase: versão de regras carimbada no kit/atendimento · modalidade: "padrao" | "prata" · vez: remarcações com multa
 // form: no formato de FORM_ACERTO_VAZIO · condicionais: [{numero, pecas}] em aberto da revendedora
@@ -97,7 +98,8 @@ function derivarAcerto(p){
   // Enquanto o atendimento está em andamento (nada lançado ou pagamento parcial a caminho) o valor a pagar é só o do acerto (ex.: venda R$ 788,00 − 30% = R$ 551,60).
   var multaAplica = !!(novas && previaAcerto && (p.finalizado || acordoExistente || form.recusouNegociar));
   var multasSoma = multaAplica ? (previaAcerto.multas||0) : 0;
-  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma)*100)/100 : 0;
+  var kitApoio = kitApoioDoForm(form);   // kit apoio bolsinhas: soma só no total a pagar (fora de venda, faixa, comissão, brinde, taxa e meta)
+  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma+kitApoio.valor)*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
   // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
   var blocoDivida = dividaAnt>0.009 && !!previaAcerto && restanteTotal>0.009 ? "Dívida anterior de "+BK(dividaAnt)+": ela não pode ficar devendo duas vezes seguidas. Kit novo só com tudo quitado." : "";
@@ -107,7 +109,7 @@ function derivarAcerto(p){
 
   // Peças liberadas para o próximo mês (quantidade pelo valor da venda, reduzida pelo % em aberto)
   var pecasProx = previaBase ? pecasProximoMes(previaBase.vendaLiquida, previaBase.valorDevido, faltaAtual, versao.pecasProx) : null;
-  return {tagsValor:tagsValor, valorTag:valorTag, trocasAjuste:trocasAjuste, vendaEfetiva:vendaEfetiva, nTrocasMes:nTrocasMes, nTrocasAnt:nTrocasAnt, pecasProx:pecasProx, versao:versao, gerais:gerais, ehPrata:ehPrata, totalPagoAtual:totalPagoAtual, acordoSoma:acordoSoma, previaBase:previaBase, faltaAtual:faltaAtual, quitado:quitado,
+  return {kitApoio:kitApoio, tagsValor:tagsValor, valorTag:valorTag, trocasAjuste:trocasAjuste, vendaEfetiva:vendaEfetiva, nTrocasMes:nTrocasMes, nTrocasAnt:nTrocasAnt, pecasProx:pecasProx, versao:versao, gerais:gerais, ehPrata:ehPrata, totalPagoAtual:totalPagoAtual, acordoSoma:acordoSoma, previaBase:previaBase, faltaAtual:faltaAtual, quitado:quitado,
     acordoExistente:acordoExistente, acordoValido:acordoValido, acordoFora:acordoFora, acordoFechado:acordoFechado, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,

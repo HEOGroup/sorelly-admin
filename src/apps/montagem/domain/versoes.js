@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.184", data:"2026-11-24", titulo:"App da representante: Kit apoio bolsinhas (MP0063) vindo da condicional e ordem das vendas no Kit novo", itens:[
+  {tipo:"novo", area:"App da representante → Calculadora de acertos → Kit apoio bolsinhas", txt:"Se a condicional tem o produto MP0063 (lido da DevMaster, só leitura), aparece o bloco antes de Vendas e pagamentos: a representante marca quantos foram vendidos (pacote aberto conta como vendido) e o valor (R$ 10,00 cada, sem comissão) soma só no valor a pagar."},
+  {tipo:"correção", area:"App da representante → Kit novo", txt:"As vendas aparecem em ordem: venda de hoje, última, penúltima e antepenúltima."}]},
  {v:"0.21.183", data:"2026-11-24", titulo:"Dashboard volta a somar as contas ao vivo; teste de ponta a ponta com 5 revendedoras", itens:[
   {tipo:"correção", area:"Dashboard", txt:"O pago e o a pagar do mês no bloco Faturamento do Dashboard voltam a vir ao vivo da lista de contas (DevMaster, Pix do admin e lançamentos). Vale também para o pago de período das Contas bancárias em mês sem pagamento lançado dia a dia. A ligação tinha sumido na junção de 22/11. Resultado do mês, Faturamento e Contas bancárias já somavam direto e não mudaram."},
   {tipo:"novo", area:"Tecnologia", txt:"Teste novo com 5 revendedoras de mentira, da listagem à comissão (47 verificações): node scripts/testar-fluxo-5-revendedoras.mjs. Roda na memória, sem banco."}]},

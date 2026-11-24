@@ -956,7 +956,7 @@ function reducer(s, a){
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
         pecasADevolver:a.pecasADevolver!=null?a.pecasADevolver:null, condicionaisSelecionadas:a.condicionaisSelecionadas||[],
         pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
-        brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0,
+        brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, kitApoio:a.kitApoio||null,
         pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0, kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[],
         assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas}, res);
       var lpU1 = usarLinksNoAcerto(s.lp, a.pagamentos, registro.id, agoraSPLp(), k.rev);   // links de pagamento usados como pagamento ficam marcados (não descontam duas vezes)
