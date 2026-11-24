@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem — pages/MarcusAcessos.js
 // Marcus › Acessos e senhas (Marcus, 23/11/2026): "pegue a tela do Contas a pagar da Sorelly, azul, e aplique 100% igual".
 // Mesma casca do Financeiro › Contas a pagar: PAGINA_CHEIA, BlocoPainel, barra azul em forma de tabela (BarraTabela/CelulaBarra) e TabelaPlanilha fina com filtro no nome da coluna.
+// Senha sempre visível e sem botão Copiar (Marcus, 23/11/2026).
 // Dados pessoais: ficam só neste navegador (domain/marcus.js, localStorage). Nada no servidor nem no Git.
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { Janela } from "@/apps/montagem/components/padrao";
@@ -12,7 +13,6 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { gravar, remover, useMarcus } from "@/apps/montagem/domain/marcus";
 import { e, useState } from "@/shared/react";
 
-var copiar = function(t){ try { navigator.clipboard.writeText(t); } catch(x){} };
 var CAMPOS_ACESSO = [{k:"cat", l:"Grupo", t:"sel", ops:["Plataformas", "Bancos"]}, {k:"plat", l:"Plataforma"}, {k:"login", l:"Login ou usuário"}, {k:"senha", l:"Senha"}, {k:"obs", l:"Observação", t:"area"}];
 var CAMPOS_PLANILHA = [{k:"nome", l:"Nome"}, {k:"link", l:"Link"}];
 
@@ -33,15 +33,11 @@ function Editor(p){
 
 function TelaAcessos(){
   var s = useMarcus(), bs = useState(""), busca = bs[0], setBusca = bs[1], ts = useState("acessos"), tipo = ts[0], setTipo = ts[1];
-  var vs = useState({}), ver = vs[0], setVer = vs[1], ed = useState(null), edit = ed[0], setEdit = ed[1];
+  var ed = useState(null), edit = ed[0], setEdit = ed[1];
   var q = busca.toLowerCase();
   var acessos = s.acessos.filter(function(a){ return !q || (a.cat+" "+a.plat+" "+a.login+" "+a.obs).toLowerCase().indexOf(q)>=0; }).map(function(a){ return Object.assign({}, a, {_orig:a}); });
   var planilhas = s.planilhas.filter(function(pl){ return !q || (pl.nome+" "+pl.link).toLowerCase().indexOf(q)>=0; }).map(function(pl){ return Object.assign({}, pl, {_orig:pl}); });
-  var mini = function(rot, fn){ return e("button",{type:"button", className:"mx-0.5 rounded border border-border px-1 text-[11px] hover:bg-white/10", onClick:function(ev){ ev.stopPropagation(); fn(); }}, rot); };
-  var colsAcesso = [{k:"cat", t:"Grupo"}, {k:"plat", t:"Plataforma"}, {k:"login", t:"Login",
-      render:function(v, l){ return e("span",null, v || "", v ? mini("Copiar", function(){ copiar(v); }) : null); }},
-    {k:"senha", t:"Senha", render:function(v, l){ if(!v) return ""; var aberto = !!ver[l.id]; return e("span",null, aberto ? v : "••••••••", mini(aberto ? "Ocultar" : "Ver", function(){ var o = Object.assign({}, ver); o[l.id] = !aberto; setVer(o); }), mini("Copiar", function(){ copiar(v); })); }, fmt:function(v){ return v ? "••••••••" : ""; }},
-    {k:"obs", t:"Observação"}];
+  var colsAcesso = [{k:"cat", t:"Grupo"}, {k:"plat", t:"Plataforma"}, {k:"login", t:"Login"}, {k:"senha", t:"Senha"}, {k:"obs", t:"Observação"}];
   var colsPlanilha = [{k:"nome", t:"Planilha"}, {k:"link", t:"Link", render:function(v){ return v ? e("a",{href:v, target:"_blank", rel:"noreferrer", className:"underline", onClick:function(ev){ ev.stopPropagation(); }}, v) : ""; }}];
   var novo = function(){ setEdit(tipo==="acessos" ? {_tipo:"acessos", cat:"Plataformas", plat:"", login:"", senha:"", obs:""} : {_tipo:"planilhas", nome:"", link:""}); };
   var abrir = function(l){ setEdit(Object.assign({_tipo:tipo}, l._orig)); };

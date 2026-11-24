@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.162", data:"2026-11-23", titulo:"Marcus: Progresso na mesma estrutura do Acessos e senhas", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"A tela Progresso ganhou a estrutura da Contas a pagar: barra azul (Mês, Agora, Hoje, Média do mês), botão Começar/Encerrar o dia no canto e tabela fina com uma linha por dia (início, fim, trabalhado, pausas e academia). Clicar no dia abre os trechos e a academia."}]},
+ {v:"0.21.161", data:"2026-11-23", titulo:"Marcus: senha sempre visível", itens:[
+  {tipo:"melhoria", area:"Marcus → Acessos e senhas", txt:"A senha aparece sempre, sem os botões Ver e Ocultar. Os botões Copiar saíram da tela."}]},
  {v:"0.21.160", data:"2026-11-23", titulo:"App da representante: bloco do dia mais compacto em Listagens", itens:[
   {tipo:"melhoria", area:"App da representante → Listagens", txt:"O bloco escuro do dia ficou em duas linhas: data, horário e kits em cima; prazo embaixo."}]},
  {v:"0.21.159", data:"2026-11-23", titulo:"Marcus: Acessos e senhas no visual da Contas a pagar", itens:[
