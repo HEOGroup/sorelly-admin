@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.176", data:"2026-11-24", titulo:"Pagamentos: vencimento das parcelas no Resumo e no acerto do fornecedor", itens:[
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Resumo geral", txt:"No detalhe de cada data, as Parcelas dos pedidos ganharam a coluna Vencimento (pedido, parcela, vencimento, valor), em ordem de vencimento."},
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Enviar acerto ao fornecedor", txt:"A página do link (e o Baixar HTML) mostra a tabela Parcelas que compõem este pagamento: pedido, parcela, vencimento, valor e o total."}]},
  {v:"0.21.175", data:"2026-11-24", titulo:"Fornecedores e prestadores: pagar no vencimento da parcela", itens:[
   {tipo:"novo", area:"Financeiro › Pagamentos a fornecedores › Fornecedores e Prestadores", txt:"Ciclo novo \"No vencimento\" no cadastro: cada parcela é paga na própria data de vencimento lançada no pedido (sem dias de corte). Vale mais que as datas de novembro feitas à mão. Os Pix já lançados seguem na data deles."}]},
  {v:"0.21.174", data:"2026-11-24", titulo:"Fatura do Itaú Black de novembro: os gastos reais no lugar da previsão (também no número oficial)", itens:[

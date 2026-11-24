@@ -3493,3 +3493,9 @@ Pedido do Lucas: "em casos específicos a data de vencimento seja a mesma do lan
 - Esse ciclo vale mais que as datas feitas à mão (`acertos`). Os Pix já lançados ficam na data deles (religar ao salvar o cadastro).
 - Teste só leitura (pf v635): Dávila fica 18/11 (R$ 520,00, pago) e 26/11 (R$ 1.865,70); Leci 26/11 (R$ 409,05).
 - Ainda não ligado para os dois: o Lucas escolhe "No vencimento" no cadastro de cada um.
+
+## 24/11/2026 · Vencimento das parcelas no acerto (Lucas)
+Pedido do Lucas: relatório simples com a data de vencimento e o valor das parcelas que compõem cada pagamento (ex.: Pontual, junção de vários pedidos).
+- Resumo geral › detalhe da data: a tabela Parcelas dos pedidos ganhou a coluna **Vencimento**.
+- Enviar acerto ao fornecedor: a página do link e o Baixar HTML (`lib/pf-extrato-html.js`) mostram **Parcelas que compõem este pagamento** (pedido, parcela, vencimento, valor, total), antes dos Pix.
+- Conferido com os dados reais do Pontual 11/11 a 20/11: 15 parcelas, total R$ 60.802,49.

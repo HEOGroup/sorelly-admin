@@ -20,6 +20,12 @@ function htmlExtrato(pf, chave, uris){
           '</div></details>'
         : '<div class="sem-comp">Comprovante não anexado</div>')+'</div>';
   }).join("");
+  // parcelas dos pedidos que compõem este pagamento (Lucas, 24/11/2026): pedido, parcela, vencimento e valor
+  var parc = ((j && j.itens) || []).map(function(it){ var pd = it.pd || {}, n = String(pd.numero==null ? "" : pd.numero).trim(); return {ped:(!n || /^[-—– ]+$/.test(n)) ? "Sem número" : n.replace(/\*+$/, ""), parc:(it.idx+1)+" de "+((pd.parcelas || []).length || 1), venc:it.p.venc, valor:+it.p.valor || 0}; })
+    .sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)) || a.ped.localeCompare(b.ped); });
+  var parcHtml = parc.length ? '<h2>Parcelas que compõem este pagamento ('+parc.length+')</h2><table class="pc"><thead><tr><th>Pedido</th><th>Parcela</th><th>Vencimento</th><th>Valor</th></tr></thead><tbody>'+
+    parc.map(function(x){ return '<tr><td>'+esc(x.ped)+'</td><td>'+x.parc+'</td><td>'+dbr(x.venc)+'</td><td>'+brl(x.valor)+'</td></tr>'; }).join("")+
+    '</tbody><tfoot><tr><td>Total</td><td></td><td></td><td>'+brl(parc.reduce(function(t, x){ return t+x.valor; }, 0))+'</td></tr></tfoot></table>' : "";
   var xls = {
     arquivo: ("Acerto "+f.nome+" "+limite).replace(/[\\/:*?"<>|]/g,"-"),
     resumo: [["Fornecedor", f.nome], ["Vencimento", dbr(limite)], ["Referência", mesLabel(j ? j.mes+"-01" : limite)], ["Total do período", +total.toFixed(2)], ["Recebido", +pago.toFixed(2)], ["Em aberto", +falta.toFixed(2)]]
@@ -44,12 +50,15 @@ function htmlExtrato(pf, chave, uris){
   '.sem-comp{margin-top:9px;font-size:13px;opacity:.6}.vazio{background:#17181c;border:1px dashed #2a2c31;border-radius:10px;padding:20px;text-align:center;opacity:.8}'+
   'footer{margin-top:26px;padding-top:15px;border-top:1px solid #2a2c31;font-size:12.5px;opacity:.65}'+
   '.xls-btn{display:inline-flex;align-items:center;gap:6px;margin:0 0 18px;padding:9px 16px;border-radius:9px;border:1px solid #2f7d55;background:rgba(62,207,142,.14);color:#3ecf8e;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}'+
-  '.xls-btn:hover{background:rgba(62,207,142,.24)}.xls-btn:disabled{opacity:.6;cursor:wait}@media print{body{background:#fff;color:#000}.pix,.tot div{background:#fff;border-color:#ccc}.xls-btn{display:none}}'+
+  '.pc{width:100%;border-collapse:collapse;margin-bottom:22px;font-size:14px;font-variant-numeric:tabular-nums}.pc th,.pc td{border:1px solid #2a2c31;padding:6px 8px;text-align:center;white-space:nowrap}'+
+  '.pc th{background:#1c1d21;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}.pc tfoot td{background:#1c1d21;font-weight:800}'+
+  '.xls-btn:hover{background:rgba(62,207,142,.24)}.xls-btn:disabled{opacity:.6;cursor:wait}@media print{body{background:#fff;color:#000}.pix,.tot div{background:#fff;border-color:#ccc}.pc th,.pc tfoot td{background:#eee}.pc th,.pc td{border-color:#ccc}.xls-btn{display:none}}'+
   '</style></head><body><div class="wrap"><header><div class="emp">Grupo Sorelly</div><h1>'+esc(f.nome)+'</h1>'+
   '<div class="per">Acerto com vencimento em '+dbr(limite)+' · referência '+mesLabel(j ? j.mes+"-01" : limite)+'</div>'+
   '<div class="tag '+(quitado ? "ok" : "pend")+'">'+(quitado ? "Pago integralmente" : "Pagamento em andamento")+'</div></header>'+
   '<div class="tot"><div><span>Total do período</span><b>'+brl(total)+'</b></div><div><span>Recebido</span><b class="g">'+brl(pago)+'</b></div>'+
   '<div><span>Em aberto</span><b class="'+(falta>0.005 ? "r" : "")+'">'+brl(falta)+'</b></div></div>'+
+  parcHtml+
   (descMq>0.005 ? '<h2>Desconto em cartão</h2><div class="pix"><div class="pix-top"><span class="d">Maquininha</span><span class="v">'+brl(descMq)+'</span></div><div class="pix-sub">Abatido do saldo das vendas passadas na maquininha</div></div>' : "")+
   '<button class="xls-btn" id="xls-btn" onclick="baixarExcel()">⬇ Baixar listagem em Excel</button>'+
   '<h2>Pix enviados ('+ls.length+')</h2>'+(ls.length ? linhas : '<div class="vazio">Nenhum Pix lançado neste período até o momento.</div>')+
