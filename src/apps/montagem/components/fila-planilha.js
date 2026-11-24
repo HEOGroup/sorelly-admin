@@ -30,7 +30,7 @@ import { e, useState } from "@/shared/react";
 
 var parar = function(ev){ ev.stopPropagation(); };   // botão dentro da linha não abre a ficha
 // cor SÓ do estado, na letra da coluna Situação (nada de selo colorido)
-var COR_SIT = {bipado:"text-success", retirado:"text-success", supervisao:"text-warning", semvalor:"text-warning", ajuste:"text-destructive", montando:"text-primary", bipando:"text-primary"};
+var COR_SIT = {bipado:"text-success", retirado:"text-success", supervisao:"text-white", semvalor:"text-white", ajuste:"text-destructive", montando:"text-primary", bipando:"text-primary"};
 // botão pequeno de contorno branco, sem fundo cinza; o principal leva o azul do bloco (o mesmo da tela Condicionais)
 var BTN = "inline-flex h-7 min-w-16 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-[13px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";   // padrao-ok: botão de 28 px dentro da linha de 32 px (o Marcus aprovou esse tamanho em 16/11/2026)
 function Bt(p){
@@ -53,14 +53,14 @@ function FichaKit(p){
   var tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, semKit = !!SEM_KIT[k.tipoKit], sit = k.pausadoEm ? "Pausado" : STATUS_LB[k.status];
   var cel = function(rot, valor){ return e("div",{key:rot, className:"min-w-0 border-b border-r border-border px-3 py-1 text-center"}, e("p",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, rot), e("div",{className:"text-[13px] font-semibold"}, valor)); };
   var celulas = [cel("Revendedora", k.rev), cel("Representante", l.rep), cel("Listagem", tituloAba(String(l.data||"sem-data").slice(0, 10))+" · "+l.horario+(l.viagem ? " · viagem para "+l.destino : "")), cel("Tipo", tipo[1]),
-    cel("Situação", e("span",{className:k.pausadoEm ? "text-warning" : (COR_SIT[k.status] || "")}, sit)), cel("Montadora", k.montId ? nomeDe(k.montId) : "—"), cel("Bipadora", k.bipId ? nomeDe(k.bipId) : "—"), cel("Horário do atendimento", k.horaAtend || "—")];
+    cel("Situação", e("span",{className:k.pausadoEm ? "text-white" : (COR_SIT[k.status] || "")}, sit)), cel("Montadora", k.montId ? nomeDe(k.montId) : "—"), cel("Bipadora", k.bipId ? nomeDe(k.bipId) : "—"), cel("Horário do atendimento", k.horaAtend || "—")];
   if(sup && !semKit) celulas = celulas.concat([cel("Valor do kit", e(KitValor,{k:k, ro:false, key:k.id+":"+k.valor+":"+k.status})), cel("Média das vendas", k.vendas && k.vendas.length ? BK(media3(k.vendas)) : "Sem vendas")]);
   var ev = eventosDoKit(s, k, sup), nums = condNums(k), novas = condNovas(k);
   var faixa = function(t){ return e("p",{className:"border-b border-t border-border px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[.05em]"}, t); };
   var linha = function(a, b, i){ return e("div",{key:i, className:"grid grid-cols-[9rem_1fr] border-b border-border text-[13px]"}, e("div",{className:"border-r border-border px-3 py-1 font-semibold"}, a), e("div",{className:"px-3 py-1"}, b)); };
   return e("div",{className:"fixed inset-0 z-[80] flex justify-center overflow-y-auto bg-black/70 p-3 md:p-6", onClick:function(ev0){ if(ev0.target===ev0.currentTarget) p.fechar(); }},
     e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-3xl rounded-lg bg-[#14171c] text-[13px] [&>section]:!bg-[#14171c]"},
-      e(BlocoPainel,{titulo:k.rev+" · "+l.rep+" · "+l.horario, dir:e("span",{className:k.pausadoEm ? "text-warning" : (COR_SIT[k.status] || "")}, sit)},
+      e(BlocoPainel,{titulo:k.rev+" · "+l.rep+" · "+l.horario, dir:e("span",{className:k.pausadoEm ? "text-white" : (COR_SIT[k.status] || "")}, sit)},
         e("div",{className:"grid grid-cols-2 md:grid-cols-4 [&>div:nth-child(4n)]:md:border-r-0"}, celulas),
         faixa("Andamento"),
         ev.length ? ev.map(function(x, i){ return linha(x[0], x[1], i); }) : e("p",{className:"px-3 py-2 text-center"}, "Ainda sem andamento."),
@@ -69,7 +69,7 @@ function FichaKit(p){
           var marca = function(rot, pp, marcado){ return e("label",{className:"inline-flex cursor-pointer items-center gap-1.5"+(st.falta ? " opacity-60" : "")}, e("input",{type:"checkbox", checked:marcado, disabled:st.falta, onChange:function(){ d({type:"COND_CHK", id:k.id, num:n, papel:pp, v:!marcado, por:s.usuario}); }}), rot); };
           return e("div",{key:n, className:"flex min-h-8 flex-wrap items-center justify-center gap-x-5 gap-y-1 border-b border-border px-3 py-1 text-[13px]"},
             e("b",{className:MONO+" w-24 text-center"}, n),
-            e("span",{className:"w-24 text-center font-semibold "+(st.falta ? "text-destructive" : st.imp ? "text-primary" : feito ? "text-success" : "text-warning")}, st.falta ? "Falta" : st.imp ? "Impressa" : feito ? "Conferida" : "A conferir"),
+            e("span",{className:"w-24 text-center font-semibold "+(st.falta ? "text-destructive" : st.imp ? "text-primary" : feito ? "text-success" : "text-white")}, st.falta ? "Falta" : st.imp ? "Impressa" : feito ? "Conferida" : "A conferir"),
             (papel==="m" || papel==="sup") && marca(papel==="sup" ? "Montadora pegou" : "Peguei", "m", st.m),
             (papel==="b" || papel==="sup") && marca(papel==="sup" ? "Bipadora conferiu" : "Conferi", "b", st.b),
             !st.falta && !st.imp && !feito && e(Bt,{onClick:function(){ d({type:"COND_FALTA", id:k.id, num:n, por:s.usuario}); }}, "Falta"),
@@ -150,12 +150,12 @@ function FilaPlanilha(p){
     {k:"hora", t:"Horário", render:function(v){ return e("span",{className:MONO}, v); }},
     {k:"nome", t:"Nome", render:function(v, l){ return celNome(l); }},
     {k:"tipo", t:"Tipo"},
-    {k:"pref", t:"Preferências", cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-warning" : "text-success")+" font-semibold"; }}]
+    {k:"pref", t:"Preferências", cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-white" : "text-success")+" font-semibold"; }}]
     .concat(sup ? [{k:"media", t:"Média"}, {k:"valor", t:"Valor do kit", render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
     .concat([
-    {k:"sit", t:"Situação", cor:function(l){ return (l.k.pausadoEm ? "text-warning" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
+    {k:"sit", t:"Situação", cor:function(l){ return (l.k.pausadoEm ? "text-white" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
     {k:"mont", t:"Montadora", render:function(v, l){ return e("div",{onClick:parar}, celMont(l.k)); }},
-    {k:"tmont", t:"Montagem", render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-warning"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
+    {k:"tmont", t:"Montagem", render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-white"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
     {k:"cond", t:"Condicionais", cor:function(l){ var ac = andamentoCond(l.k); return ac.faltas ? "text-destructive font-semibold" : ac.total && ac.feitas===ac.total ? "text-success font-semibold" : ""; }},
     {k:"bip", t:"Bipadora", render:function(v, l){ var k = l.k;
       if(k.bipId) return e("span",{className:k.bipId===euBip ? "font-semibold text-primary" : ""}, nomeDe(k.bipId));
@@ -181,7 +181,7 @@ function FilaPlanilha(p){
   return e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"},
     janelaKit && e(JanelaMontar,{key:janelaKit, kitId:janelaKit, fechar:function(){ setJanelaKit(null); }}),
     aberta && e(FichaKit,{key:aberta.id, s:s, d:d, k:aberta.k, l:aberta.l, sup:sup, euBip:euBip, lista:linhas, fechar:function(){ setFichaId(null); }, ir:setFichaId}),
-    e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, fina:true, semCaixaAlta:true, semMao:true,
+    e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
       agrupar:"grupo", linhaGrupo:linhaGrupo, grupoEsquerda:true,
       grupoAberto:function(g){ return !p.fechadas[g]; }, aoGrupo:function(g){ var o = Object.assign({}, p.fechadas); o[g] = !p.fechadas[g]; p.setFechadas(o); },
       aoClicar:function(l){

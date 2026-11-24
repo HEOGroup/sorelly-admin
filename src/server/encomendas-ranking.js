@@ -16,7 +16,7 @@ function agenteTls() {
   agenteApp = new https.Agent(ca ? { ca, keepAlive: true } : { keepAlive: true });
   return agenteApp;
 }
-function chamarApp(_metodo, rota) {
+export function chamarApp(_metodo, rota) {
   const base = (process.env.MOBILE_API_URL || "").trim().replace(/\/+$/, ""), chave = (process.env.MOBILE_API_KEY || "").trim();
   if (!base || !chave) return Promise.reject(new Error("MOBILE_API_URL e MOBILE_API_KEY não configurados"));
   const url = new URL(base + rota), lib = url.protocol === "http:" ? http : https;
@@ -50,7 +50,7 @@ async function cicloDoUsuario(id) {
   cicloApp.set(id, { t: Date.now(), v });
   return v;
 }
-async function vendasDoApp(cods, nomes) {
+export async function vendasDoApp(cods, nomes) {   // exportada em 24/11/2026: a ficha Montar kit (src/server/encomendas-vendas.js) também lê a venda no app
   try {
     const lista = [];
     for (let i = 0; i < cods.length; i += 100) {

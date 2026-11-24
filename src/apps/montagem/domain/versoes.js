@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.207", data:"2026-11-24", titulo:"Ficha Montar kit: visual de sistema, anéis por tamanho e vendas", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Montar kit", txt:"Ficha refeita em quatro painéis claros dentro de uma moldura dourada que vai até o fim da tela: Revendedora, Categorias (círculo de marcar e barra de progresso), Fotos e Respostas dela. As fotos aparecem duas lado a lado (três = duas em cima e uma embaixo), grandes, com a borda do tamanho de cada foto. Respostas em 16 px. O botão de voltar diz Voltar para as listagens quando a ficha abre pelas Listagens."},
+  {tipo:"novo", area:"Representantes & Kits → Montar kit", txt:"Anéis: gráfico de barras com quantos anéis ela vendeu em cada tamanho nos últimos 4 meses, do mais vendido para o menos (DevMaster, só leitura; conta só venda, sem brinde, premiação, indicação nem remessa de troca). O tamanho que ela escolheu no app fica em dourado."},
+  {tipo:"novo", area:"Representantes & Kits → Montar kit", txt:"Cartão do valor do kit (o definido na listagem; sem ele, o sugerido pela tabela com a média das últimas vendas), acerto previsto e venda no app do mês, só para a supervisão e a diretoria. A venda do ciclo do app está bloqueada no servidor do app (rota da representante desligada), por isso a ficha mostra o vendido do mês."},
+  {tipo:"melhoria", area:"Representantes & Kits → Listagens", txt:"Listagens no padrão azul e branco do Consolidado (linhas finas, letras brancas)."}]},
  {v:"0.21.206", data:"2026-11-24", titulo:"App da representante: avisos obrigatórios antes de abrir", itens:[
   {tipo:"novo", area:"App da representante → Início", txt:"Aviso obrigatório no meio da tela: faixa OBRIGATÓRIO A LEITURA; o Li e entendi e o OK ficam escuros por 5 segundos; aparece uma vez só por aviso e vai um por um. Grava quem leu e quando (módulo avrep, rota /api/representante/avisos). Avisos: Um recado do Marcus, Atraso do acerto e Mudar a data do acerto."}]},
  {v:"0.21.205", data:"2026-11-24", titulo:"App da representante: quantidade de revendedoras no Início", itens:[

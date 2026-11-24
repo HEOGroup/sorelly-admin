@@ -43,7 +43,7 @@ function AbaPainel(){
         acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel}) : null,
         dir:e("div",{className:"flex items-center gap-1.5"}, e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(true); }}, "Abrir todas"), e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(false); }}, "Fechar todas"))},
       conferir>0 && e("p",{className:"border-b border-border px-3 py-1 text-center text-[13px] font-semibold text-warning"}, conferir+(conferir>1 ? " kits acima de " : " kit acima de ")+BK(s.cfg.limiteAtencao)+" esperando a conferência da Deysiane"),
-      e(FilaPlanilha,{listagens:doDia, fechadas:fechadas, setFechadas:setFechadas, abrir:abrir, abrirMontar:function(id, kit){ sm[1]({id:id, kit:kit}); }})),
+      e("div",{className:"flex min-h-0 flex-1 flex-col bg-[#0f1729]"}, e(FilaPlanilha,{listagens:doDia, fechadas:fechadas, setFechadas:setFechadas, abrir:abrir, abrirMontar:function(id, kit){ sm[1]({id:id, kit:kit}); }}))),
     e(DlgNovoKit,{lid: dlg.tipo==="kit" ? dlg.lid : null, fechar:fechar}),
     e(DlgRetirada,{lid: dlg.tipo==="ret" ? dlg.lid : null, fechar:fechar}));
 }
