@@ -50,7 +50,6 @@ import { AvisoMelhorias } from "@/apps/montagem/components/aviso-melhorias";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
 import { ContaMenu } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
-import { RelogioProgresso } from "@/apps/montagem/components/relogio-progresso";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
@@ -346,7 +345,6 @@ function App(){
       // 16/11/2026 (Marcus: "compacte"): busca, conta, Sair e situação num bloco só, em 2 linhas de 32 px (Sair e situação viraram só ícone)
       e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"},
         e(IrPara,{larga:true, navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
-        /^marcus/.test(aba) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
         e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}))),   // sem o botão de situação (Disponível) para ninguém: online já é disponível (Marcus, 21/11/2026)
       // 13/11/2026 (Marcus): o seletor Admin / Marcus / Pontual saiu do alto do menu. O Pontual foi tirado e o Marcus virou um setor logo abaixo de Diretoria.
       // 13/11/2026 (Marcus): o nome com o nível de acesso, o Sair e a situação (Disponível) saíram da barra de cima e ficam num bloquinho aqui, entre a logo e o GERAL

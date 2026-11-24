@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.154", data:"2026-11-23", titulo:"Marcus: cronômetro dentro da tela Progresso", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"O cronômetro saiu do menu lateral e fica no alto da tela Progresso, compacto e alinhado (sem letra maiúscula). Nada do Marcus fica mais no lado: tudo abre pelo menu do setor, no topo."}]},
  {v:"0.21.153", data:"2026-11-23", titulo:"Marcus: tela Contas do mês excluída", itens:[
   {tipo:"melhoria", area:"Marcus", txt:"A tela Contas do mês saiu do setor Marcus (menu, endereço e bloco do Resumo). O setor ficou com Resumo, Faturamento, Patrimônio e dívidas, Extratos, Atividades, Acessos e senhas, Dados e Progresso."}]},
  {v:"0.21.152", data:"2026-11-23", titulo:"Marcus virou um setor do menu", itens:[
