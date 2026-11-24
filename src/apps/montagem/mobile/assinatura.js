@@ -23,7 +23,13 @@ function CartaoPasso(p){
     e("div",{className:"flex flex-col gap-2 p-3 text-[12.5px] leading-snug text-[#374151]"}, p.children));
 }
 
+// ACERTO SEM ASSINATURA (Marcus, 24/11/2026): só em caso esporádico, AUTORIZADO por Marcus, Nickolas ou Lucas. Fica gravado quem autorizou, quem entregou a maleta, o motivo e a hora. O kit novo continua exigindo a assinatura dela.
+var AUTORIZAM = ["Marcus", "Nickolas", "Lucas"], ENTREGOU = ["Marido", "Familiar", "Vizinho ou portaria", "Outra pessoa"];
+var CAMPO_SA = "h-8 w-full rounded-lg bg-white px-2 text-[13px] text-[#111827] outline-none ring-1 ring-black/10";
+
 function TelaAssinatura(p){
+  var sa = useState({ligado:false, quem:"", entregou:"", nome:"", motivo:""}), semA = sa[0], setSemA = function(k, v){ var o = Object.assign({}, semA); o[k] = v; sa[1](o); };
+  var semOk = semA.ligado && !!semA.quem && !!semA.entregou && !!semA.nome.trim() && semA.motivo.trim().length>=5;
   var as = useState(null), assinatura = as[0], setAssinatura = as[1];
   var ck = useState({}), checks = ck[0], setChecks = ck[1];
   var ci = useState(false), ciente = ci[0], setCiente = ci[1];
@@ -32,7 +38,7 @@ function TelaAssinatura(p){
   var regrasOk = lista ? (regras.length>0 && marcadas===regras.length) : ciente;
   var antesOk = p.antesOk !== false;
   var nAntes = (p.passosAntes || []).length;
-  var pronto = antesOk && regrasOk && !!assinatura;
+  var pronto = semA.ligado ? semOk : (antesOk && regrasOk && !!assinatura);
   var alterna = function(i){ var o = Object.assign({}, checks); o[i] = !o[i]; setChecks(o); };
   return e(React.Fragment,null,
     e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1 bg-[#0B0B0D] px-4 pb-3 pt-4"},
@@ -62,10 +68,19 @@ function TelaAssinatura(p){
       e(CartaoPasso,{n:nAntes+2, titulo:"Assinatura da revendedora", cor:"#0891B2", ok:!!assinatura, travado:!(antesOk && regrasOk)},
         e(AssinaturaDigital,{onChange:setAssinatura, legenda:p.nome ? "Assinatura de "+p.nome : ""}),
         e("p",{className:"text-center text-[12px] text-[#6B7280]"}, "A assinatura fica gravada neste acerto, com a data e a versão das regras que ela leu.")),
-      e("button",{disabled:!pronto, onClick:function(){ p.onConcluir({assinatura:assinatura, regrasLidas:regras.map(function(r){return r.t;})}); },
+      p.semAssinatura && e(CartaoPasso,{n:nAntes+3, titulo:"Revendedora não atendeu", cor:"#B45309", ok:semOk, travado:false},
+        e("label",{className:"flex items-center gap-2.5 rounded-xl bg-[#FEF3C7] px-3 py-2 text-[13px] font-semibold text-[#92400E]"},
+          e("input",{type:"checkbox", checked:semA.ligado, disabled:!p.semAssinatura.permitido, onChange:function(ev){ setSemA("ligado", ev.target.checked); }, className:"size-5 shrink-0"}),
+          p.semAssinatura.permitido ? "Finalizar sem a assinatura (só com autorização)" : p.semAssinatura.bloqueio),
+        semA.ligado && e(React.Fragment,null,
+          e("select",{value:semA.quem, "aria-label":"Quem autorizou", onChange:function(ev){ setSemA("quem", ev.target.value); }, className:CAMPO_SA}, [e("option",{key:"", value:""}, "Autorizado por")].concat(AUTORIZAM.map(function(n){ return e("option",{key:n, value:n}, n); }))),
+          e("select",{value:semA.entregou, "aria-label":"Quem entregou a maleta", onChange:function(ev){ setSemA("entregou", ev.target.value); }, className:CAMPO_SA}, [e("option",{key:"", value:""}, "Quem entregou a maleta")].concat(ENTREGOU.map(function(n){ return e("option",{key:n, value:n}, n); }))),
+          e("input",{value:semA.nome, placeholder:"Nome de quem entregou", onChange:function(ev){ setSemA("nome", ev.target.value); }, className:CAMPO_SA}),
+          e("input",{value:semA.motivo, placeholder:"Motivo (obrigatório)", onChange:function(ev){ setSemA("motivo", ev.target.value); }, className:CAMPO_SA}))),
+      e("button",{disabled:!pronto, onClick:function(){ if(semA.ligado) p.onConcluir({assinatura:null, regrasLidas:false, semAssinatura:{autorizadoPor:semA.quem, entreguePor:semA.entregou, entregueNome:semA.nome.trim(), motivo:semA.motivo.trim(), em:new Date().toISOString()}}); else p.onConcluir({assinatura:assinatura, regrasLidas:regras.map(function(r){return r.t;})}); },
         className:"h-12 rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40"}, p.rotuloBotao || "Concluir"),
       !pronto && e("p",{className:"text-center text-[11.5px] text-[#9CA3AF]"},
-        !antesOk ? "Complete o passo anterior para liberar as regras." : !regrasOk ? "Marque as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
+        semA.ligado ? "Preencha quem autorizou, quem entregou, o nome e o motivo." : !antesOk ? "Complete o passo anterior para liberar as regras." : !regrasOk ? "Marque as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
 }
 
 export { CartaoPasso, TelaAssinatura };

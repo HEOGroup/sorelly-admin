@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.198", data:"2026-11-24", titulo:"App da representante: acerto sem assinatura, só com autorização", itens:[
+  {tipo:"novo", area:"App da representante → Assinatura do acerto", txt:"Passo Revendedora não atendeu: libera o Finalizar sem a assinatura, só com quem autorizou (Marcus, Nickolas ou Lucas), quem entregou a maleta, o nome e o motivo. Fica gravado no acerto. Com kit novo confirmado a opção fica travada. O mínimo de acertos anteriores é cfg.minAcertosSemAssinatura (padrão 0, sem trava)."}]},
  {v:"0.21.197", data:"2026-11-24", titulo:"Conferência das peças: câmera para bipar a etiqueta e campo para digitar o código", itens:[
   {tipo:"novo", area:"App da representante", txt:"Na conferência das peças a câmera abre sozinha e lê o código de barras da etiqueta; a peça é achada pelo número de barras da DevMaster e recebe o check. Se a etiqueta não ler, tem o campo para digitar o código da peça. Lê também a etiqueta com as listras na vertical (tag do colar)."},
   {tipo:"melhoria", area:"App da representante", txt:"A bipagem peça a peça voltou a ficar ligada (estava desligada desde 03/11). A peça não é mais marcada só com um toque: só com a câmera ou digitando o código. Peça de fora fica registrada; peça que falta vira erro de quem bipou o kit na empresa."}]},

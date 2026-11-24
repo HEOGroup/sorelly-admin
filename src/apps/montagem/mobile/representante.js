@@ -931,14 +931,14 @@ function AppRepresentante(p){
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",
-    regras: versaoBaseSel ? textoRegras(versaoBaseSel, modalidadeKit) : [], rotuloBotao:"Finalizar acerto",
+    regras: versaoBaseSel ? textoRegras(versaoBaseSel, modalidadeKit) : [], rotuloBotao:"Finalizar acerto", semAssinatura:{permitido:!acertoForm.kitNovoOk && ((s.cfg||{}).minAcertosSemAssinatura||0)<=(s.acertosConsignado||[]).filter(function(r0){ return r0.rev===sel.rev && r0.tipo==="acerto"; }).length, bloqueio: acertoForm.kitNovoOk ? "Sem assinatura não leva kit novo: o kit novo só sai com a assinatura dela." : "Só para revendedora com pelo menos "+((s.cfg||{}).minAcertosSemAssinatura||0)+" acertos anteriores."},
     resumo:[["Vendas", BK(acertoForm.vendaBruta)], ["Comissão", previaAcerto.comissaoPct+"%"], ["Valor de Acerto", BK(previaAcerto.valorAcerto), "text-[#A67C12]"],
       ["Pago", BK(totalPagoAtual)], ["Valor restante", restanteTotal>0.009 ? BK(restanteTotal) : "R$ 0,00 · quitado", restanteTotal>0.009 ? "text-[#B91C1C]" : "text-[#15803D]"],
       ["Brindes", brindeBloqueio ? "Sem brinde" : acertoForm.brindes.length+" peça(s) lançada(s)"],
       ["Kit novo", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
     onAbrirRegras:function(){ setRegrasDaAssinatura("assinaracerto"); setTela("regrascom"); },
-    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:true})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
+    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:r.regrasLidas!==false, semAssinatura:r.semAssinatura||null})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
   // Assinatura da reposição (03/11/2026): mesmo desenho do acerto: botão das regras, check de leitura e assinatura da revendedora
   var telaAssinarRepos = kitSel && kitSel.tipoKit==="reposicao" && (function(){ var tk = totaisKit(condicionaisDoKit(kitSel)), kcR = kitConfDe(kitSel.id);
     return e(TelaAssinatura,{titulo:"Assinatura da reposição", nome:sel.rev, modo:"unico", regras:[], rotuloBotao:"Concluir reposição",

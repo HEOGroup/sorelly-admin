@@ -3566,3 +3566,6 @@ Tela Pagamentos › Geral: botão amarelo "+ Lançar pagamento" na barra (primei
 
 ## 24/11/2026 · Diarista da casa: uma conta só, paga por dia
 As 3 contas Diarista da Casa (R$ 315, R$ 315 e R$ 312 por mês) viraram uma, paga por dia (R$ 312,00, 2 vezes por semana). Previsão = quintas do mês x R$ 624,00, de nov/2026 a dez/2027 (`scripts/trocar-diarista-casa.mjs`). Lucas Castilho provisionado até dez/2027, R$ 2.000,00 no dia 10 e R$ 2.500,00 no dia 23 (`scripts/provisionar-lucas-castilho-2027.mjs`).
+
+## 24/11/2026 · Acerto sem assinatura (app da representante)
+- Marcus: não é opção livre; só em caso esporádico, autorizado por ele, para revendedora que vende há mais tempo. Feito: passo Revendedora não atendeu na assinatura do acerto, com quem autorizou (Marcus, Nickolas, Lucas), quem entregou a maleta, nome e motivo gravados em `semAssinatura`. Kit novo nunca sai sem a assinatura. Mínimo de acertos anteriores: `cfg.minAcertosSemAssinatura`, padrão 0 (sem trava) até o Marcus dizer o número. Falta: selo no Consolidado, tela no Configurador para o número, e checar de verdade quem autorizou.
