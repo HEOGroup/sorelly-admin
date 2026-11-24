@@ -56,7 +56,7 @@ function dataBr(k){ var p = k.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
 function diasDoPeriodo(s, per, agora){ var d = new Date(agora), ini, fim; if(per==="semana"){ var dow = (d.getDay()+6)%7; ini = new Date(d.getFullYear(), d.getMonth(), d.getDate()-dow); fim = new Date(d.getFullYear(), d.getMonth(), d.getDate()-dow+6); } else if(per==="mes"){ ini = new Date(d.getFullYear(), d.getMonth(), 1); fim = new Date(d.getFullYear(), d.getMonth()+1, 0); } else { ini = fim = new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
   var a = chaveDia(ini.getTime()), b = chaveDia(fim.getTime()); return Object.keys(s.dias).filter(function(k){ var x = s.dias[k]; return k>=a && k<=b && (x.trechos.length>0 || (x.academia && x.academia.fez)); }).sort().reverse(); }
 // apagar histórico: os dias ficam vazios (e não somem), assim o servidor também esvazia e nada volta de lá
-// Remédio do dia (Marcus, 24/11/2026: horário do Vyvanse): lista de {ts, txt} dentro do dia; aparece na tela Progresso.
+// Remédio do dia (Marcus, 24/11/2026: horário do Venvanse): lista de {ts, txt} dentro do dia; aparece na tela Progresso.
 function addRemedio(k, ts, txt){ mudar(function(n){ var d = copia(dia(n, k)); d.remedios = (d.remedios || []).concat([{ts:ts, txt:txt||""}]).sort(function(a, b){ return a.ts-b.ts; }); n.dias[k] = d; }); }
 function removerRemedio(k, i){ mudar(function(n){ var d = copia(dia(n, k)); d.remedios = (d.remedios || []).filter(function(x, j){ return j!==i; }); n.dias[k] = d; }); }
 function zerarProgresso(){ mudar(function(n){ Object.keys(n.dias).forEach(function(k){ n.dias[k] = diaVazio(); }); }); }

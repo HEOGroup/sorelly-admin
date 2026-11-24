@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.170", data:"2026-11-24", titulo:"Marcus: nome Venvanse corrigido", itens:[
+  {tipo:"correção", area:"Marcus → Progresso", txt:"O nome do remédio estava escrito Vyvanse. Agora é Venvanse, como no Brasil."}]},
+ {v:"0.21.169", data:"2026-11-24", titulo:"Marcus: vezes que fumou e horário do Venvanse no Progresso", itens:[
+  {tipo:"novo", area:"Marcus → Progresso", txt:"Nova coluna Fumou (vezes) na tabela e célula Fumou hoje na barra, com a soma no total. Novo botão Registrar na célula Venvanse: guarda a hora e a dose, aparece na coluna Venvanse e na janela do dia."}]},
  {v:"0.21.168", data:"2026-11-24", titulo:"Inadimplência no padrão da Contas a pagar; Placar, Controle de kits e Inadimplência financeira retirados", itens:[
   {tipo:"melhoria", area:"Inadimplência › Representantes › Inadimplência", txt:"Mesma estrutura da Contas a pagar: bloco azul, barra de filtros em células (Situação, Recuperado no mês), tabela fina com filtro em cada coluna e total no rodapé. A ficha do acerto (negociações e pagamentos) abre em janela com barras azuis. Nomes com letra normal, sem letras coloridas. A tela se chama só Inadimplência (mostra todos os acertos). Contas e ações iguais."},
   {tipo:"melhoria", area:"Representantes & Kits", txt:"Placar das representantes e Controle de kits retirados a pedido do Marcus. O botão Placar saiu do Consolidado; o botão Abrir do bloco Bipagem de retorno da Visão geral leva ao Consolidado. Endereços antigos abrem o Início."},

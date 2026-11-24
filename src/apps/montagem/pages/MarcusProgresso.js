@@ -29,12 +29,12 @@ function Horas(p){
     rodape:[e(Btn,{key:"s", v:"primary", onClick:salvar}, "Salvar"), e(Btn,{key:"c", onClick:p.fechar}, "Cancelar")]});
 }
 
-// Janela para registrar o remédio (Vyvanse): hora e dose
+// Janela para registrar o remédio (Venvanse): hora e dose
 function JanelaRemedio(p){
   var st = useState({hora:hm(Date.now()), txt:"50 mg", erro:""}), v = st[0], setV = st[1];
   var salvar = function(){ var ts = hmParaTs(p.k, v.hora); if(ts==null){ setV(Object.assign({}, v, {erro:"Use o formato HH:MM."})); return; } addRemedio(p.k, ts, v.txt.trim()); p.fechar(); };
   var campo = function(rot, chave, tipo){ return e("div",{className:"min-w-0 text-left"}, e(Rotulo,{t:rot}), e("input",{type:tipo, value:v[chave], onChange:function(ev){ var n = Object.assign({}, v, {erro:""}); n[chave] = ev.target.value; setV(n); }, className:CAMPO})); };
-  return e(Janela,{t:"Registrar Vyvanse", sub:dataBr(p.k), fechar:p.fechar,
+  return e(Janela,{t:"Registrar Venvanse", sub:dataBr(p.k), fechar:p.fechar,
     colunas:[e("div",{key:"c", className:"mx-auto flex w-full max-w-sm flex-col gap-2 text-center text-[13px]"}, campo("Hora", "hora", "time"), campo("Dose", "txt", "text"), v.erro && e("p",{className:"text-destructive"}, v.erro))],
     rodape:[e(Btn,{key:"s", v:"primary", onClick:salvar}, "Salvar"), e(Btn,{key:"c", onClick:p.fechar}, "Cancelar")]});
 }
@@ -58,7 +58,7 @@ function JanelaDia(p){
     ac.fez && e(CampoSel,{t:"Corri", id:"pg-co", value:ac.correu ? "s" : "n", opcoes:SIMNAO, onChange:function(v){ salvarAc({correu:v==="s"}); }}),
     ac.fez && e(CampoSel,{t:"Joguei bola", id:"pg-bo", value:ac.bola ? "s" : "n", opcoes:SIMNAO, onChange:function(v){ salvarAc({bola:v==="s"}); }}));
   return e(Janela,{t:semanaDe(k)+" · "+dataBr(k), sub:"Trabalhado "+hms(somas(d, agora).trabalho), fechar:p.fechar,
-    colunas:[e("div",{key:"t", className:"min-w-0"}, e(Rotulo,{t:"Trechos"}), trechos), e("div",{key:"a", className:"min-w-0"}, e(Rotulo,{t:"Academia"}), academia, e("div",{className:"pt-2"}, e(Rotulo,{t:"Vyvanse"}), remedios))],
+    colunas:[e("div",{key:"t", className:"min-w-0"}, e(Rotulo,{t:"Trechos"}), trechos), e("div",{key:"a", className:"min-w-0"}, e(Rotulo,{t:"Academia"}), academia, e("div",{className:"pt-2"}, e(Rotulo,{t:"Venvanse"}), remedios))],
     rodape:[e(Btn,{key:"f", onClick:p.fechar}, "Fechar")]});
 }
 
@@ -87,7 +87,7 @@ function TelaProgresso(){
   var hmsV = function(v){ return v>=30000 ? hms(v) : ""; };
   var cols = [{k:"dia", t:"Dia"}, {k:"sem", t:"Semana"}, {k:"ini", t:"Início"}, {k:"fim", t:"Fim"}, {k:"trab", t:"Trabalhado", fmt:function(v){ return v>0 ? hms(v) : ""; }},
     {k:"vezes", t:"Fumou (vezes)"}, {k:"fumar", t:"Fumar", fmt:hmsV}, {k:"almocar", t:"Almoçar", fmt:hmsV}, {k:"treinar", t:"Treinar", fmt:hmsV}, {k:"parado", t:"Parado", fmt:hmsV}, {k:"outro", t:"Outro", fmt:hmsV},
-    {k:"vyv", t:"Vyvanse"}, {k:"acad", t:"Academia"}, {k:"corri", t:"Corri"}, {k:"bola", t:"Joguei bola"}, {k:"membros", t:"Membros"}];
+    {k:"vyv", t:"Venvanse"}, {k:"acad", t:"Academia"}, {k:"corri", t:"Corri"}, {k:"bola", t:"Joguei bola"}, {k:"membros", t:"Membros"}];
   var rodape = function(ls){ var tr = ls.reduce(function(t, l){ return t+(l.trab || 0); }, 0); return cols.map(function(c, j){ return j===0 ? "Total" : c.k==="sem" ? ls.length+(ls.length===1 ? " dia" : " dias") : c.k==="trab" ? hms(tr) : c.k==="vezes" ? ls.reduce(function(t, l){ return t+(l.vezes || 0); }, 0) : ""; }); };
 
   var acaoDia = !abertoHoje && !diaHoje.inicio ? e(Botao,{principal:true, onClick:function(){ comecarDia(Date.now()); }}, "Começar o dia")
@@ -108,7 +108,7 @@ function TelaProgresso(){
           abertoHoje.tipo!=="trabalho" && e(Botao,{key:"v", principal:true, onClick:function(){ voltar(Date.now()); }}, "Voltar ao trabalho"),
           MOTIVOS.filter(function(m){ return m[0]!==abertoHoje.tipo; }).map(function(m){ return e(Botao,{key:m[0], onClick:function(){ pausa(m[0]); }}, m[1]); }))),
         e(CelulaBarra,{rotulo:"Fumou hoje"}, e("span",{className:"text-[11px] tabular-nums"}, String(diaHoje.trechos.filter(function(x){ return x.tipo==="fumar"; }).length)+(diaHoje.trechos.filter(function(x){ return x.tipo==="fumar"; }).length===1 ? " vez" : " vezes"))),
-        e(CelulaBarra,{rotulo:"Vyvanse"}, e(Botao,{onClick:function(){ setRemOpen(true); }}, "Registrar")),
+        e(CelulaBarra,{rotulo:"Venvanse"}, e(Botao,{onClick:function(){ setRemOpen(true); }}, "Registrar")),
         e(CelulaBarra,{rotulo:"Hoje"}, e("span",{className:"text-[11px] tabular-nums"}, hms(soHoje.trabalho))),
         e(CelulaBarra,{rotulo:"Média do mês"}, e("span",{className:"text-[11px] tabular-nums"}, diasTrab ? hms(totMs/diasTrab) : "—")),
         e(CelulaBarra,{rotulo:"Dia"}, acaoDia)),
