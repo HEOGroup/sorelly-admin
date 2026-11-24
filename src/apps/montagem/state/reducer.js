@@ -160,7 +160,7 @@ function reducer(s, a){
     // FIXAR O DIA: terminou o atendimento e o valor de hoje está certo. Vira o registro OFICIAL de hoje (o "Hoje" provisório sai) e o faturado do dia sobe sozinho em Contas a pagar → Diário.
     case "FAT_FIXAR": {
       var fdF = Object.assign({}, s.faturamentoDiario), rvF = Object.keys(s.revendedorasDiario||{}).sort();
-      fdF[a.data] = {recebido:a.recebido||0, acertos:a.acertos||0, revendedoras:rvF.length ? s.revendedorasDiario[rvF[rvF.length-1]] : 0, fixadoEm:agora};
+      fdF[a.data] = {recebido:a.recebido||0, acertos:a.acertos||0, revendedoras:((s.revendedorasDiario||{})[a.data]!==undefined ? s.revendedorasDiario[a.data] : (rvF.filter(function(k){ return k<=a.data; }).length ? s.revendedorasDiario[rvF.filter(function(k){ return k<=a.data; }).pop()] : 0)), fixadoEm:agora};
       // regra: ao fixar o dia, o faturado e os acertos DO DIA entram sozinhos no Contas a pagar → Diário (acumulado de hoje − acumulado do dia anterior do mesmo mês)
       var antF = Object.keys(fdF).filter(function(k){ return k<a.data && k.slice(0,7)===a.data.slice(0,7) && fdF[k].recebido!==undefined; }).sort().pop(), cpdF = JSON.parse(JSON.stringify(s.contasPagasDiario||{}));
       cpdF[a.data] = Object.assign({cnpjs:{}, contasPorFora:0}, cpdF[a.data], {faturado:Math.round(Math.max(0, (a.recebido||0)-(antF ? fdF[antF].recebido : 0))*100)/100, acertos:Math.max(0, (a.acertos||0)-(antF ? (fdF[antF].acertos||0) : 0))});

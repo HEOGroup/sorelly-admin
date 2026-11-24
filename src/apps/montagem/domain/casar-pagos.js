@@ -36,24 +36,40 @@ function cobertoAte(canon){ return COBERTO_ATE[semAc(canon)] || ""; }
 function casarPagos(l, parcelas){
   COBERTO_ATE = {};
   if(!parcelas || !parcelas.length) return l;
-  var por = {}; parcelas.forEach(function(p){ var k = semAc(p.canon); (por[k] = por[k] || []).push(p); });
-  var candidatos = [];
-  l.forEach(function(i, k){ if(i.status==="apagar" && i.origem!=="pf" && !i.manual && i.fornCanon && por[semAc(i.fornCanon)] && tipoDoTitulo(i)!=="outro") candidatos.push(k); });
-  if(!candidatos.length) return l;
+  var por = {}; parcelas.forEach(function(p){ if(p.prest) return; var k = semAc(p.canon); (por[k] = por[k] || []).push(p); });
+  var candidatos = [], usadas = {}, mudou = false;
+  // fornecedor fora da lista fixa: o título traz o nome inteiro da DevMaster ("Xangai Comercio Importacao...") e o Admin só o nome curto ("Xangai"); casam quando um começa pelo outro.
+  var achaPs = function(i){ var c = semAc(i.fornCanon); if(por[c]) return por[c]; var ks = Object.keys(por).filter(function(k){ return k.length>=4 && (c.indexOf(k)===0 || k.indexOf(c)===0); }); return ks.length===1 ? por[ks[0]] : null; };
+  // 24/11/2026: título sem tipo no nome (ex.: Xangai, só o nome do fornecedor) também casa, pelo valor exato e pela data.
+  l.forEach(function(i, k){ if(i.status==="apagar" && i.origem!=="pf" && !i.manual && i.fornCanon && achaPs(i)) candidatos.push(k); });
+  var out = l.slice();
   candidatos.sort(function(a, b){ return String(l[a].venc).localeCompare(String(l[b].venc)) || l[a].valor-l[b].valor; });
-  var out = l.slice(), usadas = {}, mudou = false;
   candidatos.forEach(function(k){
-    var i = l[k], ps = por[semAc(i.fornCanon)], t = tipoDoTitulo(i), melhor = null;
+    var i = l[k], ps = achaPs(i), t = tipoDoTitulo(i), melhor = null;
     ps.forEach(function(p){
-      if(usadas[p.id] || p.tipo!==t || Math.abs(p.valor-i.valor)>0.011) return;
+      if(usadas[p.id] || (t!=="outro" && p.tipo!==t) || Math.abs(p.valor-i.valor)>0.011) return;
       var d = dias(i.venc)-dias(p.venc); if(d<-3 || d>JANELA_DEPOIS) return;
       var a = Math.abs(d); if(!melhor || a<melhor.a) melhor = {p:p, a:a};
     });
     if(!melhor) return;
     var p = melhor.p; usadas[p.id] = 1; mudou = true;
-    out[k] = Object.assign({}, i, {status:"pago", baixa:p.venc, mes:String(p.venc).slice(0,7), outroMes:String(i.venc).slice(0,7)!==String(p.venc).slice(0,7), atraso:0, valorTitulo:i.valorTitulo==null ? i.valor : i.valorTitulo,
-      faltaBaixaDm:true, pagoPed:p.ped, formaTxt:NOME_TIPO[t] || "—", saidaTxt:"Pagamentos a fornecedores"});
+    out[k] = Object.assign({}, i, {status:"pago", baixa:p.pagoEm || p.venc, mes:String(p.pagoEm || p.venc).slice(0,7), outroMes:String(i.venc).slice(0,7)!==String(p.venc).slice(0,7), atraso:0, valorTitulo:i.valorTitulo==null ? i.valor : i.valorTitulo,
+      faltaBaixaDm:true, pagoPed:p.ped, formaTxt:NOME_TIPO[t=="outro" ? p.tipo : t] || "—", saidaTxt:"Pagamentos a fornecedores"});
     var c = semAc(i.fornCanon); if(p.venc>(COBERTO_ATE[c]||"")) COBERTO_ATE[c] = p.venc;
+  });
+  // 2ª rodada, PRESTADOR (Higor, Lucas Castilho...): título aberto de Pix cujo nome tem o primeiro nome do prestador, com o MESMO valor e data entre 3 dias antes e 12 depois do lançamento.
+  var prest = parcelas.filter(function(p){ return p.prest; });
+  if(prest.length) l.forEach(function(i, k){
+    if(out[k]!==i || i.status!=="apagar" || i.origem==="pf" || i.manual || tipoDoTitulo(i)!=="pix") return;
+    var txt = semAc(String(i.nome||"")+" "+String(i.natNome||"")), melhor = null;
+    prest.forEach(function(p){
+      if(usadas[p.id] || !p.prest || txt.indexOf(p.prest)<0 || Math.abs(p.valor-i.valor)>0.011) return;
+      var d = dias(i.venc)-dias(p.venc); if(d<-3 || d>JANELA_DEPOIS) return;
+      var a = Math.abs(d); if(!melhor || a<melhor.a) melhor = {p:p, a:a};
+    });
+    if(!melhor) return;
+    var p = melhor.p; usadas[p.id] = 1; mudou = true;
+    out[k] = Object.assign({}, i, {status:"pago", baixa:p.pagoEm || p.venc, mes:String(p.pagoEm || p.venc).slice(0,7), outroMes:String(i.venc).slice(0,7)!==String(p.pagoEm || p.venc).slice(0,7), atraso:0, valorTitulo:i.valorTitulo==null ? i.valor : i.valorTitulo, faltaBaixaDm:true, pagoPed:p.ped, formaTxt:"Pix", saidaTxt:"Pagamentos a fornecedores"});
   });
   return mudou ? out : l;
 }

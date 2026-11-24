@@ -141,6 +141,8 @@ function baseItens(){
   _cache = dup;
   // H&O Apps (empresa de aplicativos) tem contas próprias: natureza 11.xx e o que cita H&O; "Pix Lucas Castilho" do app Sorelly era do Juan (demitido)
   _cache.forEach(function(i){ if(/^11\./.test(i.nat) || /H&O/i.test(i.nome)) i.filial = "ho"; if(i.nat==="3.06.17" && /lucas castilho/i.test(i.nome)) i.nome = i.nome.replace(/lucas castilho/i, "Juan"); });
+  // 24/11/2026 (Marcus: "pix do Juan 2.500 pode retirar, exclui isso"): o Juan saiu da empresa. Conta do Juan AINDA EM ABERTO sai da lista e das contas do mês (o histórico pago fica). O título da DevMaster (ADM 0001527, fornecedor 001955) o financeiro exclui lá.
+  _cache = _cache.filter(function(i){ return !(i.status==="apagar" && i.forn==="001955"); });   // fornecedor PIX LUCAS CASTILHO (App Sorelly), mostrado como Juan
   _cache.forEach(decora);
   var vistos = {}; _cache.forEach(function(i){ var base = [i.status, i.filial, i.nat, i.pref, i.num, i.parc, i.forn, i.valor.toFixed(2), i.baixa || i.venc].join("|"); vistos[base] = (vistos[base]||0)+1; i.chave = base+"#"+vistos[base]; });   // chave estável de cada conta (para o Marcus marcar Sorelly ou Família)
   return _cache;
@@ -166,13 +168,16 @@ var PF_PARC = [], _pfpSig = "";
 function setPfParcelas(pf){
   var peds = (pf && pf.pedidos) || [], n = 0, s = 0, hd = new Date(), hoje = hd.getFullYear()+"-"+String(hd.getMonth()+1).padStart(2, "0")+"-"+String(hd.getDate()).padStart(2, "0");
   peds.forEach(function(p){ (p.parcelas || []).forEach(function(x){ if(x.status==="Pago"){ n++; s += Number(x.valor) || 0; } }); });
-  var sig = peds.length+"|"+n+"|"+s.toFixed(2)+"|"+((pf && pf.fornecedores) || []).length+"|"+hoje; if(sig===_pfpSig) return; _pfpSig = sig; PF_PARC = [];
+  var sig = peds.length+"|"+n+"|"+s.toFixed(2)+"|"+((pf && pf.fornecedores) || []).length+"|"+((pf && pf.lancamentos) || []).length+"|"+hoje; if(sig===_pfpSig) return; _pfpSig = sig; PF_PARC = [];
   var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
+  var limite = (function(){ var d = new Date(hd.getTime()+35*86400000); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); })();
+  // PRESTADOR (Marcus, 24/11/2026): o nome na DevMaster não bate com o cadastro; casa pelo PRIMEIRO NOME do prestador no título, valor e data. Só Pix, só valor positivo.
+  ((pf && pf.lancamentos) || []).forEach(function(l){ var f = fn[l.fornId]; if(!f || f.tipo!=="prestador" || !(Number(l.valor)>0) || !l.data) return; PF_PARC.push({id:"L"+l.id, canon:"", prest:semAcento(String(f.nome).split(" ")[0]), venc:String(l.data).slice(0, 10), pagoEm:String(l.data).slice(0, 10), valor:r2(Number(l.valor)), tipo:"pix", ped:"Lançamento "+l.id}); });
   peds.forEach(function(ped){
     var f = fn[ped.fornId]; if(!f || f.tipo==="prestador") return;   // prestador: o nome na DevMaster não bate com o do Admin
     var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
-    // parcela "Pago" com data de amanhã em diante é erro da planilha (pagamento não acontece no futuro): não baixa conta nenhuma
-    (ped.parcelas || []).forEach(function(x, k){ if(x.status!=="Pago" || !(Number(x.valor)>0) || !x.venc || String(x.venc).slice(0, 10)>hoje) return; PF_PARC.push({id:ped.id+"#"+k, canon:canon, venc:String(x.venc).slice(0,10), valor:r2(Number(x.valor)), tipo:tipoDaParcela(x.forma), ped:ped.numero || ("Pedido "+ped.id)}); });
+    // Pix adiantado (Marcus, 24/11/2026: "pendente na DevMaster, mas já somado no pago"): parcela "Paga" com vencimento nos próximos 35 dias casa com o título da DevMaster e conta como PAGA (a DevMaster baixa sozinha dias depois). Mais longe que isso ainda é erro de planilha.
+    (ped.parcelas || []).forEach(function(x, k){ if(x.status!=="Pago" || !(Number(x.valor)>0) || !x.venc || String(x.venc).slice(0, 10)>limite) return; PF_PARC.push({id:ped.id+"#"+k, canon:canon, venc:String(x.venc).slice(0,10), pagoEm:String(x.venc).slice(0,10)>hoje ? hoje : String(x.venc).slice(0,10), valor:r2(Number(x.valor)), tipo:tipoDaParcela(x.forma), ped:ped.numero || ("Pedido "+ped.id)}); });
   });
 }
 // CRUZAMENTO ADMIN x DEVMASTER (Marcus, 23/11/2026): boleto e cheque que o Admin ainda mostra como pendente, mas a DevMaster já BAIXOU (título pago), contam como pagos.
@@ -256,6 +261,42 @@ function pixSemBaixa(pf, ym){
   var base = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens(), r = aplicarPf(base), t = 0;
   r.forEach(function(i){ if(i.origem==='pf' && String(i.mes)===ym) t += i.valor; });
   return r2(t);
+}
+// STATUS DE CADA PIX LANÇADO EM PAGAMENTOS A FORNECEDORES NA DEVMASTER (24/11/2026, pedido do Marcus pela tela Resumo): só leitura, nada é gravado. Devolve {idDoLancamento: "confirmado" | "falta" | "sem"}.
+//   confirmado = a DevMaster já deu a baixa (o Pix é de antes ou do mesmo dia da última baixa de Pix do fornecedor lá; prestador: há título pago com o nome, o valor e a data).
+//   falta      = pago no Admin e o título ainda está aberto na DevMaster (ou já casado com ele, aguardando a baixa; prestador: o casamento achou o título aberto). A DevMaster baixa sozinha dias depois.
+//   sem        = a DevMaster não tem nenhum título que case.
+// Usa o MESMO casamento da lista Contas a pagar (casarPagos), antes do abatimento do Pix (aplicarPf).
+function statusDevmasterLanc(pf){
+  setPf(pf);
+  var lancs = (pf && pf.lancamentos) || []; if(!lancs.length) return {};
+  var l = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens(), pre = casarPagos(comBaixas(l), PF_PARC);
+  var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(x){ fn[x.id] = x; });
+  var porCanon = {}, pagosDm = [], casadoPed = {};
+  pre.forEach(function(i){
+    if(i.origem==="pf" || i.manual) return;
+    if(i.faltaBaixaDm && i.pagoPed) casadoPed[i.pagoPed] = true;
+    if(!i.fornCanon && i.status!=="pago") return;
+    var o = i.fornCanon ? (porCanon[i.fornCanon] = porCanon[i.fornCanon] || {ult:"", aberto:false}) : null;
+    if(i.status==="pago" && !i.faltaBaixaDm && !i.bx){ pagosDm.push({txt:semAcento(String(i.nome||"")+" "+String(i.natNome||"")), valor:i.valor, baixa:String(i.baixa||"").slice(0, 10), pix:tipoDoTitulo(i)==="pix"}); if(o && tipoDoTitulo(i)==="pix" && String(i.baixa||"")>o.ult) o.ult = String(i.baixa).slice(0, 10); }
+    else if(i.status==="apagar" && o) o.aberto = true;
+  });
+  var dia = function(iso){ var p = String(iso||"").slice(0, 10).split("-"); return Date.UTC(+p[0], (+p[1])-1, +p[2])/86400000; };
+  var out = {};
+  lancs.forEach(function(x){
+    var f = fn[x.fornId]; if(!f || !(Number(x.valor)>0) || !x.data){ out[x.id] = "sem"; return; }
+    var d = String(x.data).slice(0, 10);
+    if(f.tipo==="prestador"){
+      if(casadoPed["Lançamento "+x.id]){ out[x.id] = "falta"; return; }
+      var tok = semAcento(String(f.nome).split(" ")[0]);
+      var achou = pagosDm.some(function(p){ return p.pix && p.txt.indexOf(tok)>=0 && Math.abs(p.valor-Number(x.valor))<=0.011 && Math.abs(dia(p.baixa)-dia(d))<=30; });
+      out[x.id] = achou ? "confirmado" : "sem"; return;
+    }
+    var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome, o = porCanon[canon];
+    if(!o){ out[x.id] = "sem"; return; }
+    out[x.id] = (o.ult && d<=o.ult) ? "confirmado" : (d<=cobertoAte(canon) || o.aberto) ? "falta" : "sem";
+  });
+  return out;
 }
 // Baixas dadas no sistema (22/10/2026): pagamento de uma conta em aberto, com juros, multa e desconto; vem de s.cpe.baixas.
 // Cada baixa = {id, chave (da conta), data, forma, conta, principal (quanto da conta ela quitou), juros, multa, desc, obs, por, em}.
@@ -395,4 +436,4 @@ function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i
 // Antes de somar, liga a esta lista o que está no estado (classes, lançamentos à mão, baixas e Pix do admin): sem isso, a tela de Faturamento aberta sozinha somaria menos que a tela Contas a pagar.
 // NÃO APAGAR: esta ligação sumiu na junção de 22/11/2026 (commit 4926fb71) e o bloco Faturamento do Dashboard ficou dois dias com o número lançado à mão; recolocada em 24/11/2026. Guarda: node scripts/testar-contas-ao-vivo.mjs
 definirContasAoVivo(function(ym, s){ if(!SERV) return null; if(s){ setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf); } var t = totais(filtrar(ym, "", "", "", "", "")); return {pago:t.pago, apagar:t.apagar}; });
-export { extrasDevmaster, parcelasBaixadasDm, definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { statusDevmasterLanc, extrasDevmaster, parcelasBaixadasDm, definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, pixSemBaixa, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

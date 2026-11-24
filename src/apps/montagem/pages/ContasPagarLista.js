@@ -86,6 +86,28 @@ function marcarPagasDm(lista){
   });
   return lista.filter(function(i){ return !usadas[i.id]; }).map(function(i){ var d = par[i.id]; return d ? Object.assign({}, i, {status:"pago", baixa:d.baixa, atraso:0, valor:i.valorTitulo==null ? i.valor : i.valorTitulo, mes:String(d.baixa).slice(0, 7), tambemDm:d, pagoNaDm:true}) : i; });
 }
+// PAGO NO ADMIN, ABERTO NA DEVMASTER = PENDENTE NA DEVMASTER (Marcus, 24/11/2026: "mesmo que não tenha sido baixado na DevMaster entra no nosso como pago"): a conta da Família já PAGA no Admin e o título aberto da DevMaster (mesmo valor, mesmo mês, nome com palavra em comum, um para um) viram UMA linha só: paga, com a coluna Na DevMaster = "Pendente na DevMaster". A DevMaster baixa sozinha dias depois. SÓ NA TELA.
+function pagoNoAdminPendenteDm(lista){
+  var pals = function(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter(function(w){ return w.length>=4; }); };
+  var abertasDm = lista.filter(function(i){ return !i.ff && !i.manual && !i.bx && i.status==="apagar" && ehFam(i) && i.venc; }), usadas = {}, par = {};
+  lista.forEach(function(a){
+    if(!a.ff || a.ffAba || a.status!=="pago" || a.tambemDm) return;
+    var w = pals(a.nome+" "+(a.natNome || "")), mes = String(a.baixa || a.venc || "").slice(0, 7);
+    var c = abertasDm.filter(function(d){ return !usadas[d.id] && Math.abs(d.valor-(a.valorTitulo==null ? a.valor : a.valorTitulo))<0.005 && String(d.venc).slice(0, 7)===mes && pals(d.nome+" "+(d.natNome || "")).some(function(k){ return w.indexOf(k)>=0; }); });
+    if(c.length===1){ usadas[c[0].id] = true; par[a.id] = c[0]; }
+  });
+  return lista.filter(function(i){ return !usadas[i.id]; }).map(function(i){ var d = par[i.id]; return d ? Object.assign({}, i, {tambemDm:d, faltaBaixaDm:true}) : i; });
+}
+// FATURA DO CARTÃO x CONTAS DA FAMÍLIA (Marcus, 24/11/2026: cada pagamento aparece em UM lugar só): a compra da fatura do Itaú Black que já está lançada como conta da Família (mesmo valor, mesmo mês, um para um) fica só na Família; a linha da fatura sai da lista da empresa. SÓ NA TELA.
+function faturaPelaFamilia(lista, s){
+  var fat = lista.filter(function(i){ return i.fatura; }); if(!fat.length) return lista;
+  var fam = itensFamiliaAdmin(s).filter(function(a){ return a.status==="apagar" && !a.ffAba && a.venc; });
+  var chave = function(i){ return String(i.venc).slice(0, 7)+"|"+r2(i.valor).toFixed(2); }, porF = {}, porA = {}, tira = {}, marca = {};
+  fat.forEach(function(i){ (porF[chave(i)] = porF[chave(i)] || []).push(i); });
+  fam.forEach(function(a){ (porA[chave(a)] = porA[chave(a)] || []).push(a); });
+  Object.keys(porF).forEach(function(k){ var a = porA[k]; if(!a) return; var n = Math.min(porF[k].length, a.length); for(var x = 0; x<n; x++){ tira[porF[k][x].id] = true; marca[a[x].id] = true; } });
+  return lista.filter(function(i){ return !tira[i.id]; }).map(function(i){ return marca[i.id] ? Object.assign({}, i, {naFatura:true}) : i; });
+}
 // PESSOA DA CONTA (Marcus, 16/11/2026: "isso é um gasto meu"): conta do Admin usa a pessoa lançada lá; conta da família vinda da DevMaster usa o nome que aparece no título (Marcus, Anamaria, Marco Antonio, Ana Beatriz), só se for UM nome. Só para mostrar e filtrar: nada é gravado.
 var PES_RX = [["Marcus", /\bmarcus\b/], ["Anamaria", /\banamaria\b/], ["Marco Antonio", /\bmarco\b/], ["Ana Beatriz", /\bana beatriz\b|\banabeatriz\b/]];
 var pessoaTxt = function(i){ if(i.rateioTxt) return i.rateioTxt; if(!(i.ff || ehFam(i))) return ""; var t = String(i.nome+" "+(i.natNome || "")).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(), a = PES_RX.filter(function(r){ return r[1].test(t); }); return a.length===1 ? a[0][0] : ""; };
@@ -194,8 +216,9 @@ function TelaContas(props){
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
   var buscaTudo = String(busca || "").trim()!=="";   // com algo digitado na busca, procura em TUDO (Empresa, Família e DevMaster), qualquer que seja o botão marcado
   var todas = filtrar("", "", "", "", "", "").concat(historicoItens()).filter(function(i){ return quem==="junto" || buscaTudo || (quem==="familia" ? ehFam(i) : !ehFam(i)); }).concat(verFam && (quem!=="empresa" || buscaTudo) ? itensFamiliaAdmin(s).concat(itensDividasPrestadores(s.ff, hojeIso())) : []), maximo = {};
-  if(verFam && (quem!=="empresa" || buscaTudo)) todas = marcarPagasDm(juntarDuplicadas(todas));
+  if(verFam && (quem!=="empresa" || buscaTudo)) todas = pagoNoAdminPendenteDm(marcarPagasDm(juntarDuplicadas(todas)));
   todas.forEach(function(i){ if(!soNumero(i.parc)) return; var k = chaveTitulo(i), n0 = parseInt(i.parc, 10); if(n0>(maximo[k]||0)) maximo[k] = n0; });
+  todas = faturaPelaFamilia(todas, s);
   var hoje0 = hojeIso(), ABERTO = escopo!=="pagas", PAGO = escopo!=="apagar", DESC = escopo==="pagas";   // escopo: A pagar, Pagas ou Todas, na MESMA tela (Marcus, 12/11/2026)
   // FILTRO DO MÊS (Marcus, 12/11/2026: "sempre abrindo do mês"): a tela abre no mês de hoje. A pagar conta pelo vencimento (sem data, pela emissão); pagas, pela data do pagamento.
   var dataBase = function(i){ return i.status==="pago" ? (i.baixa || "") : (i.venc || i.emissao || ""); };
@@ -217,7 +240,7 @@ function TelaContas(props){
   ls = ls.sort(function(x, y){ var p = dataBase(x), q = dataBase(y); return DESC ? q.localeCompare(p) || x.nome.localeCompare(y.nome) : (p||"9999").localeCompare(q||"9999") || x.nome.localeCompare(y.nome); });   // ordena DEPOIS de filtrar (antes ordenava as 15 mil contas a cada letra da busca)
   var colAcao = podePagar && PAGO;
   // REPRESENTANTES: comissão e combustível do mesmo representante, CNPJ e situação viram uma linha somada; abre ao clicar
-  var linha = function(i, filho){ return {id:i.id, it:i, fil:i.filial, nome:(filho ? "↳ " : "")+i.nome, venc:dm(i.venc), pago:dm(i.baixa), cnpj:cnpj5(cnpjTxt(i.filial)), num:i.tambemDm ? "DevMaster "+numDe(i.tambemDm) : numDe(i), parc:i.tambemDm ? parcelaTxt(i.tambemDm, maximo) : parcelaTxt(i, maximo), nat:natVista(i.natNome), nota:i.nota==="sem" ? "Sem nota" : "Com nota", valor:i.valor, orig:i.valorTitulo==null ? i.valor : i.valorTitulo, emis:dm(i.emissao), atr:i.atraso>0 ? i.atraso : 0, setor:i.grupo || "—", cod:i.nat || "—", sit:sitDe(i), abrir:"Abrir", dono:(i.ff || ehFam(i)) ? (pessoaTxt(i) && pessoaTxt(i).indexOf(",")<0 && PES_RX.some(function(r){ return r[0]===pessoaTxt(i); }) ? pessoaTxt(i) : "Família") : "Sorelly", origem:i.fatura ? "Fatura Itaú Black" : i.tambemDm || i.faltaBaixaDm ? "Admin + DevMaster" : i.ff ? "Admin · Família" : i.manual ? "Só no Admin" : "DevMaster", dm:i.fatura ? "Falta ajustar na DevMaster" : i.faltaBaixaDm ? "Falta baixa na DevMaster" : i.pagoNaDm ? "Paga em "+dm(i.baixa)+" · falta baixa no Admin" : i.tambemDm ? (i.status==="pago" ? "—" : "Falta dar baixa") : i.ff || i.manual ? "Não precisa" : i.bx ? "Falta dar baixa" : "—", rateio:pessoaTxt(i) || "—", acao:i.bx ? "Desfazer" : "", forma:i.bx ? (FORMAS[i.bx.forma] || i.bx.forma || "—") : (i.formaTxt || "—"), saida:i.bx ? (i.bx.contaNome || "—") : (i.saidaTxt || "—"), compro:i.ff ? ((i.comps || []).length ? "Ver" : (i.pagoPorPix ? "Falta anexar" : "—")) : i.status!=="pago" ? "—" : !i.bx ? "—" : i.bx.comprovante ? "Ver" : "Falta anexar", por:i.bx ? nomeDe(i.bx.por) : "—", filho:!!filho}; };
+  var linha = function(i, filho){ return {id:i.id, it:i, fil:i.filial, nome:(filho ? "↳ " : "")+i.nome, venc:dm(i.venc), pago:dm(i.baixa), cnpj:cnpj5(cnpjTxt(i.filial)), num:i.tambemDm ? "DevMaster "+numDe(i.tambemDm) : numDe(i), parc:i.tambemDm ? parcelaTxt(i.tambemDm, maximo) : parcelaTxt(i, maximo), nat:natVista(i.natNome), nota:i.nota==="sem" ? "Sem nota" : "Com nota", valor:i.valor, orig:i.valorTitulo==null ? i.valor : i.valorTitulo, emis:dm(i.emissao), atr:i.atraso>0 ? i.atraso : 0, setor:i.grupo || "—", cod:i.nat || "—", sit:sitDe(i), abrir:"Abrir", dono:(i.ff || ehFam(i)) ? (pessoaTxt(i) && pessoaTxt(i).indexOf(",")<0 && PES_RX.some(function(r){ return r[0]===pessoaTxt(i); }) ? pessoaTxt(i) : "Família") : "Sorelly", origem:i.fatura ? "Fatura Itaú Black" : i.naFatura ? "Admin + Fatura Itaú Black" : i.tambemDm || i.faltaBaixaDm ? "Admin + DevMaster" : i.ff ? "Admin · Família" : i.manual ? "Só no Admin" : "DevMaster", dm:i.fatura ? "Falta ajustar na DevMaster" : i.faltaBaixaDm ? "Falta baixa na DevMaster" : i.pagoNaDm ? "Paga em "+dm(i.baixa)+" · falta baixa no Admin" : i.tambemDm ? (i.status==="pago" ? "—" : "Falta dar baixa") : i.ff || i.manual ? "Não precisa" : i.bx ? "Falta dar baixa" : "—", rateio:pessoaTxt(i) || "—", acao:i.bx ? "Desfazer" : "", forma:i.bx ? (FORMAS[i.bx.forma] || i.bx.forma || "—") : (i.formaTxt || "—"), saida:i.bx ? (i.bx.contaNome || "—") : (i.saidaTxt || "—"), compro:i.ff ? ((i.comps || []).length ? "Ver" : (i.pagoPorPix ? "Falta anexar" : "—")) : i.status!=="pago" ? "—" : !i.bx ? "—" : i.bx.comprovante ? "Ver" : "Falta anexar", por:i.bx ? nomeDe(i.bx.por) : "—", filho:!!filho}; };
   var grupos = {};
   ls.forEach(function(i){ if(i.grupo!=="Representantes") return; var k = chaveGrupo(i, i.status==="pago"); if(!grupos[k]) grupos[k] = []; grupos[k].push(i); });
   var linhas = [], feitos = {};

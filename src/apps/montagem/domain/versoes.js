@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.201", data:"2026-11-24", titulo:"Pendente na DevMaster: o que já foi pago entra no pago; Família sem duplicidade; revendedoras do dia", itens:[
+  {tipo:"melhoria", area:"Contas a pagar", txt:"Pix pago antes do vencimento (até 35 dias) e Pix de prestador casam com o título da DevMaster e contam como PAGO. Coluna Na DevMaster: Pendente na DevMaster. A baixa conta na data em que o dinheiro saiu."},
+  {tipo:"correção", area:"Contas a pagar", txt:"Conta da Família paga no Admin e aberta na DevMaster vira uma linha só (IPTU de R$ 258,40). Compra da fatura do Itaú Black que já é conta da Família fica só na Família (16 linhas, R$ 11.607,91)."},
+  {tipo:"novo", area:"Pagamentos a fornecedores", txt:"Função statusDevmasterLanc: confirmado, falta baixa ou sem título para cada Pix lançado (usada pela coluna DevMaster do Resumo)."},
+  {tipo:"correção", area:"Faturamento", txt:"O fechamento do dia grava as revendedoras do próprio dia (antes copiava o último valor e os dias 1 a 8 de novembro ficaram todos em 2.047)."}]},
  {v:"0.21.200", data:"2026-11-24", titulo:"Devolução: peça fora das condicionais mostra o código e o histórico da revendedora", itens:[
   {tipo:"novo", area:"App da representante", txt:"Ao bipar uma peça que não está nas condicionais marcadas, aparece embaixo da tela o código da peça, o nome e o aviso de que ela não está nas condicionais marcadas. Se a peça já esteve em outra condicional da mesma revendedora (aberta e não marcada, ou de uma venda anterior), o aviso diz qual, a data e quantas foram enviadas, vendidas e devolvidas. Serve para quando a revendedora mistura as peças."}]},
  {v:"0.21.199", data:"2026-11-24", titulo:"Acerto: bipar as peças que voltaram, com as condicionais marcadas juntas", itens:[
