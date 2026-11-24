@@ -34,22 +34,23 @@ function avisar(){
 function valido(c){ return /^\d{7,13}$/.test(c) || /^[A-Z]{1,4}\d{3,6}$/.test(c); }
 
 function LeitorCamera(p){
-  var ref = useRef(null), st = useState({est:"abrindo", msg:"", zoom:2, flash:0}), estado = st[0], setEstado = st[1];
+  var ref = useRef(null), st = useState({est:"abrindo", msg:"", zoom:1, flash:0, diag:""}), estado = st[0], setEstado = st[1];
+  var fotoRef = useRef(null), fs = useState(""), fotoMsg = fs[0], setFotoMsg = fs[1];
   var lerRef = useRef(p.aoLer); lerRef.current = p.aoLer;
   useEffect(function(){
-    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 2, lanterna = false;
+    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 1, lanterna = false, zoomCam = false, dg = {n:0, ms:0, bruto:"", fmt:"", motor:"", t:0};
     function parar(){ vivo = false; if(timer) clearTimeout(timer); if(stream) stream.getTracks().forEach(function(t){ t.stop(); }); window.removeEventListener("pointerdown", audio); }
     window.addEventListener("pointerdown", audio); audio();
     (async function(){
       if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ setEstado({est:"erro", msg:"Este aparelho ou navegador não abre a câmera aqui. Digite o código da peça."}); return; }
-      try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}, audio:false}); }
+      try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:2560}, height:{ideal:1440}}, audio:false}); }
       catch(x){ setEstado({est:"erro", msg: x && x.name==="NotAllowedError" ? "A câmera está bloqueada. Permita o uso da câmera para o app nas configurações do celular, ou digite o código." : "Não consegui abrir a câmera. Digite o código da peça."}); return; }
       if(!vivo){ parar(); return; }
       var v = ref.current; if(!v){ parar(); return; }
-      // zoom 2x: onde o aparelho deixa (Android) é o zoom da câmera; onde não deixa (iPhone) é zoom digital (corta o centro e amplia, na tela e na leitura)
+      // 24/11 (3): zoom 2x só onde a câmera faz zoom de verdade (Android). Onde não faz (iPhone) lê a imagem INTEIRA em resolução alta: o corte digital jogava pixels fora e obrigava a chegar bem perto.
       try {
         var tr = stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, adv = [];
-        if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); digital = 1; }
+        if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); zoomCam = true; }
         if(cap.torch){ adv.push({torch:true}); lanterna = true; }
         if(cap.focusMode && cap.focusMode.indexOf("continuous") >= 0) adv.push({focusMode:"continuous"});
         if(adv.length) await tr.applyConstraints({advanced:adv});
@@ -61,20 +62,22 @@ function LeitorCamera(p){
         if(window.BarcodeDetector){
           var sup = window.BarcodeDetector.getSupportedFormats ? await window.BarcodeDetector.getSupportedFormats() : FORMATOS;
           var det = new window.BarcodeDetector({formats: FORMATOS.filter(function(f){ return sup.indexOf(f) >= 0; })});
-          detectarImg = async function(img){ var r = await det.detect(img); return r && r[0] ? String(r[0].rawValue || "") : ""; };
+          dg.motor = "nativo";
+          detectarImg = async function(img){ var r = await det.detect(img); if(r && r[0]){ dg.fmt = r[0].format; return String(r[0].rawValue || ""); } return ""; };
         }
       } catch(x){ detectarImg = null; }
       if(!detectarImg){
-        var zx = await import("zxing-wasm/reader");
-        var opc = {formats:["Code128","EAN13","EAN8","UPCA"], tryHarder:true, tryRotate:true, tryDownscale:true, maxNumberOfSymbols:1};
-        detectarImg = async function(img){ var d = img.getContext("2d", {willReadFrequently:true}).getImageData(0, 0, img.width, img.height); var r = await zx.readBarcodes(d, opc); return r && r[0] ? String(r[0].text || "") : ""; };
+        var zx; try { zx = await import("zxing-wasm/reader"); await zx.readBarcodes(new ImageData(8, 8), {formats:["Code128"]}); } catch(x){ setEstado({est:"erro", msg:"O leitor não carregou (" + String((x && x.message) || x).slice(0, 80) + "). Use Ler por foto ou digite o código."}); return; }
+        var opc = {formats:["Code128","Code39","Code93","Codabar","ITF","EAN13","EAN8","UPCA","UPCE"], tryHarder:true, tryRotate:true, tryDownscale:true, tryInvert:true, maxNumberOfSymbols:1};
+        dg.motor = "wasm";
+        detectarImg = async function(img){ var d = img.getContext("2d", {willReadFrequently:true}).getImageData(0, 0, img.width, img.height); var r = await zx.readBarcodes(d, opc); if(r && r[0]){ dg.fmt = r[0].format; return String(r[0].text || ""); } return ""; };
         girar = false;   // o zxing-wasm já tenta a imagem girada
       }
       // Cada quadro: recorta o centro (zoom digital) e lê como está; em quadros alternados lê girado 90 graus (a tag do colar tem as listras na vertical).
       var detectar = async function(){
         if(!v.videoWidth) return "";
         volta++;
-        var f = digital, w = Math.round(v.videoWidth / f), h = Math.round(v.videoHeight / f), k = Math.min(1, 1100 / w);   // k: reduz imagem grande para ler mais rápido
+        var f = digital, w = Math.round(v.videoWidth / f), h = Math.round(v.videoHeight / f), k = Math.min(1, 1920 / w);   // k: reduz imagem grande para ler mais rápido
         cv.width = Math.round(w * k); cv.height = Math.round(h * k);
         cv.getContext("2d", {willReadFrequently:true}).drawImage(v, Math.round((v.videoWidth - w) / 2), Math.round((v.videoHeight - h) / 2), w, h, 0, 0, cv.width, cv.height);
         var alvo = cv;
@@ -90,7 +93,9 @@ function LeitorCamera(p){
       var laco = async function(){
         if(!vivo) return;
         try {
-          var cod = await detectar(), agora = Date.now();
+          var t0 = Date.now(), cod = await detectar(), agora = Date.now();
+          dg.n++; dg.ms = agora - t0; if(cod) dg.bruto = cod + " (" + dg.fmt + ")";
+          if(agora - dg.t > 500){ dg.t = agora; var tx = dg.motor + (lanterna ? " · luz ligada" : " · sem luz (o celular não deixa o site ligar)") + (zoomCam ? " · zoom 2x da câmera" : " · imagem inteira") + " · " + dg.n + " leituras · " + dg.ms + " ms" + (dg.bruto ? " · último: " + dg.bruto : " · nada na mira"); setEstado(function(x){ return Object.assign({}, x, {diag:tx}); }); }
           if(cod && valido(cod)){
             // uma leitura basta (Code128 tem dígito de controle); o mesmo número só conta outra vez se sair da mira e voltar
             {
@@ -109,13 +114,32 @@ function LeitorCamera(p){
     })();
     return parar;
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Ler por foto: abre a câmera do próprio celular (foco automático e foto inteira, bem mais nítida que o vídeo) e lê o código da foto.
+  async function lerFoto(ev){
+    var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;
+    setFotoMsg("Lendo a foto...");
+    try {
+      var bm = await createImageBitmap(f), k = Math.min(1, 2200 / Math.max(bm.width, bm.height)), c = document.createElement("canvas");
+      c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k);
+      var cx = c.getContext("2d", {willReadFrequently:true}); cx.drawImage(bm, 0, 0, c.width, c.height);
+      var zx = await import("zxing-wasm/reader");
+      var r = await zx.readBarcodes(cx.getImageData(0, 0, c.width, c.height), {formats:["Code128","Code39","Code93","Codabar","ITF","EAN13","EAN8","UPCA","UPCE"], tryHarder:true, tryRotate:true, tryDownscale:true, tryInvert:true, maxNumberOfSymbols:1});
+      var cod = r && r[0] ? String(r[0].text || "").trim().toUpperCase().replace(/s+/g, "") : "";
+      if(cod){ avisar(); setFotoMsg("Li " + cod + " (" + r[0].format + ")"); lerRef.current(cod); }
+      else setFotoMsg("Não achei código nessa foto. Chegue mais perto, com a etiqueta reta e bem iluminada, ou digite o código.");
+    } catch(x){ setFotoMsg("Não consegui ler a foto. Digite o código da peça."); }
+  }
   return e("div",{className:"flex flex-col gap-1.5"},
     estado.est==="erro"
       ? e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12.5px] font-bold text-[#92400E]"}, estado.msg)
       : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"4 / 3"}},
           e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
           e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 " + (estado.flash ? "border-[#22C55E]" : estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
-          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta · zoom 2x"+(estado.luz ? " · luz ligada" : "")+"")),
+          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta"+(estado.luz ? " · luz ligada" : ""))),
+    estado.est!=="erro" && estado.diag ? e("p",{className:"px-1 text-center text-[11px] text-[#6B7280]"}, estado.diag) : null,
+    e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}),
+    e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"h-10 rounded-xl bg-[#C9A63B] text-[13px] font-bold text-[#1F1B0E]"}, "Ler por foto (câmera do celular)"),
+    fotoMsg ? e("p",{className:"px-1 text-center text-[12px] font-semibold text-[#374151]"}, fotoMsg) : null,
     e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera"));
 }
 

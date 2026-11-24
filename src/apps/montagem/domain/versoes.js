@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.204", data:"2026-11-24", titulo:"Leitor da câmera: linha de diagnóstico e Ler por foto", itens:[
+  {tipo:"melhoria", area:"Peças que voltaram", txt:"Linha pequena embaixo da câmera mostra o motor, a luz, o zoom, quantas leituras e o último código visto. Botão Ler por foto abre a câmera do celular (foco automático, foto inteira) e lê o código da foto. Aceita mais tipos de código de barras. Lê a imagem inteira em resolução alta (sem corte digital), para ler de mais longe."},
+ ]},
  {v:"0.21.203", data:"2026-11-24", titulo:"Leitor da câmera mais rápido: novo motor de leitura e luz", itens:[
   {tipo:"melhoria", area:"Peças que voltaram", txt:"Troca do leitor de código de barras pelo zxing-wasm (bem mais rápido, lê listras na vertical e na horizontal) e luz da câmera ligada sozinha onde o aparelho deixa (Android). Uma leitura basta."},
  ]},
