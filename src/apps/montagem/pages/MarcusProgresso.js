@@ -90,9 +90,10 @@ function TelaProgresso(){
     e(BlocoPainel,{titulo:"Progresso - Marcus", compacto:true},
       e(BarraTabela,null,
         e(CelulaBarra,{rotulo:"Mês"}, e(CampoMini,{valor:mes, aoMudar:setMes, rotulo:"Mês", ops:opMeses})),
-        e(CelulaBarra,{rotulo:"Agora"}, abertoHoje
-          ? e(CampoMini,{valor:abertoHoje.tipo, aoMudar:function(v){ if(v==="trabalho") voltar(Date.now()); else pausa(v); }, rotulo:"Estado agora", ops:[["trabalho", "Trabalhando"]].concat(MOTIVOS)})
-          : e("span",{className:"text-[11px]"}, diaHoje.inicio ? "Dia encerrado" : "Não iniciado")),
+        e(CelulaBarra,{rotulo:"Agora"}, e("span",{className:"whitespace-nowrap text-[11px]"}, abertoHoje ? (abertoHoje.tipo==="trabalho" ? "Trabalhando" : rotuloMotivo(abertoHoje.tipo)) : diaHoje.inicio ? "Dia encerrado" : "Não iniciado")),
+        abertoHoje && e(CelulaBarra,{rotulo:"Marcar"}, e("span",{className:"flex items-center gap-1"},
+          abertoHoje.tipo!=="trabalho" && e(Botao,{key:"v", principal:true, onClick:function(){ voltar(Date.now()); }}, "Voltar ao trabalho"),
+          MOTIVOS.filter(function(m){ return m[0]!==abertoHoje.tipo; }).map(function(m){ return e(Botao,{key:m[0], onClick:function(){ pausa(m[0]); }}, m[1]); }))),
         e(CelulaBarra,{rotulo:"Hoje"}, e("span",{className:"text-[11px] tabular-nums"}, hms(soHoje.trabalho))),
         e(CelulaBarra,{rotulo:"Média do mês"}, e("span",{className:"text-[11px] tabular-nums"}, diasTrab ? hms(totMs/diasTrab) : "—")),
         e(CelulaBarra,{rotulo:"Dia"}, acaoDia)),

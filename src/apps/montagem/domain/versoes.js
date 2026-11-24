@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.166", data:"2026-11-24", titulo:"Marcus: botões de pausa no Progresso", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"Com o dia começado, a barra azul mostra um botão para cada motivo: Fumar, Almoçar, Treinar, Parado e Outro. Em pausa, aparece Voltar ao trabalho. Antes era uma lista escondida."}]},
  {v:"0.21.165", data:"2026-11-24", titulo:"Chaves Pix: a aba é a fonte principal", itens:[
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Chaves Pix", txt:"O Direcionar e o Atendimento procuram a chave primeiro na aba Chaves Pix e só depois nas cópias antigas. Sete chaves que só existiam em cópias foram copiadas para a aba."},
  ]},
