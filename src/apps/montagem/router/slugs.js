@@ -178,6 +178,7 @@ export const SLUG_DA_ABA = {
   prodpag: "producao-pagamentos",
   prodcasa: "producao-casa",
   prodpagproducao: "producao-pagamento-por-producao",
+  prodnotas: "producao-envio-e-devolucao",
   cpcompras: "cadastro-de-pecas-compras",
   cadpecas: "cadastro-de-pecas-pedidos",
   cpsol: "cadastro-de-pecas-solicitacoes",

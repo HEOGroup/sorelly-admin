@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.179", data:"2026-11-24", titulo:"Produção: tela Envio e devolução com nota de saída e de devolução", itens:[
+  {tipo:"novo", area:"Produção › Envio e devolução", txt:"Tela nova que troca a ficha de papel: Envio (data, quem leva, código, quantidade, responsável pelo envio) e Devolução (data, quem devolve, código, produzidas, devolvidas sem produzir, com defeito, responsável pelo recebimento). Cada registro vira uma nota numerada (NS-0001 de saída, ND-0001 de devolução) com botão Copiar nota para o WhatsApp. O envio entra no estoque da pessoa; a devolução dá baixa, as produzidas e as com defeito viram lançamento (pagas) e as sem produzir só saem do estoque. Autorização nova producao_envio para a Crisbele e a Deysiane. A janela Dias do pagamento ficou só de leitura (o pago vem do Contas a pagar)."}
+ ]},
  {v:"0.21.178", data:"2026-11-24", titulo:"Contas bancárias › Caixa: Pix sem baixa deixou de ser descontado duas vezes", itens:[
   {tipo:"correção", area:"Financeiro › Contas bancárias › Caixa", txt:"No resumo do mês, o resultado pela DevMaster passou a ser recebido − pagas. O Pix de revendedora pago a fornecedor e lançado no Admin já está dentro das contas pagas; antes era descontado de novo e a divergência saía maior."}]},
  {v:"0.21.177", data:"2026-11-24", titulo:"Faturamento: tela compacta, contas do dia como estavam e dias futuros fora", itens:[

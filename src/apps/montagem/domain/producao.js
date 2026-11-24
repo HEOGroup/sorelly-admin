@@ -300,6 +300,8 @@ function resumoExterna(pr, ano, mes, func){
 function situacaoCasa(pr, func){
   var f = func ? trim(func).toLowerCase() : null, deles = function(n){ return !f || trim(n).toLowerCase()===f; };
   var dev = []; Object.keys(pr.lancamentos||{}).forEach(function(d){ if(d<CASA_CONTROLE_DESDE) return; (pr.lancamentos[d]||[]).forEach(function(l){ if(eCasa(l) && num(l.qtd)>0 && deles(l.func)) dev.push({dia:d, codigo:l.codigo, qtd:num(l.qtd)}); }); });
+  // peças que voltaram SEM produzir (nota de devolução): saem do estoque da pessoa, mas não geram pagamento
+  (pr.notas||[]).forEach(function(n){ if(n.tipo==="devolucao" && n.dia>=CASA_CONTROLE_DESDE && deles(n.func)) (n.itens||[]).forEach(function(i){ if(num(i.semProduzir)>0) dev.push({dia:n.dia, codigo:i.codigo, qtd:num(i.semProduzir)}); }); });
   return situacaoPorCodigo((pr.movCasa||[]).filter(function(m){ return deles(m.func || PADRAO_EXTERNA); }), dev);
 }
 
@@ -337,7 +339,7 @@ function pagamentosDaProducao(pr, hoje){
   return out.sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : (a.func<b.func ? -1 : 1); });
 }
 
-function novoPr(){ return {v:1, seq:0, funcionarias:[], codigos:[], lancamentos:{}, ajustes:[], pagos:{}, diasPagos:{}, envios:{}, controleCasa:{}, movCasa:[], saldoExterna:{}, historico:[]}; }
+function novoPr(){ return {v:1, seq:0, funcionarias:[], codigos:[], lancamentos:{}, ajustes:[], pagos:{}, diasPagos:{}, envios:{}, controleCasa:{}, movCasa:[], notas:[], saldoExterna:{}, historico:[]}; }
 function proximoId(s, p){ return p+(++s.seq); }
 function prDemo(){
   var s = novoPr();
@@ -467,6 +469,47 @@ function prReduz(s, a){
       pr.movCasa = pr.movCasa || []; var totalLote = 0;
       novos.forEach(function(m2){ pr.seq = (pr.seq||0)+1; pr.movCasa.push(Object.assign({id:pr.seq, por:por, em:agora}, m2, {func:trim(m2.func) || PADRAO_EXTERNA})); totalLote += m2.qtd; });
       log("mov_lote", (trim(a.func) || PADRAO_EXTERNA)+" · "+a.dia+" · "+novos.length+" códigos, "+totalLote+" peças enviadas"); return ok("Envio de "+totalLote+" peças ("+novos.length+" códigos) anotado.");
+    }
+    case "nota_envio": {   // NOTA DE SAÍDA (Marcus, 24/11/2026: "tem que ter uma nota de saída"): data, quem leva, códigos e quantidades, responsável pelo envio. Cria os envios do estoque e guarda a nota numerada (NS-0001...).
+      var fnE = trim(a.func), respE = trim(a.resp), itE = Array.isArray(a.itens) ? a.itens.filter(function(i){ return trim(i.codigo) || num(i.qtd)>0; }) : [];
+      if(!ehDia(a.dia)) return recusa("Informe a data do envio.");
+      if(!fnE) return recusa("Informe o nome de quem está levando.");
+      if(!respE) return recusa("Informe o responsável pelo envio.");
+      if(!itE.length) return recusa("Informe ao menos um código e a quantidade.");
+      var nvE = []; for(var ie=0; ie<itE.length; ie++){ var vE = validarEnvio({dia:a.dia, func:fnE, codigo:itE[ie].codigo, qtd:itE[ie].qtd, feitas:0, obs:""}); if(vE.erro) return recusa("Linha "+(ie+1)+": "+vE.erro); nvE.push(vE.mov); }
+      pr.notas = pr.notas || []; pr.movCasa = pr.movCasa || [];
+      var numE = "NS-"+("000"+(pr.notas.filter(function(n){ return n.tipo==="envio"; }).length+1)).slice(-4), totE = 0;
+      nvE.forEach(function(m2){ pr.seq = (pr.seq||0)+1; pr.movCasa.push(Object.assign({id:pr.seq, por:por, em:agora}, m2, {func:fnE, resp:respE, nota:numE, obs:"Nota "+numE})); totE += m2.qtd; });
+      pr.seq = (pr.seq||0)+1; pr.notas.push({id:pr.seq, tipo:"envio", numero:numE, dia:a.dia, func:fnE, resp:respE, itens:nvE.map(function(m2){ return {codigo:m2.codigo, qtd:m2.qtd}; }), total:totE, por:por, em:agora});
+      log("nota_envio", numE+" · "+fnE+" · "+totE+" peças · resp. "+respE); return ok("Nota "+numE+" registrada: "+totE+" peças para "+fnE+".");
+    }
+    case "nota_devolucao": {   // NOTA DE DEVOLUÇÃO: produzidas (pagas), devolvidas SEM produzir (saem do estoque, não pagam) e com defeito (também pagas: a peça com defeito não desconta, Marcus 23/11/2026). As produzidas e com defeito viram lançamento da produção externa no dia.
+      var fnD = trim(a.func), respD = trim(a.resp), itD = Array.isArray(a.itens) ? a.itens.filter(function(i){ return trim(i.codigo) || num(i.produzidas)>0 || num(i.sem)>0 || num(i.defeito)>0; }) : [];
+      if(!ehDia(a.dia)) return recusa("Informe a data da devolução.");
+      if(!fnD) return recusa("Informe o nome de quem está devolvendo.");
+      if(!respD) return recusa("Informe o responsável pelo recebimento.");
+      if(!itD.length) return recusa("Informe ao menos um código e as quantidades.");
+      var linD = [], notaItD = [], totProd = 0, totSem = 0, totDef = 0;
+      for(var id2=0; id2<itD.length; id2++){
+        var cD = String(itD[id2].codigo||"").toUpperCase().split(" ").join("").trim(), pD = Math.round(num(itD[id2].produzidas)), sD = Math.round(num(itD[id2].sem)), dD = Math.round(num(itD[id2].defeito));
+        if(cD.length<2) return recusa("Linha "+(id2+1)+": informe o código da peça.");
+        if(pD<0 || sD<0 || dD<0) return recusa("Linha "+(id2+1)+": as quantidades não podem ser negativas.");
+        if(pD+sD+dD<=0) return recusa("Linha "+(id2+1)+": informe alguma quantidade.");
+        notaItD.push({codigo:cD, produzidas:pD, semProduzir:sD, defeito:dD}); totProd += pD; totSem += sD; totDef += dD;
+        if(pD+dD>0) linD.push({func:fnD, codigo:cD, qtd:pD+dD, valor:0, unidade:"CASA"});
+      }
+      pr.notas = pr.notas || []; pr.lancamentos = pr.lancamentos || {};
+      var numD = "ND-"+("000"+(pr.notas.filter(function(n){ return n.tipo==="devolucao"; }).length+1)).slice(-4);
+      if(linD.length) pr.lancamentos[a.dia] = (pr.lancamentos[a.dia]||[]).concat(linD.map(function(l){ return Object.assign({}, l, {nota:numD}); }));
+      pr.seq = (pr.seq||0)+1; pr.notas.push({id:pr.seq, tipo:"devolucao", numero:numD, dia:a.dia, func:fnD, resp:respD, itens:notaItD, produzidas:totProd, semProduzir:totSem, defeito:totDef, por:por, em:agora});
+      log("nota_devolucao", numD+" · "+fnD+" · "+totProd+" produzidas, "+totSem+" sem produzir, "+totDef+" com defeito · resp. "+respD); return ok("Nota "+numD+" registrada: "+totProd+" produzidas, "+totSem+" sem produzir, "+totDef+" com defeito.");
+    }
+    case "nota_apagar": {   // desfaz uma nota e o que ela criou (envios do estoque ou lançamentos da devolução)
+      var iN = (pr.notas||[]).findIndex(function(n){ return String(n.id)===String(a.id); }); if(iN<0) return recusa("Nota não encontrada.");
+      var nt = pr.notas.splice(iN, 1)[0];
+      if(nt.tipo==="envio") pr.movCasa = (pr.movCasa||[]).filter(function(m2){ return m2.nota!==nt.numero; });
+      else Object.keys(pr.lancamentos||{}).forEach(function(d){ var rest = (pr.lancamentos[d]||[]).filter(function(l){ return l.nota!==nt.numero; }); if(rest.length) pr.lancamentos[d] = rest; else delete pr.lancamentos[d]; });
+      log("nota_apagar", nt.numero+" · "+nt.func); return ok("Nota "+nt.numero+" apagada.");
     }
     case "mov_feitas": {   // quantas ela já fez daquele envio (ela informa)
       var mv = (pr.movCasa||[]).find(function(x){ return String(x.id)===String(a.id); }); if(!mv) return recusa("Envio não encontrado.");

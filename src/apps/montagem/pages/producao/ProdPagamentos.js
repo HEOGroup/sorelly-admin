@@ -111,10 +111,9 @@ function AbaProdPagamentos(props){
   if(pj){
     var dp = x.pr.diasPagos || {}, qtdDia = function(d){ return ((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===pj.func && eCasa(l); }).reduce(function(t, l){ return t+(Number(l.qtd)||0); }, 0); };
     var rowsD = pj.dias.map(function(d){ var pg = !!dp[pj.func+"|"+d]; return {id:d, dia:d, pecas:qtdDia(d), valor:valorDiaCasa(x.pr, pj.func, d), situ:pg ? "Pago" : "A pagar", pg:pg}; });
-    jan = e(Janela,{t:"Dias pagos", sub:pj.func+" · pago em "+formatarDia(pj.data), fechar:function(){ sDias[1](null); }, colunas:[
+    jan = e(Janela,{t:"Dias do pagamento", sub:pj.func+" · pago em "+formatarDia(pj.data), fechar:function(){ sDias[1](null); }, colunas:[
       e(Painel,{key:"d", t:"Dias da produção externa", ic:"calendar-blank"}, e(TabelaPlanilha,{key:"dias"+pj.id, fina:true, chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true, linhas:rowsD,
-        cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+" · "+diaDaSemana(v); }}, {k:"pecas", t:"Peças", fmt:formatarInteiro}, {k:"valor", t:"Valor", fmt:formatarReais}, {k:"situ", t:"Situação", cor:function(r){ return r.pg ? "text-success" : ""; }},
-          {k:"ac", t:"Ação", render:function(v, r){ return e("button",{type:"button", onClick:function(){ x.exec("dia_pago", {func:pj.func, dia:r.dia, pago:!r.pg}); }, className:LINK}, r.pg ? "Desfazer" : "Marcar pago"); }}]}))]});
+        cols:[{k:"dia", t:"Dia", fmt:function(v){ return formatarDia(v)+" · "+diaDaSemana(v); }}, {k:"pecas", t:"Peças", fmt:formatarInteiro}, {k:"valor", t:"Valor", fmt:formatarReais}, {k:"situ", t:"Situação", cor:function(r){ return r.pg ? "text-success" : ""; }}]}))]});   // SÓ LEITURA (Marcus, 23/11/2026): o pago vem do Contas a pagar, nunca de marcação à mão (o botão Marcar pago saiu daqui)
   }
   var jp = null;
   if(sPag[0]){

@@ -143,6 +143,7 @@ const montagem = {
     pagina("producao-pagamentos", () => import("@/apps/montagem/pages/Producao"), "AbaProdExterna"),
     pagina("producao-casa", () => import("@/apps/montagem/pages/Producao"), "AbaProdExterna"),
     pagina("producao-pagamento-por-producao", () => import("@/apps/montagem/pages/Producao"), "AbaPagamentoProducao"),
+    pagina("producao-envio-e-devolucao", () => import("@/apps/montagem/pages/Producao"), "AbaNotasProducao"),
     pagina("cadastro-de-pecas-compras", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasCompras"),
     pagina("cadastro-de-pecas-pedidos", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaCadastroPecas"),
     pagina("cadastro-de-pecas-solicitacoes", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasSolicitacoes"),

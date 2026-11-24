@@ -148,6 +148,13 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - Código: `LancarPix` em `pages/ContasReceberLista.js` (usa `chavesDoDestino`, `mensagemPixDaChave`, `mensagemPixPessoa` e `CopiarChave`).
 
 
+## 24/11/2026 (Produção: nota de saída e de devolução)
+- **Marcus: "tem que ter uma nota de saída"** (caso do Igor: 230 marcadas no pacote, 229 feitas). Nova tela Produção › Envio e devolução: a ficha de papel virou tela. Envio: data, quem leva, código, quantidade, responsável pelo envio. Devolução: data, quem devolve, código, produzidas, devolvidas SEM produzir, com defeito, responsável pelo recebimento. Cada registro gera uma nota numerada (NS-0001 saída, ND-0001 devolução) que se copia para o WhatsApp.
+- Envio entra no estoque da pessoa. Na devolução, produzidas + com defeito viram lançamento da produção externa e são PAGAS (o defeito não desconta); as sem produzir só dão baixa no estoque.
+- Quem preenche: Diretoria e quem tiver a autorização producao_envio (Crisbele e Deysiane: o RH marca em Acessos e autorizações).
+- O pago da produção externa vem só do Contas a pagar: a janela Dias do pagamento ficou só de leitura.
+- Código: ProdNotas.js e as operações nota_envio, nota_devolucao e nota_apagar em domain/producao.js.
+
 ## 23/11/2026 (Produção: regras de pagamento e visual)
 - **Dávila é a mulher do Igor; Leci é funcionária** (outra pessoa). Nunca trocar.
 - **Produção externa (Dávila, Leci, Didi):** ciclo de TERÇA a SEGUNDA (a segunda entra), paga na QUINTA-FEIRA por Pix revendedora; R$ 0,45 por peça desde 16/11. O que a pessoa tem em mãos é ESTOQUE, não dinheiro: só vale o que ela entrega. O pago vem do Contas a pagar, nunca de botão na Produção (botão Marcar pago saiu da lista de dias).
