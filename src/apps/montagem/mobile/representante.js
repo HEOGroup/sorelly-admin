@@ -248,6 +248,26 @@ function AppRepresentante(p){
   var sel = cart.find(function(r){return r.id===selId;}) || (selNome.current && selId ? cart.find(function(r){ return r.rev===selNome.current; }) : undefined);
   if(sel) selNome.current = sel.rev;
   useEffect(function(){ if(sel && selId && sel.id!==selId) setSel(sel.id); }, [sel && sel.id, selId]);
+  // RASCUNHO DO ATENDIMENTO (Marcus, 24/11/2026): a representante está sempre no meio de um atendimento; se o app recarregar (atualização do sistema, aba que fecha, erro de arquivo novo),
+  // ela volta na MESMA tela, com o acerto, as peças bipadas e os brindes como estavam. O rascunho fica só neste aparelho (localStorage), vale 12 horas e some quando ela sai do atendimento de propósito
+  // (volta ao início, vai para outra tela do app) ou termina o acerto.
+  var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1", TELAS_RASCUNHO = ["pedidodata","preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","confdev","assinarrepos","reposicao","regrascom","rev"], TELAS_SAIDA = ["inicio","revs","comissoes","listagens","novos","fechamento","resumokn","retirada","mensagens"];
+  var rascRef = useRef(undefined);
+  if(rascRef.current===undefined){ rascRef.current = null; try{ var rr = JSON.parse(localStorage.getItem(CHAVE_RASCUNHO)||"null"); if(rr && rr.rep===l.rep && Date.now()-(rr.em||0) < 12*3600*1000 && TELAS_RASCUNHO.indexOf(rr.tela)>=0) rascRef.current = rr; }catch(x){} }
+  useEffect(function(){   // devolve a representante ao ponto onde estava assim que a lista de revendedoras carregar
+    var r = rascRef.current; if(!r) return;
+    var alvo = cart.find(function(x){ return x.id===r.selId; }) || cart.find(function(x){ return x.rev===r.rev; });
+    if(!alvo){ if(reais!==null) rascRef.current = null; return; }
+    rascRef.current = null;
+    setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, r.acertoForm||{})); setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(r.tela);
+  }, [cart.length, reais]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){   // guarda o rascunho a cada mudança dentro do atendimento
+    if(rascRef.current) return;   // ainda restaurando: não sobrescreve
+    try{
+      if(TELAS_RASCUNHO.indexOf(tela)>=0 && sel){ try{ localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify({rep:l.rep, selId:sel.id, rev:sel.rev, tela:tela, confVolta:confVolta, acertoForm:acertoForm, brindeIn:brindeIn, em:Date.now()})); }catch(x){ localStorage.removeItem(CHAVE_RASCUNHO); } }
+      else if(TELAS_SAIDA.indexOf(tela)>=0) localStorage.removeItem(CHAVE_RASCUNHO);
+    }catch(x){}
+  }, [tela, acertoForm, brindeIn, confVolta, selId]);   // eslint-disable-line react-hooks/exhaustive-deps
   var lPed = minhasL.find(function(x){return x.id===lidPed;}) || minhasL[0];
   var pedir = function(tipo, opts){ opts = opts || {};
     var lidUse = opts.lid || (lPed && lPed.id), lUse = s.listagens.find(function(x){return x.id===lidUse;});

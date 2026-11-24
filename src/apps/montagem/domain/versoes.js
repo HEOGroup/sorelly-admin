@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.209", data:"2026-11-24", titulo:"App da representante: o atendimento não se perde quando o sistema atualiza", itens:[
+  {tipo:"melhoria", area:"App da representante", txt:"Se o app recarregar no meio de um atendimento (atualização do sistema, aba fechada, erro de arquivo novo), a representante volta na mesma tela, com o acerto, as peças bipadas e os brindes como estavam. O rascunho fica só no aparelho, vale 12 horas e some quando ela sai do atendimento de propósito ou termina o acerto."},
+ ]},
  {v:"0.21.208", data:"2026-11-24", titulo:"App da representante: nova tela de bipagem e novo cartão da lista de revendedoras", itens:[
   {tipo:"melhoria", area:"Peças que voltaram", txt:"Topo em três linhas (Vendeu, Comissão com percentual e Valor do acerto) que se refazem a cada peça bipada, barra grossa Voltaram X de Y, bloco embaixo da câmera com código e preço da peça bipada ou aviso de que não é do kit (com histórico da revendedora), campo e botão Bipar grandes, Desfazer grande e lista só com código e preço. Saem Fechar a câmera, textos de ajuda e a linha de diagnóstico."},
   {tipo:"melhoria", area:"Revendedoras", txt:"Cartão da lista no formato A: mesmas cores de antes (fundo dourado claro, números verde, azul e dourado, data com a cor do estado), uma fonte, telefone e endereço em texto, sem botão Copiar, e o acerto previsto com a data num quarto bloco ao lado de vendido, acerto e comissão (números maiores) o botão do WhatsApp abre direto a conversa da revendedora, telefone e cidade em fonte menor que o nome, números que nunca quebram (menores quando passam de R$ 9.999,99), busca por nome, telefone e cidade, e o total de revendedoras (ou "X de Y" ao filtrar) no canto direito do título, na cor dourada."},
