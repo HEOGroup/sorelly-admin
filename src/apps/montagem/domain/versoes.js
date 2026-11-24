@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.200", data:"2026-11-24", titulo:"Devolução: peça fora das condicionais mostra o código e o histórico da revendedora", itens:[
+  {tipo:"novo", area:"App da representante", txt:"Ao bipar uma peça que não está nas condicionais marcadas, aparece embaixo da tela o código da peça, o nome e o aviso de que ela não está nas condicionais marcadas. Se a peça já esteve em outra condicional da mesma revendedora (aberta e não marcada, ou de uma venda anterior), o aviso diz qual, a data e quantas foram enviadas, vendidas e devolvidas. Serve para quando a revendedora mistura as peças."}]},
  {v:"0.21.199", data:"2026-11-24", titulo:"Acerto: bipar as peças que voltaram, com as condicionais marcadas juntas", itens:[
   {tipo:"novo", area:"App da representante", txt:"Na calculadora de acertos, depois de marcar as condicionais da revendedora aparece o botão \"Bipar as peças que voltaram\". Ele junta todas as condicionais marcadas num kit só, abre a câmera para ler a etiqueta de cada peça (ou digitar o código) e mostra quantas voltaram, quantas não voltaram (vendidas) e o valor. Tem Desfazer. O resultado fica guardado no acerto."}]},
  {v:"0.21.198", data:"2026-11-24", titulo:"App da representante: acerto sem assinatura, só com autorização", itens:[

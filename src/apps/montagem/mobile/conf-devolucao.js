@@ -11,6 +11,7 @@ import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
 
+var dataBR = function(iso){ return iso ? String(iso).split("-").reverse().join("/") : ""; };
 var BR = function(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); };
 var BTN = "h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40";
 var CARD = "rounded-2xl bg-white p-3 ring-1 ring-[#E5E7EB]";
@@ -24,6 +25,17 @@ function ConfDevolucao(p){
   var cd = useState(""), codigo = cd[0], setCodigo = cd[1];
   var ab = useState(null), aberta = ab[0], setAberta = ab[1];
   var nt = useState(0), tentativa = nt[0], setTentativa = nt[1];
+  var inf0 = useState(null), info = inf0[0], setInfo = inf0[1];   // alerta de baixo: peça que NÃO é das condicionais marcadas (e o histórico dela com esta revendedora)
+  var dsp = useState(""), dispensado = dsp[0], setDispensado = dsp[1];
+  var ultimoLido = conf.ultimo;
+  useEffect(function(){
+    if(!ultimoLido || ultimoLido.tipo!=="fora") return;
+    var chave = ultimoLido.codigo+"|"+ultimoLido.em, vivo = true;
+    setInfo({chave:chave, lido:ultimoLido.codigo, est:"carregando"}); setDispensado("");
+    chamar("GET", "/representante/peca?cod="+encodeURIComponent(p.cod)+"&q="+encodeURIComponent(ultimoLido.codigo)).then(function(r){ if(vivo) setInfo({chave:chave, lido:ultimoLido.codigo, est:"ok", dados:r}); })
+      .catch(function(){ if(vivo) setInfo({chave:chave, lido:ultimoLido.codigo, est:"erro"}); });
+    return function(){ vivo = false; };
+  }, [ultimoLido && ultimoLido.em, ultimoLido && ultimoLido.tipo]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){
     var vivo = true; setCarga({est:"carregando", msg:"", conds:[]});
     chamar("GET", "/representante/condicionais?cod="+encodeURIComponent(p.cod)).then(function(r){
@@ -57,7 +69,7 @@ function ConfDevolucao(p){
   var ult = conf.ultimo;
   var aviso = !ult ? null : ult.tipo==="ok" ? ["#DCFCE7","#15803D","✓ Voltou · "+ult.codigo+" · "+descBonita(ult.desc)]
     : ult.tipo==="repetida" ? ["#FEF3C7","#92400E","Já conferida: "+ult.codigo+". Peça lida de novo, não conta."]
-    : ["#FEF3C7","#92400E","Peça "+ult.codigo+" não é destas condicionais. Fica só registrada."];
+    : null;
   if(carga.est==="carregando") return e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-3 text-center text-[13px] font-bold text-[#92400E]"},"Buscando as peças das condicionais na DevMaster...");
   if(carga.est!=="ok") return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"rounded-xl bg-[#FEE2E2] px-3 py-2 text-[13px] font-bold text-[#991B1B]"}, carga.msg),
@@ -95,6 +107,19 @@ function ConfDevolucao(p){
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças que não são destas condicionais ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),
     e("div",{className:CARD+" flex flex-col"},
       linha("Voltaram", voltaram+" peças", 0), linha("Não voltaram (vendidas)", vendidas+" peças", 1), linha("Valor do que não voltou", BR(valorVendido), 2)),
+    info && info.chave!==dispensado && (function(){
+      var dd = info.dados || {}, cod = dd.codigo || info.lido, hist = dd.historico || [], linhas = [];
+      if(info.est==="carregando") linhas.push("Procurando essa peça na DevMaster...");
+      else if(info.est==="erro") linhas.push("Não consegui consultar o histórico dessa peça. Ela fica registrada como peça de fora.");
+      else if(!dd.achou) linhas.push("Esse código não existe na DevMaster. Confira a etiqueta.");
+      else if(!hist.length) linhas.push("Não achei essa peça em nenhuma condicional dessa revendedora.");
+      else hist.slice(0, 3).forEach(function(h){ linhas.push((h.status==="aberta" ? "Está na condicional "+h.numero+" (aberta), que não foi marcada neste acerto." : "Já foi dela: condicional "+h.numero+" de "+dataBR(h.emissao)+" ("+h.status+"): "+h.enviada+" enviada, "+h.vendida+" vendida, "+h.devolvida+" devolvida.")); });
+      return e("div",{key:"alerta", className:"sticky bottom-2 z-10 flex flex-col gap-1 rounded-2xl bg-[#FEF3C7] px-3 py-2.5 shadow-lg ring-1 ring-[#F59E0B]"},
+        e("b",{className:"text-[13px] text-[#92400E]"}, "Peça "+cod+" não está nas condicionais marcadas"),
+        dd.desc && e("span",{className:"text-[12px] text-[#92400E]"}, descBonita(dd.desc)),
+        linhas.map(function(l, i){ return e("span",{key:i, className:"text-[12px] text-[#92400E]"}, l); }),
+        e("button",{type:"button", onClick:function(){ setDispensado(info.chave); }, className:"mt-1 h-9 rounded-xl bg-white text-[12.5px] font-bold text-[#92400E] ring-1 ring-[#F59E0B]"},"Entendi"));
+    })(),
     e("button",{onClick:function(){ p.aoSalvar({lidos:conf.lidos||{}, erros:conf.erros||[], hist:conf.hist||[], ultimo:null, resumo:{voltaram:voltaram, saiu:tot.pecas, vendidas:vendidas, valorVendido:Math.round(valorVendido*100)/100, conds:conds.map(function(c){ return c.numero; }), em:Date.now()}}); p.aoVoltar(); }, className:BTN},"Concluir e voltar ao acerto"));
 }
 
