@@ -111,16 +111,16 @@ function AvisoSemEspaco(p){
 }
 
 // CASCA DA CONTA DE REPRESENTANTE no iPhone (Marcus, 24/11/2026): o app ocupa a tela toda (viewport-fit=cover, só enquanto esta tela existe), a faixa do relógio/notch fica PRETA
-// (mesma cor do cabeçalho) e a faixa de baixo, onde fica a linha do iPhone, fica BRANCA. Em aparelho sem notch as duas faixas têm altura zero.
+// (mesma cor do cabeçalho) e a faixa de baixo, onde fica a linha do iPhone, fica do cinza do app (as bordas também). Em aparelho sem notch as duas faixas têm altura zero.
 function CascaRepresentante(){
   useEffect(function(){ var m = document.querySelector("meta[name=viewport]"), antes = m ? m.getAttribute("content") : null;
     if(m) m.setAttribute("content", String(antes||"width=device-width, initial-scale=1").replace(/,?s*viewport-fit=[a-z]+/, "")+", viewport-fit=cover");
     return function(){ if(m && antes!=null) m.setAttribute("content", antes); }; }, []);
-  return e("div",{className:"fixed inset-0 flex flex-col bg-white", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation"}},
-    e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%;background:#fff}"),
+  return e("div",{className:"fixed inset-0 flex flex-col", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation", background:"linear-gradient(to bottom, #0D0D0F 0, #0D0D0F 320px, #F2F3F5 320px)"}},   // as bordas (iPhone novo deixa uns pixels de cada lado) continuam a tela: preto no cabeçalho, cinza do app embaixo
+    e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%;background:#F2F3F5}"),
     e("div",{"aria-hidden":true, style:{flex:"none", height:"env(safe-area-inset-top, 0px)", background:"#0B0B0D"}}),
     e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet)),   // Sair da conta e Trocar foto ficam no menu do nome, no Início do app
-    e("div",{"aria-hidden":true, style:{flex:"none", height:"env(safe-area-inset-bottom, 0px)", background:"#fff"}}));
+    e("div",{"aria-hidden":true, style:{flex:"none", height:"env(safe-area-inset-bottom, 0px)", background:"#F2F3F5"}}));
 }
 
 function App(){

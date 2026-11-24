@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.189", data:"2026-11-24", titulo:"App da representante no iPhone: bordas e fundo continuam a tela", itens:[
+  {tipo:"correção", area:"App da representante", txt:"As bordas e a faixa de baixo não ficam mais brancas: continuam a tela (preto no cabeçalho, cinza do app embaixo)."}]},
  {v:"0.21.188", data:"2026-11-24", titulo:"Pagamentos: lançar e editar no padrão azul, Família por sócio", itens:[
   {tipo:"novo", area:"Financeiro › Pagamentos › Geral", txt:"Botão amarelo \"+ Lançar pagamento\" com a janela igual à Lançar recebimento (Empresa ou Sócios; o prestador da família já traz o sócio dono dele) e aviso de pagamento repetido."},
   {tipo:"novo", area:"Financeiro › Pagamentos › Geral", txt:"A janela Editar pagamento ganhou o padrão azul e mostra a venda da revendedora (valor de venda, comissão e acerto, da DevMaster)."},
