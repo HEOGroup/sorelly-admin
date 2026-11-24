@@ -25,6 +25,7 @@ import { LimiteAno } from "@/apps/montagem/pages/pf/Limite";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import { AcoesLanc, BotaoMini, COMPACTA } from "./Lancamentos";
 import { JanelaLancarPag } from "./JanelaLancarPag";
+import { BlocoPixConferencia } from "./PixConferenciaBloco";
 
 var COMP_SOBE = {};   // comprovantes já tentados nesta sessão (não repete)
 var tdn = TD+" text-right font-mono whitespace-nowrap";
@@ -650,7 +651,8 @@ function ResumoGeral(){
       (!tipoSel || ehFamTipo(tipoSel) || tipoSel==="Sócio") && subTitulo("Prestadores de serviços família"),
       (!tipoSel || ehFamTipo(tipoSel) || tipoSel==="Sócio") && tabela("p", visP, true, "Total prestadores e sócios", true),
       subTitulo("Sorelly + Família"),
-      tabelaSoma),
+      tabelaSoma,
+      e(BlocoPixConferencia,{c:c})),
     modalDet,
     modalComp,
     lancando && e(JanelaLancarPag,{key:"lanc-"+lancando, c:c, chave:lancando==="novo" ? "" : lancando, fechar:function(){ setLancando(null); }}));

@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.196", data:"2026-11-24", titulo:"Pix (conferência) saiu do menu e virou bloco no fim do Resumo geral", itens:[
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Resumo geral", txt:"A tabela com todos os Pix lançados e o aviso de duplicado agora fica no fim do Resumo geral, depois do total (bloco Pix lançados · conferência). A tela Pix (conferência) foi retirada do menu, das abas e do endereço."}]},
  {v:"0.21.195", data:"2026-11-24", titulo:"Conferência das peças: resumo das condicionais alinhado", itens:[
   {tipo:"melhoria", area:"App da representante", txt:"No resumo antes de liberar o kit, as condicionais viram uma tabela alinhada (condicional, modelos, peças e valor) com o total no rodapé. Nada quebra de linha, com 1, 2 ou 3 condicionais juntas."}]},
  {v:"0.21.194", data:"2026-11-24", titulo:"App da representante no iPhone: a tela cobre os dois lados", itens:[

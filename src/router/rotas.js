@@ -83,7 +83,6 @@ const montagem = {
     pagina("ff-configuracoes", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfConfig"),
     pagina("pf-resumo", () => import("@/apps/montagem/pages/pf/Resumo"), "AbaPfResumo"),
     pagina("pf-lancamento", () => import("@/apps/montagem/pages/pf/Lancamentos"), "AbaPfLanc"),
-    pagina("pf-pix-conferencia", () => import("@/apps/montagem/pages/pf/PixConferencia"), "AbaPfPix"),
     pagina("pf-negociacoes", () => import("@/apps/montagem/pages/pf/NegAbas"), "AbaPfNegAbas"),
     pagina("pf-maquininha", () => import("@/apps/montagem/pages/pf/Maquininha"), "AbaPfMaq"),
     pagina("pf-fornecedores", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfForn"),
