@@ -42,7 +42,8 @@ import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
-import { apiAtiva, chamar, repCodDaConta } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar, repCodDaConta, sair as sairDaConta } from "@/apps/montagem/lib/api";
+import { reduzirFoto } from "@/apps/montagem/lib/perfil";
 import { fotoPequena } from "@/apps/montagem/lib/comprovante";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -88,7 +89,9 @@ var STATUS_REP = {semvalor:"Na fila", pendente:"Na fila", ajuste:"Montando", mon
   montado:"Aguardando bipagem", bipando:"Bipando", bipado:"Pronto para retirar", retirado:"Retirado", condicional:"Condicional para retirar", precond:"Conferindo a condicional"};   // 05/11/2026 (Marcus): só o que importa para ela (fila, montando, bipagem, pronto, retirado); valor do kit e conferência são etapas internas
 // Totais REAIS da representante, vindos do app (05/11/2026): quantas revendedoras ela tem e quanto vendeu. Rota só da Diretoria (/api/representantes/painel); se falhar, as linhas não aparecem.
 var PAINEL_APP = null;
-function painelDoApp(){ if(!PAINEL_APP) PAINEL_APP = chamar("GET", "/representantes/painel").catch(function(){ PAINEL_APP = null; return null; }); return PAINEL_APP; }
+function painelDoApp(){
+  if(repCodDaConta()){ var cod0 = repCodDaConta(); return chamar("GET", "/representante/eu").then(function(j){ return j && j.painel ? {itens:[Object.assign({cod:cod0}, j.painel)]} : null; }).catch(function(){ return null; }); }   // conta dela: só os totais dela, pelo servidor (a rota da Diretoria é fechada para ela)
+  if(!PAINEL_APP) PAINEL_APP = chamar("GET", "/representantes/painel").catch(function(){ PAINEL_APP = null; return null; }); return PAINEL_APP; }
 function carteiraRep(s, rep, reais){
   var dm = function(dt){ return dt.toLocaleDateString("pt-BR",{day:"2-digit", month:"2-digit"}); };
   var dmISO = function(iso){ var p = (iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1] : ""; };
@@ -155,6 +158,8 @@ function AppRepresentante(p){
   var lvB = useState(""), buscaListagem = lvB[0], setBuscaListagem = lvB[1];
   var ep = useState(false), editandoPerfil = ep[0], setEditandoPerfil = ep[1];
   var re = useState(null), regEscolha = re[0], setRegEscolha = re[1]; // null = fechado, "multa"/"isenta" = caixinha aberta nessa escolha
+  var mcS = useState(false), menuConta = mcS[0], setMenuConta = mcS[1], ftS = useState(p.foto || ""), fotoRep = ftS[0], setFotoRep = ftS[1], fmS = useState(""), msgFoto = fmS[0], setMsgFoto = fmS[1];   // menu do nome (Trocar foto, Sair da conta) e a foto dela
+  useEffect(function(){ if(p.foto) setFotoRep(p.foto); }, [p.foto]);   // a foto chega do servidor depois de abrir a tela
   var rsT = useState(null), reais = rsT[0], setReais = rsT[1];   // carteira real da representante (DevMaster); null = carregando
   useEffect(function(){ if(!apiAtiva()){ setReais([]); return; } var vivo = true; setReais(null); listaReal(l.rep, codigoRep(s, l.rep)).then(function(x){ if(vivo) setReais((x && x.itens) || []); }); return function(){ vivo = false; }; }, [l.rep]);
   var pnS = useState(null), painelApp = pnS[0], setPainelApp = pnS[1];   // totais reais dela vindos do app
@@ -194,18 +199,16 @@ function AppRepresentante(p){
   // aceitou o kit novo: abre a conversa com a revendedora no SorellyChat já com a mensagem de apresentação enviada
   var aceitouKitNovo = function(n, texto){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(n.nome); if(!cr) return; var conv = api.openChannel(rv, "r_rep", [cr]); api.sendMessage({conv:conv, eu:cr, texto:texto}); efem({conversaSel:conv}); setTela("mensagens"); };
   var LISTA_INICIO = [
-    {tela:"mensagens", titulo:"SorellyChat", sub: chatNaoLidas ? chatNaoLidas+(chatNaoLidas===1 ? " mensagem não lida" : " mensagens não lidas") : "Fale com os setores da Sorelly", icone:"whats", cor:"#C9A13B", logo:true, ativo:true},
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
     {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
     {tela:"comissoes", titulo:"Comissões", sub: nPagNI ? "⚠ "+nPagNI+(nPagNI===1 ? " pagamento não identificado" : " pagamentos não identificados") : "Minhas comissões e quilometragem", icone:"coins", cor:"#CA8A04", ativo:true},
     {tela:"regrascom", titulo:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", icone:"book", cor:"#B8862B", ativo:true},
-    {tela:"desempenho", titulo:"Desempenho", sub:"Em breve", icone:"trofeu", cor:"#16A34A", ativo:false},
-    {tela:"indique", titulo:"Indique & Ganhe", sub:"Em breve", icone:"presente", cor:"#EAB308", ativo:false}];
+];   // Desempenho e Indique & Ganhe saíram do app (Marcus, 23/11/2026)
   var voltar = e("div",{className:"flex items-center gap-2"},
     e("button",{onClick:function(){setTela("inicio");}, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[12px] font-semibold text-amber-200"}, "‹ Início"),
     e("b",{className:"text-[16px]"}, TITULO[tela]));
-  var PCT_COMISSAO_REP_CARD = pctDaRep(comisEfetiva(s), l.rep)/100;   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
+  var PCT_COMISSAO_REP_CARD = (function(){ var c = comisEfetiva(s), reps = c.reps||[], x = reps.find(function(y){ return y.nome===l.rep; }) || reps.find(function(y){ return y.nome===String(l.rep||"").trim().split(/ +/)[0]; }); return (x && x.pct!=null ? x.pct : c.pctPadrao)/100; })();   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
   var LINHA_CARD = "border-[#E9DDBB]";
   var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };
   var cartao = function(r){
@@ -1209,48 +1212,52 @@ function AppRepresentante(p){
     e("defs",null, e("linearGradient",{id:"repFlame", x1:"0%", y1:"0%", x2:"0%", y2:"100%"},
       e("stop",{offset:"0%", stopColor:"#F1E4C6"}), e("stop",{offset:"55%", stopColor:"#E8B84B"}), e("stop",{offset:"100%", stopColor:"#B8862B"}))),
     e("path",{fill:"url(#repFlame)", d:"M12 0c2 4-3 6-3 10a3 3 0 0 0 6 0c0-1-.4-2-.4-2 2 1.5 3.4 4.2 3.4 7a6 6 0 1 1-12 0c0-6 4-8 6-15Z"}));
-  var headerInicio = e("div",{className:"relative -mx-4 -mt-2 overflow-hidden rounded-b-[34px] bg-[#0B0B0D] px-5 pb-5 pt-4"},
-    e("svg",{viewBox:"0 0 380 190", preserveAspectRatio:"none", className:"pointer-events-none absolute inset-0 h-full w-full", "aria-hidden":true},
+  var headerInicio = e("div",{className:"relative -mx-4 -mt-2 rounded-b-[34px] bg-[#0B0B0D] px-5 pb-5 pt-4"},
+    e("div",{className:"pointer-events-none absolute inset-0 overflow-hidden rounded-b-[34px]", "aria-hidden":true},
+    e("svg",{viewBox:"0 0 380 190", preserveAspectRatio:"none", className:"absolute inset-0 h-full w-full", style:{transform:"scaleX(-1)"}, "aria-hidden":true},   // ondas douradas viradas para o lado esquerdo (Marcus, 23/11/2026)
       e("defs",null, e("linearGradient",{id:"repGoldA", x1:"0%", y1:"0%", x2:"100%", y2:"100%"},
         e("stop",{offset:"0%", stopColor:"#B8862B", stopOpacity:0.9}),
         e("stop",{offset:"55%", stopColor:"#E8B84B", stopOpacity:0.5}),
         e("stop",{offset:"100%", stopColor:"#F1E4C6", stopOpacity:0}))),
       e("path",{d:"M80 -30 C 200 15 250 65 410 35 L 410 -30 Z", fill:"url(#repGoldA)"}),
-      e("path",{d:"M-30 140 C 90 95 220 175 410 105 L 410 210 L -30 210 Z", fill:"url(#repGoldA)", opacity:.35})),
-    e("div",{className:"relative flex items-center justify-between gap-2"},
-      e("div",{className:"flex min-w-0 items-center gap-2"},
-        e(Avatar,{nome:l.rep, i:0, className:"size-10 shrink-0 text-base"}),
+      e("path",{d:"M-30 140 C 90 95 220 175 410 105 L 410 210 L -30 210 Z", fill:"url(#repGoldA)", opacity:.35}))),
+    e("div",{className:"relative z-10 flex items-center justify-between gap-2"},
+      e("button",{type:"button", onClick:function(){ setMenuConta(!menuConta); }, "aria-label":"Abrir o menu da conta", "aria-expanded":menuConta, className:"flex min-w-0 cursor-pointer items-center gap-2 text-left outline-none"},
+        fotoRep ? e("span",{className:"block size-[4.5rem] shrink-0 rounded-full bg-cover bg-center", style:{backgroundImage:"url("+fotoRep+")"}}) : e(Avatar,{nome:l.rep, i:0, className:"size-[4.5rem] shrink-0 text-4xl"}),   // avatar grande: vai ser a foto da representante (Marcus, 23/11/2026)
         e("span",{className:"flex min-w-0 items-center gap-1"},
-          e("b",{className:"max-w-[8rem] text-[15px] font-bold leading-tight "+BR}, nomeBonito(l.rep)),
+          e("b",{className:"whitespace-nowrap text-[16px] font-bold leading-tight "+BR}, nomeBonito(l.rep)),
           e(Icon,{n:"chevrondown", s:12, className:"shrink-0 text-white/50"}))),
-      e("span",{className:"flex shrink-0 items-center gap-1.5"}, flameLogo, e("b",{className:"text-[12.5px] font-black tracking-[.25em] text-amber-200"},"SORELLY")),
-      e("button",{className:"relative grid size-9 shrink-0 place-items-center rounded-full bg-white/10"},
-        e(Icon,{n:"sino", s:15, className:BR}),
-        nAval>0 && e("span",{className:"absolute -right-1 -top-1 grid min-w-[1.1rem] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold "+BR}, nAval))),
-    e("div",{className:"relative mt-3 flex items-center gap-1.5"}, [
-      e(Icon,{key:"ic", n:"calendario", s:12, className:"shrink-0 text-white/40"}),
-      meses.map(function(m,i){ return e("button",{key:m, onClick:function(){setMes(i);},
-        className:"rounded-full px-2.5 py-1 text-[11px] font-semibold "+(mes===i ? "bg-amber-200 text-[#1B1409]" : "bg-white/8 "+BR)}, m+(i===0?" (atual)":"")); })]),
+      menuConta && e("div",{className:"fixed inset-0 z-40 cursor-default", onClick:function(){ setMenuConta(false); }}),
+      e("img",{src:"/logo-sorelly.png", alt:"Sorelly", draggable:false, className:"mr-4 h-20 w-auto shrink-0 select-none"})),   // a logo da Sorelly de verdade, no lado direito (Marcus, 23/11/2026)
+      menuConta && e("div",{className:"relative z-50 mt-2 ml-20 flex w-56 flex-col gap-1 rounded-2xl bg-white p-2 text-[#111827] shadow-[0_12px_32px_rgba(0,0,0,.45)] ring-1 ring-[#C9A13B]/40"},
+        e("p",{className:"px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-[.14em] text-[#8A6A12]"}, "Minha conta"),
+        repCodDaConta() && e("button",{type:"button", onClick:function(){ var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.onchange = function(){ var fl = inp.files && inp.files[0]; if(!fl) return; setMsgFoto("Enviando foto");
+            reduzirFoto(fl).then(function(url){ return chamar("PATCH", "/perfil/eu", {foto:url}).then(function(r){ setFotoRep((r.pessoa && r.pessoa.foto) || url); setMsgFoto(""); setMenuConta(false); }); }).catch(function(x){ setMsgFoto(x.message || "Não consegui trocar a foto."); }); }; inp.click(); }, className:"flex h-10 w-full cursor-pointer items-center gap-3 rounded-xl px-2 text-left text-[13px] font-semibold hover:bg-[#FBF5E3]"},
+          e("span",{className:"grid size-7 place-items-center rounded-lg bg-[#F6EBCB] text-[#8A6A12]"}, e(Icon,{n:"pencil", s:14})), "Trocar foto"),
+        repCodDaConta() && e("button",{type:"button", onClick:function(){ sairDaConta(); }, className:"flex h-10 w-full cursor-pointer items-center gap-3 rounded-xl px-2 text-left text-[13px] font-semibold hover:bg-[#FEE2E2]"},
+          e("span",{className:"grid size-7 place-items-center rounded-lg bg-[#FEE2E2] text-[#B91C1C]"}, e(Icon,{n:"logout", s:14})), "Sair da conta"),
+        !repCodDaConta() && e("p",{className:"px-2 pb-1 text-[12px] text-[#6B7280]"}, "Visualização da Diretoria: a foto e a saída são da conta dela."),
+        msgFoto && e("p",{className:"px-2 pb-1 text-[12px] font-semibold text-[#B45309]"}, msgFoto)),
     e("div",{className:"relative mt-3 flex flex-col gap-1.5"},
-      [{lb:"Vendido Total", v:BK(vendidoTotal), ic:"grafico", cor:"#F3D8A0"},
-        {lb:"Acerto Total", v:BK(acertoTotal), ic:"wallet", cor:"#C6DFF8"},
-        {lb:"Comissão Rep.", v:BK(comissaoRepTotal), ic:"coins", cor:"#C1EDD1"}].concat(painelApp ? [{lb:"Revendedoras no app", v:String(painelApp.revendedorasNoApp), ic:"users", cor:"#E9D5FF"}, {lb:"Vendido no app", v:painelApp.vendido===null ? "—" : BK(painelApp.vendido), ic:"grafico", cor:"#FDE68A"}] : []).map(function(m){
-        return e("div",{key:m.lb, className:"flex items-center justify-between gap-2 rounded-xl bg-white/8 px-3 py-2"},
+      [{lb:"Vendido Total", v:BK(painelApp && painelApp.vendido!=null ? painelApp.vendido : vendidoTotal), ic:"grafico", cor:"#F3D8A0"},
+        {lb:"Acerto Total", v:BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto : acertoTotal), ic:"wallet", cor:"#C6DFF8"},
+        {lb:"Comissão Rep.", v:BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto*PCT_COMISSAO_REP_CARD : comissaoRepTotal), ic:"coins", cor:"#C1EDD1"}].map(function(m){
+        return e("div",{key:m.lb, className:"flex items-center justify-between gap-2 rounded-2xl bg-white/8 px-3 py-2.5"},
           e("span",{className:"flex min-w-0 items-center gap-2"},
-            e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10", style:{color:m.cor}}, e(Icon,{n:m.ic, s:13, peso:"fill"})),
-            e("b",{className:"truncate text-[12.5px] font-semibold "+BR}, m.lb)),
-          e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13.5px] font-extrabold text-amber-200"}, m.v));
+            e("span",{className:"grid size-10 shrink-0 place-items-center rounded-xl", style:{color:m.cor, background:m.cor+"26", boxShadow:"inset 0 0 0 1px "+m.cor+"55"}}, e(Icon,{n:m.ic, s:22, peso:"duotone"})),
+            e("b",{className:"text-[13px] font-semibold "+BR}, m.lb)),
+          e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[16px] font-extrabold text-amber-200"}, m.v));
       })));
   // lista da tela inicial no MESMO desenho do app da revendedora (cartão compacto, ícone 32 px, título 13 px e legenda 11 px) — padronização de 29/10/2026
-  var listaInicio = e("div",{className:"mt-2.5 flex flex-col gap-2"}, LISTA_INICIO.map(function(m){
+  var listaInicio = e("div",{className:"mt-4 flex flex-col gap-3"}, LISTA_INICIO.map(function(m){
     var conteudo = [
-      e("span",{key:"ic", className:"grid size-8 shrink-0 place-items-center rounded-lg", style:m.logo ? {background:"#24180a"} : {background:m.cor+"1F", color:m.cor}}, m.logo ? e(LogoChat,{s:22}) : e(Icon,{n:m.icone, s:16, peso:"fill"})),
-      e("div",{key:"tx", className:"min-w-0 flex-1"}, e("b",{className:"block text-[13px] leading-tight text-[#111827]"}, m.titulo), e("span",{className:"block truncate text-[11px] leading-tight text-[#6B7280]"}, m.sub)),
-      m.ativo ? e(Icon,{key:"ch", n:"chevron", s:13, className:"shrink-0 text-[#9CA3AF]"})
+      e("span",{key:"ic", className:"grid size-10 shrink-0 place-items-center rounded-xl", style:m.logo ? {background:"#24180a"} : {background:m.cor+"1F", color:m.cor}}, m.logo ? e(LogoChat,{s:22}) : e(Icon,{n:m.icone, s:20, peso:"fill"})),
+      e("div",{key:"tx", className:"min-w-0 flex-1"}, e("b",{className:"block text-[16px] leading-tight text-[#111827]"}, m.titulo), e("span",{className:"block text-[13px] leading-tight text-[#6B7280]"}, m.sub)),
+      m.ativo ? e(Icon,{key:"ch", n:"chevron", s:16, className:"shrink-0 text-[#9CA3AF]"})
         : e("span",{key:"ch", className:"shrink-0 rounded-full bg-[#F3F4F6] px-1.5 py-px text-[10px] font-semibold text-[#9CA3AF]"}, "Em breve")];
     return m.ativo
-      ? e("button",{key:m.tela, onClick:function(){ if(m.tela==="mensagens") efem({conversaSel:null}); setTela(m.tela); }, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left shadow-sm active:scale-[.99]"}, conteudo)
-      : e("div",{key:m.tela, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 opacity-70"}, conteudo); }));
+      ? e("button",{key:m.tela, onClick:function(){ if(m.tela==="mensagens") efem({conversaSel:null}); setTela(m.tela); }, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left shadow-sm active:scale-[.99]"}, conteudo)
+      : e("div",{key:m.tela, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-3 rounded-2xl px-3 py-3 opacity-70"}, conteudo); }));
   // ── Tela de regras: as mesmas regras da calculadora, lidas da versão do kit (ou da vigente). Quem edita é o admin (Regras do consignado). ──
   var vr = versaoVigente(s) || versaoSel;
   var kitComRegraAntiga = versaoSel && vr && versaoSel.id!==vr.id;

@@ -331,8 +331,7 @@ function App(){
     // TRAVADO COMO APP (Marcus, 23/11/2026: "não pode quebrar para cima e para baixo"): a página não rola nem balança; só o miolo do app rola, o topo fica preso e o "Sair da conta" fica embaixo.
     e("div",{className:"fixed inset-0 flex flex-col bg-background", style:{height:"100dvh", overscrollBehavior:"none", touchAction:"manipulation"}},
       e("style",null,"html,body{overscroll-behavior:none;overflow:hidden;height:100%;position:fixed;width:100%}"),
-      e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet)),
-      e("button",{type:"button", onClick:function(){ srv.sair(); }, className:"mx-auto block h-8 shrink-0 px-4 text-[13px] font-semibold underline"}, "Sair da conta")),
+      e("main",{className:"mx-auto flex min-h-0 w-full max-w-[430px] flex-1 flex-col"}, e(Outlet))),   // Sair da conta e Trocar foto ficam no menu do nome, no Início do app
     e(Aviso));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)

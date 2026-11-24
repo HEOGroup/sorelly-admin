@@ -65,7 +65,7 @@ function podeLiberarExcecao(id){ return PODE_EXCECAO.indexOf(id)>=0; }
 var GRUPO_CONTA = {}, NOME_CONTA = {};
 function definirContaEquipe(id, grupo, nome){ if(id==null || isNaN(id)) return; if(grupo) GRUPO_CONTA[id] = grupo; else delete GRUPO_CONTA[id]; if(nome) NOME_CONTA[id] = nome; else delete NOME_CONTA[id]; }
 // Representantes que a Diretoria pode ver pelo seletor "Atuar como" (18/11/2026, Marcus: ver como a Vanessa sem sair da conta dele). Id virtual (a conta delas não tem pessoa); grupo representante = só as telas delas.
-var REPRESENTANTES_VER = [{id:9002, nome:"Marcus (Sorelly 02)", rep:"Marcus", cod:"02"}, {id:9001, nome:"Vanessa Alves Lapa", rep:"Vanessa Alves", cod:""}];   // cod = código do vendedor na DevMaster (Sorelly 02 = Marcus, 18/11/2026)
+var REPRESENTANTES_VER = [{id:9002, nome:"Marcus (Sorelly 02)", rep:"Marcus", cod:"02"}, {id:9001, nome:"Vanessa Alves Lapa", rep:"Vanessa Alves", cod:"9S"}];   // cod = código do vendedor na DevMaster (Sorelly 02 = Marcus, 18/11/2026)
 REPRESENTANTES_VER.forEach(function(p){ definirContaEquipe(p.id, "representante", p.nome); });
 function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : (NOME_CONTA[id] || "\u2014"); }
 function papelDe(id){

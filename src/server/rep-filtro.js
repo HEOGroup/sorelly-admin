@@ -8,7 +8,7 @@ import { consulta } from "./db.js";
 import { garantirTabela, versaoItens } from "./estado-itens.js";
 
 export const MODULOS_REP = ["rpo", "rpf", "inicio", "rc", "pag", "comis"];   // pag = pedidos de conta (Direcionar Pix): só os dos kits dela (src/server/rep-pag.js)
-export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante"];   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
+export const ROTAS_REP = ["/api/estado", "/api/auth/eu", "/api/saude", "/api/representante", "/api/perfil/eu"];   // /api/perfil/eu = a própria representante troca a foto dela (23/11/2026)   // /api/representante/* (revendedoras, condicionais, eu): cada rota confere o código dela (23/11/2026)
 export const rotaPermitidaRep = (caminho) => ROTAS_REP.some((p) => caminho === p || caminho.startsWith(p + "/"));
 
 const sem = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();

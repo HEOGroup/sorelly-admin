@@ -3406,3 +3406,7 @@ O Marcus decidiu que o Gasto por casa vai aparecer na Home da Família, então a
 - O Ranking virou **Top vendedoras** e as duas telas ficam no alto do menu de Encomendas e reposições (Top vendedoras, Premiação do mês). Top vendedoras = só para premiar: Top 20 do mês + Top 50 pelo acerto de 3 meses; nada de lista de acesso.
 - **Premiação do mês** = só o Top 10 do mês pelo VALOR DE ACERTO (soma do acerto_dm das linhas de venda; brinde, troca, indicação e prêmio não contam), com a foto e a descrição do prêmio ao lado. Campanha de novembro/2026 (artes do Instagram @sorellyoficial) em domain/premiacao-mes.js; mês novo = nova entrada + fotos em public/premiacao/AAAA-MM/.
 - Em aberto na campanha: data da divulgação, desempate (hoje: maior venda), se acertos de novembro feitos em dezembro entram, pagamento dos R$ 1.000 do 1º lugar, reserva do jantar.
+
+## 23/11/2026 · Início do app da representante
+- Marcus: topo com foto grande (V vira a foto), logo maior, menu ao tocar no nome (Trocar foto, Sair da conta), sem barra Sair no pé, sem meses/sino/Desempenho/Indique/SorellyChat.
+- Vendido Total e Acerto Total = valores do app das revendedoras (rota própria `/api/representante/eu`, campo `painel`, só a conta dela). Comissão Rep. = % da representante sobre o Acerto Total (Vanessa 10%).

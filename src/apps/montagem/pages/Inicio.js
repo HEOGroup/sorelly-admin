@@ -9,7 +9,7 @@ import { apiAtiva, chamar, ehAdmin, repCodDaConta, guardaNomeRep } from "@/apps/
 import { AppRepresentante } from "@/apps/montagem/mobile/representante";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
-import { ORDEM_SIT, SITUACOES, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
+import { ORDEM_SIT, SITUACOES, fotoDoServidor, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
 import { RecortarFoto } from "@/apps/montagem/components/recortar-foto";
 import { ABAS } from "@/apps/montagem/navigation/abas";
 import { primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
@@ -164,6 +164,7 @@ function AbaInicio(){
 function InicioRepresentante(){
   var cx = use(), s = cx.state, todas = s.listagens || [], cod = repCodDaConta();
   // CONTA REAL de representante (login dela): o servidor diz o nome que as telas usam (o do Agendamento) e as listagens já vêm só as dela.
+  usePerfil();   // a Diretoria vendo "Atuar como" recebe a foto da representante pela lista da equipe
   var qm = useState(null), quem = qm[0], setQuem = qm[1];
   useEffect(function(){ if(!cod) return; var vivo = true; chamar("GET", "/representante/eu").then(function(j){ guardaNomeRep(j.cod, j.nome); if(vivo) setQuem(j); }).catch(function(){ if(vivo) setQuem({cod:cod, nome:""}); }); return function(){ vivo = false; }; }, [cod]);
   // Diretoria vendo pelo seletor "Atuar como": a pessoa escolhida (REPRESENTANTES_VER)
@@ -172,7 +173,7 @@ function InicioRepresentante(){
   var dela = cod ? todas : todas.filter(function(x){ return String(x.rep||"").trim().split(/ +/)[0].toLowerCase()===pn; });
   var repNome = cod ? (quem.nome || (dela[0] && dela[0].rep) || "Representante") : (ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "));
   var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+(cod || s.usuario), rep:repNome, data:"", horario:"", retiradas:[]};
-  return e("div",{className:cod ? "flex min-h-0 w-full flex-1 flex-col" : "mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, semMoldura:cod ? "cheia" : true}));
+  return e("div",{className:cod ? "flex min-h-0 w-full flex-1 flex-col" : "mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, foto:cod ? (quem ? quem.foto : "") : (ver ? fotoDoServidor(ver.id) || "" : ""), semMoldura:cod ? "cheia" : true}));
 }
 function AbaInicioGeral(){ var cx = use(); return repCodDaConta() || grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
 export { AbaInicioGeral as AbaInicio };
