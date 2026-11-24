@@ -1,6 +1,6 @@
 // Sorelly Admin — mobile/leitor-camera.js
 // Leitor de código de barras pela câmera do celular, para a conferência das peças (Marcus, 24/11/2026: "precisa ter a câmera para bipar; se não bipar, digita o código").
-// Como lê: usa o leitor nativo do navegador (BarcodeDetector, Chrome/Android) e, onde ele não existe (Safari do iPhone), carrega a biblioteca @zxing/library só nessa hora.
+// Como lê: leitor nativo do navegador (BarcodeDetector, Chrome/Android) e, onde ele não existe (Safari do iPhone), o zxing-wasm (zxing-cpp compilado, bem mais rápido e firme que o zxing em JavaScript; gira a imagem sozinho, lê listras na vertical, e o arquivo .wasm baixa uma vez do jsdelivr).
 // O número lido é o código de barras da etiqueta (campo aaa_codbarras da DevMaster, ex.: 00032358); quem recebe (aoLer) acha a peça por ele.
 // 24/11/2026 (2): zoom 2x já ligado (da câmera, onde o aparelho deixa; senão digital), bip que toca de verdade, borda verde ao ler, e leitura só vale se vier igual em 2 quadros seguidos e com formato de código de peça.
 // Segurança do uso: a imagem NÃO sai do aparelho e nada é gravado; só o número lido sobe para a conferência. A câmera desliga ao fechar a tela.
@@ -37,7 +37,7 @@ function LeitorCamera(p){
   var ref = useRef(null), st = useState({est:"abrindo", msg:"", zoom:2, flash:0}), estado = st[0], setEstado = st[1];
   var lerRef = useRef(p.aoLer); lerRef.current = p.aoLer;
   useEffect(function(){
-    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 2;
+    var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 2, lanterna = false;
     function parar(){ vivo = false; if(timer) clearTimeout(timer); if(stream) stream.getTracks().forEach(function(t){ t.stop(); }); window.removeEventListener("pointerdown", audio); }
     window.addEventListener("pointerdown", audio); audio();
     (async function(){
@@ -50,12 +50,13 @@ function LeitorCamera(p){
       try {
         var tr = stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, adv = [];
         if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); digital = 1; }
+        if(cap.torch){ adv.push({torch:true}); lanterna = true; }
         if(cap.focusMode && cap.focusMode.indexOf("continuous") >= 0) adv.push({focusMode:"continuous"});
         if(adv.length) await tr.applyConstraints({advanced:adv});
       } catch(x){}
       v.srcObject = stream; v.setAttribute("playsinline", "true"); v.muted = true;
       try { await v.play(); } catch(x){}
-      var cv = document.createElement("canvas"), cvG = document.createElement("canvas"), volta = 0, detectarImg;
+      var cv = document.createElement("canvas"), cvG = document.createElement("canvas"), volta = 0, detectarImg, girar = true;
       try {
         if(window.BarcodeDetector){
           var sup = window.BarcodeDetector.getSupportedFormats ? await window.BarcodeDetector.getSupportedFormats() : FORMATOS;
@@ -64,37 +65,35 @@ function LeitorCamera(p){
         }
       } catch(x){ detectarImg = null; }
       if(!detectarImg){
-        var lib = await import("@zxing/library");
-        var hints = new Map();
-        hints.set(lib.DecodeHintType.POSSIBLE_FORMATS, [lib.BarcodeFormat.CODE_128, lib.BarcodeFormat.CODE_39, lib.BarcodeFormat.CODE_93, lib.BarcodeFormat.EAN_13, lib.BarcodeFormat.EAN_8, lib.BarcodeFormat.UPC_A, lib.BarcodeFormat.ITF, lib.BarcodeFormat.CODABAR]);
-        hints.set(lib.DecodeHintType.TRY_HARDER, true);
-        var leitor = new lib.MultiFormatReader(); leitor.setHints(hints);
-        detectarImg = async function(img){ try { return leitor.decode(new lib.BinaryBitmap(new lib.HybridBinarizer(new lib.HTMLCanvasElementLuminanceSource(img)))).getText(); } catch(x){ return ""; } };
+        var zx = await import("zxing-wasm/reader");
+        var opc = {formats:["Code128","EAN13","EAN8","UPCA"], tryHarder:true, tryRotate:true, tryDownscale:true, maxNumberOfSymbols:1};
+        detectarImg = async function(img){ var d = img.getContext("2d", {willReadFrequently:true}).getImageData(0, 0, img.width, img.height); var r = await zx.readBarcodes(d, opc); return r && r[0] ? String(r[0].text || "") : ""; };
+        girar = false;   // o zxing-wasm já tenta a imagem girada
       }
       // Cada quadro: recorta o centro (zoom digital) e lê como está; em quadros alternados lê girado 90 graus (a tag do colar tem as listras na vertical).
       var detectar = async function(){
         if(!v.videoWidth) return "";
         volta++;
-        var f = digital, w = Math.round(v.videoWidth / f), h = Math.round(v.videoHeight / f);
-        cv.width = w; cv.height = h;
-        cv.getContext("2d", {willReadFrequently:true}).drawImage(v, Math.round((v.videoWidth - w) / 2), Math.round((v.videoHeight - h) / 2), w, h, 0, 0, w, h);
+        var f = digital, w = Math.round(v.videoWidth / f), h = Math.round(v.videoHeight / f), k = Math.min(1, 1100 / w);   // k: reduz imagem grande para ler mais rápido
+        cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+        cv.getContext("2d", {willReadFrequently:true}).drawImage(v, Math.round((v.videoWidth - w) / 2), Math.round((v.videoHeight - h) / 2), w, h, 0, 0, cv.width, cv.height);
         var alvo = cv;
-        if(volta % 2 === 0){
-          cvG.width = h; cvG.height = w;
-          var g = cvG.getContext("2d", {willReadFrequently:true}); g.translate(h, 0); g.rotate(Math.PI / 2); g.drawImage(cv, 0, 0); alvo = cvG;
+        if(girar && volta % 2 === 0){
+          cvG.width = cv.height; cvG.height = cv.width;
+          var g = cvG.getContext("2d", {willReadFrequently:true}); g.translate(cv.height, 0); g.rotate(Math.PI / 2); g.drawImage(cv, 0, 0); alvo = cvG;
         }
         var r = await detectarImg(alvo);
         return String(r || "").trim().toUpperCase().replace(/\s+/g, "");
       };
       if(!vivo){ parar(); return; }
-      setEstado({est:"lendo", msg:"", zoom:digital, flash:0});
+      setEstado({est:"lendo", msg:"", zoom:digital, flash:0, luz:lanterna});
       var laco = async function(){
         if(!vivo) return;
         try {
           var cod = await detectar(), agora = Date.now();
           if(cod && valido(cod)){
-            // exige a mesma leitura em 2 quadros seguidos (tira leitura torta); depois o mesmo número só conta outra vez se sair da mira e voltar
-            if(cod === previo){
+            // uma leitura basta (Code128 tem dígito de controle); o mesmo número só conta outra vez se sair da mira e voltar
+            {
               if(cod !== ultimo.cod || agora - ultimo.ts > ENTRE_LEITURAS){
                 ultimo = {cod:cod, ts:agora}; avisar();
                 setEstado(function(x){ return Object.assign({}, x, {flash:agora}); });
@@ -102,10 +101,9 @@ function LeitorCamera(p){
                 lerRef.current(cod);
               } else ultimo.ts = agora;
             }
-            previo = cod;
           } else previo = "";
         } catch(x){}
-        if(vivo) timer = setTimeout(laco, 120);
+        if(vivo) timer = setTimeout(laco, 40);
       };
       laco();
     })();
@@ -117,7 +115,7 @@ function LeitorCamera(p){
       : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"4 / 3"}},
           e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
           e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 " + (estado.flash ? "border-[#22C55E]" : estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
-          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta · zoom 2x")),
+          e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, estado.est==="abrindo" ? "Abrindo a câmera..." : "Aponte para as listras da etiqueta · zoom 2x"+(estado.luz ? " · luz ligada" : "")+"")),
     e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera"));
 }
 
