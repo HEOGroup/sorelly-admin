@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.212", data:"2026-11-24", titulo:"Ficha Montar kit: observações em cima das categorias", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Montar kit", txt:"As observações da revendedora saíram do painel dela e ficam num painel próprio em cima de Categorias (segunda coluna), com rolagem se o texto for grande. A linha das respostas quebra de linha em vez de cortar o valor na borda."}]},
  {v:"0.21.211", data:"2026-11-24", titulo:"App da representante: erro numa tela não prende mais, e o rascunho volta só onde dá", itens:[
   {tipo:"correção", area:"App da representante", txt:"Se uma tela do app quebrar, aparece o botão Voltar ao início (com o código do erro), o rascunho do atendimento é apagado e o app não fica preso. O rascunho só volta para a tela do acerto se o kit de hoje ainda existe e o acerto ainda não foi registrado; senão volta na ficha da revendedora. Telas de regras não entram no rascunho, e a restauração não apaga mais o rascunho no mesmo instante."},
  ]},

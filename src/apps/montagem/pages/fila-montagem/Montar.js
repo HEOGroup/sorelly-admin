@@ -80,7 +80,7 @@ function RespostaB(p){
       return;
     }
     var val = l.vende!=null ? (l.vende ? (l.metal || "Vende") : "Não vende") : (l.metal || "");
-    cs.push(e("div",{key:"l"+i, className:"flex items-center justify-between gap-3 border-b "+LINHA2+" py-1.5 last:border-b-0"}, e("b",{className:G16}, l.rotulo), e("span",{className:G16+" font-semibold", style:{color:l.vende===false ? VERM2 : corMetal(l.metal)}}, val)));
+    cs.push(e("div",{key:"l"+i, className:"flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b "+LINHA2+" py-1.5 last:border-b-0"}, e("b",{className:G16}, l.rotulo), e("span",{className:G16+" min-w-0 text-right font-semibold", style:{color:l.vende===false ? VERM2 : corMetal(l.metal)}}, val)));
   });
   if(b.type==="letras") cs.push(e("div",{key:"n", className:"mt-2 text-[11px] "+MUT}, "Letras escolhidas: "+x.linhas.length+" de "+(b.maxLetters || 26)));
   return e("div",null, cs);
@@ -192,7 +192,6 @@ function MontarKit(p){
         vd && vd.prev && e(Def,{r:"Acerto previsto"}, dBr(vd.prev)),
         dinheiro && vd && (vapp!==null || vd.appMes) && e(Def,{r:vapp===null ? "Venda no app (mês)" : "Venda no app"}, brl(vapp!==null ? vapp : vd.appMes.total))),
       m && e("div",null, e(Rot,null, "Ouro e prata"), e(BarraOuro,{ouro:m.ouro})),
-      e("div",null, e(Rot,null, "Observações"), e("p",{className:"whitespace-pre-wrap text-[13px] leading-snug"}, obs)),
       e("div",{className:"mt-auto flex flex-col gap-2 pt-1"},
         inicio ? e("div",{className:"flex h-8 items-center justify-center rounded-lg border "+LINHA2+" bg-white text-[13px] font-semibold tabular-nums", style:{color:VERDE2}}, "Montando há "+relogio(sa[0]-Date.parse(inicio)))
                : e("button",{type:"button", onClick:iniciar, className:BTN}, "Iniciar montagem"),
@@ -219,12 +218,17 @@ function MontarKit(p){
       e("button",{type:"button", onClick:function(){ marca(b.key); if(!okSel && sel<blocos.length-1) vai(sel+1); }, "aria-pressed":okSel, title:okSel ? "Desmarcar este bloco" : "Marcar como montado e ir para a próxima categoria", className:okSel ? "flex h-8 w-full items-center justify-center rounded-lg border border-[#16a34a] bg-[#16a34a] text-[13px] font-semibold text-white hover:brightness-105" : BTNP}, okSel ? "✓ Montado (desmarcar)" : "Marcar como montado"),
       e("button",{type:"button", onClick:function(){ vai(sel+1); }, disabled:sel===blocos.length-1, className:BTN}, "Próxima ›")));
 
+  var temObs = !!String(pf.observations || "").trim();
+  var colCats = tem && e("div",{className:"flex min-h-0 min-w-0 flex-col gap-2"},
+    temObs && e(Painel,{t:"Observações", s:"da revendedora", cls:"max-h-[45%] shrink-0"}, e(Corpo,null, e("p",{className:"whitespace-pre-wrap text-[13px] leading-snug"}, obs))),
+    painelCats);
+
   var painelResp = tem && e(Painel,{t:"Respostas dela", s:b.title, cls:"lg:col-span-full xl:col-span-1"}, e(Corpo,null, e(RespostaB,{b:b, r:ans[b.key], ehAneis:ehAneis, aneis:aneis, pedidos:pedidos})));
 
   return e("div",{className:PAGINA_CHEIA+" [&_*]:!normal-case flex flex-col bg-[#c99b2b] p-2 xl:h-[calc(100vh-3.4rem)]"},
     aviso && e("div",{className:"mb-2 shrink-0 rounded-lg bg-[#fff4d6] px-3 py-1.5 text-[13px] text-[#141b2e]"}, aviso),
     e("div",{className:"grid min-h-0 flex-1 gap-2 lg:grid-cols-[18rem_14rem_minmax(0,1fr)] xl:grid-cols-[18.5rem_15rem_minmax(0,1fr)_21.5rem]"},
-      painelRev, painelCats, painelFotos, painelResp,
+      painelRev, colCats, painelFotos, painelResp,
       !tem && e("p",{className:"col-span-full text-center text-[13px]"}, temPrefs ? "Nenhum bloco ativo no formulário do app." : "Esta revendedora ainda não salvou preferências de kit. Dá para montar e concluir mesmo assim.")),
     szm[0] && e("div",{className:"fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4", onClick:function(){ szm[1](null); }}, e("img",{src:szm[0], alt:"Foto ampliada", style:{maxWidth:"92vw", maxHeight:"88vh", objectFit:"contain"}})),
     sj[0] && e(ConcluirMontagem,{kitId:p.kitId, dispatch:cx.dispatch, rev:{id:d.id, nome:d.nome}, temPrefs:temPrefs, inicio:inicio, equipe:equipe.dados, dinheiro:dinheiro,
