@@ -355,7 +355,6 @@ function AbaConsolidadoRep(){
         e("h1",{className:TITULO}, "Consolidado Representante"),
         e("p",{className:"text-[15px] text-muted-foreground"}, "Controle do que entrou: tudo que a representante preenche no app aparece aqui e fica pendente até trazer na empresa e receber o OK")),
       e("div",{className:"flex items-center gap-2"},
-        ver && e(Btn,{v:"secondary", ic:"grafico", onClick:function(){ d({type:"ABA", aba:"placar"}); }}, "Placar das representantes"),
         e("select",{value:mes, "aria-label":"Mês", className:SEL, onChange:function(ev){ setMes(ev.target.value); }}, meses.map(function(m){ return e("option",{key:m, value:m}, nomeMes(m)); })),
         ver && e(Btn,{v:"secondary", ic:"arquivo", disabled:!linhas.length, onClick:exportar}, "Exportar CSV"))),
     e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-3"}, e("div",{className:"md:col-span-1"}, e(FilaRetornos)), e("p",{className:"self-center rounded-xl bg-black/20 px-3 py-2 text-[12.5px] text-white/85 md:col-span-2"},"O kit entra na fila quando o agendamento dá o OK de recebimento (dinheiro e condicionais). Quem bipa o retorno dá o OK na coluna \"Retorno · bipar\"; a fila grande dispara alerta (30, 40... 100).")),

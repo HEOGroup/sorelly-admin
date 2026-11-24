@@ -87,7 +87,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
-  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]}
+  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep")]}
   // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
@@ -216,9 +216,8 @@ var SETORES = [
   {id:"pontual", nome:"Pontual", ic:"caixa", cor:"#C98B2C", menu:MENU_PONTUAL, semAbas:true, areas:[
     {nome:"Pontual", telas:[T("pontclientes","Clientes"), T("pontprecos","Tabelas de preço"), T("pontinad","Inadimplência"), T("pontposvenda","Pós-venda"), T("pontregras","Regras")]}]},   // admin do Valdir (empresa de banho), dados de demonstração; só a supervisão abre (06/11/2026)
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
-    {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
+    {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
-    {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
       T("consolidado"), T("regras"),
       T("prefkit","Preferências do kit"), T("filamont","Fila de montagem"), T("prodmont","Produtividade da montagem"),
@@ -283,7 +282,7 @@ var SETORES = [
   {id:"inadimplencia", nome:"Inadimplência", ic:"registro", cor:"#F97316", menu:MENU_INAD, semAbas:true, areas:[
     {nome:"Inadimplência", telas:[T("inaddiv","Dívidas"), T("inadcob","Cobrança do dia"), T("inadpag","Pagamentos"), T("inadser","Serasa"), T("inadkit","Kits em atraso"), T("inadrel","Relatórios"), T("inadreg","Regras")]},
     {nome:"Funcionários", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]},
-    {nome:"Representantes", telas:[T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]}]},
+    {nome:"Representantes", telas:[T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]}]},
   {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", menu:MENU_JURIDICO, semAbas:true, areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
     {nome:"Salas comerciais", telas:[B("Contratos de salas comerciais")]},

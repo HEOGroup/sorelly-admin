@@ -8,7 +8,6 @@ import { TabelaCrescimento } from "@/apps/montagem/components/tabela-crescimento
 import { GraficoColunasRevendedoras } from "@/apps/montagem/components/grafico-revendedoras";
 import { mesAberto, nomeMes, painelDe, proximoMes } from "@/apps/montagem/domain/agendamento";
 import { JANELAS_GRAFICO_REV, metaDoMes, MESES_LONGO, fatEfetivo, pontosRevendedoras, projetarAno, resumoMensalRevendedoras } from "@/apps/montagem/domain/financeiro";
-import { comprasDoMes, inadDoMes } from "@/apps/montagem/domain/inadimplencia-fin";
 import { resumoFinanceiro } from "@/apps/montagem/domain/resumo-financeiro";
 import { cnpjsDe, fiscalAtual, indicadoresFiscais, projecaoCnpj } from "@/apps/montagem/domain/cnpjs";
 import { REPRESENTANTES, funcionarios, resumoPessoas } from "@/apps/montagem/domain/pessoas";
@@ -105,19 +104,6 @@ function BlocoMini(p){
   return p.ir ? e("button",{onClick:p.ir, className:cls+" hover:bg-black/40"}, corpo) : e("div",{className:cls}, corpo);
 }
 
-// ── Inadimplência e compras internas do mês (valores de Financeiro → Inadimplência) ──
-function BlocoInadimp(p){
-  var s = p.s, ano = new Date().getFullYear(), mes = new Date().getMonth(), i = inadDoMes(s, ano, mes), c = comprasDoMes(s, ano, mes);
-  var falta = Math.max(0, i.divida-i.pago), pct = i.divida>0 ? i.pago/i.divida*100 : 0;
-  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"Inadimplência e compras internas · "+MESES_LONGO[mes].toLowerCase(), sub:"do dia 1 até hoje"},
-    e("div",{className:"grid grid-cols-1 gap-2 p-2 md:grid-cols-2"},
-      e(CaixaLinhas,{titulo:"Inadimplência"}, e(Linha,{ir:"inadfin", t:"Valor da dívida", v:BK(i.divida), cor:"text-destructive"}), e(Linha,{ir:"inadfin", t:"Já foi pago", v:BK(i.pago), cor:"text-success"}),
-        e(Linha,{ir:"inadfin", t:"Falta receber", v:BK(falta), cor:"text-warning", forte:true}), e("div",{className:"mt-1 h-1.5 overflow-hidden rounded-full bg-black/40"}, e("div",{className:"h-full rounded-full bg-primary", style:{width:Math.min(100,pct)+"%"}})),
-        e("span",{className:"text-[10.5px] text-white/65"}, Math.round(pct)+"% recuperado")),
-      e(CaixaLinhas,{titulo:"Compras de funcionários"}, e(Linha,{ir:"cfvisao", t:"Valor vendido", v:BK(c.vendido)}), e(Linha,{ir:"cfvisao", t:"Já foi pago", v:BK(c.pago), cor:"text-success"}),
-        e(Linha,{ir:"cfvisao", t:"Falta pagar", v:BK(Math.max(0, c.vendido-c.pago)), cor:"text-warning", forte:true}))));
-}
-
 // ── Blocos do meio da Visão geral (todos com BlocoBarra e o botão "Abrir ›" para a tela deles) ──
 var num = function(v){ return Math.round(v).toLocaleString("pt-BR"); };
 var neg = function(v){ return (v<0 ? "−" : "")+BK(Math.abs(v)); };
@@ -195,7 +181,7 @@ function BlocoBipagemRetorno(p){
     e("div",{className:"relative flex flex-col items-center px-14 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(alerta ? "text-white" : "bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]"), style:alerta ? {background:"linear-gradient(90deg, #7F1D1D, "+cor+")"} : undefined},
       e("h2",{className:"font-heading text-[15px] font-bold leading-tight"}, (alerta ? "⚠ " : "")+"Bipagem de retorno"),
       e("p",{className:"text-[11.5px] font-medium opacity-90"}, alerta ? "Passou de "+NIVEIS[nv]+": chame cadastro, Deysiane e encomendas para ajudar" : "kits que voltaram das representantes"),
-      e("button",{onClick:function(){ p.d({type:"ABA", aba:"controlekits"}); }, title:"Abrir a tela completa", className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
+      e("button",{onClick:function(){ p.d({type:"ABA", aba:"consrep"}); }, title:"Abrir o Consolidado dos representantes", className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
     e("div",{className:"grid grid-cols-[1fr_1.6fr] items-center gap-2 p-2"},
       e("div",{className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[20px] leading-none text-success"}, bipados), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/70"},"Bipados hoje")),
       e("div",{className:"flex flex-col items-center justify-center rounded-lg bg-black/35 px-2 py-1.5 text-center", style:alerta ? {boxShadow:"inset 0 0 0 1px "+cor+"99"} : undefined},
@@ -342,7 +328,7 @@ function AbaVisaoGeral(){
         e(BlocoBipagemRetorno,{s:s, d:d}),
         e(BlocoSolicitacoes,{s:s, d:d}),
         e(AtendimentoInternoVG,{s:s, d:d})),
-      e("div",null, e(BlocoInadimp,{s:s}), e(BlocoFaturamento,{s:s, d:d, janela:janelaFat})),
+      e("div",null, e(BlocoFaturamento,{s:s, d:d, janela:janelaFat})),
       e("div",null, e(BlocoPessoas,{s:s, d:d}), e(BlocoIlf,{s:s}))),
     e("div",{className:"mt-4 grid grid-cols-1 items-start gap-4"},
       e(BlocoBarra,{fixo:true, t:"Crescimento de revendedoras", sub:"escolha quantos dias mostrar — sempre com a projeção até dezembro junto"},

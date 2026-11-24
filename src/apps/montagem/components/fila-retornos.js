@@ -1,6 +1,6 @@
 // Sorelly Admin — components/fila-retornos.js
 // Fila dos kits que voltaram das representantes e ainda faltam bipar. Degraus 30, 40... 100: a cor vai do amarelo ao vermelho forte.
-// Usado no topo do Consolidado, na Visão geral e no Controle de kits.
+// SEM USO desde 23/11/2026: a única tela que usava esta peça (Controle de kits) foi retirada a pedido do Marcus.
 import { COR_NIVEL, NIVEIS, corDaFila, nivelDe, qtdFila } from "@/apps/montagem/domain/retornos";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";

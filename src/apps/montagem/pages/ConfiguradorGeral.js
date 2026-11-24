@@ -18,13 +18,13 @@ import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
 
-// Quem bipa os retornos dos kits: pessoas marcadas aqui abrem o Consolidado e o Controle de kits (sem ver os totais em dinheiro) e dão o OK na fila de bipagem.
+// Quem bipa os retornos dos kits: pessoas marcadas aqui abrem o Consolidado (sem ver os totais em dinheiro) e dão o OK na fila de bipagem.
 function ConfigQuemBipa(){
   var cx = use(), s = cx.state, d = cx.dispatch, ids = quemBipa(s, BIPA_RETORNO_PADRAO());
   var alterna = function(id){ d({type:"BIPA_RETORNO_SET", ids: ids.indexOf(id)>=0 ? ids.filter(function(x){ return x!==id; }) : ids.concat([id])}); };
   return e(BlocoBarra,{t:"Quem bipa os retornos", sub:ids.length+" pessoas · marque quem pode bipar os kits que voltam das representantes"},
     e("div",{className:"flex flex-col gap-3 p-3"},
-      e("p",{className:"text-[13px] text-white/80"},"Quem estiver marcado abre o Consolidado e o Controle de kits e dá o OK de cada retorno bipado. O resultado por representante e os totais em dinheiro continuam só da diretoria. Cadastro, encomendas e outros setores que ajudam entram aqui quando tiverem usuário."),
+      e("p",{className:"text-[13px] text-white/80"},"Quem estiver marcado abre o Consolidado e dá o OK de cada retorno bipado. O resultado por representante e os totais em dinheiro continuam só da diretoria. Cadastro, encomendas e outros setores que ajudam entram aqui quando tiverem usuário."),
       e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3"}, SETORES_LOGIN().filter(function(g){ return g[1].length; }).map(function(g){
         return e("div",{key:g[0], className:"flex flex-col gap-1.5 rounded-xl bg-black/25 p-2.5"},
           e("b",{className:"text-[11px] uppercase tracking-wide text-primary"}, PAPEL_LB[g[0]]),
