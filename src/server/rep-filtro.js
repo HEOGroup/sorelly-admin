@@ -46,7 +46,14 @@ export async function respostaItensRep(modulo, desde, repCod) {
   const lapides = modulo === "rpo" ? "left(chave,2) in ('l_','k_')" : "left(chave,2) = 'a_'";   // lápide não tem dono escrito: desce só a marca {_apagado}, sem dado nenhum
   const r = await consulta(`select chave, case when valor->>'_apagado' = 'true' then '{"_apagado":true}'::jsonb else valor end as valor, seq from sorelly.estado_item where modulo = $4 and ${seq} and ((${filtro}) or (valor->>'_apagado' = 'true' and ${lapides}))`, params);
   const conteudo = {}; let versao = desde || 0;
-  r.rows.forEach((l) => { conteudo[l.chave] = l.valor; versao = Math.max(versao, Number(l.seq)); });
+  // Mais de um cadastro: a tela dela compara o NOME ("Thalita Torazzi") para achar listagem, atendimento e kit dela. Os de CU e CV vêm com o nome do cadastro deles ("Thalita - SC"),
+  // então entregam para ela com o nome principal (só na resposta; o banco não muda aqui). Sem isso o servidor mandava e a tela escondia.
+  const nomePrincipal = cods.length > 1 ? await nomeDaRep(cods[0]) : "";
+  r.rows.forEach((l) => {
+    let v = l.valor;
+    if (nomePrincipal && v && typeof v === "object" && typeof v.rep === "string" && v.rep && v.rep !== nomePrincipal) v = Object.assign({}, v, { rep: nomePrincipal });
+    conteudo[l.chave] = v; versao = Math.max(versao, Number(l.seq));
+  });
   if (parcial && !r.rows.length) return { modulo, versao: Math.max(v, desde), igual: true };
   return { modulo, versao: Math.max(versao, v), conteudo, parcial };
 }
