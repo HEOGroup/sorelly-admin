@@ -152,7 +152,7 @@ function AppRepresentante(p){
   var mso = useState(false), mostrarSolicitar = mso[0], setMostrarSolicitar = mso[1];
   var nlA = useState(false), novaListagemAberta = nlA[0], setNovaListagemAberta = nlA[1];
   var lgS = useState({t:"lista", v:"lista", mes:null, dia:null}), lgSub = lgS[0], setLgSub = lgS[1];   // Listagens: lista | dia | excluir | nova (mobile/listagens-rep.js)   // formulário "Nova listagem" (aba Listagens e tela da revendedora)
-  var agA = useState(false), agendarAberto = agA[0], setAgendarAberto = agA[1], auA = useState(false), autoAg = auA[0], setAutoAg = auA[1];   // autoAg: criou a listagem dentro do Agendar; a revendedora entra nela sozinha (Thainá, 24/11/2026: "não está salvando")
+  var agA = useState(false), agendarAberto = agA[0], setAgendarAberto = agA[1], auA = useState(false), autoAg = auA[0], setAutoAg = auA[1], saS = useState(false), semAg = saS[0], setSemAg = saS[1], saA = useState(false), abrirSemAg = saA[0], setAbrirSemAg = saA[1];   // semAg: criou o atendimento de hoje sem agendamento; abrirSemAg: abrir a calculadora quando o kit existir   // autoAg: criou a listagem dentro do Agendar; a revendedora entra nela sozinha (Thainá, 24/11/2026: "não está salvando")
   var agF = useState({data:"", hora:""}), agendaForm = agF[0], setAgendaForm = agF[1];
   var tpA = useState("acerto_kit"), tipoAgenda = tpA[0], setTipoAgenda = tpA[1];   // Agendar atendimento: acerto + kit ou reposição (05/11/2026, Marcus)
   var lvA = useState(""), lidVista = lvA[0], setLidVista = lvA[1];
@@ -257,7 +257,7 @@ function AppRepresentante(p){
     var lidUse = opts.lid || (lPed && lPed.id), lUse = s.listagens.find(function(x){return x.id===lidUse;});
     if(!lUse || !sel) return;
     var conds = SEM_KIT[tipo] ? [String(13000 + sel.rev.length*97 + sel.rev.charCodeAt(0)).padStart(6,"0")] : [];
-    d({type:"ADD_KIT", lid:lUse.id, rev:sel.rev, bairro:sel.bairro||"", vendas: tipo==="reposicao" ? [] : sel.vendas, prio:false, atrasado:false, tipoKit:tipo, conds:conds, fone:sel.fone, cod:sel.cod, hora:(opts.hora!==undefined?opts.hora:sel.hora)||null, porApp:true, porRep:true});   // porRep: o reducer trava prazo e 1 listagem por dia (09/11/2026)
+    d({type:"ADD_KIT", lid:lUse.id, rev:sel.rev, bairro:sel.bairro||"", vendas: tipo==="reposicao" ? [] : sel.vendas, prio:false, atrasado:false, tipoKit:tipo, conds:conds, fone:sel.fone, cod:sel.cod, hora:(opts.hora!==undefined?opts.hora:sel.hora)||null, porApp:true, porRep:true, semAgendamento:!!opts.semAgendamento, porRepNome:l.rep});   // porRep: o reducer trava prazo e 1 listagem por dia (09/11/2026)
     if(!opts.ficarNaTela) setTela("revs"); };
   var kitSel = sel && sel.hoje ? s.kits.find(function(k){return k.id===sel.id;}) : null;
   // As 2 vendas anteriores da revendedora vêm do SISTEMA (a representante não digita nem consegue puxar na hora). Quando a listagem vier da DevMaster, o kit traz `vendasAnt` = [mais nova, mais antiga]; na demonstração usa os meses anteriores da carteira.
@@ -1096,6 +1096,9 @@ function AppRepresentante(p){
   var reposCheia = reposSemana>=limiteReposSemana;
   var listagensNaData = sel && agendaForm.data ?s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada && x.data===agendaForm.data;}) : [];
   useEffect(function(){ if(!autoAg) return; if(listagensNaData.length>0){ setAutoAg(false); if(!(tipoAgenda==="reposicao" && reposCheia)){ pedir(tipoAgenda, {lid:listagensNaData[0].id, hora:agendaForm.hora||null, ficarNaTela:true}); setAgendarAberto(false); } return; } var tm = setTimeout(function(){ setAutoAg(false); }, 4000); return function(){ clearTimeout(tm); }; }, [autoAg, listagensNaData.length]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ if(!semAg) return; var hojeI = isoDia(new Date()), lh = s.listagens.find(function(x){ return x.rep===l.rep && x.data===hojeI && !x.fechada; });
+    if(lh){ setSemAg(false); setAbrirSemAg(true); pedir("acerto_kit", {lid:lh.id, hora:new Date().toTimeString().slice(0,5), ficarNaTela:true, semAgendamento:true}); return; }
+    var tm = setTimeout(function(){ setSemAg(false); }, 4000); return function(){ clearTimeout(tm); }; }, [semAg, s.listagens.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   var blocoAgendaForm = sel && agendarAberto && e("div",{className:"flex flex-col gap-2 rounded-2xl border "+LINHA_CARD+" bg-white p-3 shadow-sm"},
       e("div",{className:"flex gap-2"},
         e("input",{type:"date", value:agendaForm.data, onChange:function(ev){setAgendaForm(Object.assign({}, agendaForm, {data:ev.target.value}));},
@@ -1179,9 +1182,14 @@ function AppRepresentante(p){
         e("span",{className:"grid size-8 shrink-0 place-items-center rounded-xl", style:{background:op.cor+"1F", color:op.cor}}, e(Icon,{n:op.icone, s:15})),
         e("span",{className:"min-w-0 flex-1 leading-tight"}, op.lb),
         e("span",{className:"shrink-0 text-[11px] font-bold "+(on?"text-[#8A6A12]":"text-[#6B7280]")}, on ? "Situação dela" : "Não se aplica")); }));
+  var acertoSemAgenda = function(){ var hojeI = isoDia(new Date()), lh = s.listagens.find(function(x){ return x.rep===l.rep && x.data===hojeI && !x.fechada; });
+    if(!lh){ var m = new Date(); var hh = String(m.getHours()).padStart(2,"0")+":"+(m.getMinutes()<30 ? "00" : "30"); d({type:"CRIAR_LISTAGEM", rep:l.rep, destino:"Curitiba", viagem:false, horario:hh, data:hojeI, porRep:true, semKit:true, semAgendamento:true}); }
+    setSemAg(true); };
+  var botaoSemAgenda = sel && !sel.hoje && !sel.realizado && e("button",{type:"button", onClick:acertoSemAgenda, className:"h-8 w-full rounded-xl text-[13px] font-extrabold "+ouro}, "Acerto sem agendamento");
+  useEffect(function(){ if(!abrirSemAg || !sel || !sel.hoje || !kitSel || !kitSel.semAgendamento) return; setAbrirSemAg(false); opcoesAtendimento[0].onClick(); }, [abrirSemAg, sel && sel.hoje, kitSel && kitSel.id]);   // eslint-disable-line react-hooks/exhaustive-deps
   var linhaAtendimento = sel && e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"grid grid-cols-2 gap-2"}, botaoAgendar, botaoRealizar),
-    blocoAgendaForm, painelRealizar);
+    botaoSemAgenda, blocoAgendaForm, painelRealizar);
   var botaoPedidoData = sel && !sel.realizado && e("button",{onClick:function(){ setTela("pedidodata"); }, className:"h-8 w-full rounded-xl border border-[#C9A13B]/50 bg-white text-[11px] font-extrabold text-[#8A6A12]"}, "Alterar data do acerto");
   // Pré-acerto: a representante preenche antes (remarcações e dias de atraso); no acerto chegam travados
   var botaoPreAcerto = sel && sel.hoje && kitSel && !jaAcertado && !soRepos && !soKitNovo && e("button",{onClick:function(){ setTela("preacerto"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-xl border border-[#C9A13B]/50 bg-white text-[11px] font-extrabold text-[#8A6A12]"},

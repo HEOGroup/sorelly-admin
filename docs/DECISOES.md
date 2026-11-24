@@ -3524,3 +3524,6 @@ Pedido do Lucas: relatório simples com a data de vencimento e o valor das parce
 
 ## 24/11/2026 · Kit apoio bolsinhas (MP0063)
 - Marcus: o kit apoio é o produto MP0063 (500 em estoque, R$ 10,00, sem comissão) que vem na condicional. O app lê pela DevMaster (só leitura, `?produto=MP0063`) e mostra o bloco só quando há MP0063; a representante marca vendidos (pacote aberto = vendido) e o que voltou sem extravio. Soma só no valor a pagar, fora de venda líquida, faixa, comissão, brinde, taxa e meta. Preço em `domain/kit-apoio.js`.
+
+## 24/11/2026 · Acerto sem agendamento (app da representante)
+- Marcus: a representante precisa poder fazer acerto sem ter agendamento. Botão cria o atendimento de hoje sem prazo, marcado `semAgendamento` (listagem e kit, com hora e quem criou). Falta: selo no Consolidado e decidir como a Montagem trata esse kit.
