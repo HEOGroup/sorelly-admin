@@ -20,7 +20,7 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { BotaoMini, COMPACTA } from "./Lancamentos";
 import { PointPainel } from "./Point";
 import { PainelPontual } from "./Resumo";
-import { CARD, COR, Campo, Chip, Modal, TD, Tile, Txt, aviso, brl, dbr, opc, th, usePf } from "./ui";
+import { CARD, COR, Campo, Chip, Modal, Sel, TD, Tile, Txt, aviso, brl, dbr, opc, th, usePf } from "./ui";
 
 // ---------- pequenas peças de desenho ----------
 // mesmo visual da tela Lançamento de pagamentos (Marcus, 20/11/2026): blocos colados na largura toda, letra e linha finas, faixa de escolha dentro do bloco
@@ -314,6 +314,7 @@ function AbaPfNeg(props){
       campo("Buscar", e("input",{type:"search", value:fBusca, onChange:function(ev){ setFBusca(ev.target.value); }, placeholder:"Nome, tipo, valor...", "aria-label":"Buscar fornecedor", className:"h-[18px] w-44 rounded border border-white/25 bg-white/10 px-1 text-center text-[10px] text-white placeholder:text-white/70 outline-none"})),   // padrao-ok: letra de 10 px da barra de filtros (Marcus, 21/11/2026)
       campo("Tipo", menuMini([["todos", "Todos"], ["Banho", "Banho"], ["Bruto", "Bruto"], ["Material gráfico", "Material gráfico"], ["Sistema", "Sistema"], ["Tintas", "Tintas"], ["Prestador", "Prestador"]], fTipo, setFTipo, "Tipo")),
       campo("Situação", menuMini([["aberto", "Em aberto"], ["semparcela", "Sem parcela"], ["quitado", "Quitados"], ["encerrado", "Encerrados"], ["todos", "Todos"]], fSit, setFSit, "Situação")),
+      ed && e(BotaoMini,{principal:true, onClick:function(){ setPed(Object.assign(pedidoNovo(pf, fId), {escolherForn:true})); }}, "+ Lançar pedido"),   // pedido ou negociação nova direto do resumo (Lucas, 24/11/2026)
       props && props.abasEl);
     resumo = e(BlocoBarra,{t:"Fornecedores", semBarra:true},
       filtrosR,
@@ -450,7 +451,10 @@ function JanelaPedido(p){
     .map(function(o){ return {v:String(o.nota).trim(), t:String(o.nota).trim()+" · "+normForn(o.forn)+(o.romaneio ? " · romaneio "+o.romaneio : "")+" · "+brl(o.valor || 0)+(o.status ? " · "+o.status : ""), forn:normForn(o.forn)}; });
   if(notaAtual && !opNotas.some(function(o){ return o.v===notaAtual; })) opNotas.unshift({v:notaAtual, t:notaAtual, forn:""});
   var linhasPed = [
-    Cel("r1", "Fornecedor", e("b",null, fo ? fo.nome : "---")),
+    Cel("r1", "Fornecedor", novoPed && ped.escolherForn   // botão "Lançar pedido" da barra de cima (Lucas, 24/11/2026): o fornecedor é escolhido aqui
+      ? e(Sel,{value:String(ped.fornId), label:"Fornecedor", className:"w-full", onChange:function(v){ p.setPed(Object.assign(pedidoNovo(pf, parseInt(v)), {escolherForn:true, data:ped.data, numero:ped.numero, ref:ped.ref, descricao:ped.descricao})); }},
+          pf.fornecedores.slice().sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(f){ return e("option",{key:f.id, value:String(f.id)}, f.nome); }))
+      : e("b",null, fo ? fo.nome : "---")),
     Cel("r2", ehBanho(pf, ped.fornId) ? "Fatura" : "Nº do pedido", e(Txt,{value:ped.numero, ph:ehBanho(pf, ped.fornId) ? "Ex.: 13782" : "Ex.: 1416", label:"Nº do pedido", onChange:function(v){ upd({numero:v}); }})),
     Cel("r3", "Data do pedido", e(DataCal,{value:ped.data, label:"Data do pedido", onChange:function(v){ upd({data:v}); }})),
     Cel("r4", "CNPJ (quem paga)", e(Sl,{value:ped.cnpj, label:"CNPJ", onChange:function(v){ upd({cnpj:v}); }}, CNPJS.map(function(k){ var cc = cnpjDoPedido(k); return e("option",{key:k, value:k}, cc ? cc.cnpj : k); }))),

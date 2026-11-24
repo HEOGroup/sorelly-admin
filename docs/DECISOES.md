@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Negociações: Lançar pedido no resumo)
+- Pedido do Lucas: "nessa tela tenha aonde lançar pedido/negociações novas" (/financeiro/pf-negociacoes). Botão "+ Lançar pedido" na barra de filtros do resumo de fornecedores (só quem edita). Abre a mesma `JanelaPedido`, com `escolherForn`: o fornecedor vira uma lista (em ordem alfabética); trocar o fornecedor refaz a regra e as propostas dele e mantém data, número, referência e descrição. O botão antigo do bloco Pedidos (com o fornecedor aberto) continua.
+
 ## 23/11/2026 (Marcus: Acessos e senhas igual à Contas a pagar; Atividades e Dados excluídas)
 - Pedido do Marcus: aplicar 100% o visual da Contas a pagar (azul) na tela Acessos e senhas e excluir Atividades e Dados. Tela nova: `pages/MarcusAcessos.js`. O setor Marcus ficou com Acessos e senhas e Progresso.
 

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.163", data:"2026-11-24", titulo:"Negociações: botão Lançar pedido no resumo", itens:[
+  {tipo:"melhoria", area:"Financeiro → Negociações", txt:"A barra de cima do resumo de fornecedores ganhou o botão + Lançar pedido. Ele abre a mesma janela de pedido, e nela o fornecedor é escolhido numa lista (antes só dava para lançar depois de abrir um fornecedor)."}
+ ]},
  {v:"0.21.134b", data:"2026-11-23", titulo:"Pix (conferência): todos os Pix lançados, com aviso de duplicado", itens:[
   {tipo:"novo", area:"Financeiro › Pagamentos › Pix (conferência)", txt:"Tela nova com todos os Pix lançados em Pagamentos a fornecedores, filtro e ordem em cada coluna, e aviso de duplicado provável (mesmo fornecedor, data, valor e revendedora)."},
   {tipo:"novo", area:"Financeiro › Pagamentos › Pix (conferência)", txt:"Quem confere os pagamentos apaga o duplicado na própria linha. A tela diz qual dos dois apagar."}]},
