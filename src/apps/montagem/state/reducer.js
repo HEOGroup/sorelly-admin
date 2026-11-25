@@ -113,6 +113,29 @@ function sincMqBanho(s){
     if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
   return sx;
 }
+// CARTÃO NA MAQUININHA ÚNICA (Getnet da Pontual) cai sozinho na Maquininha Banho (Lucas, 25/11/2026: "independente se passou por escolha de conta ou foi automático, preciso que caia no sistema").
+// O Direcionar já lançava o cartão que passa por ele; o que a regra "Maquininha única: já pago" resolvia sozinha ficava de fora. Chave origemPix "LF:<lançamento>#<linha>" (não duplica).
+// Não lança o que já foi lançado à mão (mesma revendedora, valor até R$ 0,15 de diferença e até 3 dias) nem o que é de antes de novembro/2026.
+var MQ_UNICA_DESDE = "2026-11-01";
+function sincMaqUnica(s){
+  if(!s.pf || !Array.isArray(s.pf.mqPassadas) || !Array.isArray(s.lancFin)) return s;
+  var nmQ = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }, prim = function(t){ return nmQ(t).split(/\s+/)[0]; };
+  var diasQ = function(a, b){ return Math.abs((Date.parse(a+"T12:00:00")-Date.parse(b+"T12:00:00"))/864e5); };
+  var feitas = {}; s.pf.mqPassadas.forEach(function(p){ if(p.origemPix) feitas[p.origemPix] = 1; });
+  var itens = [];
+  s.lancFin.forEach(function(x){ if(!x || x.cancelado || /\bteste\b/i.test(x.nome||"")) return; /* lançamento de teste não entra */ (x.linhas||[]).forEach(function(l, li){
+    if(l.auto!=="Maquininha única: já pago" || l.isento || !(l.valor>0) || (l.forma!=="credito" && l.forma!=="debito")) return;
+    if(l.enviada===false || (l.partes||[]).some(function(q){ return q.pend; })) return;   // linha alterada e ainda pendente (não enviada) espera
+    var chave = "LF:"+x.id+"#"+(l.pid || li); if(feitas[chave]) return;
+    var data = /^\d{4}-\d{2}-\d{2}$/.test(l.data||"") ? l.data : dataLocalDe(x.finalizadoTs || x.enviadoTs); if(data<MQ_UNICA_DESDE) return;
+    var manual = s.pf.mqPassadas.some(function(p){ return !p.origemPix && prim(p.rev)===prim(x.nome) && Math.abs(p.valor-l.valor)<=0.15 && diasQ(p.data, data)<=3; }); if(manual) return;
+    var pt = (l.partes||[])[0] || {};
+    itens.push({origemPix:chave, lf:x.origem==="rep" && l.pid ? {repId:x.id, pid:l.pid} : x.internoId ? {internoId:x.internoId, li:li, k:0} : null, rev:x.nome, valor:l.valor, data:data, via:"maquininha", conta:pt.descricao||"",
+      band:pt.band||"", parc:pt.parc || (l.forma==="debito" ? "DÉBITO" : "")}); }); });
+  if(!itens.length) return s;
+  var r = pfReduz(s, {op:"pix_dir", itens:[], mq:itens});
+  return r.patch && r.patch.pf ? Object.assign({}, s, {pf:r.patch.pf}) : s;
+}
 function sincCompFornecedor(s){
   s = sincMqBanho(s);
   if(!s.pf || !(s.pf.lancamentos||[]).some(function(l){ return l.aguardaComp && l.lf; })) return s;
@@ -1592,4 +1615,6 @@ function reducer(s, a){
   }
 }
 
-export { reducer };
+// depois de qualquer ação: mudou o Controle de pagamentos, o cartão da maquininha única vai para a Maquininha Banho (sincMaqUnica)
+function reducerComSinc(s, a){ var n = reducer(s, a); return n && s && n!==s && n.lancFin!==s.lancFin && n.pf ? sincMaqUnica(n) : n; }
+export { reducerComSinc as reducer, sincMaqUnica };

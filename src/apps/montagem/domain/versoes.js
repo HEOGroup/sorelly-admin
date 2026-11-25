@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.228", data:"2026-11-25", titulo:"Maquininha Banho: todo cartão da Getnet da Pontual entra sozinho", itens:[
+  {tipo:"correção", area:"Financeiro → Maquininha Banho", txt:"Cartão (crédito ou débito) que a regra Maquininha única resolvia sozinha não entrava na Maquininha Banho; só o que passava pelo Direcionar entrava. Agora todo cartão da Getnet da Pontual entra sozinho, com bandeira e parcelas do comprovante (sem elas, A informar). Não entra o que já foi lançado à mão, o que é de antes de novembro, linha pendente e lançamento de teste."},
+  {tipo:"correção", area:"Dados de 25/11/2026", txt:"Lançados na Maquininha Banho os 8 cartões que faltavam (R$ 6.595,90): Isabella, Eduarda, Bruna dos Santos, Kettlyn, Emanuelle, Caroline de Oliveira, Bianka e Camila Bonato."}]},
  {v:"0.21.227", data:"2026-11-25", titulo:"Direcionar: Pix do sócio na conta de um prestador dele volta a ser lançado", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix → PIX revendedoras e Prestadores", txt:"Pix confirmado para um sócio, mas na conta de um prestador dele (ex.: Marcus · Conta Rebel Mode), não era lançado em lugar nenhum. Agora entra em PIX revendedoras, no cartão do sócio, com a conta do prestador, e o pago do prestador sai sozinho em Prestadores (igual ao Anotar PIX). Reabrir o Pix retira os dois."},
   {tipo:"correção", area:"Dados de 25/11/2026", txt:"Lançados os que tinham ficado de fora: Franciele (R$ 519,20 Marcus · Rebel Mode e R$ 1.000,00 Anamaria · Greicy Anamaria), Pix da Nathaly para a Pontual (R$ 1.296,00) e dois links de R$ 184,00 (Tatiane e Andressa) na Maquininha Banho."}]},

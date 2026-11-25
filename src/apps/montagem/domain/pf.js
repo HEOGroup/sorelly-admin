@@ -1167,7 +1167,7 @@ function pfReduz(s, a){
       // cartão ou link direcionado ao fornecedor da maquininha (23/11/2026, Lucas): vira passada na Maquininha Banho; bandeira e parcela ficam "A informar" para o financeiro completar
       var nMq = 0; (a.mq||[]).forEach(function(it){ if(!it.origemPix || !(it.valor>0) || !DATA_OK.test(it.data||"") || pf.mqPassadas.some(function(x){ return x.origemPix===it.origemPix; })) return;
         var tx = String(it.conta||"").toLowerCase(), marca = tx.indexOf("cielo")>=0 ? "Cielo" : "Getnet", mesMq = it.data.slice(0,7), antesMq = mqSomaPassadas(pf, mesMq);
-        pf.mqPassadas.push({id:pf.seq.mqP++, data:it.data, rev:String(it.rev||"").trim()||"Direcionar", valor:r2(it.valor), band:"A informar", parc:"A informar", maq:it.via==="link" ? "Link de pagamento "+marca : marca, origemPix:it.origemPix, lf:it.lf||null});
+        pf.mqPassadas.push({id:pf.seq.mqP++, data:it.data, rev:String(it.rev||"").trim()||"Direcionar", valor:r2(it.valor), band:it.band||"A informar", parc:it.parc||"A informar", maq:it.via==="link" ? "Link de pagamento "+marca : marca, origemPix:it.origemPix, lf:it.lf||null});
         mqSincronizarBruto(pf, mesMq, antesMq); nMq++; });
       if(!nNovos && !nMq) return recusa("");
       return ok([nNovos ? nNovos+" Pix virou(aram) pagamento de fornecedor · falta o comprovante" : "", nMq ? nMq+" cartão(ões) lançado(s) na Maquininha Banho" : ""].filter(Boolean).join(" · ")); }

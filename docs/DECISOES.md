@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Maquininha Banho: todo cartão da Pontual entra sozinho, Lucas)
+- **Lucas: "independente se passou por escolha de conta ou foi automático, preciso que caia no sistema; confira esses que foram diretos e corrija".**
+- **Causa:** a regra "Maquininha única" (px.maquininha, Getnet da Pontual) marcava o cartão como pago sem passar pelo Direcionar, e só o Direcionar lançava na Maquininha Banho.
+- **Decidido:** depois de qualquer ação que mexe no Controle de pagamentos, `sincMaqUnica` (state/reducer.js) lança na Maquininha Banho o cartão resolvido pela Maquininha única (chave `LF:<lançamento>#<linha>`, não duplica). Bandeira e parcelas vêm do comprovante; débito = DÉBITO; sem informação = A informar. Fica fora: já lançado à mão (mesma revendedora, até R$ 0,15 e 3 dias), antes de 01/11/2026, linha pendente (não enviada) e lançamento de teste.
+- **Lançados nos dados reais (8, R$ 6.595,90):** Isabella Costacurta Bernardi R$ 814,00 (06/11), Eduarda Cristine Portella R$ 1.975,20 (14/11), Bruna dos Santos R$ 569,60 (16/11), Kettlyn Prado Guedes R$ 188,90 (19/11), Emanuelle Santos de Oliveira R$ 416,40, Caroline de Oliveira e Silva R$ 504,80, Bianka dos Santos Sutil R$ 1.005,00 (23/11) e Camila Bonato Rebeque R$ 1.122,00 (24/11). Ficaram fora: Paula R$ 10,85 (linha pendente, não enviada), Vini Teste (teste) e Amanda Ribeiro, Jaqueline Neves e Rúbia Falcão (outubro, Cielo, antes da regra).
+
 ## 25/11/2026 (Direcionar: Pix do sócio na conta de prestador; Pontual na Maquininha Banho, Lucas)
 - **Lucas: "corrija esse erro lançando automaticamente e verifique se houve algum desses valores lançados no Direcionar e não aparece na parte dos sócios"; "todos da Pontual lançados corretamente na Maquininha Banho".**
 - **Causa:** destino Sócio (Família) + conta de prestador do sócio caía entre as duas regras (a de 23/11 tirava de PIX revendedoras e a de 18/11 só lançava repasse quando o destino era o próprio prestador). Resultado: o Pix não ia para lugar nenhum.
