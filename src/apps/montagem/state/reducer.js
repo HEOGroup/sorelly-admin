@@ -316,6 +316,7 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
+      if(a.chave==="nav") return Object.assign({}, s, a.conteudo);   // módulo nav (25/11/2026): cada chave do banco é uma chave do estado (o que antes ficava só no navegador)
       if(a.chave==="mr") return Object.assign({}, s, {mr:Object.assign({}, s.mr, a.conteudo)});   // Marketing › Relatório diário: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="sg") return Object.assign({}, s, {sg:Object.assign({}, s.sg, a.conteudo)});   // PGR e PCMSO: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="jp") return Object.assign({}, s, {jp:Object.assign({}, s.jp, a.conteudo)});   // Pagamento em joias: o servidor manda só o que mudou; aqui só junta

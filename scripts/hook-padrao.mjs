@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DOC, REGRAS, conferirLinhas, conferirPecaTabela, conferirTelaTravada, ehTela } from "./padrao-regras.mjs";
+import { DOC, REGRAS, conferirLinhas, conferirNavegador, conferirPecaTabela, conferirTelaTravada, ehCodigo, ehTela } from "./padrao-regras.mjs";
 
 var modo = process.argv[2], entrada = {};
 try{ entrada = JSON.parse(readFileSync(0, "utf8") || "{}"); }catch(x){}
@@ -32,6 +32,14 @@ if(modo==="pre"){
   saida({hookSpecificOutput:{hookEventName:"PreToolUse", additionalContext:REGRAS}});
 }
 if(modo==="checar"){
+  // trava do navegador (25/11/2026): vale para TODO arquivo do src, não só tela
+  if(ehCodigo(arquivo) && !ehTela(arquivo) && existsSync(arquivo)){
+    var lnN = [];
+    try{ execFileSync("git", ["ls-files", "--error-unmatch", arquivo], {stdio:"ignore"}); execFileSync("git", ["diff", "HEAD", "-U0", "--", arquivo], {encoding:"utf8", maxBuffer:64*1024*1024}).split("\n").forEach(function(l){ if(l[0]==="+" && l.slice(0, 3)!=="+++") lnN.push(l.slice(1)); }); }
+    catch(x){ lnN = readFileSync(arquivo, "utf8").split("\n"); }
+    var errN = conferirNavegador(arquivo, lnN);
+    if(errN.length){ process.stderr.write("FORA DA REGRA em " + arquivo + ":\n- " + errN.slice(0, 10).join("\n- ") + "\n"); process.exit(2); }
+  }
   if(!ehTela(arquivo) || !existsSync(arquivo)) process.exit(0);
   var linhas = [], novo = false, conteudo = readFileSync(arquivo, "utf8");
   try{
@@ -39,7 +47,7 @@ if(modo==="checar"){
     var d = execFileSync("git", ["diff", "HEAD", "-U0", "--", arquivo], {encoding:"utf8", maxBuffer:64*1024*1024});
     d.split("\n").forEach(function(l){ if(l[0]==="+" && l.slice(0, 3)!=="+++") linhas.push(l.slice(1)); });
   }catch(x){ linhas = conteudo.split("\n"); novo = true; }   // arquivo novo: confere tudo
-  var erros = conferirLinhas(arquivo, linhas, {arquivoNovo:novo, conteudo:conteudo, aoEditar:true}).concat(conferirPecaTabela(arquivo, conteudo), conferirTelaTravada(arquivo, conteudo));   // 2g: a peça de tabela precisa ter o topo dourado
+  var erros = conferirLinhas(arquivo, linhas, {arquivoNovo:novo, conteudo:conteudo, aoEditar:true}).concat(conferirPecaTabela(arquivo, conteudo), conferirTelaTravada(arquivo, conteudo), conferirNavegador(arquivo, linhas));   // 2g: a peça de tabela precisa ter o topo dourado
   if(erros.length){ process.stderr.write("FORA DO PADRÃO em " + arquivo + " (" + DOC + "). Corrija antes de seguir (exceção só com `padrao-ok` na linha e o Marcus de acordo):\n- " + erros.slice(0, 10).join("\n- ") + (erros.length > 10 ? "\n- … e mais " + (erros.length - 10) : "") + "\n"); process.exit(2); }
   process.exit(0);
 }

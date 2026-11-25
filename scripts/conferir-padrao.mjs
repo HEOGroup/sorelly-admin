@@ -7,7 +7,7 @@
 // Sai com 1 quando acha erro (o CI fica vermelho).
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { DOC, PECAS_TABELA, TELAS_TRAVADAS, conferirLinhas, conferirPecaTabela, conferirTelaTravada, contarExcecoes, ehTela } from "./padrao-regras.mjs";
+import { DOC, PECAS_TABELA, TELAS_TRAVADAS, conferirLinhas, conferirNavegador, conferirPecaTabela, conferirTelaTravada, contarExcecoes, ehCodigo, ehTela } from "./padrao-regras.mjs";
 
 var args = process.argv.slice(2), relatorio = args.indexOf("--relatorio") >= 0, tudo = args.indexOf("--tudo") >= 0 || relatorio;
 var iBase = args.indexOf("--base"), base = iBase >= 0 ? args[iBase + 1] : "";
@@ -58,9 +58,18 @@ TELAS_TRAVADAS.forEach(function(f){
 });
 arquivos.forEach(function(f){
   var info = porArquivo[f];
-  var erros = conferirLinhas(f, info.linhas, {arquivoNovo:info.novo, conteudo:info.linhas.join("\n"), antes:info.antes, inteiro:info.inteiro});
+  var erros = conferirLinhas(f, info.linhas, {arquivoNovo:info.novo, conteudo:info.linhas.join("\n"), antes:info.antes, inteiro:info.inteiro}).concat(conferirNavegador(f, info.linhas));
   if(erros.length){ total += erros.length; resultado.push({f:f, erros:erros}); }
 });
+// TRAVA DO NAVEGADOR (25/11/2026) nos arquivos do src que não são tela (domain, lib, state, server): linha nova ou mexida que grava no navegador reprova
+if(!tudo){ (function(){
+  var bN = descobrirBase(); if(!bN) return;
+  var outros = git(["diff", "--name-only", bN, "--", "src"]).split("\n").filter(function(f){ return ehCodigo(f) && !ehTela(f); });
+  try{ git(["ls-files", "--others", "--exclude-standard", "src"]).split("\n").filter(function(f){ return ehCodigo(f) && !ehTela(f); }).forEach(function(f){ if(outros.indexOf(f)<0) outros.push(f); }); }catch(x){}
+  outros.forEach(function(f){ var ln = [];
+    try{ var dif = git(["diff", "-U0", bN, "--", f]); if(dif.trim()) dif.split("\n").forEach(function(l){ if(l[0]==="+" && l.slice(0, 3)!=="+++") ln.push(l.slice(1)); }); else ln = readFileSync(f, "utf8").split("\n"); }catch(x){ return; }
+    var er = conferirNavegador(f, ln); if(er.length){ total += er.length; resultado.push({f:f, erros:er}); } });
+})(); }
 // EXCEÇÕES (padrao-ok), 25/11/2026: a linha com padrao-ok escapa de TODAS as regras. O conferidor não reprova, mas passa a mostrar quantas existem no que foi conferido, para a exceção não crescer escondida.
 var exc = {total:0, semMotivo:0, arquivos:[]};
 arquivos.forEach(function(f){ var c = contarExcecoes(porArquivo[f].linhas); if(c.total){ exc.total += c.total; exc.semMotivo += c.semMotivo; exc.arquivos.push([c.total, f]); } });

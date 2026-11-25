@@ -104,6 +104,20 @@ function AvisoOutraJanela(p){
     e("button",{onClick:p.fechar, className:"h-8 shrink-0 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground hover:opacity-90"},"Entendi"));
 }
 
+// SEM CONEXÃO COM O BANCO (25/11/2026, Nickolas: "sempre banco de dados, nunca no navegador"): nada é guardado no navegador, então sem conexão a tela fica BLOQUEADA
+// (para ninguém lançar algo que se perderia). Some sozinha quando a conexão volta; "Tentar de novo" pergunta ao servidor na hora.
+function BloqueioSemConexao(){
+  var st = useState(false), sem = st[0];
+  useEffect(function(){ var f = function(ev){ st[1](!ev.detail); }; window.addEventListener("sorelly-conexao", f); return function(){ window.removeEventListener("sorelly-conexao", f); }; }, []);
+  if(!sem) return null;
+  var tentar = function(){ fetch("/api/saude", {cache:"no-store"}).then(function(r){ if(r.ok) st[1](false); }, function(){}); };
+  return e("div",{role:"alertdialog", "aria-label":"Sem conexão com o banco de dados", className:"fixed inset-0 z-[2147482000] grid place-items-center bg-black/80 p-4"},
+    e("div",{className:"flex max-w-md flex-col items-center gap-3 rounded-lg border-2 border-red-500/70 bg-card p-4 text-center text-[13px] text-white"},
+      e("b",null,"Sem conexão com o banco de dados"),
+      e("span",null,"Nada fica guardado neste computador. Para não perder o que for feito, o sistema fica parado até a conexão voltar."),
+      e("button",{onClick:tentar, className:"h-8 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground hover:opacity-90"},"Tentar de novo")));
+}
+
 function AvisoSemEspaco(p){
   if(!p.on) return null;
   var temCopia = false; try{ temCopia = !!localStorage.getItem("sorelly_copia_antes_servidor"); }catch(x){}
@@ -345,7 +359,7 @@ function App(){
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
-    e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
+    e(Aviso), e(BloqueioSemConexao), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
   // CONTA DE REPRESENTANTE (23/11/2026, Marcus: "100% a visão do app somente"): sem menu e sem as barras do Admin; só o app dela na tela inteira e o Sair.
   if(srv.repCodDaConta()) return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     // TRAVADO COMO APP (Marcus, 23/11/2026: "não pode quebrar para cima e para baixo"): a página não rola nem balança; só o miolo do app rola, o topo fica preso e o "Sair da conta" fica embaixo.
@@ -419,7 +433,7 @@ function App(){
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet,{context: aba==="entradasetor" ? {entrada: entradaSt ? {nome:entradaSt.nome.replace(/\n/g," "), cor:entradaSt.cor, grupos:gruposDaEntrada(entradaSt), abrir:abrirMenu} : null} : undefined}))),
-    e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
+    e(Aviso), e(BloqueioSemConexao), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     visao!=="pontual" && chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar

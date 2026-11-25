@@ -9,7 +9,7 @@ import { diff, aplicar } from "@/apps/montagem/lib/estado-patch";
 import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad", "mod", "rc", "jp", "mr", "sg", "cpe", "dpc", "comis"];   // comis = comissões das representantes (23/11/2026): percentuais, datas, gasolina, km e os pagamentos lançados pelo Financeiro; antes ficava só no navegador de quem lançou   // cpe = Contas a pagar (baixas, CNPJ trocado, marca Empresa/Família, contas à mão) e dpc = configuração do Direcionar (contas fixas das representantes, regras, valor fora do normal): passaram a ficar no servidor em 18/11/2026; antes cada pessoa só via o que ela mesma lançava   // jp = Pagamento em joias (17/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026   // cpe = Contas a pagar (baixas, CNPJ trocado, marca Empresa/Família, contas à mão) e dpc = configuração do Direcionar (contas fixas das representantes, regras, valor fora do normal): passaram a ficar no servidor em 18/11/2026; antes cada pessoa só via o que ela mesma lançava   // jp = Pagamento em joias (17/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
+var PADRAO = ["nav", "rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad", "mod", "rc", "jp", "mr", "sg", "cpe", "dpc", "comis"];   // comis = comissões das representantes (23/11/2026): percentuais, datas, gasolina, km e os pagamentos lançados pelo Financeiro; antes ficava só no navegador de quem lançou   // cpe = Contas a pagar (baixas, CNPJ trocado, marca Empresa/Família, contas à mão) e dpc = configuração do Direcionar (contas fixas das representantes, regras, valor fora do normal): passaram a ficar no servidor em 18/11/2026; antes cada pessoa só via o que ela mesma lançava   // jp = Pagamento em joias (17/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026   // cpe = Contas a pagar (baixas, CNPJ trocado, marca Empresa/Família, contas à mão) e dpc = configuração do Direcionar (contas fixas das representantes, regras, valor fora do normal): passaram a ficar no servidor em 18/11/2026; antes cada pessoa só via o que ela mesma lançava   // jp = Pagamento em joias (17/11/2026)   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
 var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas", "comissaoFunc"], sc:["saldosContas"], rc:["prataRev"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct", "contasPrevDia"]};   // contasPrevDia = total de contas do mês como estava em cada dia (Marcus, 23/11/2026). fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 // pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
@@ -41,7 +41,22 @@ function fatiaFc(s){
 var SIG_IN = new WeakMap(), N_IN = 0;
 function sigInad(s){ if(!s.inad) return ""; var i = SIG_IN.get(s.inad); if(i===undefined){ i = ++N_IN; SIG_IN.set(s.inad, i); } return "inad#"+i; }
 function sigFc(s){ if(!s.fc) return ""; var i = SIG_FC.get(s.fc); if(i===undefined){ i = ++N_FC; SIG_FC.set(s.fc, i); } return "fc#"+i; }
-var fatia = function(s, c){ if(c==="cpe") return fatiaCpe(s); if(c==="dpc") return fatiaDpc(s); if(c==="fc") return fatiaFc(s); if(c==="inad") return inadFatia(s.inad); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
+// MÓDULO "nav" (25/11/2026, Nickolas: "sempre banco de dados, nunca no navegador"): TUDO o que ainda não tinha módulo e ficava só no navegador
+// (atendimentos antigos, perfis, alertas, regras do consignado, formas de pagamento, autorizações, rotina, folders, cfg...). Uma chave do banco por chave do estado.
+// Ficam de fora: o que já tem módulo próprio, o estado da TELA (aba aberta, usuário...) e o que é do aparelho/da pessoa (FORA_DO_NAV, vai para as preferências na fase 4).
+var TELA = ["aba", "celular", "telaCel", "abertas", "kitAberto", "filtroReg", "aviso", "intAbas", "intSel", "visao", "logado", "usuario"];
+var FORA_DO_NAV = ["dp", "visaoMenu", "bipadora", "filaNivel", "filaSimulada", "breveNome", "confBip", "errosBipagem"];   // dp: a fila vai por "pag" e a configuração por "dpc"
+var OUTRAS = null, NAV_KEYS = [];
+function chavesDeOutros(){ if(!OUTRAS){ OUTRAS = {}; PADRAO.forEach(function(c){ if(c==="nav") return; (ESPELHO[c] || [c]).forEach(function(k){ OUTRAS[k] = 1; }); }); ["lancFin", "acertosConsignado", "internosSrv"].forEach(function(k){ OUTRAS[k] = 1; }); } return OUTRAS; }
+function fatiaNav(s){ var o = {}, fora = chavesDeOutros(); Object.keys(s || {}).forEach(function(k){ var v = s[k]; if(fora[k] || TELA.indexOf(k)>=0 || FORA_DO_NAV.indexOf(k)>=0 || v===undefined || typeof v==="function") return; o[k] = v; }); NAV_KEYS = Object.keys(o); return o; }
+// primeira leitura do "nav" neste navegador: o que o banco tem vale, MAS item de lista (com id) que só existe aqui é mantido e sobe (nada criado aqui depois da cópia de segurança se perde)
+function juntaPrimeira(srv, local){
+  if(!Array.isArray(srv) || !Array.isArray(local) || !local.some(function(x){ return x && x.id!==undefined; })) return srv;
+  var ids = {}; srv.forEach(function(x){ if(x && x.id!==undefined) ids[String(x.id)] = 1; });
+  var so = local.filter(function(x){ return x && x.id!==undefined && !ids[String(x.id)]; });
+  return so.length ? srv.concat(so) : srv;
+}
+var fatia = function(s, c){ if(c==="nav") return fatiaNav(s); if(c==="cpe") return fatiaCpe(s); if(c==="dpc") return fatiaDpc(s); if(c==="fc") return fatiaFc(s); if(c==="inad") return inadFatia(s.inad); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
@@ -72,7 +87,7 @@ function chavesNoServidor(){
   if(!apiAtiva() || !token()) return [];
   var lista = Object.assign({}, noServidor);
   try { var p = (localStorage.getItem(CHAVE_NO_SERVIDOR) || "").split("|"); if(p[0]===chaveSessao() && p[1]) p[1].split(",").forEach(function(k){ lista[k] = 1; }); } catch(x){}
-  var out = []; Object.keys(lista).forEach(function(c){ if(FICAM_NO_NAVEGADOR.indexOf(c)>=0) return; (ESPELHO[c] || [c]).forEach(function(k){ out.push(k); }); }); return out;
+  var out = []; Object.keys(lista).forEach(function(c){ if(FICAM_NO_NAVEGADOR.indexOf(c)>=0) return; if(c==="nav"){ NAV_KEYS.forEach(function(k){ out.push(k); }); return; } (ESPELHO[c] || [c]).forEach(function(k){ out.push(k); }); }); return out;
 }
 // NAVEGADOR LEVE (25/11/2026, Nickolas): pagamentos (s.lancFin) e acertos (s.acertosConsignado) têm as FOTOS dos comprovantes e as ASSINATURAS e enchiam o navegador (~6 MB).
 // Cada item que o banco já confirmou (igual ao que está lá, SNAPS = a última versão vista/enviada de cada chave) NÃO é mais guardado no navegador: ao abrir, vem do banco.
@@ -129,6 +144,7 @@ function useSyncModulos(s, d){
       Object.keys(r.conteudo||{}).forEach(function(k){
         var v = r.conteudo[k], j = json(v), base = m.snaps[k], lj = json(local[k]);
         m.snaps[k] = j;
+        if(chave==="nav" && !m.pronto) v = juntaPrimeira(v, local[k]);   // módulo nav: na 1ª leitura, item que só existe aqui fica e sobe
         if(lj===j) return;
         // MUDANÇA AINDA NÃO ENVIADA (11/11/2026): a tela mexeu nesta chave e ainda não mandou. Antes o que vinha do servidor trocava tudo e o lançamento sumia.
         // Agora a mudança local é reaplicada em cima do que veio (a diferença entre a base e o que a tela tem) e segue para o servidor no próximo envio.
@@ -210,4 +226,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC, soNaoConfirmados };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC, soNaoConfirmados, FORA_DO_NAV, TELA as TELA_DO_ESTADO };

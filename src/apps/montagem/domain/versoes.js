@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.231", data:"2026-11-25", titulo:"Sempre no banco, nunca no navegador", itens:[
+  {tipo:"melhoria", area:"Sistema · dados", txt:"Tudo o que ficava só no navegador de cada computador (atendimentos antigos, perfis das revendedoras, alertas, regras do consignado, formas de pagamento, autorizações, rotina e outros) agora fica no banco de dados. Todos os computadores veem a mesma coisa. As 5 contas de Pix que estavam só em um navegador foram incluídas."},
+  {tipo:"melhoria", area:"Sistema · sem conexão", txt:"Sem conexão com o banco, a tela fica bloqueada com o aviso Sem conexão com o banco de dados e o botão Tentar de novo. Nada é guardado no navegador enquanto isso."},
+  {tipo:"regra", area:"Sistema · trava", txt:"Trava nova: código novo ou mexido que grava no navegador é reprovado na hora e no CI. Só a chave de login fica no navegador."}
+ ]},
  {v:"0.21.230", data:"2026-11-25", titulo:"Representantes: comprovante obrigatório para finalizar o acerto; nome da cliente nos lançamentos do Pix", itens:[
   {tipo:"correção", area:"App da representante → Acerto", txt:"Todo pagamento com conta pedida ao Financeiro (Pix, link, cartão) precisa do comprovante para Confirmar acerto, mesmo quando o pedido ainda não carregou no celular (antes passava). Comprovante anexado que não chegou ao Financeiro é reenviado ao confirmar. O registro do acerto também recusa pagamento sem comprovante."},
   {tipo:"correção", area:"Financeiro → Direcionar Pix → Conferência de pagamentos, Maquininha Banho e Prestadores", txt:"Pix de acerto de representante entra com o nome da cliente (revendedora), não mais Representante X."}]},

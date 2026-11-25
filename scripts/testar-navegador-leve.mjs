@@ -40,5 +40,16 @@ t("sem nada confirmado (sem internet / sem login): guarda tudo", S.soNaoConfirma
 const antes = j(st).length, depois = j(leve).length;
 t("o que vai para o navegador encolhe (fotos e assinaturas do banco saem)", depois<antes*0.7, antes+" → "+depois);
 
+console.log("3. Módulo nav: o que ficava só no navegador vai para o banco");
+{
+  const est = { aba:"inicio", usuario:16, visaoMenu:"admin", lancFin:[], acertosConsignado:[], rh:{}, internos:[{ id:"i1" }], perfisRev:{ Ana:{} }, regrasConsignado:{ atualId:"r1" }, dp:{ pix:[] } };
+  const nv = S.fatiaDoModulo(est, "nav");
+  t("vão para o nav: atendimentos, perfis, regras", !!nv.internos && !!nv.perfisRev && !!nv.regrasConsignado);
+  t("não vão: tela (aba, usuário), preferência da pessoa (visaoMenu), o que já tem módulo (rh, pagamentos, acertos, Direcionar)", !("aba" in nv) && !("usuario" in nv) && !("visaoMenu" in nv) && !("rh" in nv) && !("lancFin" in nv) && !("acertosConsignado" in nv) && !("dp" in nv));
+  const R2 = await jiti.import("@/apps/montagem/state/reducer");
+  const depois = R2.reducer({ aba:"inicio", internos:[], perfisRev:{} }, { type:"SYNC_MODULO", chave:"nav", conteudo:{ internos:[{ id:"i9" }], perfisRev:{ Bia:{} } } });
+  t("o que vem do banco entra direto no estado", depois.internos[0].id==="i9" && !!depois.perfisRev.Bia && depois.aba==="inicio");
+}
+
 console.log("\n"+ok+" OK, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

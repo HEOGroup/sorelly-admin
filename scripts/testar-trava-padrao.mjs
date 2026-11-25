@@ -221,6 +221,18 @@ console.log("— tela travada: Configurações de compras (mesma grade de faixas
   falha("tabela feita à mão", cont + '\nvar t = e("table", null);', "feita à mão");
 }
 
+console.log("— trava do navegador (25/11/2026: sempre no banco)");
+{ const nav = (f, l) => R.conferirNavegador(f, [l]);
+  t("REPROVA: localStorage.setItem num domínio", nav("src/apps/montagem/domain/aulas.js", 'localStorage.setItem("x", "1");').length===1);
+  t("REPROVA: sessionStorage.setItem numa tela", nav("src/apps/montagem/pages/X.js", 'try{ sessionStorage.setItem("y", v); }catch(x){}').length===1);
+  t("REPROVA: indexedDB.open", nav("src/apps/montagem/lib/arquivos.js", 'var r = indexedDB.open("sorelly", 1);').length===1);
+  t("REPROVA: window.localStorage[...] =", nav("src/apps/montagem/lib/z.js", 'window.localStorage["k"] = v;').length===1);
+  t("REPROVA mesmo com padrao-ok", nav("src/apps/montagem/lib/z.js", 'localStorage.setItem("k", v); // padrao-ok').length===1);
+  t("PASSA: ler do navegador (getItem) e apagar (removeItem)", !nav("src/apps/montagem/lib/z.js", 'var v = localStorage.getItem("k"); localStorage.removeItem("k");').length);
+  t("PASSA: chave de login em lib/api.js", !nav("src/apps/montagem/lib/api.js", 'localStorage.setItem(CHAVE_TOKEN, t);').length);
+  t("PASSA: comentário", !nav("src/apps/montagem/lib/z.js", '// localStorage.setItem("k", v)').length);
+  t("PASSA: arquivo fora do src", !nav("scripts/x.mjs", 'localStorage.setItem("k", v);').length); }
+
 console.log("— o lembrete que o hook manda a cada mensagem");
 t("fala da TabelaPlanilha", /TabelaPlanilha/.test(R.REGRAS));
 t("não manda mais topo dourado", !/topo dourado/i.test(R.REGRAS));

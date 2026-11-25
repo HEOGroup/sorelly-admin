@@ -3714,3 +3714,12 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - O módulo `aci` passa a receber TODOS os acertos de verdade (antes só atendimento interno de 09/11 em diante): os antigos e os de representante, que estavam só nos navegadores, sobem ao abrir o sistema e aparecem juntos no Consolidado. Demonstração nunca sobe.
 - As imagens continuam guardadas no banco, dentro dos registros. Passar as imagens para "arquivo anexado" fica como melhoria futura (só reduziria o volume baixado ao abrir; não é preciso para o aviso).
 - Teste: `scripts/testar-navegador-leve.mjs` (11 verificações).
+
+## 25/11/2026 — Sempre no banco, nunca no navegador (Nickolas, v0.21.231)
+- Pedido do Nickolas: "Sempre salvar no banco de dados nunca no navegador ok, bloqueie essa parte do navegador sempre banco de dados."
+- Módulo novo `nav` (`lib/sync-modulos.js`, `fatiaNav`): tudo o que não tinha módulo próprio e ficava só no navegador vai para o banco, uma chave do banco por chave do estado. Ficam de fora: o que já tem módulo, o estado da tela (aba, usuário...) e preferências do aparelho/da pessoa (`FORA_DO_NAV`, fase 4). Acesso `nav: ["*"]` (antes todo navegador já tinha tudo isso).
+- Primeira carga (semente) feita a partir das cópias dos navegadores (`sorelly.copia_navegador`): vale a versão mais nova do navegador do Marcus; listas com id e objetos por data foram unidos; alertas com mais de 2 dias ficaram como lidos; `regrasConsignado` = versão do Marcus; formas de pagamento = versão do Marcus + as 5 contas de Pix que estavam só em outro navegador (Nickolas: "Incluir as 5"). Resultado: 117 chaves.
+- Na primeira leitura do `nav` em cada navegador, item de lista que só existe ali é mantido e sobe (`juntaPrimeira`): nada criado depois da cópia se perde.
+- Sem conexão com o banco: a tela é bloqueada (`BloqueioSemConexao` em `App.js`, aviso de `lib/api.js`) até voltar.
+- Trava: `scripts/padrao-regras.mjs` (`conferirNavegador`) reprova linha nova ou mexida em `src/**/*.js` que grava no navegador (`localStorage`/`sessionStorage.setItem`, `indexedDB.open`). Não aceita padrao-ok. Única exceção: a chave de login em `lib/api.js`. Vale no hook, no `npm run padrao`/conferir e no CI.
+- Próximas fases (a combinar): 3) outras gravações no navegador (melhorias, aulas, progresso, marcus, extratos, entrada de kits novos, clientes da revendedora, Pontual, cache do chat, anexos em IndexedDB) vão para o banco; 4) preferências de tela por pessoa vão para o banco; 5) conferência final: só o login no navegador.

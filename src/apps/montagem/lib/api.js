@@ -15,11 +15,15 @@ function guardaToken(t){ try { if(t) localStorage.setItem(CHAVE_TOKEN, t); else 
 var conferindo = null;
 function sessaoValida(){ if(!conferindo){ conferindo = fetch(base()+"/auth/eu", {headers:{authorization:"Bearer "+token()}}).then(function(r){ return r.status!==401; }).catch(function(){ return true; }); setTimeout(function(){ conferindo = null; }, 5000); } return conferindo; }
 // metodo: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; devolve o JSON ou joga Error com a mensagem do servidor
+// SEM CONEXÃO (25/11/2026): nada fica guardado no navegador, então sem conexão com o banco a tela é bloqueada (App.js) até voltar
+var conectado = true;
+function avisaConexao(ok){ if(ok===conectado) return; conectado = ok; try { window.dispatchEvent(new CustomEvent("sorelly-conexao", {detail:ok})); } catch(x){} }
 async function chamar(metodo, caminho, corpo){
   var h = {"content-type":"application/json", "x-sorelly-build":"2026-11-09"}; if(token()) h.authorization = "Bearer "+token();   // x-sorelly-build: o servidor reconhece a tela nova e protege dados de telas antigas ainda abertas (ver app/api/estado/[modulo]/route.js)
   var r;
   try { r = await fetch(base()+caminho, {method:metodo, headers:h, body:corpo!==undefined ? JSON.stringify(corpo) : undefined}); }
-  catch(x){ throw new Error("Sem conexão com o servidor."); }
+  catch(x){ avisaConexao(false); throw new Error("Sem conexão com o servidor."); }
+  avisaConexao(true);
   var j = await r.json().catch(function(){ return {}; });
   if(r.status===401 && caminho!=="/auth/login"){ var vale = caminho==="/auth/eu" ? false : await sessaoValida(); if(!vale){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); } }
   if(!r.ok) throw new Error(j.erro || ("Erro "+r.status));

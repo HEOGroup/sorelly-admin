@@ -20,6 +20,21 @@ export var REGRAS = "Padrão visual (" + DOC + "), medido nas telas do Financeir
 
 var norm = function(f){ return String(f || "").replace(/\\/g, "/"); };
 
+// TRAVA "SEMPRE NO BANCO, NUNCA NO NAVEGADOR" (Nickolas, 25/11/2026: "bloqueie essa parte do navegador, sempre banco de dados").
+// Vale para TODO o código do sistema (src/**/*.js), não só tela: linha nova ou mexida que grava no navegador (localStorage/sessionStorage .setItem ou indexedDB.open) é reprovada.
+// Dado vai para o banco (módulo do estado, lib/sync-modulos.js; arquivo, lib/anexo.js). Única exceção: a chave de login em src/apps/montagem/lib/api.js (identificação, não é dado).
+// As linhas antigas continuam até serem mexidas: quem mexer leva o dado para o banco (ver docs/DECISOES.md de 25/11/2026). Esta trava NÃO aceita padrao-ok.
+var LIBERADOS_NAVEGADOR = ["src/apps/montagem/lib/api.js"];
+var GRAVA_NAVEGADOR = /\b(localStorage|sessionStorage)\s*\.\s*setItem\s*\(|\bindexedDB\s*\.\s*open\s*\(|\bwindow\s*\.\s*(localStorage|sessionStorage)\s*\[/;
+export function ehCodigo(f){ return /(^|\/)src\/.*\.js$/.test(norm(f)); }
+export function conferirNavegador(arquivo, linhas){
+  if(!ehCodigo(arquivo) || LIBERADOS_NAVEGADOR.some(function(x){ return norm(arquivo).endsWith(x); })) return [];
+  var erros = [];
+  (linhas || []).forEach(function(l){ var t = String(l).trim(); if(!t || t.indexOf("//") === 0 || t.indexOf("*") === 0) return; var c = String(l).replace(/\/\/.*$/, "");
+    if(GRAVA_NAVEGADOR.test(c)) erros.push("grava no NAVEGADOR (trava de 25/11/2026: dado vai SEMPRE para o banco, pelo módulo do estado ou anexo): " + t.slice(0, 110)); });
+  return erros;
+}
+
 /** Tela ou peça (o hook e o conferidor só olham estes arquivos). */
 export function ehTela(f){ return /(^|\/)src\/(apps\/[^/]+\/(pages|components|mobile)|shared)\/.*\.js$/.test(norm(f)); }
 /** Tela do admin (regras completas). Apps de celular (mobile/) seguem só as regras de fonte flexível e limite de 20 px. */

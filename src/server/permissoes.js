@@ -4,6 +4,7 @@ import { MODULOS_REP } from "./rep-filtro.js";
 // ATENÇÃO: neste atalho a permissão é por MÓDULO inteiro. "Ver só os próprios pedidos" dentro de um módulo continua sendo regra da tela, não do servidor; por isso dados sensíveis ficam em módulos de setor restrito.
 // Chaves = nomes do estado do sistema (s.rh, s.cf, s.ce ...).
 export const SETORES_DO_MODULO = {
+  nav: ["*"],   // 25/11/2026: o que antes ficava só no navegador de cada um (atendimentos antigos, perfis, alertas, regras, formas de pagamento, rotina...); antes TODO navegador já tinha tudo isso, então o acesso não muda
   rhsol: ["*"],   // solicitações de mudança de cadastro: quem pede (supervisão do setor) e quem confirma (RH) precisam ler e gravar
   rh: ["rh"], eq: ["rh"],
   cf: ["cobranca"], ff: ["socios"],
