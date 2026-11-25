@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.230", data:"2026-11-25", titulo:"Representantes: comprovante obrigatório para finalizar o acerto; nome da cliente nos lançamentos do Pix", itens:[
+  {tipo:"correção", area:"App da representante → Acerto", txt:"Todo pagamento com conta pedida ao Financeiro (Pix, link, cartão) precisa do comprovante para Confirmar acerto, mesmo quando o pedido ainda não carregou no celular (antes passava). Comprovante anexado que não chegou ao Financeiro é reenviado ao confirmar. O registro do acerto também recusa pagamento sem comprovante."},
+  {tipo:"correção", area:"Financeiro → Direcionar Pix → Conferência de pagamentos, Maquininha Banho e Prestadores", txt:"Pix de acerto de representante entra com o nome da cliente (revendedora), não mais Representante X."}]},
  {v:"0.21.229", data:"2026-11-25", titulo:"Atendimento Sorelly: cartão pede bandeira e parcelas", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly → Pagamentos", txt:"Crédito e débito agora pedem a bandeira (obrigatória) e o crédito as parcelas antes de Adicionar. Bandeira e parcelas vão junto para o Financeiro e a Maquininha Banho lança o cartão já completo (débito = DÉBITO), sem A informar."}]},
  {v:"0.21.228", data:"2026-11-25", titulo:"Maquininha Banho: todo cartão da Getnet da Pontual entra sozinho", itens:[

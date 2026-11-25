@@ -487,14 +487,14 @@ function reducer(s, a){
             var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
             if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
             // 23/11/2026 (Lucas): cartão ou link NÃO vira Pix do fornecedor; se o fornecedor é o da Maquininha Banho, vira passada na maquininha (bandeira e parcelas vêm do comprovante da funcionária)
-            if(d.via && d.via!=="pix"){ if(fo.id===sDp.pf.mqFornId) itMq.push({origemPix:pFo.id+"#"+n, lf:lfFo, rev:pFo.quem||pFo.revendedora||pFo.repOrigem||"", valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), via:d.via, conta:d.conta||""}); return; }
-            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
+            if(d.via && d.via!=="pix"){ if(fo.id===sDp.pf.mqFornId) itMq.push({origemPix:pFo.id+"#"+n, lf:lfFo, rev:pFo.revendedora||pFo.quem||pFo.repOrigem||"", valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), via:d.via, conta:d.conta||""}); return; }
+            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.revendedora||pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
           if(itFo.length || itMq.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo, mq:itMq}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
       // 18/11/2026 (Marcus): Pix confirmado para um PRESTADOR DA FAMÍLIA vira repasse no Financeiro familiar sozinho e abate a dívida dele (conta corrente). Reabrir retira.
       if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId || (d.via && d.via!=="pix")) return;   // só Pix abate a dívida: link e maquininha não
-          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:dataLocalDe(pFa.confirmadoEm), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
+          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:dataLocalDe(pFa.confirmadoEm), origem:pFa.revendedora||pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
       // 23/11/2026 (Marcus: "Direcionar precisa lançar"): Pix confirmado para a conta de um SÓCIO vira Pix da Família, com a casa escolhida. Reabrir retira.
       if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFs = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFs && pFs.status==="direcionado" && !pFs.demo){ (pFs.divisoes||[]).forEach(function(d, n){ var ds = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!ds || ds.tipo!=="FAMILIA" || !ds.personaId || ds.prestFamId || (d.via && d.via!=="pix")) return;
@@ -971,6 +971,7 @@ function reducer(s, a){
     case "ACERTO_REGISTRAR": {
       k = kitDe(s, a.id); if(!k) return s;
       if(k.status==="acertado" && (s.acertosConsignado||[]).some(function(r0){ return r0.kitId===k.id && r0.tipo==="acerto"; })) return s;   // dois toques em "Finalizar acerto" não geram dois registros nem comissão em dobro
+      if((a.pagamentos||[]).some(function(p){ return p.pid && !p.anexo; })) return com(s, {}, "Anexe o comprovante de cada pagamento antes de finalizar o acerto", "alerta");   // comprovante obrigatório (Lucas, 25/11/2026)
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
       var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK, comissaoEspecialDe(s, k.rev));   // comissão especial da revendedora (09/11/2026)
       var abK = abaterDividas(s, k.rev, a.pagamentos, null);

@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Representantes: comprovante obrigatório no acerto; nome da cliente no Pix, Lucas)
+- **Lucas: "precisa ser obrigatório, para conseguir finalizar o acerto, elas anexarem o comprovante de pagamento; muitas deixam sem informar o comprovante. Também sempre ficar com o nome da cliente nos lançamentos de Pix".**
+- **Causa:** a trava do app (semCompN) só contava o pagamento quando o pedido de conta já estava carregado no celular; sem ele, o Confirmar acerto liberava. Em 25/11/2026 havia 12 pagamentos de representantes sem comprovante no Controle de pagamentos.
+- **Decidido:** todo pagamento com conta pedida (pid) precisa do comprovante para Confirmar acerto; o comprovante que ficou só no celular é reenviado ao confirmar; `ACERTO_REGISTRAR` também recusa. O Pix do Direcionar usa `revendedora` (nome da cliente) antes de `quem` ("Representante X") em Pagamentos a fornecedores, Maquininha Banho e repasse de prestador.
+
 ## 25/11/2026 (Atendimento Sorelly: cartão pede bandeira e parcelas, Lucas)
 - **Lucas: "ao selecionar cartão na forma de pagamento, seja obrigatório as meninas informarem a bandeira e a quantidade de parcelas, para lançar automaticamente com todas as informações".**
 - **Decidido:** substitui a regra de 16/11/2026 (Marcus: bandeira só no link). Crédito e débito pedem bandeira (mesma lista do link) e o crédito as parcelas (1x a 6x); sem bandeira o botão Adicionar não libera. A bandeira e as parcelas seguem na linha do Controle de pagamentos (`bandeira`, `parcelas`) e entram na Maquininha Banho (`sincMaqUnica`; Direcionar para a Pontual também). Pagamento antigo sem bandeira continua "A informar".

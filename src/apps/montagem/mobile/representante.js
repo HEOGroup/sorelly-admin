@@ -518,7 +518,9 @@ function AppRepresentante(p){
   var vendaMotivo = dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta;
   var minVendaGeral = (dv.novas && dv.novas.minimoRepresentante) || NOVAS_PADRAO.minimoRepresentante, motivosVB = (dv.novas && dv.novas.motivosVendaBaixa) || NOVAS_PADRAO.motivosVendaBaixa;
   var vendaBaixa = vendaMotivo!=null && vendaMotivo < minVendaGeral;
-  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && !es.aguardando && !p.anexo; }).length;   // Pix, link e cartão: conta do financeiro + comprovante antes de fechar
+  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return p.pid && !(es && es.aguardando) && !p.anexo; }).length;   // 25/11/2026 (Lucas): antes só contava quando o pedido já estava no celular; agora todo pagamento com conta pedida precisa do comprovante
+  var compSoNoCelular = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return p.pid && p.anexo && es && !es.aguardando && !es.comp; });   // anexou, mas o comprovante não chegou ao financeiro: reenvia ao confirmar
+  var reenviarComp = function(){ if(kitSel) compSoNoCelular.forEach(function(p){ d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:p.anexo}); }); };   // Pix, link e cartão: conta do financeiro + comprovante antes de fechar
   var faltaMotivoVB = vendaBaixa && (!acertoForm.motivoVendaBaixa || (acertoForm.motivoVendaBaixa==="Outro" && !(acertoForm.motivoVendaBaixaTexto||"").trim()));
   var motivoVB = !vendaBaixa ? "" : acertoForm.motivoVendaBaixa==="Outro" ? (acertoForm.motivoVendaBaixaTexto||"").trim() : (acertoForm.motivoVendaBaixa||"");
   var payloadAcerto = function(extra){
@@ -956,7 +958,7 @@ function AppRepresentante(p){
           acertoForm.motivoVendaBaixa==="Outro" && e("input",{value:acertoForm.motivoVendaBaixaTexto||"", placeholder:"Escreva o motivo", maxLength:140,
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
             className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
-        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente || aguardaContaN>0 || semCompN>0, onClick:function(){ setTela("assinaracerto"); },
+        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente || aguardaContaN>0 || semCompN>0, onClick:function(){ reenviarComp(); setTela("assinaracerto"); },
           className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : aguardaContaN>0 ? "Aguardando a conta do financeiro" : semCompN>0 ? "Anexe o comprovante do pagamento" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
