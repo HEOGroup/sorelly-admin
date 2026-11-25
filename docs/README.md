@@ -19,6 +19,7 @@ Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O có
 | [`operacao/`](operacao/) | Como subir o sistema para a equipe (servidor, banco, pessoas, fases). |
 | [`devmaster/`](devmaster/) | Spec OpenAPI da API 2 do DevMaster (ERP): tabelas, fotos e relatórios (`DEVMASTER_API_URL_V2`). |
 | [`app-sorelly/`](app-sorelly/) | Guia da API de leitura do backend do app Sorelly (revendedora/representante): login, rotas GET, respostas e variáveis de ambiente. |
+| [`autentique/`](autentique/) | Guia da API da Autentique (assinatura eletrônica de contratos): preços, sandbox, criar documento, webhooks, erros (`AUTENTIQUE_API_KEY`). |
 
 ## Negócio (`negocio/`)
 
