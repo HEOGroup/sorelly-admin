@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.226", data:"2026-11-25", titulo:"PIX revendedoras: conta Sicredi da Ana Maria no cartão do Marcus", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar › PIX revendedoras", txt:"No cartão do Marcus, Conta que recebeu passa a ter a conta Sicredi PF da Ana Maria. O Pix lançado assim conta na relação do Marcus; a coluna Favorecido mostra Ana Maria."}]},
  {v:"0.21.225", data:"2026-11-25", titulo:"Navegador leve: fim do aviso Sem espaço para salvar", itens:[
   {tipo:"correção", area:"Sistema · navegador cheio", txt:"O aviso Sem espaço para salvar neste navegador voltou porque cada computador guardava uns 6 MB: as fotos dos comprovantes dos pagamentos e as assinaturas dos acertos. Agora o navegador não guarda mais os pagamentos e acertos que já estão no banco; eles vêm do banco ao abrir. Fica guardado só o que ainda não chegou ao banco. O navegador cai para cerca de 0,5 MB."},
   {tipo:"melhoria", area:"Atendimento interno → Consolidado", txt:"Todos os acertos de verdade passam a ficar no banco, inclusive os antigos (antes de 09/11) e os de representante, que estavam só em alguns navegadores. Assim aparecem juntos para todos."}

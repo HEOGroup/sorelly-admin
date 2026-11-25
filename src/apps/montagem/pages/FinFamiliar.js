@@ -5,7 +5,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { bancoDeConta, junta, nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { CASAS_PIX, CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
+import { CASAS_PIX, contaExtraPix, CASAS_DONOS, ehCasa, FAMILIA4, daPessoa, donosDe, paraQuemDe, parteDe, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, baixaDividas, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
 import { abrirAnexo, buscarAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -777,7 +777,7 @@ function DivPix(p){
 }
 function CartaoPix(p){
   var c = p.c, ff = c.ff, pe = p.p, ym = p.ym, casa = !!p.casa, todos = ym==="TODOS" || casa, t = todos ? null : totaisPersona(ff, pe.id, ym), dv = todos ? null : pixDivisao(ff, pe.id, ym), nf = useState({data:hojeIso(), valor:"", origem:"", contaId:"", forma:"PIX"}), f = nf[0], setF = nf[1];
-  var listaTodas = ff.pix.filter(function(x){ return (casa ? pixCasa(ff, x) : x.personaId===pe.id && !pixCasa(ff, x)) && (ym==="TODOS" || x.data.slice(0,7)===ym); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), cbs = ff.contasBanc.filter(function(b){ return b.ativo && (casa ? (!!casaDe(ff, b.id) || b.personaId==="familia") : (!b.personaId || b.personaId===pe.id || b.prestadorId)); });
+  var listaTodas = ff.pix.filter(function(x){ return (casa ? pixCasa(ff, x) : x.personaId===pe.id && !pixCasa(ff, x)) && (ym==="TODOS" || x.data.slice(0,7)===ym); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), cbs = ff.contasBanc.filter(function(b){ return b.ativo && (casa ? (!!casaDe(ff, b.id) || b.personaId==="familia") : (!b.personaId || b.personaId===pe.id || b.prestadorId || contaExtraPix(pe.id, b.id))); });
   var nab = useState(""), abre = nab[0], setAbre = nab[1], ab = abre ? abre.split("|") : [];
   var abrirDiv = function(id, tipo, el){ var r = el.getBoundingClientRect(); setAbre([id, tipo, Math.round(r.left), Math.round(r.bottom)].join("|")); };
   var rotAud = {CONFIRMADO:"Confirmado", PENDENTE:"Aguardando", NAOIDENT:"Não identificado", DIVERG:"Divergência"};

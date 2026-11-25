@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (PIX revendedoras: conta da Ana Maria no cartão do Marcus, Lucas)
+- **Lucas: "no Marcus tenha a opção Anamaria Sicredi PF, preciso lançar como essa forma de pagamento na relação dele".**
+- **Decidido:** a conta "Conta Anamaria - Sicredi" (PF, dona Ana Maria) aparece também em "Conta que recebeu" do cartão do Marcus. O Pix fica com o Marcus (conta nos números dele); a conta continua sendo da Ana Maria. Regra em `domain/financeiro-familiar.js` (`CONTAS_EXTRA_PIX`): para outra conta em outro sócio, acrescentar ali.
+
 ## 25/11/2026 (Listagens e Condicionais no padrão compacto; Listagens do Atendimento interno)
 - **Pedido:** Condicionais e as duas Listagens ficam no padrão do Financeiro (linha de 18 px, letra de 10 px, sem caixa alta, Dia numa célula da barra). Abrir todas e Fechar todas nunca são dois botões: é um só que alterna.
 - **Atendimento interno › Listagens** fica só no Atendimento interno e igual à de Montagem. Abre com todos os dias do mês e tem Situação, Valor da venda e Valor do acerto. O tipo vem da agenda da Tamara (padrão "Acerto" quando ela não escolhe).

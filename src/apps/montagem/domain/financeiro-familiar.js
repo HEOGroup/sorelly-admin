@@ -58,6 +58,9 @@ function pixCasa(ff, x){ return x.personaId==="familia"; }
 var CASAS_PIX = [["casaalphaville", "Casa Alphaville"], ["juan", "Casa Praia"], ["casajardine", "Casa Jardine"], ["familia", "Casa/Família (geral)"]];
 // A conta escolhida no Direcionar é de um PRESTADOR do sócio (e não do próprio sócio)? Mesma regra do rótulo da tela (Marcus, 23/11/2026).
 var contaDePrestador = function(ff, personaId, conta){ if(!conta) return false; var cb = (ff.contasBanc||[]).find(function(z){ return z.nome===conta && z.prestadorId; }); return !!(cb ? (ff.prest||[]).find(function(z){ return z.id===cb.prestadorId; }) : (ff.prest||[]).find(function(z){ return z.nome===conta && z.responsavelId===personaId; })); };
+// CONTA DE OUTRA PESSOA NO CARTÃO DO SÓCIO (Lucas, 25/11/2026: "no Marcus tenha a opção Anamaria Sicredi PF"): o Pix entra na relação do sócio, mas caiu na conta de outra pessoa da família
+var CONTAS_EXTRA_PIX = {marcus:["cmt80ap3b000002lc5q8a09e0"]};   // Conta Anamaria - Sicredi (PF)
+var contaExtraPix = function(personaId, contaId){ return (CONTAS_EXTRA_PIX[personaId] || []).indexOf(contaId)>=0; };
 var casaPixOk = function(v){ return CASAS_PIX.some(function(c){ return c[0]===v; }) ? v : ""; };
 function pixDoMes(ff, pid, ym){
   var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); }).reduce(function(t, x){ return t+x.valor; }, 0);
@@ -329,5 +332,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { CASAS_PIX, casaPixOk, contaDePrestador, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { CASAS_PIX, casaPixOk, contaExtraPix, contaDePrestador, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };
