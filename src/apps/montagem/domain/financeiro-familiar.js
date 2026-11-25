@@ -61,6 +61,7 @@ var contaDePrestador = function(ff, personaId, conta){ if(!conta) return false; 
 // CONTA DE OUTRA PESSOA NO CARTÃO DO SÓCIO (Lucas, 25/11/2026: "no Marcus tenha a opção Anamaria Sicredi PF"): o Pix entra na relação do sócio, mas caiu na conta de outra pessoa da família
 var CONTAS_EXTRA_PIX = {marcus:["cmt80ap3b000002lc5q8a09e0"]};   // Conta Anamaria - Sicredi (PF)
 var contaExtraPix = function(personaId, contaId){ return (CONTAS_EXTRA_PIX[personaId] || []).indexOf(contaId)>=0; };
+var contaPrestadorDe = function(ff, personaId, conta){ if(!conta) return null; var cb = (ff.contasBanc||[]).find(function(z){ return z.nome===conta && z.prestadorId; }); if(cb) return cb; var pr = (ff.prest||[]).find(function(z){ return z.nome===conta && z.responsavelId===personaId; }); return pr ? ((ff.contasBanc||[]).find(function(z){ return z.prestadorId===pr.id && z.ativo!==false; }) || null) : null; };
 var casaPixOk = function(v){ return CASAS_PIX.some(function(c){ return c[0]===v; }) ? v : ""; };
 function pixDoMes(ff, pid, ym){
   var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); }).reduce(function(t, x){ return t+x.valor; }, 0);
@@ -313,9 +314,11 @@ function ffReduz(s, a){
       var jaPx = ff.pix.find(function(x){ return x.personaId===a.personaId && !x.origemDirecionar && Math.abs(x.valor-vpd)<0.005 && x.data===dtp && nmP(x.origem)===nmP(a.origem); });   // o mesmo Pix já lançado à mão (Contas a receber) não conta duas vezes
       if(jaPx){ if(!jaPx.casa && casaPixOk(a.casa)){ jaPx.casa = a.casa; return ok("Casa marcada no Pix já lançado", "PIX revendedoras", "Marcou a casa", nomeP(a.personaId), money(vpd)); } return recusa(""); }
       var lpd = {id:uid("px"), personaId:a.personaId, data:dtp, valor:vpd, origem:String(a.origem||"").trim(), contaId:"", forma:"PIX", auditoria:"PENDENTE", auditadoPor:"", origemDirecionar:a.origemDirecionar};
-      if(casaPixOk(a.casa)) lpd.casa = a.casa; ff.pix.push(lpd);
+      // conta de PRESTADOR do sócio (Lucas, 25/11/2026: o Pix sumia, não ia nem para PIX revendedoras nem para Prestadores): o Pix guarda a conta e o repasse do prestador sai sozinho (syncRepasse), igual ao Anotar PIX
+      var cbD = a.contaId ? ff.contasBanc.find(function(z){ return z.id===a.contaId; }) : null; if(cbD) lpd.contaId = cbD.id;
+      if(casaPixOk(a.casa)) lpd.casa = a.casa; ff.pix.push(lpd); syncRepasse(lpd);
       return ok("Pix do Direcionar lançado", "PIX revendedoras", "Pix do Direcionar", nomeP(a.personaId), money(vpd)); }
-    case "pix_dir_desfaz": { var antesX = ff.pix.length; ff.pix = ff.pix.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.pix.length===antesX) return recusa(""); return ok("Pix do Direcionar retirado"); }
+    case "pix_dir_desfaz": {   /* o repasse automático do Pix sai junto */ var antesX = ff.pix.length, saiX = {}; ff.pix.forEach(function(x){ if(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0) saiX[x.id] = 1; }); ff.pix = ff.pix.filter(function(x){ return !saiX[x.id]; }); ff.repasses = ff.repasses.filter(function(r){ return !(r.origemPixLancId && saiX[r.origemPixLancId]); }); if(ff.pix.length===antesX) return recusa(""); return ok("Pix do Direcionar retirado"); }
     case "repasse_dir_desfaz": { var antesR = ff.repasses.length; ff.repasses = ff.repasses.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.repasses.length===antesR) return recusa(""); return ok("Repasse do Direcionar retirado"); }
     case "repasse_add": { var rv = r2(a.valor); if(!a.prestId || !a.data || !(rv>0)) return recusa("Informe prestador, data e valor."); if(!String(a.origem||"").trim()) return recusa("Informe quem pagou."); var pxr = ff.prest.find(function(x){ return x.id===a.prestId; });
       if(a.pixRevendedora && (!pxr || !pxr.responsavelId)) return recusa("Defina o sócio responsável do prestador para contar como PIX de revendedora.");
@@ -332,5 +335,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { CASAS_PIX, casaPixOk, contaExtraPix, contaDePrestador, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { CASAS_PIX, casaPixOk, contaExtraPix, contaDePrestador, contaPrestadorDe, CASAS_DONOS, ehCasa, donosDe, parteDe, paraQuemDe, itensDividasPrestadores, prazoDaDivida, casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };

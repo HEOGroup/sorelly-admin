@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Direcionar: Pix do sócio na conta de prestador; Pontual na Maquininha Banho, Lucas)
+- **Lucas: "corrija esse erro lançando automaticamente e verifique se houve algum desses valores lançados no Direcionar e não aparece na parte dos sócios"; "todos da Pontual lançados corretamente na Maquininha Banho".**
+- **Causa:** destino Sócio (Família) + conta de prestador do sócio caía entre as duas regras (a de 23/11 tirava de PIX revendedoras e a de 18/11 só lançava repasse quando o destino era o próprio prestador). Resultado: o Pix não ia para lugar nenhum.
+- **Decidido:** esse Pix vira Pix do sócio COM a conta do prestador (`pix_dir` recebe `contaId`) e o repasse do prestador sai sozinho (`syncRepasse`), igual ao Anotar PIX à mão. Reabrir retira o Pix e o repasse.
+- **Auditoria de 25/11/2026 e lançado nos dados reais:** Franciele R$ 519,20 (Marcus · Rebel Mode) e R$ 1.000,00 (Anamaria · Greicy Anamaria); Pontual: Pix da Nathaly R$ 1.296,00 (aguarda comprovante) e links de R$ 184,00 da Tatiane e da Andressa na Maquininha Banho. Lucas: "se foi lançado à mão, deixa assim; se não tem registro, cadastre". Conferido um a um, nenhum ficou sem registro: Francelle R$ 1.732,68 é o mesmo acerto enviado duas vezes pela Nagela (06/11 e 10/11) e o 2º pedido foi direcionado para CNPJ 46 · Sicredi Shopping 46 (lançar no Marco Antonio duplicaria); Mayara: o comprovante anexado nas 3 linhas é o mesmo, um Pix só de R$ 1.827,60 (já lançado à mão, nº 1527), então o 2º R$ 1.827,60 e os R$ 380,00 de brinde não têm Pix; Thaina R$ 50,00 de brinde foi cartão, já está na Maquininha Banho (passada 541).
+
 ## 25/11/2026 (PIX revendedoras: conta da Ana Maria no cartão do Marcus, Lucas)
 - **Lucas: "no Marcus tenha a opção Anamaria Sicredi PF, preciso lançar como essa forma de pagamento na relação dele".**
 - **Decidido:** a conta "Conta Anamaria - Sicredi" (PF, dona Ana Maria) aparece também em "Conta que recebeu" do cartão do Marcus. O Pix fica com o Marcus (conta nos números dele); a conta continua sendo da Ana Maria. Regra em `domain/financeiro-familiar.js` (`CONTAS_EXTRA_PIX`): para outra conta em outro sócio, acrescentar ali.
