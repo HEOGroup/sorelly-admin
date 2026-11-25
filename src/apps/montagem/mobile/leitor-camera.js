@@ -7,7 +7,7 @@
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var FORMATOS = ["code_128", "code_39", "code_93", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "codabar"];
-var ENTRE_LEITURAS = 1800;   // ms: o mesmo número na mira não conta de novo antes disso (a peça só conta outra vez se sair da mira e voltar)
+var ENTRE_LEITURAS = 1000;   // ms: o mesmo número na mira não conta de novo antes disso (a peça só conta outra vez se sair da mira e voltar). 25/11/2026: era 1800; trocar rápido por outra peça igual não era lido
 
 // O som do celular só toca depois de um toque na tela: o contexto de som é criado uma vez e "destravado" no primeiro toque.
 var AUDIO = null;

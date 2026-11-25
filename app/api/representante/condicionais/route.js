@@ -51,6 +51,9 @@ export const GET = rota(async (req, { eu, url }) => {
     itens.filter((i) => i.afj_condicional === c.afi_codigo).forEach((i) => {
       const codigo = String(i.afj_produto || "").trim(), g = grupoDe.get(codigo) || "00";
       if (!por.has(g)) por.set(g, { cod: g, nome: GRUPOS[g] || "Grupo " + g, itens: [] });
+      // a DevMaster grava uma linha por peça: o mesmo código em duas linhas da mesma condicional soma a quantidade (25/11/2026)
+      const igual = por.get(g).itens.find((x) => x.codigo === codigo);
+      if (igual) { igual.qtd += Number(i.afj_quantidade) || 0; return; }
       por.get(g).itens.push({ codigo, barras: barrasDe.get(codigo) || "", desc: nomeNormal(String(i.afj_descricao || "").trim()).toUpperCase(), valor: Number(i.afj_valorun) || 0, qtd: Number(i.afj_quantidade) || 0 });
     });
     return { numero: c.afi_codigo, emissao: d10(c.afi_data), previsao: d10(c.afi_prevdevol), vendedor: mapa.get(c.afi_vendedor) || c.afi_vendedor, pecas: Number(c.afi_qtditens) || 0, valor: Number(c.afi_valormerc) || 0, produtoQtd: qtdProduto.get(c.afi_codigo) || 0, grupos: [...por.values()].sort((a, b) => a.cod.localeCompare(b.cod)) };

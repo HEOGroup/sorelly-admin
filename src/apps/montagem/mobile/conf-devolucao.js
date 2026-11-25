@@ -3,7 +3,7 @@
 // na calculadora de acertos; aqui elas viram UM kit só (as condicionais formam um kit inteiro): lista de todas as peças que saíram, câmera para bipar a etiqueta de cada uma
 // que voltou, campo para digitar o código quando a etiqueta não lê. O que não voltou é o que a revendedora vendeu. O resultado fica no acerto (acertoForm.devolucaoBip);
 // nada é gravado como erro de ninguém aqui: peça de fora só fica registrada. As peças vêm da DevMaster (rota /representante/condicionais, com o número de barras).
-import { bipar, descBonita, itensDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
+import { bipar, descBonita, itensDe, totaisKit, unir } from "@/apps/montagem/domain/conferencia-pecas";
 import { FAIXAS_OFICIAIS } from "@/apps/montagem/domain/consignado";
 import { chamar } from "@/apps/montagem/lib/api";
 import { LeitorCamera } from "@/apps/montagem/mobile/leitor-camera";
@@ -46,7 +46,7 @@ function ConfDevolucao(p){
       if(!vivo) return;
       var todas = r.condicionais || [], marcadas = todas.filter(function(c){ return (p.numeros||[]).indexOf(c.numero)>=0; });
       if(!marcadas.length) setCarga({est:"vazio", msg:"As condicionais marcadas não têm peças na DevMaster. Volte e confira a lista.", conds:[]});
-      else setCarga({est:"ok", msg:"", conds:marcadas});
+      else setCarga({est:"ok", msg:"", conds:marcadas.map(unir)});   // mesma peça em duas linhas vira um item só (25/11/2026)
     }).catch(function(x){ if(vivo) setCarga({est:"erro", msg:(x && x.message) || "Não consegui buscar as peças na DevMaster.", conds:[]}); });
     return function(){ vivo = false; };
   }, [p.cod, (p.numeros||[]).join(","), tentativa]);   // eslint-disable-line react-hooks/exhaustive-deps

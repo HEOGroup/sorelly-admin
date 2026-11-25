@@ -6,7 +6,19 @@
 
 function condicionaisDoKit(k){ return (k && k.condsReais) || []; }
 
-function itensDe(c){ var r = []; (c.grupos||[]).forEach(function(g){ g.itens.forEach(function(i){ r.push(Object.assign({cond:c.numero, grupo:g.nome, grupoCod:g.cod}, i)); }); }); return r; }
+// 25/11/2026 (Marcus: "bipou as primeiras e depois não bipou mais"): a DevMaster grava UMA linha por peça, então o mesmo código aparece em duas linhas da mesma condicional (ex.: MU0031 e BB0747 na 098029, cada linha com qtd 1).
+// Com duas linhas, a 2ª unidade nunca contava ("Já bipada", digitando também). Aqui o mesmo código na mesma condicional vira UM item só, com a quantidade somada.
+function unir(c){
+  if(!c || !c.grupos) return c;
+  var visto = {}, grupos = c.grupos.map(function(g){ return Object.assign({}, g, {itens:[]}); });
+  c.grupos.forEach(function(g, gi){ g.itens.forEach(function(i){
+    var k = String(i.codigo||"").toUpperCase();
+    if(visto[k]){ visto[k].qtd += (Number(i.qtd)||0); return; }
+    var novo = Object.assign({}, i, {qtd:Number(i.qtd)||0}); visto[k] = novo; grupos[gi].itens.push(novo);
+  }); });
+  return Object.assign({}, c, {grupos:grupos.filter(function(g){ return g.itens.length; })});
+}
+function itensDe(c){ var r = []; ((unir(c)||{}).grupos||[]).forEach(function(g){ g.itens.forEach(function(i){ r.push(Object.assign({cond:c.numero, grupo:g.nome, grupoCod:g.cod}, i)); }); }); return r; }
 function totaisDe(c){ var it = itensDe(c); return {modelos:it.length, pecas:it.reduce(function(t,i){ return t+i.qtd; },0), valor:it.reduce(function(t,i){ return t+i.valor*i.qtd; },0)}; }
 function totaisKit(conds){ var t = {condicionais:conds.length, modelos:0, pecas:0, valor:0}; conds.forEach(function(c){ var x = totaisDe(c); t.modelos += x.modelos; t.pecas += x.pecas; t.valor += x.valor; }); return t; }
 
@@ -42,4 +54,4 @@ function resultado(conds, conf){
 // Descrição da peça para MOSTRAR (Marcus, 24/11/2026): "Colar folheado ouro 18k", nunca "COLAR FOLHEADO OURO 18K". A DevMaster guarda em caixa alta; a primeira letra fica maiúscula e o resto minúsculo.
 function descBonita(t){ var s = String(t||"").toLowerCase().replace(/\s+/g, " ").trim(); return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
-export { condicionaisDoKit, itensDe, totaisDe, totaisKit, bipar, resultado, descBonita };
+export { condicionaisDoKit, unir, itensDe, totaisDe, totaisKit, bipar, resultado, descBonita };
