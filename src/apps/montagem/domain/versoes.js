@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.224", data:"2026-11-25", titulo:"Negociações: opção Sem nota no Lançar pedido", itens:[
+  {tipo:"novo", area:"Financeiro → Pagamentos a fornecedores → Negociações", txt:"No Lançar pedido e enviar proposta, o seletor CNPJ (quem paga) ganhou a opção Sem nota, para todos os fornecedores. Com ela: 0% com nota, R$ 0,00 com nota e 100% sem nota (campos travados), número e arquivo da nota desabilitados, propostas pela regra sem nota do fornecedor e a mensagem mostra Modalidade: Sem nota, sem CNPJ. Se já havia nota preenchida, pergunta antes. Voltar para um CNPJ refaz a divisão pela regra do fornecedor."},
+  {tipo:"melhoria", area:"Financeiro → Pagamentos a fornecedores → Negociações", txt:"O pedido Sem nota fica marcado como tal (sem CNPJ inventado) e reabre com Sem nota em editar e consultar. Pedidos antigos 100% sem nota também passam a abrir com Sem nota (antes abriam no CNPJ 34); nada muda neles até alguém salvar."}
+ ]},
  {v:"0.21.223", data:"2026-11-25", titulo:"Produção em casa: preço da peça passa a R$ 0,35 em 26/11", itens:[
   {tipo:"correção", area:"Produção → Pagamento da produção", txt:"A peça recebida até 25/11 vale R$ 0,45. De 26/11 em diante vale R$ 0,35, menos duas pessoas que ficam em R$ 0,45 (decisão do Marcus). A tela mostra o preço certo de cada dia."}]},
  {v:"0.21.222", data:"2026-11-25", titulo:"Decisões do Marcus de 25/11: ILF, alta da média, acesso e trava da produção", itens:[

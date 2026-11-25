@@ -3674,3 +3674,11 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 
 ## 25/11/2026 · Produção em casa: preço da peça
 - Pedido do Marcus: até 25/11/2026 a peça vale R$ 0,45; a partir de 26/11/2026 vale R$ 0,35 (o que for recebido de 26/11 em diante). Duas pessoas ficam em R$ 0,45. Código: `precoPecaCasa` em `domain/producao.js`; a tela Pagamento da produção mostra o preço de cada dia.
+
+## 25/11/2026 — Negociações: opção "Sem nota" no Lançar pedido (Nickolas, v0.21.224)
+- Seletor "CNPJ (quem paga)" ganhou "Sem nota" (todos os fornecedores). Selecionada: % com nota 0, valor com nota R$ 0,00, 100% sem nota (campos travados, inclusive ao mudar o total), nº e arquivo da NF desabilitados, propostas pela regra sem nota do fornecedor (ajuste manual continua). Mensagem: "🏢 Modalidade: Sem nota", sem CNPJ e sem a NF antiga.
+- Se já havia nº ou arquivo de NF, pergunta antes de aplicar. O arquivo não é apagado do sistema; só deixa de ficar ligado ao pedido ao salvar. Voltando a um CNPJ antes de salvar, o nº e o arquivo voltam.
+- Voltar de "Sem nota" para um CNPJ: a divisão volta ao % da regra do fornecedor (não presume 100% com nota) e pode ser ajustada.
+- Gravação: marca própria `pd.semNota` (pedido_add e pedido_editar), sem CNPJ fictício; o texto `cnpj` continua "Sem NF" como nos pedidos 100% sem nota de antes. Recusa "Sem nota" com valor com nota.
+- Reabrir/editar/consultar: `semNota` ou pedido antigo "Sem NF" 100% sem nota abrem com "Sem nota" (antes abriam no CNPJ 34). Nada muda no banco até salvar.
+- Teste: `scripts/testar-sem-nota-pf.mjs` (13 verificações).

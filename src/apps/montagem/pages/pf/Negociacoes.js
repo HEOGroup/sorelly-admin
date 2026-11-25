@@ -75,6 +75,7 @@ var DataCal = function(p){
     e("input",{type:"date", value:p.value || "", "aria-label":p.label, className:"absolute inset-0 h-full w-full cursor-pointer opacity-0", onClick:function(ev){ try{ ev.target.showPicker(); }catch(x){} }, onChange:function(ev){ p.onChange(ev.target.value); }}));
 };
 var CNPJS = ["CNPJ 34 · Sorelly Atacadista","CNPJ 46 · Sorelly Comércio","CNPJ 59 · Serenity","CNPJ 67 · Axis Joias"];
+var SEM_NOTA = "Sem nota";   // opção do seletor "CNPJ (quem paga)" (25/11/2026): 100% sem nota, sem CNPJ; grava a marca semNota no pedido
 var NF_SEG = [["com","Todo com NF"],["sem","Todo sem NF"],["misto","Parte com / parte sem"]];
 
 // grava via domínio; devolve true se salvou (para fechar a janela). Pergunta confirmação quando o domínio pede; recusa vira aviso na tela.
@@ -123,7 +124,7 @@ var propostasDe = function(ped, regra, X){
 var pedidoParaEdicao = function(pd){
   var lin = function(p){ return {forma:p.forma, venc:p.venc, valor:(+p.valor||0).toFixed(2), qtd:"1", conta:p.conta==="—" ? "" : (p.conta||""), status:p.status||"Pendente", arq:p.arq || null}; };
   var comNF = (+pd.comNF||0)>0.005, semNF = (+pd.semNF||0)>0.005, nf = comNF && semNF ? "misto" : comNF ? "com" : "sem";
-  return {prop:0, parcManual:true, msgManual:null, verParc:true, editId:pd.id, fornId:pd.fornId, numero:pd.numero==="s/nº" || pd.numero==="---" ? "" : (pd.numero||""), ref:pd.ref||"", nfArq:pd.nfArq || null, fornBruto:pd.fornBruto || "", notaForn:pd.notaForn || "", cpcId:pd.cpcId || "", pct:"", data:pd.data, total:String(pd.total), nf:nf, editado:"", com:String(pd.comNF||0), sem:String(pd.semNF||0), cnpj:pd.cnpj && pd.cnpj!=="Sem NF" ? pd.cnpj : CNPJS[0], nfNum:pd.nfNum||"",
+  return {prop:0, parcManual:true, msgManual:null, verParc:true, editId:pd.id, fornId:pd.fornId, numero:pd.numero==="s/nº" || pd.numero==="---" ? "" : (pd.numero||""), ref:pd.ref||"", nfArq:pd.nfArq || null, fornBruto:pd.fornBruto || "", notaForn:pd.notaForn || "", cpcId:pd.cpcId || "", pct:"", data:pd.data, total:String(pd.total), nf:nf, editado:"", com:String(pd.comNF||0), sem:String(pd.semNF||0), cnpj:pd.semNota || (pd.cnpj==="Sem NF" && !((+pd.comNF||0)>0.005)) ? SEM_NOTA : pd.cnpj && pd.cnpj!=="Sem NF" ? pd.cnpj : CNPJS[0], nfNum:pd.nfNum||"",
     lcom:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="com"; }).map(lin), lsem:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="sem"; }).map(lin),
     qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:pd.descricao||"", limite:pd.limite||"", pixMin:pd.pixMin ? String(pd.pixMin) : ""};
 };
@@ -375,9 +376,10 @@ function msgProposta(pf, ped, X){
   var f = forn(pf, ped.fornId), c = cnpjDoPedido(ped.cnpj), linhas = (X.com>0.005 ? ped.lcom : []).concat(X.sem>0.005 ? ped.lsem : []), todas = expandirParcelas(linhas);
   var dia = function(iso){ var q = new Date(iso+"T12:00:00"); return q.getDay(); };
   var m = [];
-  m.push("🧾 PEDIDO "+(f ? f.nome.toUpperCase() : "")+(ped.nfNum ? " — NF "+ped.nfNum : "")+(ped.numero ? " — Pedido "+ped.numero : ""));
+  var semNota = ped.cnpj===SEM_NOTA;
+  m.push("🧾 PEDIDO "+(f ? f.nome.toUpperCase() : "")+(ped.nfNum && !semNota ? " — NF "+ped.nfNum : "")+(ped.numero ? " — Pedido "+ped.numero : ""));
   m.push("");
-  m.push("🏢 Pagador: "+(c ? "CNPJ "+c.nome+" "+c.cnpj : (ped.cnpj || "---")));
+  m.push(semNota ? "🏢 Modalidade: Sem nota" : "🏢 Pagador: "+(c ? "CNPJ "+c.nome+" "+c.cnpj : (ped.cnpj || "---")));
   m.push("🏭 Beneficiário: "+(f ? f.nome+(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(String(f.cnpj || "")) ? " ("+f.cnpj+")" : "") : "---"));
   m.push("📅 Doc.: "+dbr(ped.data));
   m.push("");
@@ -426,20 +428,32 @@ function JanelaPedido(p){
     var linhas = (X.com>0.005 ? ped.lcom : []).concat(X.sem>0.005 ? ped.lsem : []);
     var ruim = linhas.find(function(l){ return !dataValida(l.venc); });
     if(ruim){ aviso(c, "Vencimento inválido ou vazio"+(ruim.venc ? ": "+ruim.venc : "")+". Confira as datas das parcelas (o mês pode não ter esse dia).", "alerta"); return; }
-    var ok = grava(c, ped.editId ? "pedido_editar" : "pedido_add", {id:ped.editId, fornId:ped.fornId, numero:ped.numero, ref:ped.ref, fornBruto:ped.fornBruto || cadAuto.forn, notaForn:ped.notaForn || cadAuto.nota, nfArq:ped.nfArq, cpcId:lig ? lig.id : ped.cpcId, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
+    var ok = grava(c, ped.editId ? "pedido_editar" : "pedido_add", {id:ped.editId, fornId:ped.fornId, numero:ped.numero, ref:ped.ref, fornBruto:ped.fornBruto || cadAuto.forn, notaForn:ped.notaForn || cadAuto.nota, nfArq:ped.cnpj===SEM_NOTA ? null : ped.nfArq, cpcId:lig ? lig.id : ped.cpcId, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj===SEM_NOTA ? "Sem NF" : ped.cnpj, nfNum:ped.cnpj===SEM_NOTA ? "" : ped.nfNum, semNota:ped.cnpj===SEM_NOTA, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
     if(!ok) return;
     if(enviar){ copiaTxt(msg); try{ window.open("https://wa.me/?text="+encodeURIComponent(msg), "_blank"); }catch(x){} aviso(c, "Pedido lançado. A proposta foi copiada e o WhatsApp foi aberto para você escolher o fornecedor.", "ok"); }
     fechar();
   };
   var tabJ = function(extra){ return e("div",{className:TJ_CLS}, e(TabelaPlanilha, Object.assign({}, TJ, extra))); };
 
+  // ----- "Sem nota" (25/11/2026): 0% com nota e 100% sem nota; a nota fiscal não se aplica. Voltar a um CNPJ refaz a divisão pela regra do fornecedor -----
+  var semNota = ped.cnpj===SEM_NOTA;
+  var trocaCnpj = function(v){
+    if(v===SEM_NOTA){
+      if(semNota) return;
+      if((ped.nfNum || ped.nfArq) && !window.confirm("Este pedido tem número ou arquivo de nota fiscal. Com \"Sem nota\" eles não serão usados neste pedido (o arquivo não é apagado do sistema). Continuar?")) return;
+      upd(Object.assign(aplicaPct(ped.total, "0"), {cnpj:SEM_NOTA, parcManual:false}));
+      return;
+    }
+    if(semNota){ upd(Object.assign(aplicaPct(ped.total, String(regra.pct || 0)), {cnpj:v, parcManual:false})); return; }
+    upd({cnpj:v});
+  };
   // ----- tabela do pedido (campo, dado, campo, dado) -----
   var nfArqNome = ped.nfArq && ped.nfArq.nome ? ped.nfArq.nome : "";
   var nfCel = e("span",{className:"flex items-center justify-center gap-2"}, nfArqNome && e("span",{title:nfArqNome}, nfArqNome),
     e("label",{className:"cursor-pointer underline text-[#7DD3FC]"}, nfArqNome ? "Trocar" : "Anexar", e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ anexa(ev, function(a){ upd({nfArq:a}); }, "Não consegui anexar a nota fiscal."); }})),
     nfArqNome && e("a",{href:"#", role:"button", className:"underline text-destructive", onClick:function(ev){ ev.preventDefault(); upd({nfArq:null}); }}, "Remover"));
   var Cel = function(k, rot, node, rot2, node2){ return {id:k, a:rot, av:node, b:rot2, bv:node2}; };
-  var din = function(valor, rot, aoMudar){ return e(Dinheiro,{out:"ponto", value:valor, label:rot, className:"w-full min-w-0 px-1! text-[11px]!", onChange:aoMudar}); };   // o valor sobe em reais enquanto se digita
+  var din = function(valor, rot, aoMudar, travado){ return e(Dinheiro,{out:"ponto", value:valor, label:rot, disabled:!!travado, className:"w-full min-w-0 px-1! text-[11px]!", onChange:aoMudar}); };   // o valor sobe em reais enquanto se digita
   var Cel = function(k, rot, node){ return {id:k, a:rot, av:node}; };
   var cadAuto = ehBanho(pf, ped.fornId) ? ligarCadastro((c.s && c.s.cpc) || {}, ped.numero) : {forn:"", nota:"", ids:[]};
   var cpcJ = (c.s && c.s.cpc) || {}, fornAtual = ped.fornBruto || cadAuto.forn, notaAtual = ped.notaForn || cadAuto.nota;
@@ -457,13 +471,13 @@ function JanelaPedido(p){
       : e("b",null, fo ? fo.nome : "---")),
     Cel("r2", ehBanho(pf, ped.fornId) ? "Fatura" : "Nº do pedido", e(Txt,{value:ped.numero, ph:ehBanho(pf, ped.fornId) ? "Ex.: 13782" : "Ex.: 1416", label:"Nº do pedido", onChange:function(v){ upd({numero:v}); }})),
     Cel("r3", "Data do pedido", e(DataCal,{value:ped.data, label:"Data do pedido", onChange:function(v){ upd({data:v}); }})),
-    Cel("r4", "CNPJ (quem paga)", e(Sl,{value:ped.cnpj, label:"CNPJ", onChange:function(v){ upd({cnpj:v}); }}, CNPJS.map(function(k){ var cc = cnpjDoPedido(k); return e("option",{key:k, value:k}, cc ? cc.cnpj : k); }))),
-    Cel("r5", "Valor total", din(ped.total, "Valor total", function(v){ var q = ped.pct!=="" && ped.pct!==undefined ? aplicaPct(v, ped.pct) : {}; upd(Object.assign({total:v}, q)); })),
-    Cel("r6", "% com nota", e(Txt,{type:"number", value:pctAtual, ph:"Ex.: 30", label:"Percentual com nota", onChange:function(v){ upd(aplicaPct(ped.total, v)); }})),
-    Cel("r7", "Valor com nota", din(vCom, "Valor com nota", function(v){ var y = dividirNF("misto", ped.total, "com", v, ped.sem); upd({nf:"misto", editado:"com", com:v, sem:y.sem.toFixed(2), pct:""}); })),
-    Cel("r8", "Valor sem nota", din(vSem, "Valor sem nota", function(v){ var y = dividirNF("misto", ped.total, "sem", ped.com, v); upd({nf:"misto", editado:"sem", sem:v, com:y.com.toFixed(2), pct:""}); })),
-    Cel("r9", "Nº da nota fiscal", e(Txt,{value:X.com>0.005 ? ped.nfNum : "", disabled:X.com<=0.005, ph:"Ex.: 11881", label:"Nº da nota fiscal", onChange:function(v){ upd({nfNum:v}); }})),
-    Cel("r10", "Nota fiscal (arquivo)", nfCel)].concat(ehBanho(pf, ped.fornId) ? [
+    Cel("r4", "CNPJ (quem paga)", e(Sl,{value:ped.cnpj, label:"CNPJ", onChange:trocaCnpj}, CNPJS.map(function(k){ var cc = cnpjDoPedido(k); return e("option",{key:k, value:k}, cc ? cc.cnpj : k); }).concat([e("option",{key:SEM_NOTA, value:SEM_NOTA}, SEM_NOTA)]))),
+    Cel("r5", "Valor total", din(ped.total, "Valor total", function(v){ var q = semNota ? aplicaPct(v, "0") : ped.pct!=="" && ped.pct!==undefined ? aplicaPct(v, ped.pct) : {}; upd(Object.assign({total:v}, q)); })),
+    Cel("r6", "% com nota", e(Txt,{type:"number", value:semNota ? "0" : pctAtual, disabled:semNota, ph:"Ex.: 30", label:"Percentual com nota", onChange:function(v){ upd(aplicaPct(ped.total, v)); }})),
+    Cel("r7", "Valor com nota", semNota ? din("0.00", "Valor com nota", function(){}, true) : din(vCom, "Valor com nota", function(v){ var y = dividirNF("misto", ped.total, "com", v, ped.sem); upd({nf:"misto", editado:"com", com:v, sem:y.sem.toFixed(2), pct:""}); })),
+    Cel("r8", "Valor sem nota", semNota ? din(X.sem.toFixed(2), "Valor sem nota", function(){}, true) : din(vSem, "Valor sem nota", function(v){ var y = dividirNF("misto", ped.total, "sem", ped.com, v); upd({nf:"misto", editado:"sem", sem:v, com:y.com.toFixed(2), pct:""}); })),
+    Cel("r9", "Nº da nota fiscal", e(Txt,{value:X.com>0.005 && !semNota ? ped.nfNum : "", disabled:X.com<=0.005 || semNota, ph:"Ex.: 11881", label:"Nº da nota fiscal", onChange:function(v){ upd({nfNum:v}); }})),
+    Cel("r10", "Nota fiscal (arquivo)", semNota ? e("span",null, "Não se aplica (sem nota)") : nfCel)].concat(ehBanho(pf, ped.fornId) ? [
     Cel("r11", "Fornecedor do bruto", e(Sl,{value:fornAtual || "", label:"Fornecedor do bruto", onChange:function(v){ upd({fornBruto:v, notaForn:""}); }}, e("option",{value:""}, "Escolha no Cadastro de peças"), opFornBruto.map(function(n){ return e("option",{key:n, value:n}, n); }))),
     Cel("r12", "Nota do fornecedor", e(Sl,{value:notaAtual || "", label:"Nota do fornecedor", onChange:function(v){ var o = opNotas.find(function(x){ return x.v===v; }); upd({notaForn:v, fornBruto:ped.fornBruto || (o && o.forn) || ped.fornBruto}); }}, e("option",{value:""}, "Escolha o pedido de bruto"), opNotas.map(function(o){ return e("option",{key:o.v+o.t, value:o.v}, o.t); })))] : []);
   var _fimPedido = [
@@ -605,7 +619,7 @@ function JanelaDetalhe(p){
   var extras = [];
   if(pd.avisoLimite) extras.push(caixa("Aviso do teto mensal", [e("p",{key:"av", className:"px-3 py-2 text-center text-[11px] font-bold text-warning"}, pd.avisoLimite)], "aviso"));
   if((pd.historico || []).length>0) extras.push(caixa("Histórico de alterações", [e("div",{key:"h", className:"flex flex-col gap-0.5 px-3 py-2 text-center text-[11px]"}, pd.historico.slice().reverse().map(function(h, i){ return e("div",{key:i}, e("b",null, h.em+" · "+(h.por || "—")+": "), h.mudou); }))], "hist"));
-  return e(ModalAzul,{larga:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+pd.cnpj+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
+  return e(ModalAzul,{larga:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+(pd.semNota ? "Sem nota" : pd.cnpj)+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
     e("div",{className:"flex flex-col gap-3 "+PADRAO_BLOCOS},
       caixa("Resumo do pedido", [tabResumo, tabAloc], "resumo"),
       e.apply(null, ["div",{className:"flex flex-col gap-3"}].concat(blocosParc)),
@@ -655,4 +669,4 @@ function JanelaAcerto(p){
       e(Btn,{g:true, neutro:true, onClick:fechar}, "Cancelar"), e(Btn,{g:true, disabled:!c.edita, onClick:salvar}, "Salvar datas")));
 }
 
-export { AbaPfNeg, JanelaPedido, pedidoNovo };
+export { AbaPfNeg, JanelaPedido, pedidoNovo, pedidoParaEdicao, msgProposta, SEM_NOTA };   // os 3 últimos também servem ao teste scripts/testar-sem-nota-pf.mjs

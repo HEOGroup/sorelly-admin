@@ -1321,8 +1321,10 @@ function pfReduz(s, a){
       if(s2>0.005 && Math.abs(s2-aSem)>0.005) avisos.push("Sem NF: alocado "+brl(aSem)+" de "+brl(s2));
       if(avisos.length && !a.forcar) return recusa("As parcelas não fecham com a divisão do pedido: "+avisos.join(" · ")+". Salvar mesmo assim?", true);
       var num1 = a.numero||"---", parcelas = pCom.concat(pSem).sort(function(x,y){ return x.venc.localeCompare(y.venc); });
+      if(a.semNota && c>0.005) return recusa("Pedido \"Sem nota\" não pode ter valor com nota.");   // opção "Sem nota" da janela Lançar pedido (25/11/2026)
       var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, ref:String(a.ref||"").trim(), fornBruto:String(a.fornBruto||"").trim(), notaForn:String(a.notaForn||"").trim(), nfArq:a.nfArq || null, cpcId:String(a.cpcId||""), data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
+      if(a.semNota){ novoPd.semNota = true; novoPd.nfArq = null; }
       if(ePrest2){ if(a.limite && DATA_OK.test(a.limite)) novoPd.limite = a.limite; if(pixMin>0) novoPd.pixMin = pixMin; }
       // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
       var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);
@@ -1372,6 +1374,7 @@ function pfReduz(s, a){
       if(!mud.length) return ok("Nada mudou no pedido.");
       pe.fornId = fidE; pe.numero = a.numero||"---"; if(a.ref!==undefined) pe.ref = String(a.ref||"").trim(); if(a.fornBruto!==undefined) pe.fornBruto = String(a.fornBruto||"").trim(); if(a.notaForn!==undefined) pe.notaForn = String(a.notaForn||"").trim(); if(a.nfArq!==undefined) pe.nfArq = a.nfArq || null; if(a.cpcId!==undefined) pe.cpcId = String(a.cpcId||""); pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
       pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
+      if(a.semNota!==undefined){ if(a.semNota && cE<=0.005){ pe.semNota = true; pe.nfArq = null; } else delete pe.semNota; }   // "Sem nota" (25/11/2026): marca própria; o arquivo da nota sai do pedido (não é apagado do sistema)
       if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
       if(!ePrestE){ delete pe.limite; delete pe.pixMin; }   // prestador: a data limite e o Pix mínimo antigos ficam como estão (19/11/2026)
       pe.parcelas = todasParc;

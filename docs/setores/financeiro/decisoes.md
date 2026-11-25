@@ -680,3 +680,11 @@ Janela "Lançar pedido e enviar proposta" no formato D1: esquerda = pedido + reg
 
 ## 21/11/2026 · Lançar pedido: ajustes de tela (Marcus)
 Janela da Pontual: data do pedido com calendário (clicar abre o calendário; a data fica escrita no meio); clicar numa das 5 propostas abre o bloco "Proposta escolhida · datas e valores" (uma linha de datas e, embaixo, os valores com nota; depois outra linha de datas e, embaixo, os valores sem nota; clicar de novo na mesma proposta fecha); botões azuis embaixo do bloco da esquerda; tabela do pedido metade e metade (Campos | Dados); tirados o arquivo das regras, "Conferência" e "O que estamos pagando" (a regra volta ao padrão da Pontual a cada pedido novo; sem botão Salvar como padrão por enquanto).
+
+## 25/11/2026 — Negociações: opção "Sem nota" no Lançar pedido (Nickolas, v0.21.224)
+- Seletor "CNPJ (quem paga)" ganhou "Sem nota" (todos os fornecedores). Selecionada: % com nota 0, valor com nota R$ 0,00, 100% sem nota (campos travados, inclusive ao mudar o total), nº e arquivo da NF desabilitados, propostas pela regra sem nota do fornecedor (ajuste manual continua). Mensagem: "🏢 Modalidade: Sem nota", sem CNPJ e sem a NF antiga.
+- Se já havia nº ou arquivo de NF, pergunta antes de aplicar. O arquivo não é apagado do sistema; só deixa de ficar ligado ao pedido ao salvar. Voltando a um CNPJ antes de salvar, o nº e o arquivo voltam.
+- Voltar de "Sem nota" para um CNPJ: a divisão volta ao % da regra do fornecedor (não presume 100% com nota) e pode ser ajustada.
+- Gravação: marca própria `pd.semNota` (pedido_add e pedido_editar), sem CNPJ fictício; o texto `cnpj` continua "Sem NF" como nos pedidos 100% sem nota de antes. Recusa "Sem nota" com valor com nota.
+- Reabrir/editar/consultar: `semNota` ou pedido antigo "Sem NF" 100% sem nota abrem com "Sem nota" (antes abriam no CNPJ 34). Nada muda no banco até salvar.
+- Teste: `scripts/testar-sem-nota-pf.mjs` (13 verificações).
