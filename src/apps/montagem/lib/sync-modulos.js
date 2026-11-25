@@ -2,7 +2,7 @@
 // Mantém os módulos escolhidos iguais no servidor (tabela estado_modulo): a cada 20 s busca o que mudou e, 1 s depois de mexer, envia só as chaves que mudaram.
 // Só funciona com servidor ligado e pessoa logada (lib/api.js). Módulo ainda vazio no servidor: o que está no navegador de quem abrir primeiro sobe como ponto de partida.
 // Quais módulos: variável VITE_MODULOS_SERVIDOR (ex.: "rh,cf") ou, para testar, localStorage "sorelly_modulos". Por padrão todos (cada pessoa só recebe os que o servidor libera para o setor dela).
-import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar, pessoaDaConta, token } from "@/apps/montagem/lib/api";
 import { inadFatia } from "@/apps/montagem/domain/inadimplencia";
 import { useEffect, useRef, useState } from "@/shared/react";
 import { diff, aplicar } from "@/apps/montagem/lib/estado-patch";
@@ -93,6 +93,21 @@ function chavesNoServidor(){
 // Cada item que o banco já confirmou (igual ao que está lá, SNAPS = a última versão vista/enviada de cada chave) NÃO é mais guardado no navegador: ao abrir, vem do banco.
 // Só fica guardado o que ainda não chegou ao banco (lançado sem internet, ou mudado e ainda não enviado). Assim nada se perde e o espaço não acaba.
 var SNAPS = {};
+// CONTA SÓ NO BANCO (25/11/2026, Nickolas: "só da minha conta, não salvar mais no navegador, salvar no banco"): nestas contas (pessoaId) o estado NÃO é guardado no navegador.
+// Ao abrir, tudo vem do banco. A cópia antiga é apagada só quando o banco confirmou tudo (tudoNoBanco). Fechar a aba com algo ainda não enviado mostra o aviso do navegador.
+var CONTAS_SO_BANCO = ["17"];   // 17 = Nickolas
+function soBanco(){ return apiAtiva() && !!token() && CONTAS_SO_BANCO.indexOf(String(pessoaDaConta()))>=0; }
+// havia cópia do estado neste navegador ao abrir? (sem cópia, o estado começa do padrão do código e NADA dele pode subir como item "só daqui")
+var TEM_COPIA = (function(){ try { return !!localStorage.getItem("sorelly_montagem_v9"); } catch(x){ return false; } })();
+var VIVO = null;   // o hook de sincronização aberto (mods + estado atual)
+// true = todos os módulos leram o banco e nada da tela ficou sem enviar; window.__sorellyPendentes lista o que falta (para conferir)
+function tudoNoBanco(){
+  var r = VIVO, falta = []; if(!r || !r.s) return false;
+  modulosLigados().forEach(function(c){ var m = r.mods[c]; if(!m){ falta.push(c+":sem leitura"); return; } if(m.semAcesso) return; if(!m.pronto || m.enviando || m.bloqueado){ falta.push(c+":"+(m.pronto ? "enviando" : "lendo")); return; }
+    var at = fatia(r.s, c) || {}; Object.keys(at).forEach(function(k){ if(json(at[k])!==m.snaps[k]) falta.push(c+"."+k); }); });
+  try { window.__sorellyPendentes = falta; } catch(x){}
+  return !falta.length;
+}
 var LEVES = [["pag", "lancFin", "lf_"], ["aci", "acertosConsignado", "a_"]];
 function soNaoConfirmados(st, snaps){
   var o = st;
@@ -130,7 +145,7 @@ function useSyncModulos(s, d){
   var modo = apiAtiva() && tk ? "servidor" : null;   // com servidor e login, sincroniza sempre
   var ativo = !!modo && s.logado!==false;
   var ref = useRef({mods:{}, s:s});   // por módulo: {versao, snaps:{chave: json}, pronto}
-  ref.current.s = s;
+  ref.current.s = s; VIVO = ref.current;
   var lista = modulosLigados();
   var mod = function(c){ if(!ref.current.mods[c]){ ref.current.mods[c] = {versao:0, snaps:{}, pronto:false}; SNAPS[c] = ref.current.mods[c].snaps; } return ref.current.mods[c]; };   // SNAPS: o que o banco confirmou (navegador leve)
   // trata a resposta de UM módulo (vinda da leitura em lote)
@@ -144,7 +159,7 @@ function useSyncModulos(s, d){
       Object.keys(r.conteudo||{}).forEach(function(k){
         var v = r.conteudo[k], j = json(v), base = m.snaps[k], lj = json(local[k]);
         m.snaps[k] = j;
-        if(chave==="nav" && !m.pronto) v = juntaPrimeira(v, local[k]);   // módulo nav: na 1ª leitura, item que só existe aqui fica e sobe
+        if(chave==="nav" && !m.pronto && TEM_COPIA) v = juntaPrimeira(v, local[k]);   // módulo nav: na 1ª leitura, item que só existe aqui fica e sobe
         if(lj===j) return;
         // MUDANÇA AINDA NÃO ENVIADA (11/11/2026): a tela mexeu nesta chave e ainda não mandou. Antes o que vinha do servidor trocava tudo e o lançamento sumia.
         // Agora a mudança local é reaplicada em cima do que veio (a diferença entre a base e o que a tela tem) e segue para o servidor no próximo envio.
@@ -226,4 +241,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC, soNaoConfirmados, FORA_DO_NAV, TELA as TELA_DO_ESTADO };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC, soNaoConfirmados, FORA_DO_NAV, TELA as TELA_DO_ESTADO, soBanco, tudoNoBanco };

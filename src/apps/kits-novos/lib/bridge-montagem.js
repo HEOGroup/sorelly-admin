@@ -12,8 +12,17 @@
 // @/apps/montagem/state/store.js (CHAVE) e domain/representantes.js (NOVAS0).
 import { MESES } from "@/apps/kits-novos/lib/datas";
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
-import { lerEstado, textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
+import { lerEstado, ponteViva, textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 const CHAVE_MONTAGEM = "sorelly_montagem_v9";
+// conta "só no banco" (25/11/2026): sem cópia no navegador, lê o estado aberto do sistema (ponte viva) e grava nele; nas outras contas, a cópia do navegador como antes
+function lerMontagem() {
+  var v = ponteViva(); if (v) { var x = v.ler(); return x ? Object.assign({}, x) : null; }
+  var raw = localStorage.getItem(CHAVE_MONTAGEM); return raw ? lerEstado(raw) : null;
+}
+function gravarViva(s, chaves) {
+  var v = ponteViva(); if (!v) return false;
+  var o = {}; chaves.forEach(function (k) { o[k] = s[k]; }); v.gravar(o); cacheResp.em = 0; return true;
+}
 
 /** Com servidor ligado, o kit vai para o módulo "kn" (uma chave por kit): assim chega no app da representante em qualquer aparelho, não só neste navegador. */
 function enviarKitAoServidor(item) {
@@ -35,14 +44,13 @@ export function direcionarParaRepresentante(c, rep) {
   var item = itemDoKit(c, rep);   // expositor vem da observação do kit (antes ia sempre "sem expositor")
   enviarKitAoServidor(item);
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    if (!raw) return apiAtiva();
-    var s = lerEstado(raw);
+    var s = lerMontagem();
     if (!s || s.v !== 4) return apiAtiva();
     var novas = (s.novas || []).filter(function (n) { return n.id !== id; });
     novas.unshift(item);
     s.novas = novas;
     var kn = Object.assign({}, s.kn); kn["k_" + id] = item; s.kn = kn;
+    if (gravarViva(s, ["novas", "kn"])) return true;
     localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return true;
   } catch (x) {
@@ -59,8 +67,7 @@ export function respostasDoApp() {
   if (Date.now() - cacheResp.em < 5000) return cacheResp.mapa;
   var mapa = {};
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    var s = raw ? lerEstado(raw) : null;
+    var s = lerMontagem();
     Object.keys((s && s.kn) || {}).forEach(function (k) {
       var it = s.kn[k]; if (!it || !it.id || String(it.id).indexOf("KN") !== 0) return;
       var id = String(it.id).slice(2), rec = (it.recusasApp || [])[(it.recusasApp || []).length - 1];
@@ -81,13 +88,14 @@ export function situacaoNoApp(c, situacao) {
   var mudanca = situacao === "entregue" ? { status: "entregue" } : { status: "aguardando", rep: null, saiuDoApp: situacao };
   var atual = null;
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM), s = raw ? lerEstado(raw) : null;
+    var s = lerMontagem();
     if (s && s.v === 4) {
       var kn = Object.assign({}, s.kn); atual = kn["k_" + id] || (s.novas || []).find(function (n) { return n.id === id; }) || null;
       if (atual) {
         var novoLocal = Object.assign({}, atual, mudanca);
         kn["k_" + id] = novoLocal; s.kn = kn;
         s.novas = (s.novas || []).map(function (n) { return n.id === id ? novoLocal : n; });
+        if (gravarViva(s, ["novas", "kn"])) { enviarKitAoServidor(Object.assign({}, atual, mudanca)); return; }
         localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
         cacheResp.em = 0;
       }
@@ -108,13 +116,11 @@ export const REP_SORELLY = "Sorelly (atendimento interno)";
 /** Kit novo direcionado para a Sorelly: entra na lista de Revendedoras internas como "A contatar", com a marca Kit novo. */
 export function direcionarParaSorelly(c) {
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    if (!raw) return false;
-    var s = lerEstado(raw);
+    var s = lerMontagem();
     if (!s || s.v !== 4) return false;
     var chave = function (t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
     var marca = { id: "KN" + c.id, valor: c.val || 0, desde: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) };
-    var lista = s.revInternas || [], ja = lista.find(function (r) { return chave(r.nome) === chave(c.nome); });
+    var lista = (s.revInternas || []).map(function (r) { return Object.assign({}, r); }), ja = lista.find(function (r) { return chave(r.nome) === chave(c.nome); });
     if (ja) { ja.kitNovo = marca; }
     else {
       var h = { data: null, venda: null, acerto: null };
@@ -122,6 +128,7 @@ export function direcionarParaSorelly(c) {
         contatos: c.tel ? [{ nome: "WhatsApp da revendedora", fone: c.tel }] : [], prata: false, devmaster: "", cidade: c.cid || "", obs: "", registro: [], conds: [], kitNovo: marca });
     }
     s.revInternas = lista;
+    if (gravarViva(s, ["revInternas"])) return true;
     localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return true;
   } catch (x) { return false; }
@@ -129,7 +136,7 @@ export function direcionarParaSorelly(c) {
 
 /** true se o app de montagem já tem estado salvo neste navegador (pra avisar quando a ponte não vai funcionar). */
 export function montagemDisponivel() {
-  try { return !!localStorage.getItem(CHAVE_MONTAGEM); } catch (x) { return false; }
+  try { return !!ponteViva() || !!localStorage.getItem(CHAVE_MONTAGEM); } catch (x) { return false; }
 }
 
 export { CHAVE_MONTAGEM };
@@ -137,8 +144,7 @@ export { CHAVE_MONTAGEM };
 /** Revendedoras de cada representante, lidas do AGENDAMENTO do app de montagem (a cota do mês atual; sem ela, a do último mês que tiver). {nomeCompleto: quantidade}; vazio se não der para ler. */
 export function revendedorasPorRep() {
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM); if (!raw) return {};
-    var s = lerEstado(raw), ag = s && s.agend; if (!ag || !ag.config) return {};
+    var s = lerMontagem(), ag = s && s.agend; if (!ag || !ag.config) return {};
     var h = new Date(), ym = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0"), meses = Object.keys(ag.cotas || {}).sort();
     var cotas = (ag.cotas || {})[ym] || (ag.cotas || {})[meses[meses.length - 1]] || {}, out = {};
     (ag.config.representantes || []).forEach(function (r) { if (cotas[r.id] > 0) out[r.nome] = cotas[r.id]; });
@@ -152,8 +158,7 @@ function hojeIsoSP() { return new Date().toLocaleDateString("sv-SE", { timeZone:
 /** Recusas lidas do app de montagem (lista crua, mais nova primeiro); vazio se não houver. */
 export function listaRecusas() {
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM); if (!raw) return [];
-    var s = lerEstado(raw);
+    var s = lerMontagem();
     return ((s && s.recusas) || []).filter(function (r) { return r && r.rep; });
   } catch (x) { return []; }
 }
@@ -161,9 +166,7 @@ export function listaRecusas() {
 /** Recusa por WhatsApp: mesmos efeitos do reducer do montagem (RECUSAR_NOVA). Devolve {bloqueou, total, limite} ou null se a ponte não funcionar. */
 export function registrarRecusa(o) {
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    if (!raw) return null;
-    var s = lerEstado(raw);
+    var s = lerMontagem();
     if (!s || s.v !== 4) return null;
     var id = o.id ? "KN" + o.id : null;
     var d = new Date();
@@ -180,6 +183,7 @@ export function registrarRecusa(o) {
       return Object.assign({}, n, { status: "aguardando", rep: null, recusadaPor: (n.recusadaPor || []).concat([o.rep]) });
     });
     if (id) { var kr = s.novas.find(function (n) { return n.id === id; }); if (kr) { enviarKitAoServidor(kr); var kn2 = Object.assign({}, s.kn); kn2["k_" + id] = kr; s.kn = kn2; } }
+    if (gravarViva(s, ["recusas", "bloqueioNovas", "novas", "kn"])) return { bloqueou: bloqueou, total: total, limite: limite };
     localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return { bloqueou: bloqueou, total: total, limite: limite };
   } catch (x) {

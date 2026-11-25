@@ -3727,3 +3727,11 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Sem conexão com o banco: a tela é bloqueada (`BloqueioSemConexao` em `App.js`, aviso de `lib/api.js`) até voltar.
 - Trava: `scripts/padrao-regras.mjs` (`conferirNavegador`) reprova linha nova ou mexida em `src/**/*.js` que grava no navegador (`localStorage`/`sessionStorage.setItem`, `indexedDB.open`). Não aceita padrao-ok. Única exceção: a chave de login em `lib/api.js`. Vale no hook, no `npm run padrao`/conferir e no CI.
 - Próximas fases (a combinar): 3) outras gravações no navegador (melhorias, aulas, progresso, marcus, extratos, entrada de kits novos, clientes da revendedora, Pontual, cache do chat, anexos em IndexedDB) vão para o banco; 4) preferências de tela por pessoa vão para o banco; 5) conferência final: só o login no navegador.
+
+## 25/11/2026 — Conta "só no banco" (Nickolas, v0.21.232)
+- Pedido do Nickolas: "só resolva a situação do meu computador de não salvar mais do navegador e salvar no banco de dados só das minhas situações; de resto não faça nada". A fase 3 geral (outras gravações no navegador) ficou PARADA.
+- `lib/sync-modulos.js`: `CONTAS_SO_BANCO = ["17"]` (Nickolas). Nessas contas o estado não é gravado no navegador (`App.js`, `salvar`); a cópia antiga (`sorelly_montagem_v9`) é apagada quando `tudoNoBanco()` confirma que todos os módulos leram o banco e nada ficou sem enviar (`window.__sorellyPendentes` mostra o que falta). Fechar a aba com algo pendente mostra o aviso do navegador.
+- Kits novos (`kits-novos/lib/bridge-montagem.js`) lia e gravava essa cópia; nessa conta passa a ler e gravar no estado aberto (ponte viva, `lib/estado-comprimido.js`). Nas outras contas, igual a antes.
+- Correção para todos: a junção do módulo `nav` na primeira leitura (item só deste navegador sobe) só vale se havia cópia no navegador; sem cópia, o estado do código não sobe como dado.
+- Fica no navegador do Nickolas: login, preferências de tela e a cópia própria do Kits novos (os kits já estão no banco, módulo `kndados`).
+- Não foi conferido na tela (navegador embutido sem login e Chrome sem conexão); o Nickolas pediu para subir sem testar.

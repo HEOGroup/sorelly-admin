@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.232", data:"2026-11-25", titulo:"Conta do Nickolas: nada guardado no navegador", itens:[
+  {tipo:"melhoria", area:"Sistema · dados", txt:"Na conta do Nickolas, o sistema não guarda mais cópia no navegador: tudo vem do banco ao abrir. A cópia antiga sai sozinha quando o banco confirma que tem tudo. Fechar a aba com algo ainda não enviado pede para esperar. As outras contas não mudam."},
+  {tipo:"correção", area:"Sistema · dados", txt:"Navegador sem cópia (novo ou limpo) não sobe dados de exemplo para o banco ao abrir."}
+ ]},
  {v:"0.21.231", data:"2026-11-25", titulo:"Sempre no banco, nunca no navegador", itens:[
   {tipo:"melhoria", area:"Sistema · dados", txt:"Tudo o que ficava só no navegador de cada computador (atendimentos antigos, perfis das revendedoras, alertas, regras do consignado, formas de pagamento, autorizações, rotina e outros) agora fica no banco de dados. Todos os computadores veem a mesma coisa. As 5 contas de Pix que estavam só em um navegador foram incluídas."},
   {tipo:"melhoria", area:"Sistema · sem conexão", txt:"Sem conexão com o banco, a tela fica bloqueada com o aviso Sem conexão com o banco de dados e o botão Tentar de novo. Nada é guardado no navegador enquanto isso."},

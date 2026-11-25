@@ -50,4 +50,10 @@ function lerEstado(raw){
   try { return JSON.parse(raw.indexOf(MARCA)===0 ? descomprimirTexto(raw.slice(MARCA.length)) : raw); } catch(x){ return null; }
 }
 
-export { comprimirTexto, descomprimirTexto, textoDoEstado, lerEstado };
+// PONTE VIVA (25/11/2026): na conta "só no banco" (lib/sync-modulos.js › soBanco) não há cópia do estado no navegador; o Kits novos (lib/bridge-montagem.js)
+// lê e grava direto no estado aberto do sistema: {ler: () => estado, gravar: (chaves) => junta no estado}. Nas outras contas fica null e nada muda.
+var PONTE = null;
+function ligarPonteViva(p){ PONTE = p || null; }
+function ponteViva(){ return PONTE; }
+
+export { comprimirTexto, descomprimirTexto, textoDoEstado, lerEstado, ligarPonteViva, ponteViva };

@@ -13,7 +13,8 @@ import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
-import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { semDoServidor, soBanco, tudoNoBanco, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { ligarPonteViva } from "@/apps/montagem/lib/estado-comprimido";
 import { useCopiaNavegador } from "@/apps/montagem/lib/copia-navegador";
 import { enviarAcaoInd, indAoVivo } from "@/apps/montagem/lib/indicacoes-servidor";
 import { useCondicionaisKits } from "@/apps/montagem/lib/condicionais-kits";
@@ -223,10 +224,20 @@ function App(){
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
   // Salvar no navegador. Se o espaço acabar (limite de ~10 MB), AVISA na tela em vez de falhar calado (01/11/2026: acerto sumia ao recarregar)
   var sp = useState(false), semEspaco = sp[0], setSemEspaco = sp[1];
+  // conta "só no banco" (25/11/2026, Nickolas): não grava nada no navegador; apaga a cópia antiga quando o banco confirmou tudo
+  var salvarSoBanco = function(){ if(tudoNoBanco()){ try{ if(localStorage.getItem(CHAVE)) localStorage.removeItem(CHAVE); }catch(x){} } };
   var salvar = function(){ try{ localStorage.setItem(CHAVE, textoDoEstado(semDoServidor(paraSalvar(Object.assign({}, s, {aviso:null}))))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
   var liberarEspaco = function(){ try{ localStorage.removeItem("sorelly_copia_antes_servidor"); localStorage.removeItem("sorelly_copia_antes_servidor_em"); }catch(x){} salvar(); };
   // grava 0,4 s depois da última mudança (comprimir um estado grande leva uns décimos de segundo) e na hora em que a aba é escondida ou fechada
-  var salvarRef = React.useRef(null); salvarRef.current = salvar;
+  var salvarRef = React.useRef(null); salvarRef.current = soBanco() ? salvarSoBanco : salvar;   // conta só no banco: nunca grava no navegador
+  // conta "só no banco": fechar a aba com algo ainda não enviado ao banco pede para esperar; o Kits novos lê e grava no estado aberto (ponte viva)
+  var estadoRef = React.useRef(s); estadoRef.current = s;
+  useEffect(function(){ if(!soBanco()) return undefined;
+    ligarPonteViva({ler:function(){ return estadoRef.current; }, gravar:function(o){ d({type:"SYNC_MODULO", chave:"nav", conteudo:o}); }});
+    var sair = function(ev){ if(tudoNoBanco()) return undefined; ev.preventDefault(); ev.returnValue = "Ainda salvando no banco. Espere alguns segundos."; return ev.returnValue; };
+    var t = setInterval(function(){ salvarRef.current(); }, 5000);   // confere a cada 5 s (a cópia antiga sai assim que o banco confirmar)
+    window.addEventListener("beforeunload", sair);
+    return function(){ ligarPonteViva(null); clearInterval(t); window.removeEventListener("beforeunload", sair); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ var t = setTimeout(function(){ salvarRef.current(); }, 400); return function(){ clearTimeout(t); }; }, [s]);
   useEffect(function(){ var f = function(){ salvarRef.current(); }, g = function(){ if(document.hidden) f(); };
     window.addEventListener("pagehide", f); document.addEventListener("visibilitychange", g); return function(){ window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", g); }; }, []);
