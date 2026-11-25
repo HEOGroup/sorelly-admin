@@ -18,4 +18,7 @@ export async function register() {
   // Só liga com APP_REP_SINCRONIZAR=1 (o .env de desenvolvimento aponta para a API de produção do app).
   const { agendarSincronizacao } = await import("./src/server/app-rep/sincronizar.js");
   agendarSincronizacao();
+  // Kommo → Kits novos (25/11/2026): a aprovada na Kommo entra sozinha nos Kits novos, a cada 2 minutos. Só liga com KITS_NOVOS_KOMMO=1.
+  const { agendarKommoKitsNovos } = await import("./src/server/kits-novos-kommo.js");
+  agendarKommoKitsNovos();
 }

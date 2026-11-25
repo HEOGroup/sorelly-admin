@@ -19,7 +19,7 @@ function Etiquetas(p){ var s = use().state, c = p.c;
     atrasado(c, s.cfg) && badge("Atrasada "+(diasNaEtapa(c)-prazoDe(c,s.cfg))+"d","destructive","alert"),
     (c.desm||0)>0 && badge(c.desm+(c.desm>1?" desmarca\u00e7\u00f5es":" desmarca\u00e7\u00e3o"), c.desm>=s.cfg.maxDesmarcacoes?"destructive":"warning","calendar"),
     c.tipo==="Retornando" && badge("Retornando","purple","refresh"),
-    c.rep==="Sorelly" && badge("Vem na empresa","info"),
+    /^Sorelly/.test(c.rep||"") && badge("Vem na empresa","info"),
     c.obs && /EXPOSITOR/i.test(c.obs) && badge("Expositor","warning"),
     c.obs && /FALTA LIGAR/i.test(c.obs) && aberto(c) && badge("Falta ligar","warning","message")); }
 

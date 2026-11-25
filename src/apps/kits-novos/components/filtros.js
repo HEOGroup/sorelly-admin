@@ -9,9 +9,11 @@ import { e } from "@/shared/react";
 // Regiões da planilha da Michele, na ordem dela. Kit sem região (criado dentro do sistema) vale como Curitiba e região.
 var REGIOES = ["Curitiba e região", "Maringá", "Litoral do Paraná", "Ponta Grossa", "Joinville", "Santa Catarina"];
 function regiaoDe(c){ return c.reg || REGIOES[0]; }
-function filtrar(s){ var f = s.filtro, b = f.busca.toLowerCase();
+// busca sem acento e sem diferença de maiúscula (como no admin antigo); também acha pelo telefone
+var semAc = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
+function filtrar(s){ var f = s.filtro, b = semAc(f.busca);
   return s.dados.filter(function(c){
-    if(b && (c.nome+" "+c.bai+" "+c.cid+" "+(c.prof||"")+" "+c.rep).toLowerCase().indexOf(b)<0) return false;
+    if(b && semAc(c.nome+" "+c.bai+" "+c.cid+" "+(c.prof||"")+" "+c.rep+" "+(c.tel||"")).indexOf(b)<0) return false;
     if(f.st==="aguardando"){ if(!seguro(c)) return false; } else if(f.st && (c.st!==f.st || seguro(c))) return false; if(f.reg && regiaoDe(c)!==f.reg) return false; if(f.rep && c.rep!==f.rep) return false; if(f.cid && c.cid!==f.cid) return false;
     if(f.mes && mesDe(c)!==f.mes) return false; if(f.ent && c.ent!==f.ent) return false;
     if(f.so==="atrasadas" && !atrasado(c, s.cfg)) return false; if(f.so==="aguardando" && !seguro(c)) return false; if(f.so==="abertos" && !aberto(c)) return false;

@@ -9,6 +9,10 @@ import { GradeJanelas } from "@/apps/kits-novos/components/grade-janelas";
 import { Sugestoes } from "@/apps/kits-novos/components/rep-indicar";
 import { motivoSugestao, sugerir, todasReps } from "@/apps/kits-novos/domain/indicacao";
 import { use } from "@/apps/kits-novos/state/context";
+import { quem } from "@/apps/kits-novos/state/store";
+import { recusasDosKits, repBloqueada } from "@/apps/kits-novos/domain/config";
+import { excluirNoServidor } from "@/apps/kits-novos/lib/sync-servidor";
+import { ehAdmin } from "@/apps/montagem/lib/api";
 import { badge } from "@/apps/kits-novos/ui/badge";
 import { Btn } from "@/apps/kits-novos/ui/button";
 import { Icon } from "@/apps/kits-novos/ui/icon";
@@ -76,9 +80,20 @@ function Linha2(p){
         e("div",{className:"flex items-center justify-between gap-2"}, e("b",{className:"text-sm text-destructive"}, "Cancelada"), e("span",{className:MONO+" text-[13px]"}, dataBR(c.ret))),
         c.obs && e("span",{className:"text-[12px] text-muted-foreground"}, c.obs.split("|").pop().trim())))] : []));
 }
+// De onde veio e o que o app respondeu (25/11/2026): lead da Kommo (etapa no funil Aprovadas), resposta da representante no app e recusas.
+var DIA_BR = function(i){ return i ? String(i).slice(0, 10).split("-").reverse().join("/") : ""; };
+function BlocoOrigem(p){
+  var c = p.c, a = c.app, li = function(r, v, cor){ return e("div",{key:r, className:"flex items-center justify-between gap-2 text-[13px]"}, e("span",null, r), e("b",{className:cor||""}, v)); };
+  return e("div",{className:"flex flex-col gap-1"},
+    c.kId && li("Lead na Kommo", e("a",{href:"https://sorelly.kommo.com/leads/detail/"+c.kId, target:"_blank", rel:"noreferrer", className:"text-primary underline"}, "#"+c.kId)),
+    c.kId && c.kEt && li("Etapa na Kommo", c.kEt+(c.kEm ? " · "+DIA_BR(c.kEm) : "")),
+    a && li("App da representante", a.tipo==="recusado" ? "Recusou"+(a.rep ? " ("+a.rep+")" : "") : "Agendou"+(a.data ? " para "+DIA_BR(a.data) : "")+(a.periodo ? ", "+a.periodo : ""), a.tipo==="recusado" ? "text-destructive" : "text-success"),
+    a && a.tipo==="recusado" && a.motivo && li("Motivo", a.motivo),
+    (c.recs||[]).length>0 && li("Recusas deste kit", (c.recs||[]).map(function(r){ return r.rep+" ("+DIA_BR(r.iso)+(r.via ? ", "+r.via : "")+")"; }).join(" · "), "text-destructive"));
+}
 function DlgDetalhe(p){
   var cx = use(), s = cx.state, d = cx.dispatch, c = p.c, listas = p.listas;
-  var st = useState({rep:c.rep, mod:c.mod, val:c.val||0, retirada:c.retirada, disp:c.disp, obs:c.obs, obs2:c.obs2, tipo:c.tipo, ent:c.ent, bai:c.bai, cid:c.cid, prof:c.prof, trab:c.trab, trabEnd:c.trabEnd,
+  var st = useState({rep:c.rep, mod:c.mod, val:c.val||0, retirada:c.retirada, disp:c.disp, obs:c.obs, obs2:c.obs2, tipo:c.tipo, ent:c.ent, entId:c.entId, bai:c.bai, cid:c.cid, prof:c.prof, trab:c.trab, trabEnd:c.trabEnd, tel:c.tel, end:c.end,
     cad:c.cad, lib:c.lib, sol:c.sol, ace:c.ace, con:c.con, age:c.age, bip:c.bip, rtd:c.rtd, agDia:c.agDia, agPer:c.agPer, jan:c.jan,
     c1:c.c1, c2:c.c2, c3:c.c3, c1n:c.c1n, c1t:c.c1t, c1r:c.c1r, c2n:c.c2n, c2t:c.c2t, c2r:c.c2r, c3n:c.c3n, c3t:c.c3t, c3r:c.c3r});
   var f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
@@ -88,15 +103,24 @@ function DlgDetalhe(p){
   var selecao = function(k, ops){ return e("select",{className:IN, value:f[k]||"", onChange:function(ev){up(k, ev.target.value);}},
     e("option",{value:""},"—"), (ops.indexOf(f[k])<0 && f[k] ? [f[k]] : []).concat(ops).map(function(o){ return e("option",{key:o, value:o}, o); })); };
   var abtn = "w-full justify-start!";
-  return e(Modal,{open:true, largo:true, titulo:c.nome, sub:(c.bai?c.bai+", ":"")+c.cid+(c.prof?" · "+c.prof:"")+(c.op?" · cadastro por "+c.op:"")+(c.entId?" · campanha "+c.entId:""), confirmar:"Salvar alterações", icone:"save", onClose:p.fechar,
-      onConfirmar:function(){ d({type:"SALVAR", id:c.id, campos:f}); }},
+  var recs = recusasDosKits(s.dados), bloqRep = f.rep!==c.rep && repBloqueada(f.rep, s.cfg, recs);
+  return e(Modal,{open:true, largo:true, titulo:c.nome, sub:(c.bai?c.bai+", ":"")+c.cid+(c.prof?" · "+c.prof:"")+(c.op?" · cadastro por "+c.op:"")+(c.entId?" · campanha "+c.entId:""), confirmar:"Salvar alterações", icone:"save", onClose:p.fechar, desabilitado:bloqRep,
+      onConfirmar:function(){
+        // trocou a representante de um kit já solicitado: o kit vai para o app da nova (como no admin antigo, só a troca reenvia)
+        if(c.st==="solicitado" && f.rep && f.rep!==c.rep){ if(/^Sorelly/.test(f.rep)) direcionarParaSorelly(Object.assign({}, c, f)); else direcionarParaRepresentante(Object.assign({}, c, f), f.rep); }
+        d({type:"SALVAR", id:c.id, campos:Object.assign({}, f, {tel:String(f.tel||"").replace(/\D/g, "")})}); }},
     e("div",{className:"flex flex-wrap items-center gap-1.5"}, e(StBadge,{c:c}), e(EntBadge,{c:c}), e(Etiquetas,{c:c}), aberto(c) && badge(diasNaEtapa(c)+" dias na etapa","muted","clock")),
     e("div",{className:"grid grid-cols-1 items-start gap-3 lg:grid-cols-3"},
       // Coluna da esquerda: quem é a revendedora e os contatos.
       e("div",{className:"flex flex-col gap-3"},
         e(Sec,{t:"Revendedora", ic:"user"},
           e("div",{className:"grid grid-cols-2 gap-2"},
-            e(Cp,{l:"Representante", className:"col-span-2"}, selecao("rep", listas.reps)), e(Cp,{l:"Cidade"}, selecao("cid", listas.cids)), e(Cp,{l:"Bairro"}, inp("bai")),
+            e(Cp,{l:"Representante", className:"col-span-2"}, selecao("rep", listas.reps)),
+            bloqRep && e("p",{className:"col-span-2 text-[13px] text-destructive"}, f.rep+" está bloqueada para novos kits (recusas ou bloqueio no Configurador)."),
+            e(Cp,{l:"Telefone"}, inp("tel", {placeholder:"41999998888"})),
+            e(Cp,{l:"WhatsApp"}, linkWhats(f.tel) ? e("a",{href:linkWhats(f.tel), target:"_blank", rel:"noreferrer", className:"inline-flex h-8 items-center justify-center gap-1 rounded-md border border-success/40 bg-success/10 px-2 text-[13px] font-semibold text-success"}, e(Icon,{n:"send", s:12}), "Chamar") : e("span",{className:"inline-flex h-8 items-center text-[13px]"}, "Sem telefone")),
+            e(Cp,{l:"Endereço da casa", className:"col-span-2"}, inp("end")),
+            e(Cp,{l:"Cidade"}, selecao("cid", listas.cids)), e(Cp,{l:"Bairro"}, inp("bai")),
             e(Cp,{l:"Tipo"}, selecao("tipo", ["Vendedora","Retornando"])), e(Cp,{l:"Entrada"}, selecao("ent", listas.ents)),
             e(Cp,{l:"Profissão", className:"col-span-2"}, inp("prof")),
             e(Cp,{l:"Trabalho (local)", className:"col-span-2"}, inp("trab")), e(Cp,{l:"Endereço do trabalho", className:"col-span-2"}, inp("trabEnd")))),
@@ -106,6 +130,7 @@ function DlgDetalhe(p){
       // Coluna do meio: linha do tempo das etapas e o kit.
       e("div",{className:"flex flex-col gap-3"},
         e(Sec,{t:"Etapas", ic:"clock"}, e(Linha2,{c:c, f:f, up:up})),
+        (c.kId || c.app || (c.recs||[]).length>0) && e(Sec,{t:"Kommo e app da representante", ic:"send"}, e(BlocoOrigem,{c:c})),
         e(Sec,{t:"Representantes indicadas", ic:"user", aberta:aberto(c) && !c.rep},
           e(GradeJanelas,{valor:f.jan||{}, onChange:function(v){ up("jan", v); }}),
           e(Sugestoes,{rev:{cid:f.cid, bai:f.bai, jan:f.jan||{}}, max:3, onEscolher:function(nome){ up("rep", nome); }})),
@@ -124,7 +149,7 @@ function DlgDetalhe(p){
           c.rep && (c.st==="liberado"||c.st==="solicitado") && e(Btn,{v:"destructive", ic:"userx", className:abtn, onClick:function(){d({type:"DIALOGO", d:{tipo:"recusou", id:c.id}});}},"Recusou"),
           aberto(c) && e(Btn,{v:"destructive", ic:"ban", className:abtn, onClick:function(){d({type:"DIALOGO", d:{tipo:"cancelar", id:c.id}});}},"Cancelar revendedora"),
           c.st==="cancelado" && e(Btn,{v:"success", ic:"refresh", className:abtn, onClick:function(){d({type:"REATIVAR", id:c.id});}},"Reativar"),
-          s.usuario==="nickolas" && e(Btn,{v:"destructive", ic:"trash", className:abtn, onClick:function(){ situacaoNoApp(c.id, "excluida"); d({type:"EXCLUIR", id:c.id});}},"Excluir")),
+          (ehAdmin() || s.usuario==="nickolas") && e(Btn,{v:"destructive", ic:"trash", className:abtn, onClick:function(){ if(!window.confirm("Excluir "+c.nome+" dos Kits novos? Isso não pode ser desfeito.")) return; situacaoNoApp(c, "excluida"); excluirNoServidor(c, quem(s)); d({type:"EXCLUIR", id:c.id});}},"Excluir")),
         e(Sec,{t:"Observações", ic:"message"},
           e(Cp,{l:"Disponibilidade"}, area("disp")), e(Cp,{l:"Observação"}, area("obs")), e(Cp,{l:"Indicação / origem"}, area("obs2"))),
         (c.hist||[]).length>0 && e(Sec,{t:"Histórico no sistema", ic:"history", aberta:false},
@@ -138,11 +163,13 @@ function DlgAvancar(p){
   var sug = prox.k==="solicitado" ? sugerir(cx2.state, {cid:c.cid, bai:c.bai, jan:c.jan||{}}).lista.slice(0, 3) : [], revSug = {cid:c.cid, bai:c.bai};
   var st = useState({data:hojeISO(), retirada:c.retirada||"", rep:c.rep || (sug[0] ? sug[0].nome : ""), ok:false, agDia:c.agDia||"", agPer:c.agPer||"Manhã"}), f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
   var precisaRep = prox.k==="solicitado" && !f.rep, precisaOk = prox.k==="entregue" && !f.ok;
-  return e(Modal,{open:true, titulo:"Avan\u00e7ar para "+prox.nome, sub:c.nome+", hoje em "+et.nome, confirmar:"Confirmar", icone:"arrowright", desabilitado:!f.data||precisaRep||precisaOk||(prox.k==="agendado" && !f.agDia),
+  // representante bloqueada (recusas ou bloqueio manual no Configurador) não recebe kit novo; "Sorelly" (vem na empresa) nunca é bloqueada. Como no admin antigo.
+  var bloqueada = prox.k==="solicitado" && !!f.rep && repBloqueada(f.rep, cx2.state.cfg, recusasDosKits(cx2.state.dados));
+  return e(Modal,{open:true, titulo:"Avan\u00e7ar para "+prox.nome, sub:c.nome+", hoje em "+et.nome, confirmar:"Confirmar", icone:"arrowright", desabilitado:!f.data||precisaRep||precisaOk||bloqueada||(prox.k==="agendado" && !f.agDia),
       onClose:p.fechar, onConfirmar:function(){ var extra = {}; if(prox.k==="solicitado") extra.rep = f.rep; if(prox.k==="retirado") extra.retirada = f.retirada; if(prox.k==="agendado"){ extra.agDia = f.agDia; extra.agPer = f.agPer; }
         d({type:"AVANCAR", id:c.id, data:f.data, extra:extra});
         if(prox.k==="solicitado" && f.rep){ if(f.rep===REP_SORELLY) direcionarParaSorelly(c); else direcionarParaRepresentante(c, f.rep); }
-        if(prox.k==="entregue") situacaoNoApp(c.id, "entregue"); }},   // app real da representante: entregue = sai da lista dela
+        if(prox.k==="entregue") situacaoNoApp(c, "entregue"); }},   // app real da representante: entregue = sai da lista dela
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       e(Campo,{l:"Data de "+prox.nome.toLowerCase()}, e("input",{type:"date", className:INPUT+" "+MONO, value:f.data, onChange:function(ev){up("data", ev.target.value);}})),
       prox.k==="solicitado" && e(Campo,{l:"Representante"}, e("select",{className:INPUT, value:f.rep, onChange:function(ev){up("rep", ev.target.value);}}, e("option",{value:""},"Escolha"), opcoesRep(p.listas.reps, cx2.state, f.rep).map(function(r){return e("option",{key:r, value:r}, r);}))),
@@ -165,7 +192,8 @@ function DlgAvancar(p){
     prox.k==="devolvido" && e("p",{className:"text-sm text-muted-foreground"},"Devolvido = a condicional assinada voltou para a Sorelly (prazo de 3 dias depois da entrega)."),
     prox.k==="solicitado" && e("p",{className:"text-sm text-muted-foreground"},"Direciona pra representante escolhida: entra em Kits \u2192 Kits novos (e no app dela) pra aceitar ou recusar, do jeito que j\u00e1 funciona hoje."),
     prox.k==="entregue" && e("label",{className:"flex items-center gap-2 text-sm font-medium"}, e("input",{type:"checkbox", checked:f.ok, onChange:function(){up("ok",!f.ok);}, className:"size-4 accent-primary"}), "Kit entregue \u00e0 revendedora"),
-    precisaRep && e("p",{className:"text-sm text-warning"},"Para solicitar o kit \u00e9 preciso definir a representante."));
+    precisaRep && e("p",{className:"text-sm text-warning"},"Para solicitar o kit \u00e9 preciso definir a representante."),
+    bloqueada && e("p",{className:"text-[13px] text-destructive"}, f.rep+" est\u00e1 bloqueada para novos kits (recusas ou bloqueio no Configurador). Escolha outra representante."));
 }
 function DlgMotivo(p){
   var cx = use(), s = cx.state, d = cx.dispatch, c = p.c, canc = p.tipo==="cancelar";
@@ -173,7 +201,7 @@ function DlgMotivo(p){
   return e(Modal,{open:true, titulo:canc?"Cancelar revendedora":"Voltar etapa", sub:c.nome, confirmar:canc?"Cancelar revendedora":"Voltar", icone:canc?"ban":"undo", perigo:true, desabilitado:!mot.trim(),
       onClose:p.fechar, onConfirmar:function(){
         // app real da representante: cancelada, ou voltou de Solicitado para Liberado = sai da lista dela
-        if(canc) situacaoNoApp(c.id, "cancelada"); else if(etapaDe(c) && etapaDe(c).k==="solicitado") situacaoNoApp(c.id, "voltou");
+        if(canc) situacaoNoApp(c, "cancelada"); else if(etapaDe(c) && etapaDe(c).k==="solicitado") situacaoNoApp(c, "voltou");
         d({type:canc?"CANCELAR":"VOLTAR", id:c.id, motivo:mot.trim()}); }},
     canc ? e(Campo,{l:"Motivo"}, e("select",{className:INPUT, value:mot, onChange:function(ev){setMot(ev.target.value);}}, e("option",{value:""},"Escolha"), s.cfg.motivosCancel.map(function(m){return e("option",{key:m, value:m}, m);})))
          : e(Campo,{l:"Motivo"}, e("input",{className:INPUT, value:mot, autoFocus:true, onChange:function(ev){setMot(ev.target.value);}})));
@@ -198,14 +226,17 @@ function DlgRecusa(p){
 }
 function DlgNova(p){
   var cx = use(), s = cx.state, d = cx.dispatch, listas = p.listas;
-  var st = useState({nome:"", cid:"Curitiba", bai:"", prof:"", rep:"", mod:"Normal", val:s.cfg.valorPadrao, tipo:"Vendedora", ent:"", trab:"", trabEnd:"", disp:"", obs2:"", c1n:"", c1t:"", c1r:""}), f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
+  var st = useState({nome:"", tel:"", end:"", cid:"Curitiba", bai:"", prof:"", rep:"", mod:"Normal", val:s.cfg.valorPadrao, tipo:"Vendedora", ent:"", trab:"", trabEnd:"", disp:"", obs2:"", c1n:"", c1t:"", c1r:"", expositor:false, faltaLigar:false, vemEmpresa:false}), f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
+  var marca = function(k, rot){ return e("label",{className:"flex h-8 items-center gap-2 text-[13px] font-medium"}, e("input",{type:"checkbox", checked:!!f[k], onChange:function(){ up(k, !f[k]); }, className:"size-4 accent-primary"}), rot); };
   var inp = function(k, ph){ return e("input",{className:INPUT, value:f[k], placeholder:ph||"", onChange:function(ev){up(k, ev.target.value);}}); };
   var sel = function(k, ops){ return e("select",{className:INPUT, value:f[k], onChange:function(ev){up(k, ev.target.value);}}, e("option",{value:""},"\u2014"), ops.map(function(o){return e("option",{key:o, value:o}, o);})); };
   return e(Modal,{open:true, titulo:"Nova revendedora", sub:"Entra como Cadastrada com a data de hoje", confirmar:"Cadastrar", icone:"plus", desabilitado:!f.nome.trim(), onClose:p.fechar, onConfirmar:function(){ d({type:"NOVA", dados:f}); }},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       e(Campo,{l:"Nome", className:"sm:col-span-2"}, e("input",{className:INPUT, value:f.nome, autoFocus:true, onChange:function(ev){up("nome", ev.target.value);}})),
+      e(Campo,{l:"Telefone (WhatsApp)"}, inp("tel", "41999998888")), e(Campo,{l:"Endereço da casa"}, inp("end")),
       e(Campo,{l:"Cidade"}, sel("cid", listas.cids)), e(Campo,{l:"Bairro"}, inp("bai")),
       e(Campo,{l:"Representante (pode definir depois)"}, sel("rep", listas.reps)), e(Campo,{l:"Entrada"}, sel("ent", listas.ents)),
+      e("div",{className:"flex flex-wrap items-center gap-4 sm:col-span-2"}, marca("expositor", "Expositor"), marca("vemEmpresa", "Vem na empresa"), marca("faltaLigar", "Falta ligar")),
       e(Campo,{l:"Modelo do kit"}, sel("mod", ["Normal","Prata"])), e(Campo,{l:"Valor do kit"}, e(MoneyInput,{value:f.val, onChange:function(v){up("val", v);}, label:"Valor do kit"})),
       e(Campo,{l:"Tipo"}, sel("tipo", ["Vendedora","Retornando"])), e(Campo,{l:"Profiss\u00e3o"}, inp("prof")),
       e(Campo,{l:"Trabalho (nome do local)"}, inp("trab")), e(Campo,{l:"Endere\u00e7o do trabalho"}, inp("trabEnd")),

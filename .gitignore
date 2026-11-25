@@ -30,3 +30,10 @@ tests/fotos/referencia/*-darwin.png
 
 # log do servidor local (iniciar-servidor-unico.cmd)
 logs/
+
+# planilhas com dados reais (ex.: Kits Novos 2026.xlsx, importada por scripts/importar-kits-novos-planilha.mjs): nunca no Git
+*.xlsx
+*.xls
+
+# ligação local com a Vercel (vercel link): nunca no Git
+.vercel

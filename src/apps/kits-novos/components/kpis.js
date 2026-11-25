@@ -1,7 +1,7 @@
 // Sorelly Admin · kits novos Curitiba — components/kpis.js
 // RESUMO EM UM BLOCO (Marcus, 05/11/2026): saiu a faixa de números do topo; os mesmos números viraram um bloco de lista (BlocoResumo). Vermelho = atraso, verde = entregue.
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
-import { ETAPAS, aberto, atrasado, entregou, etapaDe, mesDe, seguro } from "@/apps/kits-novos/domain/etapas";
+import { aberto, atrasado, colunasQuadro, entregou, etapaDe, mesDe, seguro } from "@/apps/kits-novos/domain/etapas";
 import { MESES, diasEntre } from "@/apps/kits-novos/lib/datas";
 import { N1 } from "@/apps/kits-novos/lib/format";
 import { use } from "@/apps/kits-novos/state/context";
@@ -24,14 +24,16 @@ function KPIs(){
     {r:"Entregues no mês", v:String(entMes.length), cor:entMes.length>0 ? "ok" : undefined},
     {r:"Condicional", v:String(cond), cor:condAtr ? "ruim" : undefined},
     {r:"Cancelados no mês", v:String(cancMes.length)},
-    {r:"Meta de "+cfg.metaDias+" dias", v:N1(dentro)+"%", cor:"ok"}]});
+    // como no admin antigo: % das entregas do cadastro à entrega dentro da meta (verde a partir de 70%) e a mediana dos dias
+    {r:"Meta de "+cfg.metaDias+" dias", v:N1(dentro)+"%", cor:dentro>=70 ? "ok" : "ruim"},
+    {r:"Mediana do cadastro à entrega", v:tempos.length ? String(tempos.slice().sort(function(a, b){ return a-b; })[Math.floor((tempos.length-1)/2)])+" dias" : "—"}]});
 }
 
 // POR ETAPA (Marcus, 05/11/2026): segundo bloco, ao lado do Resumo do mês: quantos kits em cada etapa e quantos atrasados.
 function PorEtapa(){
   var s = use().state, ds = s.dados, cfg = s.cfg, mesAtual = MESES[new Date().getMonth()];
   // etapas abertas: tudo que está nelas agora; Devolvido e Cancelado: só os do mês (igual ao Resumo do mês)
-  var defs = ETAPAS.slice(0, 1).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(1), [{k:"cancelado", nome:"Cancelado"}]);
+  var defs = colunasQuadro();
   var linhas = defs.map(function(x){ var fechada = x.k==="devolvido" || x.k==="cancelado", esp = x.k==="aguardando";
     var cs = ds.filter(function(c){ if(esp) return seguro(c); var k = c.st==="cancelado" ? "cancelado" : (etapaDe(c)||{}).k; return k===x.k && (fechada ? mesDe(c)===mesAtual : !seguro(c)); }), at = fechada || esp ? 0 : cs.filter(function(c){ return atrasado(c, cfg); }).length;
     return {r:fechada ? x.nome+" (no mês)" : x.nome, v:String(cs.length), p:fechada || esp ? "—" : String(at), pcor:at>0 ? "ruim" : undefined, cor:esp ? "alerta" : undefined}; });

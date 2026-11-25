@@ -45,4 +45,11 @@ function BarraPct(p){
   return e("div",{className:"mx-auto h-2 w-full max-w-40 overflow-hidden rounded-full bg-white/10"}, e("i",{className:"block h-full rounded-full", style:{width:Math.max(p.pct>0 ? 3 : 0, Math.min(100, p.pct))+"%", background:p.cor||"#E8B84B"}}));
 }
 
-export { nInt, nPct, dbr, hora, mesBr, PERIODO0, paramsDe, textoPeriodo, FiltrosDesempenho, CampoData, BarraPct };
+// situação da ligação com a Kommo / admin antigo / Meta (25/11/2026): uma linha só, acima dos números. Nada a dizer = não aparece.
+function AvisoLigacao(p){
+  var t = p.erro ? p.erro : p.desligado ? "Ligação com a Kommo desligada no servidor (falta ADMIN_ANTIGO_DATABASE_URL). Os números aparecem zerados." : p.carregando ? "Lendo os dados da Kommo…" : "";
+  if(!t) return null;
+  return e("p",{role:"status", className:"text-center text-[13px] "+(p.erro || p.desligado ? "text-destructive" : "text-white")}, t);
+}
+
+export { nInt, nPct, dbr, hora, mesBr, PERIODO0, paramsDe, textoPeriodo, FiltrosDesempenho, CampoData, BarraPct, AvisoLigacao };

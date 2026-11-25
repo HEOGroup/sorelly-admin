@@ -24,7 +24,7 @@ export function carregarDados() {
       try {
         if (apiAtiva() && token()) {
           var r = await chamar("GET", "/estado/kndados");
-          var c = r && r.conteudo ? r.conteudo : {}, lista = Object.keys(c).filter(function (k) { return k.indexOf("r_") === 0; }).map(function (k) { return c[k]; });
+          var c = r && r.conteudo ? r.conteudo : {}, lista = Object.keys(c).filter(function (k) { return k.indexOf("r_") === 0 && c[k] && !c[k].excluido; }).map(function (k) { return c[k]; });
           if (lista.length) { DADOS = lista; FONTE = "planilha-" + String((c.meta && c.meta.versao) || ""); return lista; }
         }
       } catch (x) { /* sem acesso: segue com a lista vazia */ }

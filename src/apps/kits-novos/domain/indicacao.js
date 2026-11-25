@@ -2,6 +2,7 @@
 // Indicação da representante para um kit novo: cruza a REGIÃO (cidade e bairro da revendedora) e os HORÁRIOS (janelas dela x dias e períodos da representante).
 // Hoje é só sugestão: a Michele escolhe. Os pesos ficam aqui no topo para ajustar com o Marcus (nada de valor fixo dentro de tela).
 import { emCurso } from "@/apps/kits-novos/domain/etapas";
+import { recusasDosKits, repBloqueada } from "@/apps/kits-novos/domain/config";
 import { DIAS, PENDENTES, PERFIS0, REGIOES_EXTRA, PERIODOS, RESPOSTAS, RMC, janDe } from "@/apps/kits-novos/domain/regioes-rep";
 import { recusasPorRep, revendedorasPorRep } from "@/apps/kits-novos/lib/bridge-montagem";
 
@@ -9,7 +10,7 @@ var PESO = {bairro:50, cidade:40, inteira:35, prioridade:20, horario:4, horarioM
 var LIMITE_REV = 120;        // acima disso a representante atende pior: o ideal é NÃO mandar kit novo (pode, mas pesa contra na indicação)
 var FORTALECER_ATE = 80;     // até aqui a representante é "para fortalecer": ganha pontos na indicação
 PESO.acimaDoLimite = 25; PESO.divCarga = 3;   // pontos: −25 se passar de 120; abaixo de 120 ganha (120 − revendedoras) ÷ 3 (60 revendedoras = +20)
-var LIMITE_RECUSAS = 2;   // com 2 recusas a representante fica bloqueada para kits novos (mesma regra do app de montagem)
+// limite de recusas: agora no Configurador (cfg.recusasBloqueio) e na regra repBloqueada (domain/config.js), 25/11/2026
 
 var tokens = function(n){ return String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/).filter(Boolean); };
 // "Leticia Moroz" casa com "Leticia Adrielle Moroz": todas as palavras do nome curto estão no nome completo do Agendamento
@@ -62,7 +63,7 @@ function slotsDe(jan){ var o = []; DIAS.forEach(function(d){ String((jan||{})[d[
 function rotuloSlot(sl){ var d = sl.split("-"); return DIAS.find(function(x){ return x[0]===d[0]; })[1]+" "+PERIODOS.find(function(x){ return x[0]===d[1]; })[1].toLowerCase(); }
 
 function sugerir(s, rev){
-  var rec = recusasPorRep(), mapaRev = revendedorasPorRep(), abertos = {}, slotsRev = slotsDe(rev.jan), lista = [], fora = [];
+  var recsKits = recusasDosKits(s.dados), rec = recusasPorRep(), mapaRev = revendedorasPorRep(), abertos = {}, slotsRev = slotsDe(rev.jan), lista = [], fora = [];
   s.dados.forEach(function(c){ if(c.rep && emCurso(c)) abertos[c.rep] = (abertos[c.rep]||0)+1; });
   todasReps(s).forEach(function(it){
     if(!it.p) return;
@@ -70,7 +71,8 @@ function sugerir(s, rev){
     if(naoAtende(it.p, rev.cid, rev.bai)){ if(nivel) fora.push({nome:it.nome, motivo:"Não quer atender esta região"}); return; }
     if(!nivel) return;
     var slotsRep = slotsDe(it.p.jan), comum = slotsRev.length ? slotsRev.filter(function(x){ return slotsRep.indexOf(x)>=0; }) : null;
-    if((rec[it.nome]||0) >= LIMITE_RECUSAS){ fora.push({nome:it.nome, motivo:"Bloqueada por recusas"}); return; }
+    // bloqueio igual ao do admin antigo (25/11/2026): recusas gravadas nos kits desde o último desbloqueio, ou bloqueio manual no Configurador
+    if(repBloqueada(it.nome, s.cfg, recsKits)){ fora.push({nome:it.nome, motivo:"Bloqueada para novos kits"}); return; }
     if(comum && slotsRep.length && !comum.length){ fora.push({nome:it.nome, motivo:"Sem horário em comum"}); return; }
     var cota = cotaDe(it.nome, mapaRev);
     var prior = nivel!=="inteira" && (it.p.prior||[]).some(function(x){ return norm(x)===norm(rev.bai); });

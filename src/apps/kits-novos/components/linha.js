@@ -17,7 +17,7 @@ function Linha(p){
   var abrir = function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); };
   // Situação e alertas em TEXTO (padrão do Financeiro: sem selos soltos no meio da tabela; cor só no valor)
   var sit = c.st==="cancelado" ? "Cancelado" : et.nome, sitCor = (c.st==="entregue" || c.st==="devolvido") ? "text-success" : (c.st==="cancelado" || atr) ? "text-destructive" : "";
-  var al = []; if((c.desm||0)>0) al.push(c.desm+(c.desm>1 ? " desmarcações" : " desmarcação")); if(c.tipo==="Retornando") al.push("Retornando"); if(c.rep==="Sorelly") al.push("Vem na empresa");
+  var al = []; if((c.desm||0)>0) al.push(c.desm+(c.desm>1 ? " desmarcações" : " desmarcação")); if(c.tipo==="Retornando") al.push("Retornando"); if(/^Sorelly/.test(c.rep||"")) al.push("Vem na empresa");
   if(c.obs && /EXPOSITOR/i.test(c.obs)) al.push("Expositor"); if(c.obs && /FALTA LIGAR/i.test(c.obs) && aberto(c)) al.push("Falta ligar");
   // a coluna Contatos (1, 2, 3) saiu da tabela (pedido da Michele, 29/10/2026): os contatos de referência ficam só no detalhe da revendedora, para o Cadastro
   // passar o mouse numa etapa mostra o tempo dela: quanto levou desde a etapa anterior (e o prazo), ou há quantos dias está parada nela

@@ -4,6 +4,8 @@ import { Bloco, FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/
 import { FiltrosDesempenho, nPct, paramsDe, textoPeriodo, dbr } from "@/apps/montagem/pages/cadastro/des-comum";
 import { metricas } from "@/apps/montagem/domain/cadastro-leads";
 import { use } from "@/apps/montagem/state/context";
+import { useCadastroReal } from "@/apps/montagem/lib/cadastro-real";
+import { AvisoLigacao } from "@/apps/montagem/pages/cadastro/des-comum";
 import { e, useState } from "@/shared/react";
 
 var VERDE = "#4ADE80", VERMELHO = "#F87171";
@@ -26,10 +28,12 @@ function GraficoDiario(p){
 }
 
 function DesMetricas(p){
-  var s = use().state, m = metricas(s.cl, paramsDe(p.f)), k = m.kpis, dias = m.serie.filter(function(x){ return x.aprovados || x.reprovados; }).reverse();
+  // leads reais da Kommo (25/11/2026)
+  var s = use().state, cad = useCadastroReal(s.cl), m = metricas(cad.cl, paramsDe(p.f)), k = m.kpis, dias = m.serie.filter(function(x){ return x.aprovados || x.reprovados; }).reverse();
   var taxaCor = k.decididos===0 ? "" : k.taxaAprovacao>=60 ? "text-success" : k.taxaAprovacao<40 ? "text-destructive" : "";
   return e("div",{className:"flex flex-col gap-3"},
     e(FiltrosDesempenho,{f:p.f, set:p.set}),
+    e(AvisoLigacao,{erro:cad.erro, desligado:cad.ligado===false, carregando:cad.carregando}),
     e(FaixaTotais,{itens:[{t:"Aprovadas", v:String(k.aprovados), cor:"text-success"}, {t:"Reprovadas", v:String(k.reprovados), cor:k.reprovados ? "text-destructive" : ""},
       {t:"Taxa de aprovação", v:nPct(k.taxaAprovacao), cor:taxaCor}, {t:"Pendentes agora", v:String(k.pendentes), cor:k.pendentes ? "text-warning" : ""}, {t:"Decisões de hoje", v:String(k.decisoesHoje)}]}),
     e(GraficoDiario,{serie:m.serie, periodo:m.periodo}),

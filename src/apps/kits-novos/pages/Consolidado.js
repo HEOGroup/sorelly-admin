@@ -1,6 +1,6 @@
 // Sorelly Admin · kits novos Curitiba — pages/Consolidado.js
 // Extraído de sorelly_admin_kits_novos_curitiba.html sem alterar o corpo das funções.
-import { listaDe, nomeEntrada } from "@/apps/kits-novos/domain/config";
+import { ehIdAnuncio, listaDe, nomeEntrada } from "@/apps/kits-novos/domain/config";
 import { aberto, atrasado, mesDe } from "@/apps/kits-novos/domain/etapas";
 import { MESES, diasEntre } from "@/apps/kits-novos/lib/datas";
 import { N1 } from "@/apps/kits-novos/lib/format";
@@ -19,7 +19,9 @@ function Barras(p){
       e("text",{x:i*bw+bw/2, y:H+20, textAnchor:"middle", className:"fill-muted-foreground text-[12px]"}, x.l)); }));
 }
 function AbaConsolidado(p){
-  var s = use().state, ds = s.dados, cfg = s.cfg;
+  // ano corrente pela data de cadastro (como no admin antigo); os abertos de anos anteriores aparecem nas outras telas
+  var s = use().state, ano = String(new Date().getFullYear()), ds = s.dados.filter(function(c){ return String(c.cad||"").slice(0, 4)===ano; }), cfg = s.cfg;
+  var idAn = function(c){ return c.entId || (ehIdAnuncio(c.ent) ? c.ent : ""); };
   var mesesCom = MESES.filter(function(m){ return ds.some(function(c){return mesDe(c)===m;}); });
   var porMes = mesesCom.map(function(m){ return {l:m.slice(0,3), v:ds.filter(function(c){return mesDe(c)===m;}).length}; });
   var linha = function(g){ var en = g.filter(function(c){return c.st==="entregue" || c.st==="devolvido";}), ca = g.filter(function(c){return c.st==="cancelado";});
@@ -29,14 +31,16 @@ function AbaConsolidado(p){
     lista.map(function(g){ var r = linha(ds.filter(function(c){return chave(c)===g;})); return e("tr",{key:g, className:TR}, e(TD,{className:"font-medium"}, fmt?fmt(g):(g||"(vazio)")), e(TD,{r:true}, r.n), e(TD,{r:true, className:"text-success"}, r.en),
       e(TD,{r:true, className:r.ca?"text-warning":""}, r.ca), e(TD,{r:true}, r.ab), e(TD,{r:true, className:r.atr?"text-destructive":""}, r.atr), e(TD,{r:true}, r.en?N1(r.t)+" d":"\u2014")); }))); };
   var canc = ds.filter(function(c){return c.st==="cancelado";}).length;
-  var campanhas = listaDe(ds.filter(function(c){return c.entId;}), "entId");
+  var campanhas = listaDe(ds.map(function(c){ return {id:idAn(c)}; }).filter(function(x){ return x.id; }), "id");
+  var pct = function(n){ return ds.length ? N1(n/ds.length*100)+"%" : "0%"; }, melhor = porMes.slice().sort(function(a,b){return b.v-a.v;})[0];
+  var entregues = ds.filter(function(c){return c.st==="entregue" || c.st==="devolvido";}).length;
   return e(React.Fragment,null,
-    e(PageHead,{t:"Consolidado", sub:"Curitiba e regi\u00e3o metropolitana, 2026 at\u00e9 hoje."}),
+    e(PageHead,{t:"Consolidado", sub:"Todas as regi\u00f5es, cadastros de "+ano+" at\u00e9 hoje."}),
     e("div",{className:"grid grid-cols-2 gap-3 lg:grid-cols-4"},
-      e(KPI,{l:"Entradas no ano", v:ds.length}), e(KPI,{l:"Entregues", v:ds.filter(function(c){return c.st==="entregue" || c.st==="devolvido";}).length, tom:"text-success", sub:N1(ds.filter(function(c){return c.st==="entregue";}).length/ds.length*100)+"%"}),
-      e(KPI,{l:"Canceladas", v:canc, tom:"text-warning", sub:N1(canc/ds.length*100)+"%"}), e(KPI,{l:"Melhor m\u00eas", v:porMes.slice().sort(function(a,b){return b.v-a.v;})[0].l, sub:"mais entradas"})),
+      e(KPI,{l:"Entradas no ano", v:ds.length}), e(KPI,{l:"Entregues", v:entregues, tom:"text-success", sub:pct(entregues)}),
+      e(KPI,{l:"Canceladas", v:canc, tom:"text-warning", sub:pct(canc)}), e(KPI,{l:"Melhor m\u00eas", v:melhor ? melhor.l : "\u2014", sub:"mais entradas"})),
     e(Secao,{t:"Entradas por m\u00eas"}, e(Card,null, e(Barras,{dados:porMes, label:"Entradas por m\u00eas"}))),
-    e("div",{className:"grid grid-cols-1 gap-5 xl:grid-cols-2"}, tab("Por entrada", function(c){return c.ent;}, p.listas.ents.slice(0,10)), tab("Por campanha", function(c){return c.entId;}, campanhas, function(id){ return nomeEntrada({ent:"An\u00fancio", entId:id}, cfg); })),
+    e("div",{className:"grid grid-cols-1 gap-5 xl:grid-cols-2"}, tab("Por entrada", function(c){return c.ent;}, p.listas.ents.slice(0,10)), tab("Por campanha", idAn, campanhas, function(id){ return nomeEntrada({ent:"An\u00fancio", entId:id}, cfg); })),
     e("div",{className:"grid grid-cols-1 gap-5 xl:grid-cols-2"}, tab("Por representante", function(c){return c.rep;}, p.listas.reps.slice(0,15)), tab("Por cidade", function(c){return c.cid;}, p.listas.cids.slice(0,12))));
 }
 

@@ -26,7 +26,7 @@ Representantes ou Agendamento (kit novo)
 ## 3. Regras que valem
 | # | Regra |
 |---|---|
-| 1 | Lead e campanha entram à mão (sem ligação com Kommo nem Meta ainda). |
+| 1 | Desde 25/11/2026 os cadastros vêm da Kommo (via backend do admin antigo, com as fotos) e as campanhas da Meta Ads, ao vivo. Aprovar e reprovar gravam na Kommo. |
 | 2 | Só a diretoria decide a aprovação. |
 | 3 | Kits novos vê só a tela de Kit novo, com o valor do kit. |
 
@@ -52,7 +52,7 @@ Código das telas: `pages/AprovacaoCadastros.js`, `pages/BaseRevendedoras.js`, `
 
 ## 5. Em aberto (principais)
 - Suposições a confirmar: 1.000 moedas por kit entregue; validade de 90 dias.
-- Ligação com o Kommo e com a Meta.
+- Tirar a dependência do backend do admin antigo (webhook da Kommo, fila e fotos no CDN) quando ele for desligado.
 - Lista completa: `pendencias.md` desta pasta (5 itens, a revisar com o Marcus).
 
 ## 6. Regra de trabalho

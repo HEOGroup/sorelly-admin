@@ -4,6 +4,9 @@ import { Bloco, Botao, CampoBusca, FaixaTotais, TabelaP, Td, Tr } from "@/apps/m
 import { FiltrosDesempenho, dbr, hora, nInt, paramsDe } from "@/apps/montagem/pages/cadastro/des-comum";
 import { formatarValorKit, janela, mensagemKit, registros, rotuloKit } from "@/apps/montagem/domain/cadastro-leads";
 import { podeDecidirCadastro } from "@/apps/montagem/domain/equipe";
+import { decidirCadastro, useCadastroReal } from "@/apps/montagem/lib/cadastro-real";
+import { ehAdmin } from "@/apps/montagem/lib/api";
+import { AvisoLigacao } from "@/apps/montagem/pages/cadastro/des-comum";
 import { use } from "@/apps/montagem/state/context";
 import { e, useState } from "@/shared/react";
 
@@ -15,14 +18,17 @@ function copiarTexto(txt){
 var MINI = "inline-flex h-6 items-center rounded-md border border-border px-2 text-[12px] hover:bg-white/10";
 
 function DesRegistros(p){
-  var cx = use(), s = cx.state, d = cx.dispatch, qs = useState(""), q = qs[0], pg = useState(1), pagina = pg[0], diretoria = podeDecidirCadastro(s.usuario);
+  // leads reais da Kommo (25/11/2026); desfazer grava na Kommo e no admin antigo (só Diretoria)
+  var cx = use(), s = cx.state, d = cx.dispatch, cad = useCadastroReal(s.cl), qs = useState(""), q = qs[0], pg = useState(1), pagina = pg[0], diretoria = ehAdmin() || podeDecidirCadastro(s.usuario);
   var j = p.f.modo==="tudo" ? {from:null, to:null} : janela(paramsDe(p.f));
-  var r = registros(s.cl, {q:q, from:j.from||undefined, to:j.to||undefined, page:pagina, limit:LIMITE}), meta = r.meta;
+  var r = registros(cad.cl, {q:q, from:j.from||undefined, to:j.to||undefined, page:pagina, limit:LIMITE}), meta = r.meta;
   var copiar = function(l){ copiarTexto(mensagemKit(l.kitOpcao, l.kitValorCasa, l.kitValorEmpresa)).then(function(){ d({type:"AVISO", txt:"Mensagem do kit copiada.", tom:"ok"}); }); };
-  var desfazer = function(l){ if(!window.confirm("Desfazer a decisão de "+l.nome+"? O cadastro volta para a fila de aprovação.")) return; d({type:"CL", op:"desfazer", id:l.id}); };
+  var desfazer = function(l){ if(!window.confirm("Desfazer a decisão de "+l.nome+"? O cadastro volta para a fila de aprovação (também na Kommo).")) return;
+    decidirCadastro(l.id, {acao:"desfazer"}).then(function(){ d({type:"AVISO", txt:"Decisão desfeita: "+l.nome+" voltou para a fila."}); }).catch(function(x){ window.alert(x.message); }); };
   var cols = [{t:"Nº", w:60, c:1}, {t:"Data", w:110, c:1}, {t:"Nome", w:210, c:1}, {t:"Cidade", w:150, c:1}, {t:"Telefone", w:130, c:1}, {t:"Resultado", w:100, c:1}, {t:"Kit", w:240, c:1}, {t:"Decidido por", w:120, c:1}].concat(diretoria ? [{t:"", w:210, c:1}] : [{t:"", w:130, c:1}]);
   return e("div",{className:"flex flex-col gap-3"},
     e(FiltrosDesempenho,{f:p.f, set:function(n){ pg[1](1); p.set(n); }}, e(CampoBusca,{key:"q", t:"Buscar", id:"des-q", value:q, placeholder:"Nome, empresa, cidade, telefone ou número", onChange:function(v){ qs[1](v); pg[1](1); }})),
+    e(AvisoLigacao,{erro:cad.erro, desligado:cad.ligado===false, carregando:cad.carregando}),
     e(FaixaTotais,{itens:[{t:"Registros", v:nInt(meta.total)}, {t:"Pendentes agora", v:nInt(meta.pendentes), cor:meta.pendentes ? "text-warning" : ""}, {t:"Aprovadas hoje", v:nInt(meta.aprovadosHoje), cor:meta.aprovadosHoje ? "text-success" : ""}, {t:"Reprovadas hoje", v:nInt(meta.reprovadosHoje), cor:meta.reprovadosHoje ? "text-destructive" : ""}]}),
     e(Bloco,{t:"Cadastros revisados", dir:e("div",{className:"flex items-center gap-2"},
         e(Botao,{desabilitado:meta.page<=1, onClick:function(){ pg[1](meta.page-1); }}, "Anterior"),

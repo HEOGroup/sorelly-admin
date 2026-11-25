@@ -1,6 +1,6 @@
 // Sorelly Admin · kits novos Curitiba — components/quadro.js
 // Quadro kanban das etapas (usa a peça padrão shared/kanban.js). Mover = abre os mesmos diálogos de hoje (avançar, voltar, cancelar) ou reativa.
-import { ETAPAS, aberto, atrasado, dataEtapa, dataFim, diasNaEtapa, etapaDe, seguro } from "@/apps/kits-novos/domain/etapas";
+import { ETAPAS, aberto, atrasado, colunasQuadro, dataEtapa, dataFim, diasNaEtapa, etapaDe, seguro } from "@/apps/kits-novos/domain/etapas";
 import { diasDesde, tsDe } from "@/apps/kits-novos/lib/datas";
 import { use } from "@/apps/kits-novos/state/context";
 import { respostasDoApp } from "@/apps/kits-novos/lib/bridge-montagem";
@@ -30,6 +30,7 @@ function CartaoKit(p){
         aberto(c) && e("span",{className:"text-[11px] font-semibold tabular-nums "+(atr ? "text-destructive" : esp ? "text-warning" : "text-success"), title:atr ? "Atrasada" : esp ? "Aguardando peça" : "No prazo"}, dias+" d"),
         e(MenuMover,{c:c, destinos:p.destinos, mover:p.mover}))),
     e("span",{className:"text-[11px] leading-tight text-white/70", title:"Representante, bairro, cidade e profissão"}, linha2),
+    c.kId && c.kEt && aberto(c) && c.st==="cadastrada" && e("span",{className:"text-[11px] leading-tight", title:"Etapa do lead no funil Aprovadas da Kommo"}, "Kommo · "+c.kEt),
     p.resp && e(SeloApp,{r:p.resp}));
 }
 // Resposta da representante no APP REAL (05/11/2026): agendou (dia e período), já entrou na listagem dela ou recusou (volta sem representante)
@@ -40,12 +41,14 @@ function SeloApp(p){
   return e("span",{title:r.tipo==="recusado" && r.motivo ? "Motivo: "+r.motivo : txt, className:"rounded-md px-1.5 text-[11px] font-semibold "+(r.tipo==="recusado" ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success")}, txt);
 }
 
+// resposta do app gravada no próprio kit pelo servidor (25/11/2026): vale em qualquer computador; só enquanto o kit está com a representante
+function respDoKit(c){ var a = c.app; if(!a || !aberto(c) || (a.tipo==="agendado" && c.st!=="solicitado") || (a.tipo==="recusado" && c.rep)) return null; return {tipo:a.tipo, data:a.data, periodo:a.periodo, motivo:a.motivo, rep:a.rep}; }
 function Quadro(p){
   var cx = use(), s = cx.state, d = cx.dispatch, cs = p.dados;
   var tk = useState(0), setTick = tk[1];   // resposta do app chega pelo servidor: redesenha a cada 20 s
   useEffect(function(){ var t = setInterval(function(){ setTick(function(n){ return n+1; }); }, 20000); return function(){ clearInterval(t); }; }, []);
   var resps = respostasDoApp();
-  var grupos = ETAPAS.slice(0, 1).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(1), [{k:"cancelado", nome:"Cancelado"}]).filter(function(g){ return !s.filtro.st || s.filtro.st===g.k; });   // Aguardando peça: coluna ao lado de Liberado (Michele, 06/11/2026)
+  var grupos = colunasQuadro().filter(function(g){ return !s.filtro.st || s.filtro.st===g.k; });   // Aguardando peça: coluna ao lado de Liberado (Michele, 06/11/2026)
   var colunas = grupos.map(function(g){
     var itens = cs.filter(function(c){ return (g.k==="aguardando" ? seguro(c) : c.st===g.k && !seguro(c)) && (aberto(c) || diasDesde(dataFim(c)) <= s.cfg.ocultarApos); })
       .sort(function(a,b){ if(!aberto(a)) return (tsDe(dataFim(b))||0)-(tsDe(dataFim(a))||0); return (atrasado(b,s.cfg)?1:0)-(atrasado(a,s.cfg)?1:0) || (tsDe(dataEtapa(a))||0)-(tsDe(dataEtapa(b))||0); });
@@ -69,7 +72,7 @@ function Quadro(p){
   };
   var corBarra = function(c, col){ return aberto(c) ? (atrasado(c, s.cfg) ? "#EF4444" : seguro(c) ? "#F59E0B" : "#4CC38A") : col.cor; };
   return e(Kanban,{colunas:colunas, onMover:mover, vazio:"Nenhuma revendedora nesta etapa.", compacto:true, semMover:true, corBarra:corBarra,
-    card:function(c, col){ return e(CartaoKit,{c:c, resp:resps[c.id] || null, mover:mover, destinos:grupos.filter(function(g){ return col.k==="aguardando" ? (g.k===c.st || g.k==="cancelado") : g.k!==col.k; }), abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
+    card:function(c, col){ return e(CartaoKit,{c:c, resp:resps[c.id] || respDoKit(c), mover:mover, destinos:grupos.filter(function(g){ return col.k==="aguardando" ? (g.k===c.st || g.k==="cancelado") : g.k!==col.k; }), abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
 }
 
 export { Quadro };

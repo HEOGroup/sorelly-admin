@@ -1,12 +1,16 @@
 // Sorelly Admin · montagem — pages/AprovacaoCadastros.js
-// Aprovação de cadastros (candidatas a revendedora) em QUADRO KANBAN: cada coluna é uma etapa do funil (s.cl.etapasFunil + saídas) e cada cartão é uma candidata.
-// Arrastar o cartão (ou "Concluir etapa ›") muda o campo desempenho dela; soltar em "Aprovadas" ou "Reprovadas" abre a janela de decisão.
-// Regras e dados em domain/cadastro-leads.js (estado s.cl); aqui só o desenho. Só quem pode decidir (podeDecidirCadastro) aprova, reprova e desfaz.
+// Aprovação de cadastros (candidatas a revendedora) em QUADRO KANBAN: Em análise → Aprovadas | Reprovadas.
+// AO VIVO desde 25/11/2026 (pedido do Leonardo): os cadastros vêm da Kommo (guardados pelo admin antigo, com as fotos no CDN) por lib/cadastro-real.js,
+// e aprovar, reprovar e desfazer gravam na Kommo e no admin antigo (src/server/cadastro-aprovacao.js), como o admin antigo. Só a Diretoria decide.
+// "Analisar fila" = o jeito do admin antigo: um cadastro por vez, com as fotos, e os atalhos A (aprovar), R (reprovar), P (pular) e Z (desfazer a última).
+// Decididos aparecem por 7 dias; os anteriores ficam em Desempenho do cadastro › Registros.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro, Pagina } from "@/apps/montagem/components/padrao";
 import { KIT_OPCOES, diasEntre, formatarValorKit, hojeSP, mensagemKit, rotuloKit, valorDoKit } from "@/apps/montagem/domain/cadastro-leads";
 import { nomeDe, podeDecidirCadastro } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
+import { ehAdmin } from "@/apps/montagem/lib/api";
+import { buscarCadastro, decidirCadastro, useCadastroReal } from "@/apps/montagem/lib/cadastro-real";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Kanban } from "@/shared/kanban";
@@ -70,18 +74,6 @@ function DialogoDecisao(p){
         tipo==="aprovar" ? "Confirmar aprovação" : tipo==="reprovar" ? "Confirmar reprovação" : "Voltar à análise")));
 }
 
-// ───────────── janela de novo lead (lançamento manual) ─────────────
-function DialogoNovo(p){
-  var st = useState({nome:"", telefone:"", cidade:"", endereco:"", cep:"", profissao:"", empresa:"", observacoes:"", tags:"", indicadora:""}), v = st[0], setV = st[1];
-  var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
-  var T = function(k, rot, cls){ return e(CampoRot,{rot:rot, className:cls}, e("input",{value:v[k], "aria-label":rot, className:INPUT+" h-10! text-center", onChange:function(ev){ set(k, ev.target.value); }})); };
-  return e(Janela,{t:"Novo lead", sub:"Lançamento manual na etapa Em análise", fechar:p.fechar, largo:true},
-    e("p",{className:"rounded-lg bg-black/25 px-3 py-2 text-[12.5px] text-white/80"}, "A entrada automática dos cadastros será feita pela integração com o CRM, ainda não conectada. Enquanto isso, os cadastros são lançados manualmente."),
-    e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-2"}, T("nome","Nome"), T("telefone","Telefone"), T("cidade","Cidade"), T("cep","CEP"), T("endereco","Endereço","sm:col-span-2"), T("profissao","Profissão"), T("empresa","Empresa"), T("indicadora","Indicada por"), T("tags","Origem (separe por vírgula)"), T("observacoes","Observações","sm:col-span-2")),
-    e("div",{className:"flex flex-wrap justify-center gap-2"}, e(Bt,{onClick:p.fechar}, "Cancelar"),
-      e(Bt,{tipo:"forte", ic:"user-plus", disabled:!v.nome.trim(), onClick:function(){ p.salvar(Object.assign({}, v, {tags:v.tags.split(",").map(function(t){ return t.trim(); }).filter(Boolean), indicadora:v.indicadora.trim()||null})); }}, "Lançar no quadro")));
-}
-
 // ───────────── janela de detalhe: todos os dados, fotos e observações ─────────────
 function DialogoDetalhe(p){
   var l = p.lead, fotos = (l.fotos||[]).filter(function(f){ return f.url; }), dec = l.reviewStatus!=="PENDING", ap = l.reviewStatus==="APPROVED";
@@ -100,87 +92,95 @@ function DialogoDetalhe(p){
     fotos.length>0 && e("div",{className:"grid grid-cols-2 gap-2 sm:grid-cols-3"}, fotos.map(function(f, i){
       return e("button",{key:i, type:"button", title:"Ampliar a foto", onClick:function(){ p.ampliar(f); }, className:"group relative overflow-hidden rounded-lg bg-black/30 ring-1 ring-white/15 hover:ring-white/40"},
         e("img",{src:f.url, alt:f.rotulo||f.campo||"Foto", className:"h-28 w-full object-cover"}),
-        e("span",{className:"absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/60 px-1 py-0.5 text-[11px] font-bold"}, e(Ph,{n:"magnifying-glass-plus", s:12}), f.rotulo||f.campo||"Foto")); })));
+        e("span",{className:"absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/60 px-1 py-0.5 text-[11px] font-bold"}, e(Ph,{n:"magnifying-glass-plus", s:12}), f.rotulo||f.campo||"Foto")); })),
+    p.children);
+}
+// cadastro antigo vem resumido na lista: ao abrir, busca o completo (fotos e observações)
+function useCompleto(l){
+  var st = useState(null), cheio = st[0], set = st[1];
+  useEffect(function(){ set(null); if(l && l.completo===false) buscarCadastro(l.id).then(set).catch(function(){}); }, [l && l.id]);   // eslint-disable-line react-hooks/exhaustive-deps
+  return l && l.completo===false ? (cheio || l) : l;
 }
 
+var SEMANA = 7;   // decididos aparecem no quadro por 7 dias
+var COLS = [{slug:"iniciou-análise", nome:"Em análise"}, {slug:"aprovada", nome:"Aprovadas"}, {slug:"reprovadas", nome:"Reprovadas"}];
 function AbaAprovacaoCadastros(){
-  var cx = use(), s = cx.state, cl = s.cl, hoje = hojeSP(), por = nomeDe(s.usuario);
-  var pode = podeDecidirCadastro(s.usuario);
+  var cx = use(), s = cx.state, hoje = hojeSP(), cad = useCadastroReal(s.cl, 5000), cl = cad.cl;
+  var pode = ehAdmin() || podeDecidirCadastro(s.usuario);
   var st3 = useState(null), dlg = st3[0], setDlg = st3[1];             // {tipo, id}
-  var st4 = useState(false), novo = st4[0], setNovo = st4[1];
   var st5 = useState(null), foto = st5[0], setFoto = st5[1];
   var st6 = useState(null), det = st6[0], setDet = st6[1];             // id do cadastro aberto no detalhe
   var st7 = useState(""), aviso = st7[0], setAviso = st7[1];
+  var st8 = useState(false), analisar = st8[0], setAnalisar = st8[1];  // modo "Analisar fila": um cadastro por vez
+  var st9 = useState([]), pulados = st9[0], setPulados = st9[1];       // "Pular" manda para o fim da fila (só nesta tela)
+  var st10 = useState(null), ultima = st10[0], setUltima = st10[1];    // última decisão desta sessão (Z desfaz)
+  var st11 = useState(false), salvando = st11[0], setSalvando = st11[1];
   useEffect(function(){ if(!aviso) return; var t = setTimeout(function(){ setAviso(""); }, 4500); return function(){ clearTimeout(t); }; }, [aviso]);
 
-  var etapas = cl.etapasFunil || [], saidas = cl.saidasFunil || [];
-  var defs = etapas.concat(saidas), primeira = defs.length ? defs[0].slug : "";
-  var temCol = function(sl){ return defs.some(function(d){ return d.slug===sl; }); };
+  var defs = COLS, primeira = COLS[0].slug;
   var nomeCol = function(sl){ var d = defs.find(function(x){ return x.slug===sl; }); return d ? d.nome : sl; };
   var leadDe = function(id){ return id==null ? null : cl.leads.find(function(x){ return String(x.id)===String(id); }) || null; };
-
-  // coluna de cada candidata: decidida = aprovadas/reprovadas (ou cadastradas); em análise nunca fica em coluna de decisão
-  var colDe = function(l){
-    var d = l.desempenho, ok = temCol(d);
-    if(l.reviewStatus==="APPROVED") return d==="cadastradas" && ok ? d : (temCol("aprovada") ? "aprovada" : primeira);
-    if(l.reviewStatus==="REJECTED") return temCol("reprovadas") ? "reprovadas" : primeira;
-    if(!ok || d==="aprovada" || d==="cadastradas" || d==="reprovadas") return temCol("iniciou-análise") ? "iniciou-análise" : primeira;
-    return d;
-  };
+  var colDe = function(l){ return l.reviewStatus==="APPROVED" ? "aprovada" : l.reviewStatus==="REJECTED" ? "reprovadas" : primeira; };
+  var recente = function(l){ return l.reviewStatus==="PENDING" || (l.reviewedAt && diasEntre(String(l.reviewedAt).slice(0, 10), hoje) < SEMANA); };
   var porCol = {}; defs.forEach(function(d){ porCol[d.slug] = []; });
-  cl.leads.forEach(function(l){ var c = colDe(l); if(porCol[c]) porCol[c].push(l); });
+  cl.leads.forEach(function(l){ if(recente(l)) porCol[colDe(l)].push(l); });
   Object.keys(porCol).forEach(function(k){ porCol[k].sort(function(a, b){
     var da = a.reviewStatus!=="PENDING", db = b.reviewStatus!=="PENDING";
     if(da && db) return (b.reviewedAt||"").localeCompare(a.reviewedAt||"");
     return (a.entrouNaFilaEm||"").localeCompare(b.entrouNaFilaEm||"") || (Number(a.id)-Number(b.id) || 0); }); });
+  // fila do modo Analisar: pendentes, mais antigo primeiro; os pulados vão para o fim, na ordem em que foram pulados
+  var fila = porCol[primeira].slice().sort(function(a, b){ return pulados.indexOf(a.id)-pulados.indexOf(b.id); });
 
-  var leadDlg = dlg ? leadDe(dlg.id) : null, leadDet = det!=null ? leadDe(det) : null;
+  var leadDlg = dlg ? leadDe(dlg.id) : null, leadDet = useCompleto(det!=null ? leadDe(det) : (analisar ? fila[0] || null : null));
   var abrir = function(tipo, lead){ if(pode && lead) setDlg({tipo:tipo, id:lead.id}); };
-  var setEtapa = function(l, para){ cx.dispatch({type:"CL", op:"lead_set", id:l.id, desempenho:para, etapaCriadaEm:hoje}); };
+  var setEtapa = function(){ setAviso("As etapas vêm da Kommo: aqui só se aprova ou reprova."); };
   var confirmar = function(v){
-    var l = leadDlg; if(!l) return;
-    if(dlg.tipo==="aprovar") cx.dispatch({type:"CL", op:"aprovar", id:l.id, opcao:v.opcao, valorCasa:v.vc, valorEmpresa:v.ve, nota:v.nota, por:por});
-    else if(dlg.tipo==="reprovar") cx.dispatch({type:"CL", op:"reprovar", id:l.id, nota:v.nota, por:por});
-    else cx.dispatch({type:"CL", op:"desfazer", id:l.id, por:por});
-    setDlg(null);
+    var l = leadDlg; if(!l || salvando) return;
+    var tipo = dlg.tipo, dados = tipo==="aprovar" ? {acao:"aprovar", opcao:v.opcao, valorCasa:v.vc, valorEmpresa:v.ve, nota:v.nota} : tipo==="reprovar" ? {acao:"reprovar", nota:v.nota} : {acao:"desfazer"};
+    setSalvando(true);
+    decidirCadastro(l.id, dados).then(function(){
+      setAviso(tipo==="aprovar" ? l.nome+" aprovada. A Kommo já foi atualizada." : tipo==="reprovar" ? l.nome+" reprovada. A Kommo já foi atualizada." : l.nome+" voltou para a análise.");
+      setUltima(tipo==="desfazer" ? null : l.id); setDlg(null); if(det!=null && tipo!=="desfazer") setDet(null);
+    }).catch(function(x){ setAviso(x.message); setDlg(null); }).then(function(){ setSalvando(false); });
   };
+  var pular = function(l){ if(l) setPulados(pulados.filter(function(x){ return x!==l.id; }).concat([l.id])); };
 
-  // soltar o cartão em outra coluna (ou "Mover para…")
+  // atalhos do modo Analisar (como o admin antigo): A aprova, R reprova, P pula, Z desfaz a última decisão desta tela, Esc sai
+  useEffect(function(){
+    if(!analisar) return undefined;
+    var tecla = function(ev){
+      if(dlg || foto || ev.ctrlKey || ev.metaKey || ev.altKey || /input|textarea|select/i.test((ev.target && ev.target.tagName) || "")) return;
+      var k = String(ev.key||"").toLowerCase(), l = fila[0];
+      if(k==="a" && l){ ev.preventDefault(); abrir("aprovar", l); }
+      else if(k==="r" && l){ ev.preventDefault(); abrir("reprovar", l); }
+      else if(k==="p" && l){ ev.preventDefault(); pular(l); }
+      else if(k==="z" && ultima!=null){ ev.preventDefault(); abrir("desfazer", leadDe(ultima)); }
+      else if(k==="escape") setAnalisar(false);
+    };
+    window.addEventListener("keydown", tecla);
+    return function(){ window.removeEventListener("keydown", tecla); };
+  });
+
+  // soltar o cartão em outra coluna (ou "Mover para…"): só decisões
   var mover = function(l, de, para){
     if(para===de) return;
-    if(l.reviewStatus==="REJECTED"){ setAviso("Cadastro reprovado: use Desfazer para voltar à análise."); return; }
-    if(l.reviewStatus==="APPROVED"){
-      if(para==="aprovada" || para==="cadastradas") setEtapa(l, para);
-      else setAviso("Cadastro aprovado: use Desfazer para voltar à análise.");
-      return;
-    }
+    if(l.reviewStatus!=="PENDING"){ setAviso("Cadastro já decidido: use Voltar à análise."); return; }
     if(para==="aprovada"){ if(pode) abrir("aprovar", l); return; }
     if(para==="reprovadas"){ if(pode) abrir("reprovar", l); return; }
-    if(para==="cadastradas"){ setAviso("Aprove o cadastro antes de concluir."); return; }
-    setEtapa(l, para);
   };
 
-  // botão principal do cartão: avança a etapa (ou abre a aprovação na última etapa de análise)
-  var proximo = function(l, c){
-    if(l.reviewStatus==="REJECTED") return null;
-    if(l.reviewStatus==="APPROVED") return c==="aprovada" && temCol("cadastradas") ? {sl:"cadastradas", t:"Concluir etapa"} : null;
-    if(c==="nao-respondem") return temCol("contato-inicial") ? {sl:"contato-inicial", t:"Retomar contato"} : null;
-    var i = etapas.findIndex(function(x){ return x.slug===c; });
-    if(i<0) return null;
-    var nx = etapas[i+1];
-    if(!nx || nx.slug==="aprovada") return {decide:true, t:"Aprovar"};
-    return {sl:nx.slug, t:"Concluir etapa"};
-  };
+  // botão principal do cartão: aprovar (em análise)
+  var proximo = function(l){ return l.reviewStatus==="PENDING" ? {decide:true, t:"Aprovar"} : null; };
 
   var colunas = defs.map(function(d, i){
     var decide = d.slug==="aprovada" || d.slug==="reprovadas";
-    return {k:d.slug, titulo:d.nome, cor:COR_COL[d.slug] || PALETA[i%PALETA.length], itens:porCol[d.slug]||[], aceita:decide ? pode : true};
+    return {k:d.slug, titulo:d.nome, cor:COR_COL[d.slug] || PALETA[i%PALETA.length], itens:porCol[d.slug]||[], aceita:decide ? pode : false};
   });
 
   // Cartão: nome, cidade e profissão, origem, telefone, tempo na etapa e (se aprovada) o kit. Um botão principal por vez; "Voltar à análise" só aparece em cadastro já decidido
   // (desfaz a aprovação ou a reprovação: o cadastro volta para Em análise, para corrigir um erro).
   var card = function(l, col){
-    var c = col.k, dec = l.reviewStatus!=="PENDING", nx = proximo(l, c);
+    var c = col.k, dec = l.reviewStatus!=="PENDING", nx = proximo(l);
     var base = String(l.etapaCriadaEm || l.entrouNaFilaEm || l.criadoEm || "").slice(0,10), dias = base ? Math.max(0, diasEntre(base, hoje)) : 0;
     var ind = nomeIndicadora(l), atraso = !dec && dias>=3, kit = l.reviewStatus==="APPROVED" && l.kitOpcao ? rotuloKit(l.kitOpcao)+" · "+formatarValorKit(valorDoKit(l.kitOpcao, l.kitValorCasa, l.kitValorEmpresa)) : "";
     var local = [l.cidade, l.profissao].filter(Boolean).join(" · ");
@@ -195,7 +195,7 @@ function AbaAprovacaoCadastros(){
         e("span",{className:"flex items-center gap-1 "+(atraso ? "font-semibold text-[#F87171]" : ""), title:atraso ? "Parado há "+dias+" dias nesta etapa" : "Tempo nesta etapa"}, e(Ph,{n:"clock", s:12}), dias===0 ? "hoje" : dias+(dias===1 ? " dia" : " dias"))),
       kit && e("span",{className:"w-full truncate text-center text-[11.5px] text-white/85", title:kit}, kit),
       dec && l.reviewedAt && e("span",{className:"text-[11px] text-white/60"}, dbr(l.reviewedAt)+(l.reviewedBy ? " · "+l.reviewedBy : "")),
-      c==="cadastradas" && e(Selo,{cor:"#4ADE80"}, "Já está com a Michele"),
+      (l.fotos||[]).length>0 && e("span",{className:"flex items-center gap-1 text-[11px]"}, e(Ph,{n:"image", s:12}), l.fotos.length+(l.fotos.length===1 ? " foto" : " fotos")),
       e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
         nx && (nx.decide
           ? (pode && e(Bt,{tipo:"ok", ic:"check-circle", onClick:function(){ abrir("aprovar", l); }, className:"px-2.5! py-1.5!"}, "Aprovar"))
@@ -204,15 +204,28 @@ function AbaAprovacaoCadastros(){
       dec && pode && e("button",{type:"button", onClick:function(){ abrir("desfazer", l); }, title:"Desfaz a decisão: o cadastro volta para Em análise (use se aprovou ou reprovou por engano)", className:"text-[11px] text-white/55 underline decoration-dotted hover:text-white"}, "Voltar à análise"));
   };
 
+  var lf = fila[0] || null, emAnalise = porCol[primeira].length;
+  var hojeAp = cl.leads.filter(function(l){ return l.reviewStatus==="APPROVED" && String(l.reviewedAt||"").slice(0, 10)===hoje; }).length;
+  var hojeRp = cl.leads.filter(function(l){ return l.reviewStatus==="REJECTED" && String(l.reviewedAt||"").slice(0, 10)===hoje; }).length;
   return e(Pagina,null,
-    e(PageHead,{t:"Aprovação de cadastros", sub:"Quadro das candidatas a revendedora: arraste o cartão ou conclua a etapa"},
-      e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ setNovo(true); }}, "Novo lead")),
-    !pode && e("p",{className:"text-center text-[12.5px] text-white/70"}, "Somente quem decide aprova ou reprova. Você move os cartões entre as etapas intermediárias."),
+    e(PageHead,{t:"Aprovação de cadastros", sub:"Cadastros da Kommo: em análise, aprovados e reprovados (últimos 7 dias)"},
+      e(Bt,{tipo:"forte", ic:"play", disabled:!emAnalise, onClick:function(){ setDet(null); setAnalisar(true); }}, "Analisar fila ("+emAnalise+")")),
+    cad.ligado===false && e("p",{className:"text-center text-[13px] text-destructive"}, "Ligação com a Kommo desligada no servidor (falta ADMIN_ANTIGO_DATABASE_URL)."),
+    cad.erro && e("p",{className:"text-center text-[13px] text-destructive"}, cad.erro),
+    cad.carregando && e("p",{className:"text-center text-[13px]"}, "Lendo os cadastros da Kommo…"),
+    pode && cad.ligado && !cad.gravar && e("p",{className:"text-center text-[13px] text-warning"}, "Decisões desligadas no servidor: aprovar e reprovar precisam de CADASTRO_GRAVAR=1."),
+    !pode && e("p",{className:"text-center text-[13px]"}, "Somente a Diretoria aprova ou reprova."),
     aviso && e("p",{role:"status", className:"mx-auto w-fit rounded-lg bg-[#F97316]/20 px-3 py-1.5 text-center text-[13px] font-bold text-[#FDBA74] ring-1 ring-[#F97316]/50"}, aviso),
     e(Kanban,{colunas:colunas, card:card, onMover:function(l, de, para){ mover(l, de, para); }, vazio:"Nenhum cadastro nesta etapa."}),
     dlg && leadDlg && e(DialogoDecisao,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, lead:leadDlg, cfg:cl.config, fechar:function(){ setDlg(null); }, confirmar:confirmar}),
-    leadDet && e(DialogoDetalhe,{lead:leadDet, etapa:nomeCol(colDe(leadDet)), fechar:function(){ setDet(null); }, ampliar:setFoto}),
-    novo && e(DialogoNovo,{fechar:function(){ setNovo(false); }, salvar:function(d){ cx.dispatch(Object.assign({type:"CL", op:"lead_add"}, d)); setNovo(false); }}),
+    leadDet && e(DialogoDetalhe,{lead:leadDet, etapa:analisar && det==null ? "Em análise · "+fila.length+" na fila" : nomeCol(colDe(leadDet)), fechar:function(){ setDet(null); setAnalisar(false); }, ampliar:setFoto},
+      analisar && det==null && lf && pode && e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
+        e(Bt,{tipo:"ok", ic:"check-circle", disabled:salvando, onClick:function(){ abrir("aprovar", lf); }}, "Aprovar (A)"),
+        e(Bt,{tipo:"perigo", ic:"x-circle", disabled:salvando, onClick:function(){ abrir("reprovar", lf); }}, "Reprovar (R)"),
+        e(Bt,{ic:"skip-forward", disabled:fila.length<2, onClick:function(){ pular(lf); }}, "Pular (P)"),
+        ultima!=null && e(Bt,{ic:"arrow-counter-clockwise", onClick:function(){ abrir("desfazer", leadDe(ultima)); }}, "Desfazer a última (Z)"))),
+    analisar && det==null && !lf && e(Janela,{t:"Fila vazia", sub:"Nenhum cadastro em análise agora.", fechar:function(){ setAnalisar(false); }},
+      e("p",{className:"text-[13px]"}, "Hoje: "+hojeAp+(hojeAp===1 ? " aprovada" : " aprovadas")+" e "+hojeRp+(hojeRp===1 ? " reprovada." : " reprovadas."))),
     foto && e("div",{className:"fixed inset-0 z-[60] grid place-items-center bg-black/85 p-3", onClick:function(){ setFoto(null); }},
       e("div",{className:"flex max-h-full flex-col items-center gap-2"}, e("img",{src:foto.url, alt:foto.rotulo||"Foto", className:"max-h-[85vh] max-w-full rounded-lg object-contain"}), e("span",{className:"text-[13px] font-bold"}, (foto.rotulo||foto.campo||"Foto")+" · clique para fechar"))));
 }

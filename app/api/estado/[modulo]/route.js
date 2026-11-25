@@ -91,6 +91,16 @@ export const PUT = rota(async (req, { eu, params }) => {
     ["blocos", "obs", "config"].forEach((k) => { if (k in pedido) { delete pedido[k]; console.warn("[pk] " + eu.id + " tentou mudar o formulário do app (" + k + "); descartado"); } });
     if (!Object.keys(pedido).length) return erro("Só a Diretoria edita o formulário do app.", 403);
   }
+  // KITS NOVOS · CADASTRADA (25/11/2026): uma tela aberta antes desta versão não conhece a etapa Cadastrada e a troca por Liberado sem avançar
+  // (sem data de liberação e sem linha nova no histórico). O servidor devolve a etapa guardada nesses casos. Pode sair quando todas as telas forem atualizadas.
+  if (modulo === "kndados" && b.chaves) {
+    const ids = Object.keys(b.chaves).filter((k) => k.startsWith("r_") && b.chaves[k] && b.chaves[k].st === "liberado" && !b.chaves[k].lib);
+    if (ids.length) {
+      const at = await consulta("select conteudo from sorelly.estado_modulo where modulo = 'kndados'");
+      const guardado = (at.rows[0] && at.rows[0].conteudo) || {};
+      ids.forEach((k) => { const g = guardado[k], v = b.chaves[k]; if (g && g.st === "cadastrada" && ((v.hist || []).length <= (g.hist || []).length)) v.st = "cadastrada"; });
+    }
+  }
   // GRAVAÇÃO SEGURA (11/11/2026, src/server/estado-modulo.js): tela nova manda só a diferença ({patches}); tela antiga ({chaves}) junta sem apagar itens que ela não traz.
   // As duas ficam registradas em sorelly.estado_modulo_log.
   const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id) : await gravarModulo(modulo, b.chaves, "chaves", eu.id);

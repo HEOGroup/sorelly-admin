@@ -32,7 +32,7 @@ function hojeCurto() {
 /** Direciona um kit novo (já liberado) pra uma representante no app de montagem. */
 export function direcionarParaRepresentante(c, rep) {
   var id = "KN" + c.id;
-  var item = { id: id, nome: c.nome, cidade: c.cid || "", bairro: c.bai || "", valor: c.val || 0, expositor: false, rep: rep, status: "direcionada", cadastro: hojeCurto() };
+  var item = itemDoKit(c, rep);   // expositor vem da observação do kit (antes ia sempre "sem expositor")
   enviarKitAoServidor(item);
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM);
@@ -73,22 +73,33 @@ export function respostasDoApp() {
   return mapa;
 }
 
-/** O quadro mudou um kit que já foi para o app: entregue, cancelado, voltou para Liberado ou excluído = sai do app da representante. */
-export function situacaoNoApp(cId, situacao) {
+/** O quadro mudou um kit que já foi para o app: entregue, cancelado, voltou para Liberado ou excluído = sai do app da representante.
+ *  c = o kit (ou só o id, jeito antigo). 25/11/2026: com o kit em mãos o aviso vai direto ao servidor (módulo kn), em qualquer computador; antes só
+ *  funcionava no navegador que tinha a Montagem aberta. Kit que nunca foi solicitado (sem data em sol) nunca esteve no app: não manda nada. */
+export function situacaoNoApp(c, situacao) {
+  var kit = c && typeof c === "object" ? c : null, cId = kit ? kit.id : c, id = "KN" + cId;
+  var mudanca = situacao === "entregue" ? { status: "entregue" } : { status: "aguardando", rep: null, saiuDoApp: situacao };
+  var atual = null;
   try {
-    var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    if (!raw) return;
-    var s = lerEstado(raw);
-    if (!s || s.v !== 4) return;
-    var id = "KN" + cId, kn = Object.assign({}, s.kn), atual = kn["k_" + id] || (s.novas || []).find(function (n) { return n.id === id; });
-    if (!atual) return;   // nunca foi para o app
-    var novo = Object.assign({}, atual, situacao === "entregue" ? { status: "entregue" } : { status: "aguardando", rep: null, saiuDoApp: situacao });
-    enviarKitAoServidor(novo);
-    kn["k_" + id] = novo; s.kn = kn;
-    s.novas = (s.novas || []).map(function (n) { return n.id === id ? novo : n; });
-    localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
-    cacheResp.em = 0;
-  } catch (x) { /* sem estado do app de montagem */ }
+    var raw = localStorage.getItem(CHAVE_MONTAGEM), s = raw ? lerEstado(raw) : null;
+    if (s && s.v === 4) {
+      var kn = Object.assign({}, s.kn); atual = kn["k_" + id] || (s.novas || []).find(function (n) { return n.id === id; }) || null;
+      if (atual) {
+        var novoLocal = Object.assign({}, atual, mudanca);
+        kn["k_" + id] = novoLocal; s.kn = kn;
+        s.novas = (s.novas || []).map(function (n) { return n.id === id ? novoLocal : n; });
+        localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
+        cacheResp.em = 0;
+      }
+    }
+  } catch (x) { /* sem estado do app de montagem neste navegador: segue pelo servidor */ }
+  if (atual) { enviarKitAoServidor(Object.assign({}, atual, mudanca)); return; }
+  if (kit && kit.sol) enviarKitAoServidor(Object.assign(itemDoKit(kit, kit.rep), mudanca));
+}
+
+/** Item do módulo kn (o que vai para o app da representante) a partir do kit novo. */
+function itemDoKit(c, rep) {
+  return { id: "KN" + c.id, nome: c.nome, cidade: c.cid || "", bairro: c.bai || "", valor: c.val || 0, expositor: !!(c.obs && /EXPOSITOR/i.test(c.obs)), rep: rep, status: "direcionada", cadastro: hojeCurto() };
 }
 
 /** Nome da opção "Sorelly" na lista de representantes: o kit vai para a lista da Tamara (Atendimento interno › Revendedoras). */

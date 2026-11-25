@@ -4,15 +4,20 @@ import { MESES, diasDesde } from "@/apps/kits-novos/lib/datas";
 
 // Funil do kit novo (23/10/2026): do cadastro até a revendedora receber o kit. As etapas Aceito, Em contato, Agendado e Retirado são o caminho da REPRESENTANTE
 // (quando passa para ela, é onde o kit mais demora). Bipado = kit pronto na empresa; Retirado = a representante pegou o kit.
+// Cadastrada VOLTOU em 25/11/2026 (pedido do Leonardo: kits novos vêm da Kommo, como no admin antigo): a revendedora aprovada na Kommo entra aqui sozinha
+// (src/server/kits-novos-kommo.js) e passa para Liberado quando o Cadastro libera o kit (no sistema ou na Kommo, etapa "kit liberado" do funil Aprovadas).
 var ETAPAS = [
-  {k:"liberado",   n:1,  nome:"Liberado",   campo:"lib", ic:"check"},
-  {k:"solicitado", n:2,  nome:"Solicitado", campo:"sol", ic:"box"},
-  {k:"bipado",     n:3,  nome:"Bipado",     campo:"bip", ic:"scan"},
-  {k:"entregue",   n:4,  nome:"Entregue",   campo:"ret", ic:"gem"},
-  {k:"devolvido",  n:5,  nome:"Devolvido",  campo:"dev", ic:"undo"}
+  {k:"cadastrada", n:1,  nome:"Cadastrada", campo:"cad", ic:"user"},
+  {k:"liberado",   n:2,  nome:"Liberado",   campo:"lib", ic:"check"},
+  {k:"solicitado", n:3,  nome:"Solicitado", campo:"sol", ic:"box"},
+  {k:"bipado",     n:4,  nome:"Bipado",     campo:"bip", ic:"scan"},
+  {k:"entregue",   n:5,  nome:"Entregue",   campo:"ret", ic:"gem"},
+  {k:"devolvido",  n:6,  nome:"Devolvido",  campo:"dev", ic:"undo"}
 ];
-// As etapas antigas (Cadastrada, Aceito, Em contato, Agendado, Montando, Retirado) saíram: a Michele não as usa. Registro antigo passa para a etapa mais próxima.
-var LEGADO = {cadastrada:"liberado", aceito:"solicitado", contato:"solicitado", agendado:"solicitado", montando:"solicitado", retirado:"bipado"};
+// As etapas antigas (Aceito, Em contato, Agendado, Montando, Retirado) saíram: a Michele não as usa. Registro antigo passa para a etapa mais próxima.
+var LEGADO = {aceito:"solicitado", contato:"solicitado", agendado:"solicitado", montando:"solicitado", retirado:"bipado"};
+// Colunas do quadro e abas da tela Kits: as etapas na ordem, com "Aguardando peça" logo depois de Liberado (Michele, 06/11/2026) e Cancelado no fim.
+function colunasQuadro(){ return ETAPAS.slice(0, 2).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(2), [{k:"cancelado", nome:"Cancelado"}]); }
 function estadoAtual(st){ return LEGADO[st] || st; }
 var ETAPA = {}; ETAPAS.forEach(function(x){ ETAPA[x.k]=x; });
 function etapaDe(c){ return ETAPA[c.st]; }
@@ -33,4 +38,4 @@ function atrasado(c, cfg){ return aberto(c) && !seguro(c) && diasNaEtapa(c) > pr
 function mesDe(c){ return c.cad ? MESES[+c.cad.split("-")[1]-1] : c.mes; }
 function contatosFeitos(c){ return (c.c1?1:0)+(c.c2?1:0)+(c.c3?1:0); }
 
-export { ETAPAS, ETAPA, LEGADO, estadoAtual, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, seguro, atrasado, mesDe, contatosFeitos };
+export { ETAPAS, ETAPA, LEGADO, colunasQuadro, estadoAtual, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, seguro, atrasado, mesDe, contatosFeitos };

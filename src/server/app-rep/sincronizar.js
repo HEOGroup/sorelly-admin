@@ -8,6 +8,7 @@
 //  3) Kit pronto: kit do app bipado = aviso no celular da representante (POST /admin/listagens/avisos), uma vez por kit.
 import { emTransacao, gravarItens, lerPrefixos, lerPrefixosCli } from "../estado-itens.js";
 import { gravarModulo, lerModulo, sem } from "./base.js";
+import { gravarModulo as gravarModuloSeguro } from "../estado-modulo.js";
 import { chamarApp, podeGravar } from "./cliente-app.js";
 import { MAX_LISTAGEM, PRAZO_PEDIDO_HORAS, capacidade, horasAteRetirada, montarKits, montarListagens, vivo } from "../../apps/montagem/domain/app-rep.js";
 import { PERFIS0 } from "../../apps/kits-novos/domain/regioes-rep.js";
@@ -49,14 +50,16 @@ function codigosDasReps(ag) {
 // corpo do PUT /admin/kits-novos/:externalId (validação do backend: kits-novos.validation.ts)
 function payloadKit(item, dados, repCod) {
   const d = dados || {};
-  const refs = (Array.isArray(d.refs) ? d.refs : Array.isArray(d.contatos) ? d.contatos : [])
+  // contatos de referência: no kndados ficam em c1n/c1t/c1r, c2…, c3… (25/11/2026: antes o app recebia a lista vazia)
+  const doKit = [1, 2, 3].map((n) => ({ nome: d["c" + n + "n"], fone: d["c" + n + "t"], rel: d["c" + n + "r"] }));
+  const refs = (Array.isArray(d.refs) ? d.refs : Array.isArray(d.contatos) ? d.contatos : doKit)
     .map((c) => ({ nome: texto(c.nome, 255) || "", telefone: texto(c.fone || c.telefone, 40) || "", relacao: texto(c.rel || c.relacao, 120) || "" }))
     .filter((c) => c.nome || c.telefone).slice(0, 10);
   const prata = /prata/i.test(String(d.mod || item.mod || ""));
   return {
     representanteCod: repCod, nome: texto(item.nome || d.nome, 255) || "Revendedora nova", telefone: texto(d.tel || d.fone || d.celular || d.whats || item.fone, 40),
     cidade: texto(item.cidade || d.cid, 255) || "Curitiba", bairro: texto(item.bairro || d.bai, 255),
-    tipoKit: (prata ? "Kit Prata" : "Kit Misto") + (item.expositor ? " + expositor" : ""), valor: r2(item.valor || d.val || 0),
+    tipoKit: (prata ? "Kit Prata" : "Kit Misto") + (item.expositor || /EXPOSITOR/i.test(String(d.obs || "")) ? " + expositor" : ""), valor: r2(item.valor || d.val || 0),
     profissao: texto(d.prof || item.profissao, 255), enderecoResidencial: texto(d.end || d.endereco || item.endereco, 500),
     enderecoTrabalho: texto([d.trab || item.trab, d.trabEnd || item.trabEnd].filter(Boolean).join(" · "), 500), disponibilidade: texto(d.disp || item.disp, 500),
     contatos: refs,
@@ -112,6 +115,34 @@ async function incluirNaListagem(item, resp, repNome) {
   });
 }
 
+// A resposta do app também fica no próprio kit novo (kndados), para todo mundo ver no quadro e no detalhe (25/11/2026; antes só no módulo kn,
+// lido do navegador de quem tinha a Montagem aberta). Recusa: tira a representante do kit e grava a recusa (recs), que conta no bloqueio.
+async function respostaNoKit(resp, item) {
+  const id = String(resp.externalId || "").replace(/^KN/, ""), chave = "r_" + id;
+  const quando = String(resp.respondidoEm || new Date().toISOString());
+  const app = { tipo: resp.status, data: resp.agendadoPara || null, periodo: resp.periodo || null, motivo: resp.motivo || null, rep: item.rep || null, em: quando };
+  const muda = (k) => {
+    if (!k || !k.id || k.excluido) return null;
+    if (k.app && k.app.em === quando && k.app.tipo === resp.status) return null;   // já gravada
+    const n = Object.assign({}, k, { app });
+    if (resp.status === "agendado") {
+      n.agDia = app.data; n.agPer = app.periodo;
+      n.hist = (k.hist || []).concat([{ em: Date.now(), quem: "App da representante", txt: item.rep + " agendou pelo app" + (app.data ? " para " + app.data.split("-").reverse().join("/") : "") + (app.periodo ? " (" + app.periodo + ")" : "") }]);
+    } else if (resp.status === "recusado") {
+      if (k.rep && sem(k.rep) === sem(item.rep)) n.rep = "";
+      n.recs = (k.recs || []).concat([{ rep: item.rep, iso: quando.slice(0, 10), motivo: app.motivo || "Recusou pelo app", via: "app" }]);
+      n.hist = (k.hist || []).concat([{ em: Date.now(), quem: "App da representante", txt: item.rep + " recusou pelo app: " + (app.motivo || "sem motivo") }]);
+    } else return null;
+    return n;
+  };
+  const kn = await lerModulo("kndados");
+  if (!muda(kn[chave])) return;
+  await gravarModuloSeguro("kndados", { [chave]: muda(kn[chave]) }, "chaves", "app-rep", (guardado, novo) => {
+    const n = muda(guardado[chave]);
+    return n ? Object.assign({}, guardado, { [chave]: n }) : guardado;
+  });
+}
+
 async function puxarRespostas(r) {
   const ks = await lerPrefixos("rpo", ["ks_"]);
   const cursor = ks.ks_cursor && ks.ks_cursor.desde;
@@ -138,6 +169,7 @@ async function puxarRespostas(r) {
         novo = Object.assign({}, item, { status: "aguardando", rep: null, agendamentoApp: null, recusadaPor: (item.recusadaPor || []).concat([item.rep]), recusasApp: (item.recusasApp || []).concat([rec]) });
       }
       if (novo) { await gravarModulo("kn", { ["k_" + item.id]: novo }, "app-rep"); r.respostas++; }
+      if (novo) await respostaNoKit(resp, item).catch((e) => r.erros.push(`resposta no kit ${resp.externalId}: ${e.message}`));
     } catch (e) { r.erros.push(`resposta ${resp.externalId}: ${e.message}`); }
   }
   if (maior && maior !== cursor) await gravarItens("rpo", { ks_cursor: { desde: maior, em: new Date().toISOString() } }, "app", "sincronizar");

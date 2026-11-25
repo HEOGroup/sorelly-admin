@@ -172,8 +172,9 @@ function maiorQueda(stages){
   if(!pior) return null;
   return "Maior queda: "+pior.de+" para "+pior.para+", "+new Intl.NumberFormat("pt-BR", {minimumFractionDigits:0, maximumFractionDigits:0}).format(-pior.q)+"%";
 }
-function funilDesempenho(s, p, hoje){
-  var j = janela(p, hoje), e = estoqueDesempenho(s, j, false), f = montaFunil(s, e.estoque, e.total);
+// ext = {estoque, total} lido ao vivo da Kommo (25/11/2026, /api/cadastro/desempenho); sem ext, conta os leads do estado
+function funilDesempenho(s, p, hoje, ext){
+  var j = janela(p, hoje), e = ext || estoqueDesempenho(s, j, false), f = montaFunil(s, e.estoque||{}, e.total||0);
   return {periodo:{from:j.from, to:j.to, tudo:j.tudo}, kpis:f.kpis, stages:f.stages, exits:f.exits, insight:maiorQueda(f.stages), contatos:f.stages.length?f.stages[0].cumulative:0, emAnalise:(f.stages.find(function(x){ return x.slug==="iniciou-análise"; })||{cumulative:0}).cumulative, saidas:f.kpis.reprovadas+f.kpis.naoRespondem};
 }
 
@@ -181,8 +182,8 @@ function funilDesempenho(s, p, hoje){
 var campanhaIgnorada = function(nome){ var n = String(nome||"").toLowerCase(); return n.indexOf("consultoras")===0 || n.indexOf("seguidores")===0; };
 function montaLinhaCamp(o){ var g = r2(num(o.gasto)), im = Math.round(num(o.impressoes)), cl = Math.round(num(o.cliques)); return {id:o.id, nome:o.nome, gasto:g, impressoes:im, cliques:cl, cpc:r2(cl>0 ? g/cl : 0), ctr:r1(im>0 ? cl/im*100 : 0)}; }
 // funil das campanhas: "Cliques" no início, depois o Desempenho só dos leads da tag de anúncio, com o gasto diluído (custo por pessoa em cada etapa). "Cadastradas" só com janela de 7 dias ou mais
-function funilCampanhas(s, j, gasto, cliques, mostrarCad){
-  var e = estoqueDesempenho(s, j, true), base = montaFunil(s, e.estoque, e.total), custo = function(n){ return n>0 ? r2(gasto/n) : null; };
+function funilCampanhas(s, j, gasto, cliques, mostrarCad, extFb){
+  var e = extFb || estoqueDesempenho(s, j, true), base = montaFunil(s, e.estoque||{}, e.total||0), custo = function(n){ return n>0 ? r2(gasto/n) : null; };
   var kom = base.stages.filter(function(x){ return mostrarCad || x.slug!=="cadastradas"; }), cl = Math.max(0, Math.round(cliques)), inicio = cl>0 ? cl : (kom[0] ? kom[0].cumulative : 0);
   var etCliques = {slug:"cliques", nome:NOME_ETAPA.cliques.nome, curto:NOME_ETAPA.cliques.curto, count:cl, cumulative:cl, ofStartPct:100, fromPrevPct:100, cost:custo(cl), costCumulative:custo(cl)};
   var stages = [etCliques].concat(kom.map(function(x, k){ var prev = k===0 ? cl : kom[k-1].cumulative;
@@ -191,17 +192,19 @@ function funilCampanhas(s, j, gasto, cliques, mostrarCad){
   return {kpis:Object.assign({}, base.kpis, {gasto:gasto, cliques:cl, mostrarCadastradas:mostrarCad, conversao:pct(base.kpis.cadastradas, iniConv)}), stages:stages, exits:base.exits.map(function(x){ return Object.assign({}, x, {cost:custo(x.count)}); }), insight:maiorQueda(stages)};
 }
 // p = {mes} | {from,to} | {dias} | vazio (mês corrente). Campanha entra se o mês dela encosta na janela.
-function campanhas(s, p, hoje){
+// ext = {campanhas:[{id,nome,gasto,impressoes,cliques}], fb:{estoque,total}} da Meta Ads e da Kommo, já no período (25/11/2026, /api/cadastro/campanhas)
+function campanhas(s, p, hoje, ext){
   var j = janela(p, hoje), mesDe = j.from ? j.from.slice(0,7) : "", mesAte = j.to.slice(0,7);
-  var lista = s.campanhas.filter(function(c){ return !campanhaIgnorada(c.nome) && (j.tudo || (c.mes>=mesDe && c.mes<=mesAte)); })
-    .map(function(c){ var l = montaLinhaCamp(c); l.mes = c.mes; l.anuncios = (c.anuncios||[]).map(montaLinhaCamp); return l; })
+  var lista = (ext ? (ext.campanhas||[]) : s.campanhas).filter(function(c){ return !campanhaIgnorada(c.nome) && (ext || j.tudo || (c.mes>=mesDe && c.mes<=mesAte)); })
+    .map(function(c){ var l = montaLinhaCamp(c); l.mes = c.mes||""; l.conta = c.conta||""; l.anuncios = (c.anuncios||[]).map(montaLinhaCamp); return l; })
     .filter(function(c){ return c.gasto>0 || c.impressoes>0 || c.cliques>0; }).sort(function(a, b){ return b.gasto-a.gasto; });
   var g = r2(lista.reduce(function(t, c){ return t+c.gasto; }, 0)), im = lista.reduce(function(t, c){ return t+c.impressoes; }, 0), cl = lista.reduce(function(t, c){ return t+c.cliques; }, 0);
   var dias = j.tudo ? 9999 : diasEntre(j.from, j.to)+1, mostrarCad = j.tudo || dias>=7;
-  return {periodo:{from:j.from, to:j.to, tudo:j.tudo}, kpis:{gasto:g, impressoes:im, cliques:cl, campanhasQtd:lista.length, cpc:r2(cl>0 ? g/cl : 0), ctr:r1(im>0 ? cl/im*100 : 0)}, campanhas:lista, funil:funilCampanhas(s, j, g, cl, mostrarCad)};
+  return {periodo:{from:j.from, to:j.to, tudo:j.tudo}, kpis:{gasto:g, impressoes:im, cliques:cl, campanhasQtd:lista.length, cpc:r2(cl>0 ? g/cl : 0), ctr:r1(im>0 ? cl/im*100 : 0)}, campanhas:lista, funil:funilCampanhas(s, j, g, cl, mostrarCad, ext ? (ext.fb || {estoque:{}, total:0}) : null)};
 }
 // anúncios de uma campanha (drill-down)
-function anunciosDa(s, campanhaId){ var c = s.campanhas.find(function(x){ return x.id===campanhaId; }); return c ? (c.anuncios||[]).map(montaLinhaCamp).sort(function(a, b){ return b.gasto-a.gasto; }) : []; }
+// ext = lista de anúncios da Meta (25/11/2026); sem ext, os anúncios digitados da campanha
+function anunciosDa(s, campanhaId, ext){ if(ext) return ext.map(montaLinhaCamp).sort(function(a, b){ return b.gasto-a.gasto; }); var c = s.campanhas.find(function(x){ return x.id===campanhaId; }); return c ? (c.anuncios||[]).map(montaLinhaCamp).sort(function(a, b){ return b.gasto-a.gasto; }) : []; }
 function novaCampanha(s, d){
   var an = (d.anuncios||[]).map(function(x){ return {id:x.id||("a"+(++s.seq)), nome:String(x.nome||"Anúncio").trim(), gasto:r2(num(x.gasto)), impressoes:Math.round(num(x.impressoes)), cliques:Math.round(num(x.cliques))}; });
   return {id:d.id||("c"+(++s.seq)), nome:String(d.nome||"").trim(), mes:d.mes||hojeSP().slice(0,7), gasto:r2(num(d.gasto)), impressoes:Math.round(num(d.impressoes)), cliques:Math.round(num(d.cliques)), anuncios:an};

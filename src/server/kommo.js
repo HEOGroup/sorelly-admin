@@ -1,4 +1,4 @@
-// Kommo (CRM) · SÓ LEITURA (17/11/2026). Acesso: KOMMO_API_URL + KOMMO_ACCESS_TOKEN no .env.local / Vercel. Nunca escreve no Kommo.
+// Kommo (CRM). Acesso: KOMMO_API_URL + KOMMO_ACCESS_TOKEN no .env.local / Vercel. Leitura (17/11/2026); gravação só pela Aprovação de cadastros (kommoEnviar, 25/11/2026, com CADASTRO_GRAVAR=1).
 // Devolve só nomes de etapa e QUANTIDADE de leads por etapa (sem dados de pessoa). Cache de 5 min por servidor.
 import https from "node:https";
 import tls from "node:tls";
@@ -13,16 +13,39 @@ function ag() {
   return agente;
 }
 
-function pedir(rota) {
+function pedir(rota, metodo = "GET", corpo) {
   const base = String(process.env.KOMMO_API_URL || "").replace(/\/+$/, ""), token = process.env.KOMMO_ACCESS_TOKEN || "";
   if (!base || !token) throw Object.assign(new Error("Falta KOMMO_API_URL ou KOMMO_ACCESS_TOKEN (veja .env.exemplo)."), { statusCode: 503 });
+  const txt = corpo === undefined ? null : JSON.stringify(corpo);
+  const headers = { Authorization: "Bearer " + token, Accept: "application/json" };
+  if (txt !== null) { headers["Content-Type"] = "application/json"; headers["Content-Length"] = Buffer.byteLength(txt); }
   return new Promise((ok, erro) => {
-    const req = https.request(new URL(base + rota), { method: "GET", agent: ag(), timeout: 30000, headers: { Authorization: "Bearer " + token, Accept: "application/json" } }, (res) => {
+    const req = https.request(new URL(base + rota), { method: metodo, agent: ag(), timeout: 30000, headers }, (res) => {
       const p = []; res.on("data", (c) => p.push(c));
       res.on("end", () => { const t = Buffer.concat(p).toString("utf8"); let j = null; try { j = JSON.parse(t); } catch (x) { /* vazio (204) */ } ok({ status: res.statusCode, j }); });
     });
-    req.on("timeout", () => req.destroy(new Error("tempo esgotado"))); req.on("error", erro); req.end();
+    req.on("timeout", () => req.destroy(new Error("tempo esgotado"))); req.on("error", erro); if (txt !== null) req.write(txt); req.end();
   });
+}
+
+// GET na Kommo para outros módulos (Kits novos, 25/11/2026). Kommo ocupada (429) ou fora (5xx): tenta de novo até 3 vezes. Devolve {status, j}.
+export function kommoLigada() { return !!(process.env.KOMMO_API_URL && process.env.KOMMO_ACCESS_TOKEN); }
+export async function kommoGet(rota) {
+  for (let i = 0; ; i++) {
+    const r = await pedir(rota);
+    if ((r.status === 429 || r.status >= 500) && i < 3) { await new Promise((ok) => setTimeout(ok, 1500 * (i + 1))); continue; }
+    return r;
+  }
+}
+
+// GRAVA na Kommo (25/11/2026, Aprovação de cadastros: aprovar, reprovar e desfazer mudam a etapa e os campos do lead, como o admin antigo).
+// Quem chama decide se pode gravar (CADASTRO_GRAVAR=1). Ocupada (429): tenta de novo até 3 vezes. Devolve {status, j}.
+export async function kommoEnviar(metodo, rota, corpo) {
+  for (let i = 0; ; i++) {
+    const r = await pedir(rota, metodo, corpo);
+    if (r.status === 429 && i < 3) { await new Promise((ok) => setTimeout(ok, 1500 * (i + 1))); continue; }
+    return r;
+  }
 }
 
 export async function kommoFunilCadastro({ forcar = false } = {}) {

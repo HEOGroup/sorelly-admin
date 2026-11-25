@@ -2,7 +2,9 @@
 // Desempenho do cadastro › Funil: do contato inicial até o cadastro (acumulado), com as saídas (não respondem, reprovadas). FunilTabela também serve ao funil de Facebook Ads (com custo).
 import { Bloco, FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { BarraPct, FiltrosDesempenho, nInt, nPct, paramsDe, textoPeriodo } from "@/apps/montagem/pages/cadastro/des-comum";
-import { funilDesempenho } from "@/apps/montagem/domain/cadastro-leads";
+import { funilDesempenho, janela } from "@/apps/montagem/domain/cadastro-leads";
+import { qsPeriodo, useRelatorio } from "@/apps/montagem/lib/cadastro-real";
+import { AvisoLigacao } from "@/apps/montagem/pages/cadastro/des-comum";
 import { BKC } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { e } from "@/shared/react";
@@ -22,9 +24,12 @@ function FunilTabela(p){
 }
 
 function DesFunil(p){
-  var s = use().state, fu = funilDesempenho(s.cl, paramsDe(p.f)), k = fu.kpis;
+  // ao vivo da Kommo (25/11/2026): quantos leads criados no período estão em cada etapa do campo Desempenho
+  var s = use().state, par = paramsDe(p.f), rel = useRelatorio("/cadastro/desempenho"+qsPeriodo(janela(par))), est = rel.dados ? rel.dados.todos : {estoque:{}, total:0};
+  var fu = funilDesempenho(s.cl, par, undefined, est), k = fu.kpis;
   return e("div",{className:"flex flex-col gap-3"},
     e(FiltrosDesempenho,{f:p.f, set:p.set}),
+    e(AvisoLigacao,{erro:rel.erro, carregando:rel.carregando && !rel.dados}),
     e(FaixaTotais,{itens:[{t:"Total no período", v:nInt(k.totalPeriodo)}, {t:"Cadastradas", v:nInt(k.cadastradas), cor:k.cadastradas ? "text-success" : ""}, {t:"Conversão", v:nPct(k.conversao)},
       {t:"Reprovadas", v:nInt(k.reprovadas), cor:k.reprovadas ? "text-destructive" : ""}, {t:"Não respondem", v:nInt(k.naoRespondem), cor:k.naoRespondem ? "text-warning" : ""}]}),
     e(Bloco,{t:"Funil de desempenho · "+textoPeriodo(fu.periodo), dir:fu.insight ? e("span",{className:"text-[12px]"}, fu.insight) : null},
