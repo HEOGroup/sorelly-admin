@@ -3671,3 +3671,6 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Pix acima de R$ 3.000 (interno ou de representante) sempre vira pergunta no Direcionar. Open Finance fica para 2027.
 - Setor passa a se chamar Cobrança. Fiscal continua setor próprio; o Lucas lança até 2027. Escrita de CNPJ e conta em todo o sistema: número - nome - banco (a construir).
 - Trava da produção no servidor (src/server/trava-producao.js): gravação de quem não é da Diretoria não muda dia fechado, produção externa nem o dia já lançado de uma funcionária.
+
+## 25/11/2026 · Produção em casa: preço da peça
+- Pedido do Marcus: até 25/11/2026 a peça vale R$ 0,45; a partir de 26/11/2026 vale R$ 0,35 (o que for recebido de 26/11 em diante). Duas pessoas ficam em R$ 0,45. Código: `precoPecaCasa` em `domain/producao.js`; a tela Pagamento da produção mostra o preço de cada dia.

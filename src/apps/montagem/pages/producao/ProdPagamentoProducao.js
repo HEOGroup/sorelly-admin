@@ -4,7 +4,7 @@
 // (4) Pagamentos da produção por ciclo (enviar ao Financeiro). INTERNAS (Marcus, 22/11/2026: "teria que ter a parte de pagamento por produção das internas, e no filtro alteraria para cada funcionária interna"): a mesma tela vale para cada funcionária interna; aí cada dia mostra o BÔNUS do dia (R$ 15, R$ 20 ou R$ 25, meta de 300 peças) e NÃO existe "bônus do mês": cada dia vale por si e a soma dos dias é o que ela recebe, EM DINHEIRO, no dia 12 do mês seguinte (ou segunda-feira, se cair no fim de semana); o bloco "Pagamentos da produção" envia isso ao Contas a pagar (forma Dinheiro). O ciclo de quinta-feira é só da produção externa. SEM botão "Marcar pago" (Marcus, 22/11/2026): o pago vem do Contas a pagar; a situação aqui só lê o que já estava baixado em pr.diasPagos. Só a diretoria.
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { CASA_PECA_DESDE, CASA_POR_PECA, diaDaSemana, faixasDe, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, dataPagBonus, ehExterna, listaExternas, nomeMes, premiacaoDoMes, quartaDaSemana, resumoExterna, somaDias, valorDiaCasa } from "@/apps/montagem/domain/producao";
+import { CASA_PECA_DESDE, precoPecaCasa, diaDaSemana, faixasDe, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, intervaloPeriodo, linhasDoPeriodo, dataPagBonus, ehExterna, listaExternas, nomeMes, premiacaoDoMes, quartaDaSemana, resumoExterna, somaDias, valorDiaCasa } from "@/apps/montagem/domain/producao";
 import { AbaProdPagamentos } from "@/apps/montagem/pages/producao/ProdPagamentos";
 import { Aviso, FaixaAzul, MenuFaixa, MIUDA, Raiz, usePr } from "@/apps/montagem/pages/producao/visualProd";
 import { e, useState } from "@/shared/react";
@@ -32,7 +32,7 @@ function AbaProdPagamentoProducao(){
   var linhas = Object.keys(porDia).sort().map(function(d){
     var pago = !!dp[func+"|"+d], pagarEm = quartaDaSemana(d);   // ciclo de terça a segunda, paga na quinta (22/11/2026)
     return {id:d, dia:d, quando:formatarDia(d)+" · "+cap(diaDaSemana(d)), semana:formatarDia(somaDias(pagarEm, -9)).slice(0, 5)+" a "+formatarDia(somaDias(pagarEm, -3)).slice(0, 5), pagarEm:formatarDia(pagarEm), pecas:porDia[d],
-      porPeca:d<CASA_PECA_DESDE ? "Diária" : formatarReais(CASA_POR_PECA), valor:valorDiaCasa(pr, func, d), pago:pago, situ:pago ? "Pago" : pagarEm<hoje ? "Atrasado" : "A pagar"};
+      porPeca:d<CASA_PECA_DESDE ? "Diária" : formatarReais(precoPecaCasa(func, d)), valor:valorDiaCasa(pr, func, d), pago:pago, situ:pago ? "Pago" : pagarEm<hoje ? "Atrasado" : "A pagar"};
   });
   var cols = [{k:"quando", t:"Dia"}, {k:"semana", t:"Ciclo"}, {k:"pagarEm", t:"Pagar em"}, {k:"pecas", t:"Peças", fmt:formatarInteiro}, {k:"porPeca", t:"Valor da peça"},
     {k:"valor", t:"Valor do dia", fmt:formatarReais}, {k:"situ", t:"Situação", cor:function(r){ return r.pago ? "text-success" : r.situ==="Atrasado" ? "text-danger" : "text-warning"; }}];

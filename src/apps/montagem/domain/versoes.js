@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.223", data:"2026-11-25", titulo:"Produção em casa: preço da peça passa a R$ 0,35 em 26/11", itens:[
+  {tipo:"correção", area:"Produção → Pagamento da produção", txt:"A peça recebida até 25/11 vale R$ 0,45. De 26/11 em diante vale R$ 0,35, menos duas pessoas que ficam em R$ 0,45 (decisão do Marcus). A tela mostra o preço certo de cada dia."}]},
  {v:"0.21.222", data:"2026-11-25", titulo:"Decisões do Marcus de 25/11: ILF, alta da média, acesso e trava da produção", itens:[
   {tipo:"correção", area:"Fiscal", txt:"A meta de ILF volta a ser 30%. Estado salvo com 25% passa para 30%."},
   {tipo:"correção", area:"Financeiro → Faturamento", txt:"A alta da média de dezembro passa de 12% para 10%. Janeiro em 15% ainda falta ligar."},

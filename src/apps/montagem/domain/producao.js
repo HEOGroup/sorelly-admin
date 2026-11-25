@@ -43,6 +43,17 @@ function eCasa(l){ return l.unidade==="CASA" || ehExterna(l.func); }
 var CASA_DIARIA = 130;   // até 15/11/2026 a casa era paga por DIA
 var CASA_POR_PECA = 0.45;   // 16/11/2026 (Marcus: "muda para R$ 0,45 por peça, a partir de hoje"): dia trabalhado desta data em diante vale peças × R$ 0,45; dias antes ficam em R$ 130,00 por dia
 var CASA_PECA_DESDE = "2026-11-16";
+// 25/11/2026 (Marcus): "até hoje pago 0,45 por peça, mas a partir do dia 26 vou pagar 0,35 por peça; o que receber amanhã já entra em 35 centavos. Dávila e minha tia mantêm 0,45."
+// Peça recebida de 26/11/2026 em diante vale R$ 0,35; Dávila e Leci (a tia do Marcus) ficam em R$ 0,45. A lista é por começo do nome, sem acento nem maiúscula.
+var CASA_POR_PECA_NOVO = 0.35;
+var CASA_PECA_NOVO_DESDE = "2026-11-26";
+var CASA_MANTEM_045 = ["davila", "leci"];
+/** Preço da peça na produção em casa: R$ 0,45 até 25/11/2026; de 26/11/2026 em diante R$ 0,35, menos Dávila e Leci, que seguem em R$ 0,45. */
+function precoPecaCasa(func, dia){
+  if(dia<CASA_PECA_NOVO_DESDE) return CASA_POR_PECA;
+  var n = String(func||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  return CASA_MANTEM_045.some(function(p){ return n.indexOf(p)===0; }) ? CASA_POR_PECA : CASA_POR_PECA_NOVO;
+}
 var BONUS_DIA_PAGAMENTO = 5;
 var CUSTO_DIA_INTERNA = 172.12;   // custo completo estimado por dia de uma funcionária interna da Produção (salário médio do RH + encargos, 22 dias); só para o comparativo com a produção em casa, se muda no código
 var LIMITE_EXCEDENTE = 100;   // Marcus, 17/11/2026: o Pix de revendedora vem em valores fechados; se passar um pouco do devido, o excedente vira CRÉDITO da próxima semana. O Lucas tenta não passar de R$ 100,00.
@@ -244,7 +255,7 @@ function premiacaoDoMes(pr, ano, mes){
 function valorDiaCasa(pr, func, dia){
   if(dia<CASA_PECA_DESDE){ var gP = (pr.diasPagos||{})[func+"|"+dia]; return gP && gP.valor!==undefined ? r2(num(gP.valor)) : CASA_DIARIA; }   // dia da diária: vale o que foi pago de verdade (o dia pode ter valor 0: Marcus, 24/11/2026, a Dávila recebeu exatamente R$ 520,00)
   var q = ((pr.lancamentos||{})[dia]||[]).filter(function(l){ return l.func===func && eCasa(l); }).reduce(function(t2, l){ return t2+num(l.qtd); }, 0);
-  return r2(q*CASA_POR_PECA);
+  return r2(q*precoPecaCasa(func, dia));
 }
 // ---------- média por pessoa e comparativo Casa × funcionárias (Marcus, 16/11/2026) ----------
 // por pessoa no mês: dias com peça lançada, peças, média por dia e melhor dia
@@ -595,7 +606,7 @@ function prReduz(s, a){
   }
 }
 
-export { SUPERVISORAS, descontoMeta, ehSupervisora, faixasDe, metaDoDia, dataPagBonus, situacaoCasa, CASA_CONTROLE_DESDE, prDemo, prMigrar, prReduz, hojeSP, somaDias, quartaApos, quartaDaSemana, LIMITE_EXCEDENTE, controleDaCasa, valorDiaCasa, CASA_POR_PECA, CASA_PECA_DESDE, estatisticasDoMes, comparativoCasa, CUSTO_DIA_INTERNA, pagamentosDaProducao, CASA_DIARIA,
+export { precoPecaCasa, SUPERVISORAS, descontoMeta, ehSupervisora, faixasDe, metaDoDia, dataPagBonus, situacaoCasa, CASA_CONTROLE_DESDE, prDemo, prMigrar, prReduz, hojeSP, somaDias, quartaApos, quartaDaSemana, LIMITE_EXCEDENTE, controleDaCasa, valorDiaCasa, CASA_POR_PECA, CASA_PECA_DESDE, estatisticasDoMes, comparativoCasa, CUSTO_DIA_INTERNA, pagamentosDaProducao, CASA_DIARIA,
   UNIDADES, ROTULO_UNIDADE, PERIODOS, ROTULO_PERIODO, FAIXAS_BONUS, META_DIA_PADRAO, DIA_MINIMO, CODIGOS_PADRAO, DIAS_SEMANA,
   formatarReais, formatarInteiro, formatarDia, diaDaSemana, nomeMes,
   valorLinha, limparLinha, limparLinhas, montarMapa, categoriaDe, agregar, tendencia, ranking,
