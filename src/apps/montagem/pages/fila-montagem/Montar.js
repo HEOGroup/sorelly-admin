@@ -31,6 +31,7 @@ var PN = "rounded-xl border border-[#e1e5ef] bg-[#f6f7fb] text-[#141b2e]", MUT =
 var G16 = "text-[16px]";   // padrao-ok: nome, respostas e valores em 16 px, pedido do Marcus de 24/11/2026 (a montadora lê de longe)
 var G15 = "text-[15px]";   // padrao-ok: nome da revendedora em 15 px, desenho aprovado pelo Marcus em 24/11/2026
 var BTN = "flex h-8 w-full items-center justify-center rounded-lg border border-[#d3d9e6] bg-white text-[13px] font-semibold text-[#141b2e] hover:bg-[#eef1f8] disabled:opacity-40";
+var BTNV = "flex h-8 w-full items-center justify-center rounded-lg border border-[#1d4ed8] bg-[#1d4ed8] text-[13px] font-semibold text-white hover:brightness-110";
 var BTNP = "flex h-8 w-full items-center justify-center rounded-lg border border-[#e8b84b] bg-[#e8b84b] text-[13px] font-semibold text-[#111] hover:brightness-105 disabled:opacity-40";
 var corMetal = function(t){ var q = String(t || ""); return /ouro/i.test(q) ? OURO : /prata/i.test(q) ? "#475569" : undefined; };
 var pct1 = function(n){ return String(Math.round(Number(n) * 10) / 10).replace(".", ","); };
@@ -175,7 +176,7 @@ function MontarKit(p){
 
   var painelRev = e(Painel,{t:"Revendedora", s:"Listagens"},
     e(Corpo,null,
-      e("button",{type:"button", onClick:p.voltar, className:BTN}, "‹ Voltar para as listagens"),
+      e("button",{type:"button", onClick:p.voltar, className:BTNV}, "‹ Voltar para as listagens"),
       e("div",{className:"flex items-center gap-3"},
         e("div",{className:"flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e8b84b] font-bold text-[#111] "+G15}, iniciais),
         e("div",{className:"min-w-0"}, e("div",{className:G15+" font-semibold leading-tight"}, d.nome), e("div",{className:"text-[13px] "+MUT}, regiao))),
@@ -219,16 +220,18 @@ function MontarKit(p){
       e("button",{type:"button", onClick:function(){ vai(sel+1); }, disabled:sel===blocos.length-1, className:BTN}, "Próxima ›")));
 
   var temObs = !!String(pf.observations || "").trim();
-  var colCats = tem && e("div",{className:"flex min-h-0 min-w-0 flex-col gap-2"},
-    temObs && e(Painel,{t:"Observações", s:"da revendedora", cls:"max-h-[45%] shrink-0"}, e(Corpo,null, e("p",{className:"whitespace-pre-wrap text-[13px] leading-snug"}, obs))),
-    painelCats);
+  // meio: Categorias e Fotos em cima, lado a lado; as Observações (texto) embaixo, cobrindo a largura dos dois (Marcus, 24/11/2026)
+  var temObs = !!String(pf.observations || "").trim();
+  var colMeio = tem && e("div",{className:"grid min-h-0 min-w-0 gap-2 lg:[grid-template-columns:15rem_minmax(0,1fr)] lg:[grid-template-rows:minmax(0,1fr)_auto]"},
+    painelCats, painelFotos,
+    temObs && e(Painel,{t:"Observações", s:"da revendedora", cls:"lg:col-span-2 lg:max-h-44"}, e(Corpo,null, e("p",{className:"whitespace-pre-wrap text-[13px] leading-snug"}, obs))));
 
   var painelResp = tem && e(Painel,{t:"Respostas dela", s:b.title, cls:"lg:col-span-full xl:col-span-1"}, e(Corpo,null, e(RespostaB,{b:b, r:ans[b.key], ehAneis:ehAneis, aneis:aneis, pedidos:pedidos})));
 
   return e("div",{className:PAGINA_CHEIA+" [&_*]:!normal-case flex flex-col bg-[#c99b2b] p-2 xl:h-[calc(100vh-3.4rem)]"},
     aviso && e("div",{className:"mb-2 shrink-0 rounded-lg bg-[#fff4d6] px-3 py-1.5 text-[13px] text-[#141b2e]"}, aviso),
-    e("div",{className:"grid min-h-0 flex-1 gap-2 lg:grid-cols-[18rem_14rem_minmax(0,1fr)] xl:grid-cols-[18.5rem_15rem_minmax(0,1fr)_21.5rem]"},
-      painelRev, colCats, painelFotos, painelResp,
+    e("div",{className:"grid min-h-0 flex-1 gap-2 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[18.5rem_minmax(0,1fr)_21.5rem]"},
+      painelRev, colMeio, painelResp,
       !tem && e("p",{className:"col-span-full text-center text-[13px]"}, temPrefs ? "Nenhum bloco ativo no formulário do app." : "Esta revendedora ainda não salvou preferências de kit. Dá para montar e concluir mesmo assim.")),
     szm[0] && e("div",{className:"fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4", onClick:function(){ szm[1](null); }}, e("img",{src:szm[0], alt:"Foto ampliada", style:{maxWidth:"92vw", maxHeight:"88vh", objectFit:"contain"}})),
     sj[0] && e(ConcluirMontagem,{kitId:p.kitId, dispatch:cx.dispatch, rev:{id:d.id, nome:d.nome}, temPrefs:temPrefs, inicio:inicio, equipe:equipe.dados, dinheiro:dinheiro,

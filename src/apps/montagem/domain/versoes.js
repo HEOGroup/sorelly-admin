@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.216", data:"2026-11-24", titulo:"Montar kit: observações embaixo e botão Voltar azul; Listagens sem a janela antiga nos botões", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Montar kit", txt:"As observações da revendedora ficam embaixo, num painel que cobre a largura de Categorias e Fotos (que ficam em cima, lado a lado). O botão Voltar para as listagens é azul."},
+  {tipo:"correção", area:"Representantes & Kits → Listagens", txt:"Na coluna Fazer, os kits em Conferir condicional, Pegar condicionais e Aguardando valor mostram só texto (Na condicional, Falta valor) em vez de um botão que abria a janela antiga. Clicar na linha da revendedora continua abrindo a tela de preferências (Montar kit)."}]},
  {v:"0.21.215", data:"2026-11-24", titulo:"Produção: Empresa e Casa separadas, Estoque, filtro Peças ou Dinheiro e linhas mais altas", itens:[
   {tipo:"melhoria", area:"Produção › Produção", txt:"Duas tabelas coladas: Produção da empresa (bônus por dia) em cima e Produção de casa (R$ 0,45 por peça) embaixo, sem a faixa branca entre elas. Filtro Peças ou Dinheiro ao lado de Todas: em Dinheiro cada dia mostra o valor a pagar. Bloco Estoque ao lado da Produção por tipo, com estoque, valor de custo e valor de venda (todos ou cada pessoa)."},
   {tipo:"melhoria", area:"Produção › Pagamento por produção", txt:"Quem faz Empresa e Casa (Crisbele) vê as duas partes lado a lado: Empresa à esquerda, Casa à direita."},

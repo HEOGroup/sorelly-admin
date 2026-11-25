@@ -125,10 +125,9 @@ function FilaPlanilha(p){
     if(st==="bipando") return (sup || k.bipId===euBip) ? botao("Finalizar", false, "Abrir a ficha e finalizar a bipagem", true, abrirFicha) : texto("Em bipagem");
     if(st==="bipado") return sup ? botao("Liberar", false, "Fazer a retirada: liberar o kit para a representante", true, function(){ p.abrir("ret", l.l.id); }) : texto("Pronto");
     if(st==="retirado") return texto("Liberado");
-    if(st==="semvalor") return sup ? botao("Definir valor", false, "Abrir a ficha e definir o valor do kit", true, abrirFicha) : texto("Aguarda valor");
+    if(st==="semvalor") return texto("Falta valor");
     if(st==="supervisao") return sup ? botao("Conferir", false, "Abrir a ficha e conferir o kit", true, abrirFicha) : texto("Em conferência");
-    if(st==="condicional") return botao("Pegar", false, "Abrir a ficha e marcar as condicionais pegas", true, abrirFicha);
-    if(st==="precond") return botao("Conferir", false, "Abrir a ficha e conferir a condicional", true, abrirFicha);
+    if(st==="condicional" || st==="precond") return texto("Na condicional");
     return vazio;
   };
 

@@ -3,6 +3,7 @@
 Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam de representantes, da mais nova para a mais antiga.
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 
+- **24/11/2026** (Marcus, diário geral, seção "Montar kit: observações embaixo; Listagens sem a janela antiga"): **Observações embaixo de Categorias e Fotos, botão Voltar azul; na coluna Fazer, Conferir condicional/Pegar condicionais/Aguardando valor só mostram texto, e clicar na linha abre a tela de preferências.**
 - **24/11/2026** (Marcus, diário geral, seção "Listagens: o próximo passo em toda linha"): **Coluna Fazer com o próximo passo de todo status (Montar, Bipar, Liberar...), Preferências só Sim ou Não, Cond. antes da Montadora, sem setinhas e cabendo na tela; saíram Última hora e Retirada/Nada pronto da linha da representante.**
 - **24/11/2026** (Marcus, diário geral, seção "Ficha Montar kit: observações"): **Observações da revendedora em painel próprio, em cima de Categorias (segunda coluna) da ficha Montar kit.**
 - **24/11/2026** (Marcus, diário geral, seção "Fila de montagem removida"): **A tela Fila de montagem não existe mais;** a ficha Montar kit abre só pelas Listagens e o Voltar leva a elas. Não recriar.
