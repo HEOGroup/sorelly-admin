@@ -15,6 +15,7 @@ import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { useCopiaNavegador } from "@/apps/montagem/lib/copia-navegador";
+import { enviarAcaoInd, indAoVivo } from "@/apps/montagem/lib/indicacoes-servidor";
 import { useCondicionaisKits } from "@/apps/montagem/lib/condicionais-kits";
 import { pendenciasDoAcerto } from "@/apps/montagem/domain/inadimplencia";
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
@@ -127,7 +128,10 @@ function CascaRepresentante(){
 function App(){
   // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
   if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
-  var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
+  var r = useReducer(reducer, null, inicial), s = r[0], dBase = r[1];
+  // Indicações ao vivo (19/11/2026): com servidor e login, as ações {type:"IND"} vão para o servidor (app + banco) e voltam com o estado novo; o resto segue no reducer.
+  // 25/11/2026: a junção de 22/11 tirou este desvio e "Já entrei em contato" (e agendar/retirar/cancelar) só mudava a tela, sem gravar. Não tirar.
+  var d = React.useMemo(function(){ return function(a){ if(a && a.type==="IND" && indAoVivo()) return enviarAcaoInd(a, dBase); return dBase(a); }; }, [dBase]);
   if(typeof window!=="undefined") window.__sorellyAtuando = String(s.usuario);   // abas abertas e favoritas são de quem está usando (ou de quem o Marcus está "atuando como")
   var navigate = useNavigate();
   var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou

@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.217", data:"2026-11-25", titulo:"Indicações: \"Já entrei em contato\" volta a ficar salvo", itens:[
+  {tipo:"correção", area:"Cadastro de revendedoras → Indicações → Resgates", txt:"Desde 22/11 as ações das Indicações (Já entrei em contato, marcas do balcão, agendar, retirar, cancelar e moedas) só mudavam a tela e não iam para o servidor; na leitura seguinte voltavam como antes. Agora gravam de novo no banco e no app."}]},
  {v:"0.21.216", data:"2026-11-24", titulo:"Montar kit: observações embaixo e botão Voltar azul; Listagens sem a janela antiga nos botões", itens:[
   {tipo:"melhoria", area:"Representantes & Kits → Montar kit", txt:"As observações da revendedora ficam embaixo, num painel que cobre a largura de Categorias e Fotos (que ficam em cima, lado a lado). O botão Voltar para as listagens é azul."},
   {tipo:"correção", area:"Representantes & Kits → Listagens", txt:"Na coluna Fazer, os kits em Conferir condicional, Pegar condicionais e Aguardando valor mostram só texto (Na condicional, Falta valor) em vez de um botão que abria a janela antiga. Clicar na linha da revendedora continua abrindo a tela de preferências (Montar kit)."}]},
