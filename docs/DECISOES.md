@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Listagens e Condicionais no padrão compacto; Listagens do Atendimento interno)
+- **Pedido:** Condicionais e as duas Listagens ficam no padrão do Financeiro (linha de 18 px, letra de 10 px, sem caixa alta, Dia numa célula da barra). Abrir todas e Fechar todas nunca são dois botões: é um só que alterna.
+- **Atendimento interno › Listagens** fica só no Atendimento interno e igual à de Montagem. Abre com todos os dias do mês e tem Situação, Valor da venda e Valor do acerto. O tipo vem da agenda da Tamara (padrão "Acerto" quando ela não escolhe).
+- **Trava:** `padrao-regras.mjs` e `PADRAO-VISUAL.md` passam a exigir o padrão compacto. Publicado com o "Sim, publicar" do Marcus em 25/11/2026 (v0.21.221).
+
 ## 25/11/2026 (Cadastro de revendedoras ao vivo: Kommo, fotos, aprovadas e reprovadas, relatórios e tráfego, pedido do Leonardo)
 - **Pedido:** "trazer toda a parte do cadastro do admin antigo, ligado na Kommo, com o servidor de imagens, aprovadas e reprovadas e os relatórios de tráfego". O front do antigo deixa de ser usado.
 - **Como ficou:** o backend do admin antigo CONTINUA recebendo a Kommo (webhook → fila → ingestão) e guardando os leads (`kommo_lead`) e as fotos (CDN `cdn.sorellyjoias.com.br`, `kommo_lead_image`). Este sistema lê esse banco (`ADMIN_ANTIGO_DATABASE_URL`, `src/server/cadastro-aprovacao.js`) e as telas usam as mesmas contas de antes (`domain/cadastro-leads.js`) sobre os leads reais (`lib/cadastro-real.js`). Conferido: novembro (1 a 24) = 217 aprovadas e 126 reprovadas, igual ao banco do antigo.

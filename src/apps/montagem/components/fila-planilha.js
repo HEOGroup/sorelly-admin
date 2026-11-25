@@ -14,6 +14,7 @@ import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-pai
 import { tituloAba } from "@/apps/montagem/components/menu-dias";
 import { MenuAcoes } from "@/apps/montagem/components/menu-acoes";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { CLS_FINA_ESPACO, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { condEstado, condNovas, condNums } from "@/apps/montagem/domain/condicionais";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
@@ -32,13 +33,13 @@ var parar = function(ev){ ev.stopPropagation(); };   // botão dentro da linha n
 // cor SÓ do estado, na letra da coluna Situação (nada de selo colorido)
 var COR_SIT = {bipado:"text-success", retirado:"text-success", supervisao:"text-white", semvalor:"text-white", ajuste:"text-destructive", montando:"text-primary", bipando:"text-primary"};
 // botão pequeno de contorno branco, sem fundo cinza; o principal leva o azul do bloco (o mesmo da tela Condicionais)
-var BTN = "inline-flex h-7 min-w-16 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-2.5 text-[13px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";   // padrao-ok: botão de 28 px dentro da linha de 32 px (o Marcus aprovou esse tamanho em 16/11/2026)
+var BTN = "inline-flex h-[18px] min-w-16 items-center justify-center gap-1 whitespace-nowrap rounded border px-2 text-[10px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";   // botão de 18 px, padrão compacto de 25/11/2026
 function Bt(p){
-  return e("button",{type:"button", onClick:p.onClick, disabled:p.off, title:p.titulo, "aria-label":p.rotulo, className:(p.estreito ? BTN.replace("min-w-16", "w-7 min-w-0").replace("px-2.5", "px-0") : BTN)+(p.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-white/60 bg-transparent")}, p.children);
+  return e("button",{type:"button", onClick:p.onClick, disabled:p.off, title:p.titulo, "aria-label":p.rotulo, className:(p.estreito ? BTN.replace("min-w-16", "w-[18px] min-w-0").replace("px-2.5", "px-0") : BTN)+(p.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-white/60 bg-transparent")}, p.children);
 }
 var vazio = e("span",null,"—");
 // "15:00" vira 15h e "15:30" vira 15h30 (Marcus, 24/11/2026: horário nunca quebra)
-function horaCurta(v){ var m = /^(d{1,2}):(d{2})$/.exec(String(v||"")); return m ? (+m[1])+"h"+(m[2]==="00" ? "" : m[2]) : String(v||"—"); }
+function horaCurta(v){ var m = /^(\d{1,2}):(\d{2})$/.exec(String(v||"")); return m ? (+m[1])+"h"+(m[2]==="00" ? "" : m[2]) : String(v||"—"); }
 // chave do grupo de uma listagem: dia | horário | representante | id (a tabela ordena os grupos pela chave, então saem em ordem de data e de horário)
 function chaveGrupo(l){ return String(l.data||"sem-data").slice(0, 10)+"|"+String(minutos(l.horario)).padStart(4, "0")+"|"+l.rep+"|"+l.id; }
 // quantas condicionais já foram pegas (montadora) ou conferidas (bipadora): da bipagem em diante vale a conferência, antes vale o pegar
@@ -53,15 +54,15 @@ function FichaKit(p){
   var s = p.s, d = p.d, k = p.k, l = p.l, sup = p.sup, lista = p.lista, papel = sup ? "sup" : p.euBip ? "b" : "m";
   var idx = lista.findIndex(function(x){ return x.k.id===k.id; }), ant = idx>0 ? lista[idx-1] : null, prox = idx>=0 && idx<lista.length-1 ? lista[idx+1] : null;
   var tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, semKit = !!SEM_KIT[k.tipoKit], sit = k.pausadoEm ? "Pausado" : STATUS_LB[k.status];
-  var cel = function(rot, valor){ return e("div",{key:rot, className:"min-w-0 border-b border-r border-border px-3 py-1 text-center"}, e("p",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, rot), e("div",{className:"text-[13px] font-semibold"}, valor)); };
+  var cel = function(rot, valor){ return e("div",{key:rot, className:"min-w-0 border-b border-r border-border px-3 py-1 text-center"}, e("p",{className:"text-[10px] font-medium"}, rot), e("div",{className:"text-[10px] font-semibold"}, valor)); };
   var celulas = [cel("Revendedora", k.rev), cel("Representante", l.rep), cel("Listagem", tituloAba(String(l.data||"sem-data").slice(0, 10))+" · "+l.horario+(l.viagem ? " · viagem para "+l.destino : "")), cel("Tipo", tipo[1]),
     cel("Situação", e("span",{className:k.pausadoEm ? "text-white" : (COR_SIT[k.status] || "")}, sit)), cel("Montadora", k.montId ? nomeDe(k.montId) : "—"), cel("Bipadora", k.bipId ? nomeDe(k.bipId) : "—"), cel("Horário do atendimento", k.horaAtend || "—")];
   if(sup && !semKit) celulas = celulas.concat([cel("Valor do kit", e(KitValor,{k:k, ro:false, key:k.id+":"+k.valor+":"+k.status})), cel("Média das vendas", k.vendas && k.vendas.length ? BK(media3(k.vendas)) : "Sem vendas")]);
   var ev = eventosDoKit(s, k, sup), nums = condNums(k), novas = condNovas(k);
-  var faixa = function(t){ return e("p",{className:"border-b border-t border-border px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[.05em]"}, t); };
-  var linha = function(a, b, i){ return e("div",{key:i, className:"grid grid-cols-[9rem_1fr] border-b border-border text-[13px]"}, e("div",{className:"border-r border-border px-3 py-1 font-semibold"}, a), e("div",{className:"px-3 py-1"}, b)); };
+  var faixa = function(t){ return e("p",{className:"border-b border-t border-border px-3 py-1 text-center text-[10px] font-semibold"}, t); };
+  var linha = function(a, b, i){ return e("div",{key:i, className:"grid grid-cols-[9rem_1fr] border-b border-border text-[10px]"}, e("div",{className:"border-r border-border px-3 py-1 font-semibold"}, a), e("div",{className:"px-3 py-1"}, b)); };
   return e("div",{className:"fixed inset-0 z-[80] flex justify-center overflow-y-auto bg-black/70 p-3 md:p-6", onClick:function(ev0){ if(ev0.target===ev0.currentTarget) p.fechar(); }},
-    e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-3xl rounded-lg bg-[#14171c] text-[13px] [&>section]:!bg-[#14171c]"},
+    e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-3xl rounded-lg bg-[#14171c] text-[10px] [&>section]:!bg-[#14171c]"},
       e(BlocoPainel,{titulo:k.rev+" · "+l.rep+" · "+l.horario, dir:e("span",{className:k.pausadoEm ? "text-white" : (COR_SIT[k.status] || "")}, sit)},
         e("div",{className:"grid grid-cols-2 md:grid-cols-4 [&>div:nth-child(4n)]:md:border-r-0"}, celulas),
         faixa("Andamento"),
@@ -69,7 +70,7 @@ function FichaKit(p){
         nums.length>0 && faixa("Condicionais"),
         nums.map(function(n){ var st = condEstado(k, n), feito = papel==="b" ? st.b : papel==="m" ? st.m : st.m && st.b;
           var marca = function(rot, pp, marcado){ return e("label",{className:"inline-flex cursor-pointer items-center gap-1.5"+(st.falta ? " opacity-60" : "")}, e("input",{type:"checkbox", checked:marcado, disabled:st.falta, onChange:function(){ d({type:"COND_CHK", id:k.id, num:n, papel:pp, v:!marcado, por:s.usuario}); }}), rot); };
-          return e("div",{key:n, className:"flex min-h-8 flex-wrap items-center justify-center gap-x-5 gap-y-1 border-b border-border px-3 py-1 text-[13px]"},
+          return e("div",{key:n, className:"flex min-h-[18px] flex-wrap items-center justify-center gap-x-5 gap-y-1 border-b border-border px-3 py-1 text-[10px]"},
             e("b",{className:MONO+" w-24 text-center"}, n),
             e("span",{className:"w-24 text-center font-semibold "+(st.falta ? "text-destructive" : st.imp ? "text-primary" : feito ? "text-success" : "text-white")}, st.falta ? "Falta" : st.imp ? "Impressa" : feito ? "Conferida" : "A conferir"),
             (papel==="m" || papel==="sup") && marca(papel==="sup" ? "Montadora pegou" : "Peguei", "m", st.m),
@@ -102,7 +103,7 @@ function FilaPlanilha(p){
   var euBipando = euBip && s.kits.some(function(k){ return k.bipId===euBip && k.status==="bipando"; });
 
   // Montar e clicar na revendedora levam SEMPRE à tela nova (ficha das preferências com Iniciar montagem) (Marcus, 24/11/2026)
-  var abrirKit = function(k){ var rp = prefDoApp(k.rev); if(p.abrirMontar) p.abrirMontar(rp && rp.id!=null ? rp.id : null, k.id); else setFichaId(k.id); };   // sem cadastro no app, a tela nova avisa
+  var abrirKit = function(k){ var rp = prefDoApp(k.rev); if(p.abrirMontar) p.abrirMontar(rp && rp.id!=null ? rp.id : null, k.id); else setFichaId(k.id); };   // sempre a tela nova (24/11/2026: o bloco antigo não existe mais); sem cadastro no app, a tela nova avisa
   // Montar direto na linha: abre a janela do kit (preferências, condicionais e iniciar). Texto vermelho = kit sem montador informado.
   // Quem montou: só o nome (Marcus, 24/11/2026). O botão fica na coluna "Fazer", logo depois da Situação.
   var celMont = function(k){
@@ -110,7 +111,7 @@ function FilaPlanilha(p){
     return k.montId ? nomeDe(k.montId) : vazio;
   };
   // PASSO A PASSO (Marcus, 24/11/2026: "status, um botão Montar que vai para a outra tela; depois de montado fica Bipar; depois Liberar para a representante"):
-  // todo status mostra o próximo passo: pendente → Montar · montando → Abrir · montado → Bipar · bipando → Finalizar · bipado → Liberar (retirada) · semvalor → Definir valor · condicional → Pegar · precond/supervisão → Conferir
+  // pendente → Montar (abre a ficha) · montando → Abrir · montado → Bipar (bipadora) · bipado → Liberar (retirada da representante, supervisão)
   var celFazer = function(l){
     var k = l.k, st = k.status, grande = soEncomendas(k, s.cfg), proibido = euMont && grande && !ehEncomendas(s, s.usuario);
     var botao = function(txt, off, titulo, principal, fn){ return e("div",{onClick:parar}, e(Bt,{principal:principal, off:off, titulo:titulo, onClick:fn}, txt)); };
@@ -137,7 +138,7 @@ function FilaPlanilha(p){
     var ks = s.kits.filter(function(k){ return k.lid===l.id; })
       .sort(function(a, b){
         if(a.prio!==b.prio) return a.prio ? -1 : 1;   // 1) prioritários primeiro; 2) mais adiantados em cima; 3) posição na fila; 4) ordem da listagem
-        var ea = ETAPA[a.status]===undefined ? 6.4 : ETAPA[a.status], eb = ETAPA[b.status]===undefined ? 6.4 : ETAPA[b.status]; if(ea!==eb) return ea-eb;   // "Conferir condicional" (precond) também aparece, logo antes da fila (Marcus, 24/11/2026)
+        var ea = ETAPA[a.status]===undefined ? 6.4 : ETAPA[a.status], eb = ETAPA[b.status]===undefined ? 6.4 : ETAPA[b.status]; if(ea!==eb) return ea-eb;   // "Conferir condicional" (precond) também aparece, logo antes da fila (Marcus, 24/11/2026: listagem criada no app tem que aparecer inteira)
         var pa = fila.indexOf(a), pb = fila.indexOf(b); if(pa>=0 && pb>=0) return pa-pb;
         return a.ordem-b.ordem; });
     var g = chaveGrupo(l);
@@ -159,7 +160,7 @@ function FilaPlanilha(p){
 
   var celNome = function(l){
     var k = l.k;
-    var tag = function(txt, titulo){ return e("span",{className:"ml-1.5 rounded border border-white/60 px-1 text-[11px] font-semibold", title:titulo}, txt); };
+    var tag = function(txt, titulo){ return e("span",{className:"ml-1.5 rounded border border-white/60 px-1 text-[10px] font-semibold", title:titulo}, txt); };
     return e("span",{title:k.rev+(k.atrasado ? " · pedido fora do prazo" : "")+(k.autorizadoPor ? " · autorizado por "+nomeDe(k.autorizadoPor) : "")},
       k.prio && e("span",{title:"Prioritário"}, "★ "), k.rev,
       k.atrasado && tag("Atrasado", "Pedido fora do prazo"),
@@ -192,10 +193,10 @@ function FilaPlanilha(p){
   };
 
   var aberta = fichaId && linhas.find(function(x){ return x.id===fichaId; });
-  return e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"},
+  return e("div",{ref:refCheia(), className:CLS_FINA_ESPACO+" [&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"},
     janelaKit && e(JanelaMontar,{key:janelaKit, kitId:janelaKit, fechar:function(){ setJanelaKit(null); }}),
     aberta && e(FichaKit,{key:aberta.id, s:s, d:d, k:aberta.k, l:aberta.l, sup:sup, euBip:euBip, lista:linhas, fechar:function(){ setFichaId(null); }, ir:setFichaId}),
-    e(TabelaPlanilha,{key:"fila", semFiltro:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
+    e(TabelaPlanilha,{key:"fila", fina:true, semFiltro:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
       agrupar:"grupo", linhaGrupo:linhaGrupo, grupoEsquerda:true,
       grupoAberto:function(g){ return !p.fechadas[g]; }, aoGrupo:function(g){ var o = Object.assign({}, p.fechadas); o[g] = !p.fechadas[g]; p.setFechadas(o); },
       aoClicar:function(l){ abrirKit(l.k); },

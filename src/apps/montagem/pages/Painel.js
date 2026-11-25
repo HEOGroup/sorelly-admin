@@ -11,6 +11,7 @@ import { FilaPlanilha, chaveGrupo } from "@/apps/montagem/components/fila-planil
 import { MenuDias } from "@/apps/montagem/components/menu-dias";
 import { MontarKit } from "@/apps/montagem/pages/fila-montagem/Montar";
 import { Pagina } from "@/apps/montagem/components/padrao";
+import { BarraTabela, CelulaBarra } from "@/apps/montagem/components/planilha-cheia";
 import { Aviso, Botao } from "@/apps/montagem/components/padrao-fin";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { papelDe } from "@/apps/montagem/domain/equipe";
@@ -19,7 +20,7 @@ import { use } from "@/apps/montagem/state/context";
 import { e, useState } from "@/shared/react";
 
 // botão pequeno de contorno branco para a barra azul (como o seletor do Contas a pagar)
-var BTN_BARRA = "inline-flex h-7 items-center justify-center whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-semibold normal-case text-white hover:bg-white/15";   // padrao-ok: controle de 28 px na barra azul, como o Contas a pagar (Marcus aprovou 28 px em 16/11/2026)
+var BTN_BARRA = "inline-flex h-[18px] items-center justify-center whitespace-nowrap rounded border border-white/50 bg-[#14233f] px-2 text-[10px] font-semibold normal-case text-white hover:bg-white/15";   // controle de 18 px na barra azul, padrão compacto de 25/11/2026
 
 // Revendedora que ainda não está no app: sem preferências para mostrar, mas a montagem pode começar (Marcus, 24/11/2026: clicar na revendedora sempre vai para a tela nova)
 function MontarSemApp(p){
@@ -47,15 +48,17 @@ function AbaPainel(){
     .sort(function(a, b){ return chaveGrupo(a).localeCompare(chaveGrupo(b)); });
   var conferir = s.kits.filter(function(k){ return k.status==="supervisao"; }).length;
   var abreTodas = function(v){ var o = {}; if(!v) doDia.forEach(function(l){ o[chaveGrupo(l)] = true; }); setFechadas(o); };   // v=true: abre todas; v=false: fecha todas
+  var todasAbertas = doDia.every(function(l){ return !fechadas[chaveGrupo(l)]; });   // um botão só: abre tudo ou fecha tudo (Marcus, 25/11/2026)
   if(montar && montar.id==null) return e(Pagina,null, e(MontarSemApp,{kitId:montar.kit, voltar:function(){ sm[1](null); }}));
   if(montar) return e(Pagina,null, e(MontarKit,{key:montar.id, id:montar.id, kitId:montar.kit, voltar:function(){ sm[1](null); }}));
-  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3 [&_*]:!normal-case"},
     e(BlocoErrosBipagem),
     papelDe(s.usuario)==="bipadora" && e(BarraBipadora),
-    e(BlocoPainel,{titulo:"Listagens", compacto:true, alta:true,
-        acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel}) : null,
-        dir:e("div",{className:"flex items-center gap-1.5"}, e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(true); }}, "Abrir todas"), e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(false); }}, "Fechar todas"))},
-      conferir>0 && e("p",{className:"border-b border-border px-3 py-1 text-center text-[13px] font-semibold text-warning"}, conferir+(conferir>1 ? " kits acima de " : " kit acima de ")+BK(s.cfg.limiteAtencao)+" esperando a conferência da Deysiane"),
+    e(BlocoPainel,{titulo:"Listagens", compacto:true},
+      dias.length>0 && e(BarraTabela,null,
+        e(CelulaBarra,{rotulo:"Dia"}, e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel})),
+        e(CelulaBarra,{rotulo:"Listagens"}, e("div",{className:"flex items-center px-1"}, e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(!todasAbertas); }}, todasAbertas ? "Fechar todas" : "Abrir todas")))),
+      conferir>0 && e("p",{className:"border-b border-border px-3 py-0.5 text-center text-[10px] font-semibold text-warning"}, conferir+(conferir>1 ? " kits acima de " : " kit acima de ")+BK(s.cfg.limiteAtencao)+" esperando a conferência da Deysiane"),
       e("div",{className:"flex min-h-0 flex-1 flex-col bg-[#0f1729]"}, e(FilaPlanilha,{listagens:doDia, fechadas:fechadas, setFechadas:setFechadas, abrir:abrir, abrirMontar:function(id, kit){ sm[1]({id:id, kit:kit}); }}))),
     e(DlgNovoKit,{lid: dlg.tipo==="kit" ? dlg.lid : null, fechar:fechar}),
     e(DlgRetirada,{lid: dlg.tipo==="ret" ? dlg.lid : null, fechar:fechar}));

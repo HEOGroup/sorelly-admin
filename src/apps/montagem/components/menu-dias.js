@@ -24,10 +24,9 @@ function MenuDias(p){
   var rot = todos ? "Todos os dias" : sel.length===1 ? tituloAba(sel[0]) : sel.length+" dias";   // o campo fechado escreve igual à lista aberta (Marcus, 16/11/2026)
   var alterna = function(d0){ var n = sel.indexOf(d0)>=0 ? sel.filter(function(x){ return x!==d0; }) : sel.concat([d0]); if(n.length) p.onChange(p.dias.filter(function(x){ return n.indexOf(x)>=0; })); };
   var abre = function(){ if(pos){ setPos(null); return; } var r = bt.current.getBoundingClientRect(); setPos({top:r.bottom+4, left:r.left}); };
-  var linha = "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[13px] font-normal normal-case text-white hover:bg-white/15";   // dentro da lista: letra normal, minúscula e sem negrito (Marcus: "escrever normal ali dentro"); só o campo fechado fica grande e em maiúsculas
+  var linha = "flex h-[18px] cursor-pointer items-center gap-2 rounded px-2 text-[10px] font-normal normal-case text-white hover:bg-white/15";   // padrão compacto (25/11/2026): controle de 18 px e letra de 10 px, escrita normal
   return e("div",{className:"flex items-center gap-2"},
-    e("span",{className:"text-[13px] font-bold uppercase"}, "Dia"),
-    e("button",{ref:bt, id:"cd-dia", type:"button", "aria-expanded":!!pos, onClick:abre, className:"flex h-8 items-center gap-2 whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-normal normal-case text-white outline-none"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, pos ? "▴" : "▾")),
+    e("button",{ref:bt, id:"cd-dia", type:"button", "aria-expanded":!!pos, onClick:abre, className:"flex h-[18px] w-full items-center justify-between gap-2 whitespace-nowrap rounded border border-white/50 bg-[#14233f] px-2 text-[10px] font-medium normal-case text-white outline-none"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, pos ? "▴" : "▾")),
     pos && createPortal(e("div",{ref:lista, role:"listbox", "aria-multiselectable":true, style:{top:pos.top, left:pos.left}, className:"fixed z-[90] max-h-[60vh] min-w-72 overflow-y-auto rounded-md border border-white/50 bg-[#14233f] p-1 shadow-lg"},
       p.dias.length>1 && e("label",{className:linha+" border-b border-white/30"}, e("input",{type:"checkbox", checked:todos, onChange:function(){ p.onChange(todos ? [sel[0]] : p.dias.slice()); }}), "Todos os dias"),
       p.dias.map(function(d0){ return e("label",{key:d0, className:linha}, e("input",{type:"checkbox", checked:sel.indexOf(d0)>=0, onChange:function(){ alterna(d0); }}), tituloAba(d0)); }),

@@ -18,6 +18,7 @@ import { use } from "@/apps/montagem/state/context";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { CLS_FINA_ESPACO, BarraTabela, CelulaBarra, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { MONO } from "@/apps/montagem/ui/input";
 import { createPortal } from "react-dom";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -32,15 +33,15 @@ var tituloAba = function(iso){   // dia padronizado, sem Hoje/Amanhã: "16/11/20
 var parar = function(ev){ ev.stopPropagation(); };   // botão dentro da linha não abre a ficha
 // Botões e campo SEM fundo cinza (Marcus, 16/11/2026: "não quero fundo cinza em nada"): contorno branco fino sobre o fundo da própria janela, como o Desfazer do Contas a pagar;
 // o principal leva o azul do bloco. Na tabela (CelaBotoes) continuam BOTÕES com contorno, centralizados na célula (Marcus: "Achei e Falta têm que ficar como botão").
-var BT = "inline-flex h-8 min-w-24 items-center justify-center whitespace-nowrap rounded-md border px-3.5 text-[13px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";
+var BT = "inline-flex h-[18px] min-w-24 items-center justify-center whitespace-nowrap rounded-md border px-3.5 text-[10px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";
 function Botao(p){
   return e("button",{type:"button", onClick:p.onClick, disabled:p.desabilitado, title:p.title, "aria-label":p.rotulo, className:(p.estreito ? BT.replace("min-w-24", "w-8 min-w-0").replace("px-3.5", "px-0") : BT)+(p.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-border bg-transparent")}, p.children);
 }
-var CAMPO = "h-8 min-w-0 rounded-md border border-border bg-transparent px-2.5 text-[13px] text-foreground outline-none placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-[var(--bloco-titulo)]";
+var CAMPO = "h-[18px] min-w-0 rounded-md border border-border bg-transparent px-2 text-[10px] text-foreground outline-none placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-[var(--bloco-titulo)]";
 function CelaBotoes(p){
-  return e("div",{className:"flex h-8 items-center justify-center gap-1.5", onClick:parar},
+  return e("div",{className:"flex h-[18px] items-center justify-center gap-1.5", onClick:parar},
     p.itens.filter(Boolean).map(function(b, i){
-      return e("button",{key:i, type:"button", disabled:b.desabilitado, title:b.title, onClick:b.onClick, className:"inline-flex h-7 min-w-20 items-center justify-center whitespace-nowrap rounded-md border px-3 text-[13px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 "+(b.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-white/60 bg-transparent")}, b.t); }));   // padrao-ok: botão de 28 px dentro da linha de 32 px; o Marcus aprovou esse tamanho em 16/11/2026 ("28px ok")
+      return e("button",{key:i, type:"button", disabled:b.desabilitado, title:b.title, onClick:b.onClick, className:"inline-flex h-[18px] min-w-20 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[10px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 "+(b.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-white/60 bg-transparent")}, b.t); }));
 }
 var COR_ST = {"Conferida":"text-success", "Liberada":"text-success", "Impressa":"text-primary", "Falta":"text-destructive", "A conferir":"text-warning"};
 
@@ -59,7 +60,7 @@ function Ficha(p){
   var idx = p.lista.findIndex(function(x){ return x.kit.id===k.id; }), ant = idx>0 ? p.lista[idx-1] : null, prox = idx>=0 && idx<p.lista.length-1 ? p.lista[idx+1] : null;
   var feitas = nums.filter(function(n){ return condEstado(k, n).p; }).length, faltas = nums.filter(function(n){ return condEstado(k, n).falta; }).length;
   var sit = lib ? "Liberada" : faltas ? faltas+" falta"+(faltas>1 ? "m" : "") : ok ? "Conferida" : "A conferir";
-  var cel = function(rot, valor){ return e("div",{key:rot, className:"min-w-0 border-b border-r border-border px-3 py-1 text-center"}, e("p",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, rot), e("p",{className:"text-[13px] font-semibold"}, valor)); };
+  var cel = function(rot, valor){ return e("div",{key:rot, className:"min-w-0 border-b border-r border-border px-3 py-1 text-center"}, e("p",{className:"text-[10px] font-medium"}, rot), e("p",{className:"text-[10px] font-semibold"}, valor)); };
   var celulas = e("div",{className:"grid grid-cols-2 border-b border-border md:grid-cols-4 [&>div:nth-child(4n)]:md:border-r-0 [&>div:nth-last-child(-n+4)]:md:border-b-0"},
     cel("Revendedora", k.rev), cel("Representante", l ? l.rep : "—"), cel("Listagem", l ? diaCurto(l.data)+" · "+l.horario : "—"), cel("Tipo", (TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit)[1]));
   var linhas = nums.map(function(n){
@@ -79,12 +80,12 @@ function Ficha(p){
   var liberar = function(){ d({type:"LIBERAR_COND", ids:[k.id], por:p.usuario}); var seg = p.lista.slice(idx+1).filter(function(x){ return !x.lib; })[0]; if(seg) p.ir(seg.kit.id); else p.fechar(); };
   var nova = (k.cond.novaDm || []);
   return e("div",{className:"fixed inset-0 z-[80] flex justify-center overflow-y-auto bg-black/70 p-3 md:p-6", onClick:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }},
-    e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-2xl rounded-lg bg-[#14171c] text-[13px] [&>section]:!bg-[#14171c]"},
+    e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-2xl rounded-lg bg-[#14171c] text-[10px] [&>section]:!bg-[#14171c]"},
       e(BlocoPainel,{titulo:k.rev+" · "+(l ? l.rep+" · "+diaCurto(l.data)+" · "+l.horario : ""), dir:e("span",{className:COR_ST[lib ? "Liberada" : faltas ? "Falta" : ok ? "Conferida" : "A conferir"]}, sit+" · "+feitas+" de "+nums.length)},
         celulas,
-        e("p",{className:"border-b border-border px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[.05em]"}, "Condicionais que voltam no acerto"),
-        nums.length ? e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", cols:cols, linhas:linhas}) : e("p",{className:"px-3 py-3 text-center text-[13px]"}, "Nenhuma condicional aberta para conferir."),
-        nova.length>0 && e("p",{className:"border-t border-border px-3 py-1 text-center text-[13px]"}, "Condicional nova deste kit (fica fora da conferência): ", e("b",{className:MONO+" font-semibold"}, nova.join("   "))),
+        e("p",{className:"border-b border-border px-3 py-1 text-center text-[10px] font-semibold"}, "Condicionais que voltam no acerto"),
+        nums.length ? e("div",{ref:refCheia(), className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, semCaixaAlta:true, semContagem:true, semFiltro:true, grade:true, chave:"id", cols:cols, linhas:linhas})) : e("p",{className:"px-3 py-3 text-center text-[10px]"}, "Nenhuma condicional aberta para conferir."),
+        nova.length>0 && e("p",{className:"border-t border-border px-3 py-1 text-center text-[10px]"}, "Condicional nova deste kit (fica fora da conferência): ", e("b",{className:MONO+" font-semibold"}, nova.join("   "))),
         !lib && e("div",{className:"flex flex-wrap items-center justify-center gap-2 border-t border-border px-3 py-1.5"}, e("span",null, "Número que não veio da DevMaster:"), e(AddNum,{id:k.id, d:d})),
         e("div",{className:"flex flex-wrap items-center justify-between gap-2 border-t border-border px-3 py-1.5"},
           e("div",{className:"flex gap-2"}, e(Botao,{desabilitado:!ant, onClick:function(){ p.ir(ant.kit.id); }}, "‹ Anterior"), e(Botao,{desabilitado:!prox, onClick:function(){ p.ir(prox.kit.id); }}, "Próxima ›")),
@@ -106,10 +107,9 @@ function MenuDias(p){
   var rot = todos ? "Todos os dias" : sel.length===1 ? tituloAba(sel[0]) : sel.length+" dias";   // o campo fechado escreve igual à lista aberta (Marcus, 16/11/2026)
   var alterna = function(d0){ var n = sel.indexOf(d0)>=0 ? sel.filter(function(x){ return x!==d0; }) : sel.concat([d0]); if(n.length) p.onChange(p.dias.filter(function(x){ return n.indexOf(x)>=0; })); };
   var abre = function(){ if(pos){ setPos(null); return; } var r = bt.current.getBoundingClientRect(); setPos({top:r.bottom+4, left:r.left}); };
-  var linha = "flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[13px] font-normal normal-case text-white hover:bg-white/15";   // dentro da lista: letra normal, minúscula e sem negrito (Marcus: "escrever normal ali dentro"); só o campo fechado fica grande e em maiúsculas
-  return e("div",{className:"flex items-center gap-2"},
-    e("span",{className:"text-[13px] font-bold uppercase"}, "Dia"),
-    e("button",{ref:bt, id:"cd-dia", type:"button", "aria-expanded":!!pos, onClick:abre, className:"flex h-8 items-center gap-2 whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-normal normal-case text-white outline-none"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, pos ? "▴" : "▾")),
+  var linha = "flex h-[18px] cursor-pointer items-center gap-2 rounded px-2 text-[10px] font-normal normal-case text-white hover:bg-white/15";   // padrão compacto (25/11/2026): controle de 18 px e letra de 10 px, escrita normal
+  return e("div",{className:"flex h-full w-full items-center"},
+    e("button",{ref:bt, id:"cd-dia", type:"button", "aria-expanded":!!pos, onClick:abre, className:"flex h-[18px] w-full items-center justify-between gap-2 whitespace-nowrap rounded border border-white/50 bg-[#14233f] px-2 text-[10px] font-medium normal-case text-white outline-none"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, pos ? "▴" : "▾")),
     pos && createPortal(e("div",{ref:lista, role:"listbox", "aria-multiselectable":true, style:{top:pos.top, left:pos.left}, className:"fixed z-[90] max-h-[60vh] min-w-72 overflow-y-auto rounded-md border border-white/50 bg-[#14233f] p-1 shadow-lg"},
       p.dias.length>1 && e("label",{className:linha+" border-b border-white/30"}, e("input",{type:"checkbox", checked:todos, onChange:function(){ p.onChange(todos ? [sel[0]] : p.dias.slice()); }}), "Todos os dias"),
       p.dias.map(function(d0){ return e("label",{key:d0, className:linha}, e("input",{type:"checkbox", checked:sel.indexOf(d0)>=0, onChange:function(){ alterna(d0); }}), tituloAba(d0)); }),
@@ -165,14 +165,15 @@ function AbaCondicionais(){
     {k:"acao", t:"Impressão", render:function(v, l){ return e(CelaBotoes,{itens:[{t:"Impressa", onClick:function(){ d({type:"COND_IMPRESSA", id:l.k.id, num:l.n, por:s.usuario}); }}]}); }}];
 
   var linhaAberta = aberta && linhas.find(function(x){ return x.id===aberta; });
-  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3 [&_*]:!normal-case"},
     linhaAberta && e(Ficha,{key:linhaAberta.id, k:linhaAberta.kit, l:linhaAberta.l, lista:linhas, d:d, usuario:s.usuario, fechar:function(){ setAberta(null); }, ir:setAberta}),
     fila.length>0 && e(BlocoPainel,{titulo:"Aguardando impressão", compacto:true},
-      e(TabelaPlanilha,{key:"fila", cols:colsFila, linhas:fila, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhum pedido de impressão."})),
-    e(BlocoPainel,{titulo:"Condicionais", compacto:true, alta:true,
-        // o dia fica à ESQUERDA, na mesma linha do título (uma linha só no topo; Marcus, 16/11/2026)
-        acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel, antigas:verAntigas, onAntigas:setVerAntigas}) : null},
-      e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"}, e(TabelaPlanilha,{key:"cond", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true,
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO},
+        e(TabelaPlanilha,{key:"fila", fina:true, semCaixaAlta:true, cols:colsFila, linhas:fila, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhum pedido de impressão."}))),
+    e(BlocoPainel,{titulo:"Condicionais", compacto:true},
+        // o dia fica numa célula da barra, como no Contas a pagar (padrão de 25/11/2026)
+        dias.length>0 && e(BarraTabela,null, e(CelulaBarra,{rotulo:"Dia"}, e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel, antigas:verAntigas, onAntigas:setVerAntigas}))),
+      e("div",{ref:refCheia(), className:CLS_FINA_ESPACO+" [&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"}, e(TabelaPlanilha,{key:"cond", fina:true, semCaixaAlta:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true,
         agrupar:"grupo", rotuloGrupo:function(g, q){ var p0 = String(g).split("|"); return p0[1]+" · "+p0[2]+" · "+tituloAba(p0[0])+" · "+q+" revendedora"+(q>1 ? "s" : ""); },   // 17/11/2026 (Marcus): tamanho padrão, com o horário da listagem à ESQUERDA
         grupoAberto:function(g){ return !fech[g]; }, aoGrupo:function(g){ var o = Object.assign({}, fech); o[g] = !fech[g]; setFech(o); },
         aoClicar:function(l){ setAberta(l.id); },

@@ -4,7 +4,7 @@
 //  · barra de filtros azul, centralizada, campos de 18 px e letra de 10 px (BarraMini, CampoMini, BuscaMini);
 //  · tabela com letra de 10 px, cabeçalho de 16 px, sem a setinha (o filtro continua ao clicar no nome da coluna) e linhas de cerca de 18 px (CLS_FINA);
 //  · a altura das linhas se ajusta para caber um número EXATO de linhas na janela, e a rolagem para sempre numa linha inteira (refCheia).
-// Exceção ao padrão de 30/32 px e 11/13 px aprovada pelo Marcus em 20/11/2026 ("padrao-ok" nas linhas abaixo).
+// Estas medidas (10 px, 18 px) SÃO o padrão vigente desde 25/11/2026 (docs/design/PADRAO-VISUAL.md). O "padrao-ok" nas linhas abaixo é resto do tempo em que a trava exigia 30/32 px.
 import { PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { e } from "@/shared/react";
 

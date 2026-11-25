@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.221", data:"2026-11-25", titulo:"Listagens e Condicionais no padrão compacto do Financeiro", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Listagens e Condicionais", txt:"Linha de 18 px, letra de 10 px, sem caixa alta. O Dia fica numa célula da barra. Abrir todas e Fechar todas viraram um botão só."},
+  {tipo:"melhoria", area:"Atendimento interno → Listagens", txt:"Mesmo desenho da Listagens de Montagem, com todos os dias do mês, colunas Situação, Valor da venda e Valor do acerto (do registro do acerto) e o tipo marcado pela agenda da Tamara. Corrigido id repetido que deixava linhas sem fechar."},
+  {tipo:"melhoria", area:"Trava do padrão visual", txt:"A trava e o PADRAO-VISUAL.md passam a valer o padrão compacto de 25/11/2026 (10 px, linha de 18 px)."}]},
  {v:"0.21.220", data:"2026-11-25", titulo:"Cadastro de revendedoras ao vivo: Kommo, fotos, aprovadas e reprovadas e campanhas da Meta", itens:[
   {tipo:"novo", area:"Cadastro de revendedoras → Aprovação de cadastros", txt:"Os cadastros vêm da Kommo, com as fotos (Instagram, Instagram Pro e casa), como no admin antigo. Aprovar (com a opção e os valores do kit e a mensagem do WhatsApp), reprovar e voltar à análise gravam na Kommo. Novo modo Analisar fila: um cadastro por vez, com os atalhos A (aprovar), R (reprovar), P (pular) e Z (desfazer a última). O lançamento manual de lead saiu."},
   {tipo:"novo", area:"Cadastro de revendedoras → Desempenho do cadastro", txt:"Métricas, Origem e Registros mostram as aprovadas e reprovadas reais. O Funil é lido ao vivo da Kommo. Campanhas mostra a Meta Ads ao vivo (gasto, impressões, cliques, CPC, CTR e anúncios de cada campanha) e o funil dos leads de anúncio com o custo por etapa. A digitação manual de campanhas saiu."}]},
