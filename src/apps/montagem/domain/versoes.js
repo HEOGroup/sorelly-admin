@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.213", data:"2026-11-24", titulo:"Revendedoras abrem rápido, total do Início, ficha da revendedora e Listagens", itens:[
+  {tipo:"melhoria", area:"Servidor", txt:"A lista de revendedoras (DevMaster) ficou guardada no banco e uma rotina a refaz a cada 10 minutos: a representante abre as revendedoras em cerca de 1 segundo, em vez de 21."},
+  {tipo:"melhoria", area:"App da representante", txt:"Início: Vendido Total, Acerto Total e Comissão agora somam as revendedoras dela do mês escolhido (antes ficavam em R$ 0,00). Ficha da revendedora: fonte maior nos três números e nos botões; saíram os botões Acerto sem agendamento e Alterar data do acerto; Realizar atendimento faz o acerto sem agendamento; o botão Agendar vira Atendimento agendado · Mudar data."},
+  {tipo:"melhoria", area:"Representantes & Kits → Listagens", txt:"Saiu a coluna Ordem; horários como 15h, 15h30; colunas com largura fixa; kits em Conferir condicional aparecem; clicar na revendedora ou em Montar abre sempre a tela nova Montar kit (sem cadastro no app, mostra aviso e Iniciar montagem)."}]},
  {v:"0.21.212", data:"2026-11-24", titulo:"Ficha Montar kit: observações em cima das categorias", itens:[
   {tipo:"melhoria", area:"Representantes & Kits → Montar kit", txt:"As observações da revendedora saíram do painel dela e ficam num painel próprio em cima de Categorias (segunda coluna), com rolagem se o texto for grande. A linha das respostas quebra de linha em vez de cortar o valor na borda."}]},
  {v:"0.21.211", data:"2026-11-24", titulo:"App da representante: erro numa tela não prende mais, e o rascunho volta só onde dá", itens:[

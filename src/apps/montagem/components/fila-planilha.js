@@ -37,6 +37,8 @@ function Bt(p){
   return e("button",{type:"button", onClick:p.onClick, disabled:p.off, title:p.titulo, "aria-label":p.rotulo, className:(p.estreito ? BTN.replace("min-w-16", "w-7 min-w-0").replace("px-2.5", "px-0") : BTN)+(p.principal ? "border-white bg-[var(--bloco-titulo)] hover:brightness-125" : "border-white/60 bg-transparent")}, p.children);
 }
 var vazio = e("span",null,"—");
+// "15:00" vira 15h e "15:30" vira 15h30 (Marcus, 24/11/2026: horário nunca quebra)
+function horaCurta(v){ var m = /^(d{1,2}):(d{2})$/.exec(String(v||"")); return m ? (+m[1])+"h"+(m[2]==="00" ? "" : m[2]) : String(v||"—"); }
 // chave do grupo de uma listagem: dia | horário | representante | id (a tabela ordena os grupos pela chave, então saem em ordem de data e de horário)
 function chaveGrupo(l){ return String(l.data||"sem-data").slice(0, 10)+"|"+String(minutos(l.horario)).padStart(4, "0")+"|"+l.rep+"|"+l.id; }
 // quantas condicionais já foram pegas (montadora) ou conferidas (bipadora): da bipagem em diante vale a conferência, antes vale o pegar
@@ -99,10 +101,12 @@ function FilaPlanilha(p){
   var euMont = papelDe(s.usuario)==="montadora", podeMontar = sup || euMont;
   var euBipando = euBip && s.kits.some(function(k){ return k.bipId===euBip && k.status==="bipando"; });
 
+  // Montar e clicar na revendedora levam SEMPRE à tela nova (ficha das preferências com Iniciar montagem) (Marcus, 24/11/2026)
+  var abrirKit = function(k){ var rp = prefDoApp(k.rev); if(p.abrirMontar) p.abrirMontar(rp && rp.id!=null ? rp.id : null, k.id); else setFichaId(k.id); };   // sem cadastro no app, a tela nova avisa
   // Montar direto na linha: abre a janela do kit (preferências, condicionais e iniciar). Texto vermelho = kit sem montador informado.
   var celMont = function(k){
     var sem = semMontador(k), grande = soEncomendas(k, s.cfg), proibido = euMont && grande && !ehEncomendas(s, s.usuario);
-    var montar = function(txt, off, titulo, principal){ return e(Bt,{principal:principal, off:off, titulo:titulo, onClick:function(){ setJanelaKit(k.id); }}, txt); };
+    var montar = function(txt, off, titulo, principal){ return e(Bt,{principal:principal, off:off, titulo:titulo, onClick:function(){ abrirKit(k); }}, txt); };
     if(sem) return e("span",{className:"font-semibold text-destructive", title:"Este kit não tem montador informado. A bipagem e a comissão da bipadora só valem com montador."}, "Sem montador");
     if(k.status==="pendente" || k.status==="ajuste") return podeMontar ? montar("Montar", proibido || (k.status==="pendente" && !!k.designada && k.designada!==s.usuario && !sup),
       proibido ? "Kit acima do limite: só o setor Encomendas monta ("+nomesEncomendas(s)+")" : k.designada && k.designada!==s.usuario && !sup ? "Pedido para "+nomeDe(k.designada) : "Abrir a janela do kit e iniciar a montagem", true) : vazio;
@@ -114,10 +118,10 @@ function FilaPlanilha(p){
   // UMA linha por kit, agrupada por listagem
   var linhas = [], porGrupo = {};
   (p.listagens||[]).forEach(function(l){
-    var ks = s.kits.filter(function(k){ return k.lid===l.id && k.status!=="precond"; })
+    var ks = s.kits.filter(function(k){ return k.lid===l.id; })
       .sort(function(a, b){
         if(a.prio!==b.prio) return a.prio ? -1 : 1;   // 1) prioritários primeiro; 2) mais adiantados em cima; 3) posição na fila; 4) ordem da listagem
-        var ea = ETAPA[a.status], eb = ETAPA[b.status]; if(ea!==eb) return ea-eb;
+        var ea = ETAPA[a.status]===undefined ? 6.4 : ETAPA[a.status], eb = ETAPA[b.status]===undefined ? 6.4 : ETAPA[b.status]; if(ea!==eb) return ea-eb;   // "Conferir condicional" (precond) também aparece, logo antes da fila (Marcus, 24/11/2026)
         var pa = fila.indexOf(a), pb = fila.indexOf(b); if(pa>=0 && pb>=0) return pa-pb;
         return a.ordem-b.ordem; });
     var g = chaveGrupo(l);
@@ -146,30 +150,29 @@ function FilaPlanilha(p){
       modalidadeDe(s, k.rev)==="prata" && tag("Prata", "Kit 100% Prata"));
   };
   var cols = [
-    {k:"ordem", t:"Ordem"},
-    {k:"hora", t:"Horário", render:function(v){ return e("span",{className:MONO}, v); }},
-    {k:"nome", t:"Nome", render:function(v, l){ return celNome(l); }},
-    {k:"tipo", t:"Tipo"},
-    {k:"pref", t:"Preferências", cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-white" : "text-success")+" font-semibold"; }}]
-    .concat(sup ? [{k:"media", t:"Média"}, {k:"valor", t:"Valor do kit", render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
+    {k:"hora", t:"Horário", w:60, render:function(v){ return e("span",{className:MONO+" whitespace-nowrap"}, horaCurta(v)); }},
+    {k:"nome", t:"Nome", w:230, render:function(v, l){ return celNome(l); }},
+    {k:"tipo", t:"Tipo", w:92},
+    {k:"pref", t:"Preferências", w:226, cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-white" : "text-success")+" font-semibold"; }}]
+    .concat(sup ? [{k:"media", t:"Média", w:80}, {k:"valor", t:"Valor do kit", w:100, render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
     .concat([
-    {k:"sit", t:"Situação", cor:function(l){ return (l.k.pausadoEm ? "text-white" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
-    {k:"mont", t:"Montadora", render:function(v, l){ return e("div",{onClick:parar}, celMont(l.k)); }},
-    {k:"tmont", t:"Montagem", render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-white"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
-    {k:"cond", t:"Condicionais", cor:function(l){ var ac = andamentoCond(l.k); return ac.faltas ? "text-destructive font-semibold" : ac.total && ac.feitas===ac.total ? "text-success font-semibold" : ""; }},
-    {k:"bip", t:"Bipadora", render:function(v, l){ var k = l.k;
+    {k:"sit", t:"Situação", w:126, cor:function(l){ return (l.k.pausadoEm ? "text-white" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
+    {k:"mont", t:"Montadora", w:80, render:function(v, l){ return e("div",{onClick:parar}, celMont(l.k)); }},
+    {k:"tmont", t:"Montagem", w:72, render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-white"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
+    {k:"cond", t:"Condicionais", w:92, cor:function(l){ var ac = andamentoCond(l.k); return ac.faltas ? "text-destructive font-semibold" : ac.total && ac.feitas===ac.total ? "text-success font-semibold" : ""; }},
+    {k:"bip", t:"Bipadora", w:72, render:function(v, l){ var k = l.k;
       if(k.bipId) return e("span",{className:k.bipId===euBip ? "font-semibold text-primary" : ""}, nomeDe(k.bipId));
       if(euBip && k.status==="montado") return e("div",{onClick:parar}, e(Bt,{principal:true, off:euBipando, titulo:euBipando ? "Finalize o kit atual antes de iniciar outro" : "Iniciar a bipagem deste kit", onClick:function(){ d({type:"INICIAR_B", id:k.id, bipId:euBip}); }}, "Bipar"));
       return vazio; }},
-    {k:"tbip", t:"Bipagem", render:function(v, l){ var k = l.k; return k.status==="bipando" ? e(RelogioB,{desde:k.iniB, curto:true, className:"font-semibold text-primary"}) : e("span",{className:MONO}, v); }},
-    {k:"nova", t:"Nova condicional"},
-    {k:"acao", t:"Ações", render:function(v, l){ return sup ? e("div",{className:"flex justify-center", onClick:parar}, e(MenuAcoes,{k:l.k, abrirRetirada:function(){ p.abrir("ret", l.l.id); }, naLinha:function(){ setFichaId(l.k.id); }})) : vazio; }}]);
+    {k:"tbip", t:"Bipagem", w:72, render:function(v, l){ var k = l.k; return k.status==="bipando" ? e(RelogioB,{desde:k.iniB, curto:true, className:"font-semibold text-primary"}) : e("span",{className:MONO}, v); }},
+    {k:"nova", t:"Nova condicional", w:112},
+    {k:"acao", t:"Ações", w:56, render:function(v, l){ return sup ? e("div",{className:"flex justify-center", onClick:parar}, e(MenuAcoes,{k:l.k, abrirRetirada:function(){ p.abrir("ret", l.l.id); }, naLinha:function(){ setFichaId(l.k.id); }})) : vazio; }}]);
 
   // linha do grupo: representante, dia, horário e, para a supervisão, os botões da listagem (Confirmar valores, Última hora, Retirada)
   var linhaGrupo = function(g, ls){
-    var l = porGrupo[g] || ls[0].l, todos = s.kits.filter(function(k){ return k.lid===l.id && k.status!=="precond"; });
+    var l = porGrupo[g] || ls[0].l, todos = s.kits.filter(function(k){ return k.lid===l.id; });
     var prontos = todos.filter(function(k){ return k.status==="bipado"; }).length, semValor = todos.filter(function(k){ return k.status==="semvalor"; }).length;
-    var txt = e("span",null, l.rep+" · "+tituloAba(String(l.data||"sem-data").slice(0, 10))+" · "+l.horario+(l.viagem ? " · viagem para "+l.destino : "")+" · "+ls.length+(ls.length===1 ? " kit" : " kits"));
+    var txt = e("span",null, l.rep+" · "+tituloAba(String(l.data||"sem-data").slice(0, 10))+" · "+horaCurta(l.horario)+(l.viagem ? " · viagem para "+l.destino : "")+" · "+ls.length+(ls.length===1 ? " kit" : " kits"));
     var botoes = sup ? e("div",{className:"flex items-center gap-1.5", onClick:parar},
       semValor>0 && e(Bt,{titulo:"Confirmar os valores sugeridos", onClick:function(){ d({type:"CONFIRMAR_SUGERIDOS", lid:l.id}); }}, "Confirmar valores"),
       e(Bt,{titulo:"Incluir kit de última hora", onClick:function(){ p.abrir("kit", l.id); }}, "Última hora"),
@@ -184,11 +187,7 @@ function FilaPlanilha(p){
     e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
       agrupar:"grupo", linhaGrupo:linhaGrupo, grupoEsquerda:true,
       grupoAberto:function(g){ return !p.fechadas[g]; }, aoGrupo:function(g){ var o = Object.assign({}, p.fechadas); o[g] = !p.fechadas[g]; p.setFechadas(o); },
-      aoClicar:function(l){
-        // 20/11/2026 (Marcus): clicar na revendedora abre a FICHA DAS PREFERÊNCIAS dela (a de Montar kit, com Iniciar montagem), ligada a este kit; sem preferências no app, abre a janela do kit
-        var rp = prefDoApp(l.k.rev);
-        if(rp && rp.id!=null && p.abrirMontar) p.abrirMontar(rp.id, l.k.id);
-        else if(podeMontar) setJanelaKit(l.k.id); else setFichaId(l.id); },
+      aoClicar:function(l){ abrirKit(l.k); },
       vazio:"Nenhum kit nas listagens desse dia."}));
 }
 

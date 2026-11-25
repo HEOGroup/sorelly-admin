@@ -11,6 +11,8 @@ import { FilaPlanilha, chaveGrupo } from "@/apps/montagem/components/fila-planil
 import { MenuDias } from "@/apps/montagem/components/menu-dias";
 import { MontarKit } from "@/apps/montagem/pages/fila-montagem/Montar";
 import { Pagina } from "@/apps/montagem/components/padrao";
+import { Aviso, Botao } from "@/apps/montagem/components/padrao-fin";
+import { PageHead } from "@/apps/montagem/ui/page";
 import { papelDe } from "@/apps/montagem/domain/equipe";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -18,6 +20,16 @@ import { e, useState } from "@/shared/react";
 
 // botão pequeno de contorno branco para a barra azul (como o seletor do Contas a pagar)
 var BTN_BARRA = "inline-flex h-7 items-center justify-center whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-semibold normal-case text-white hover:bg-white/15";   // padrao-ok: controle de 28 px na barra azul, como o Contas a pagar (Marcus aprovou 28 px em 16/11/2026)
+
+// Revendedora que ainda não está no app: sem preferências para mostrar, mas a montagem pode começar (Marcus, 24/11/2026: clicar na revendedora sempre vai para a tela nova)
+function MontarSemApp(p){
+  var cx = use(), s = cx.state, k = (s.kits||[]).find(function(x){ return x.id===p.kitId; });
+  var pode = k && (k.status==="pendente" || k.status==="ajuste") && (papelDe(s.usuario)==="montadora" || papelDe(s.usuario)==="supervisao");
+  return e("div",{className:"flex flex-col gap-2.5"},
+    e(PageHead,{t:"Montar kit", sub:k ? k.rev : ""}, e(Botao,{onClick:p.voltar}, "Voltar para as listagens")),
+    e(Aviso,{tom:"amarelo"}, "Esta revendedora ainda não está no app, então não há preferências para mostrar."),
+    pode && e("div",{className:"flex justify-center"}, e(Botao,{principal:true, onClick:function(){ cx.dispatch({type:"INICIAR_M", id:k.id, montId:s.usuario}); p.voltar(); }}, "Iniciar montagem")));
+}
 
 function AbaPainel(){
   var cx = use(), s = cx.state;
@@ -35,6 +47,7 @@ function AbaPainel(){
     .sort(function(a, b){ return chaveGrupo(a).localeCompare(chaveGrupo(b)); });
   var conferir = s.kits.filter(function(k){ return k.status==="supervisao"; }).length;
   var abreTodas = function(v){ var o = {}; if(!v) doDia.forEach(function(l){ o[chaveGrupo(l)] = true; }); setFechadas(o); };   // v=true: abre todas; v=false: fecha todas
+  if(montar && montar.id==null) return e(Pagina,null, e(MontarSemApp,{kitId:montar.kit, voltar:function(){ sm[1](null); }}));
   if(montar) return e(Pagina,null, e(MontarKit,{key:montar.id, id:montar.id, kitId:montar.kit, voltar:function(){ sm[1](null); }}));
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     e(BlocoErrosBipagem),

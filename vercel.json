@@ -32,6 +32,10 @@
     {
       "path": "/api/app-rep/sincronizar",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/automatico/aquecer-revendedoras",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

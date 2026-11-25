@@ -194,6 +194,9 @@ function AppRepresentante(p){
   var acertosCard = (s.acertosConsignado||[]).filter(function(a){ return a.origem!=="interno" && a.tipo==="acerto" && a.rep===l.rep && (a.data||"").slice(0,7)===mesCard; });
   var vendidoTotal = acertosCard.reduce(function(t0,a){ return t0+(a.vendaBruta||0); }, 0), acertoTotal = acertosCard.reduce(function(t0,a){ return t0+(a.valorAcerto||0); }, 0),
     comissaoRepTotal = itensComissao(comisEfetiva(s), s, Date.now()).filter(function(i){ return i.dest===l.rep && !i.pixRep && (i.data||"").slice(0,7)===mesCard; }).reduce(function(t0,i){ return t0+i.comissao; }, 0);
+  // SOMA DA CARTEIRA (Marcus, 24/11/2026: "o app fazendo a soma do acerto"; o backend do app está desligado e os acertos registrados estão zerados): sem totais do app e sem acerto registrado no mês, o Início soma o vendido do mês escolhido de todas as revendedoras dela e o acerto de cada uma pela tabela de comissão.
+  var usaCarteira = !(painelApp && painelApp.vendido!=null) && acertosCard.length===0, carregandoCarteira = usaCarteira && apiAtiva() && reais===null;
+  var somaCarteiraV = cart.reduce(function(t0,r){ return t0+vendMes(r); }, 0), somaCarteiraA = cart.reduce(function(t0,r){ var v = vendMes(r); return t0+Math.round(v*(1-((comissaoRev(v, s.cfg)||{pct:0}).pct/100))); }, 0);
   var nPagNI = (s.acertosConsignado||[]).reduce(function(t,r){ return r.origem==='interno' || r.rep!==l.rep ? t : t+Object.keys(r.divs||{}).filter(function(i){ return r.divs[i].tipo==='nao_ident' && !(r.fin && r.fin[i]); }).length; }, 0);
   var minhasL = s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada;});
   // conversa com a revendedora no próprio chat do app (em vez de abrir o WhatsApp)
@@ -212,7 +215,7 @@ function AppRepresentante(p){
     e("b",{className:"text-[16px]"}, TITULO[tela]));
   var PCT_COMISSAO_REP_CARD = (function(){ var c = comisEfetiva(s), reps = c.reps||[], x = reps.find(function(y){ return y.nome===l.rep; }) || reps.find(function(y){ return y.nome===String(l.rep||"").trim().split(/ +/)[0]; }); return (x && x.pct!=null ? x.pct : c.pctPadrao)/100; })();   // comissão da representante no cartão: o % DELA (Dayanne, Lysie e Vanessa 10%, as demais 8%; 23/11/2026)
   var LINHA_CARD = "border-[#E9DDBB]";
-  var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[11px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" text-[13px] font-bold leading-tight", style:cor?{color:cor}:null}, v)); };   // coluna Vendido/Acerto/Comissão (a ficha da revendedora usa; a lista nova não): sem ela, tocar numa revendedora dava erro (24/11/2026)
+  var col = function(lb, v, cor){ return e("div",{className:"px-1"}, e("p",{className:"text-[13px] font-bold leading-tight tracking-wide text-[#9A8B63]"}, lb), e("p",{className:MONO+" whitespace-nowrap text-[15px] font-extrabold leading-tight", style:cor?{color:cor}:null}, v)); };   // coluna Vendido/Acerto/Comissão (a ficha da revendedora usa; a lista nova não): sem ela, tocar numa revendedora dava erro (24/11/2026)
   var cartao = function(r){
     // mês atual, ainda sem acerto: vale o que ela vendeu no APP desde o último acerto (é o que vai virar o acerto); sem venda no app, a última venda da DevMaster
     var doApp = mes===0 && !r.realizado && r.vendaApp>0;
@@ -1114,8 +1117,13 @@ function AppRepresentante(p){
         +(kitSel.kitNovoEntregue.pecasFaltaram ? " · "+kitSel.kitNovoEntregue.pecasFaltaram+" em falta" : " · conferido, sem divergência"))),
     jaAcertado && kitSel.reposicaoEntregue && e("div",{className:"rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-[12.5px]"},
       e("b",{className:"text-emerald-700"},"Reposição entregue"), kitSel.comissaoFixa ? e("p",{className:"text-[11.5px] text-emerald-900/70"},"Comissão "+BK(kitSel.comissaoFixa)) : null));
-  var botaoAgendar = sel && e("button",{onClick:function(){ setAgendarAberto(!agendarAberto); setMenuAberto(false); }, className:"flex h-8 w-full items-center justify-center whitespace-nowrap rounded-xl text-[11px] font-extrabold leading-none "+ouro},
-    "Agendar atendimento");
+  // Marcus, 24/11/2026: quando a representante já agendou o atendimento, o botão vira "Atendimento agendado · Mudar data" (leva ao pedido de mudança de data, que pergunta o motivo); o botão "Alterar data do acerto" saiu.
+  var hojeAg = isoDia(new Date());
+  var kitAgendado = sel && !sel.realizado && (sel.hoje || s.kits.some(function(k){ return k.rev===sel.rev && k.status!=="retirado" && minhasL.some(function(x){ return x.id===k.lid && (x.data||"")>=hojeAg; }); }));
+  var botaoAgendar = sel && (kitAgendado
+    ? e("button",{onClick:function(){ setTela("pedidodata"); setMenuAberto(false); }, className:"flex min-h-8 w-full flex-col items-center justify-center rounded-xl px-2 py-1 text-center text-[13px] font-extrabold leading-tight "+ouro}, e("span",null,"Atendimento agendado"), e("span",{className:"text-[13px] font-semibold underline"},"Mudar data"))
+    : e("button",{onClick:function(){ setAgendarAberto(!agendarAberto); setMenuAberto(false); }, className:"flex min-h-8 w-full items-center justify-center rounded-xl px-2 py-1 text-center text-[13px] font-extrabold leading-tight "+ouro},
+    "Agendar atendimento"));
   // limite de reposições por semana da representante (Encomendas e reposições → Regras, padrão 10; semana de segunda a domingo)
   var limiteReposSemana = ((((s.er||{}).config||{}).reposicao||{}).repPorSemana) || 10;
   var semanaAgenda = inicioSemana(agendaForm.data || isoDia(new Date()));
@@ -1200,7 +1208,7 @@ function AppRepresentante(p){
     {id:"acerto", lb: jaAcertado ? "Ver acerto (já registrado)" : "Realizar acerto + kit", icone:"calc", cor:"#16A34A", onClick:function(){ opcoesAtendimento[0].onClick(); }},
     {id:"kitnovo", lb: kitSel && kitSel.kitNovoEntregue ? "Kit novo (já entregue)" : "Entregar kit novo", icone:"novas", cor:"#DB2777", onClick:function(){ setMenuAberto(false); setTela("entregakit"); }},
     {id:"repos", lb: kitSel && kitSel.reposicaoEntregue ? "Reposição (já entregue)" : "Entregar reposição", icone:"caixa", cor:"#0891B2", onClick:function(){ setMenuAberto(false); setTela("reposicao"); }}];
-  var botaoRealizar = sel && e("button",{onClick:function(){ setMenuAberto(!menuAberto); setAgendarAberto(false); }, className:"relative flex h-8 w-full items-center justify-center whitespace-nowrap rounded-xl px-5 text-[11px] font-extrabold leading-none "+ouro},
+  var botaoRealizar = sel && e("button",{onClick:function(){ if(!sel.hoje && !sel.realizado){ acertoSemAgenda(); return; } setMenuAberto(!menuAberto); setAgendarAberto(false); }, className:"relative flex min-h-8 w-full items-center justify-center rounded-xl px-6 py-1 text-center text-[13px] font-extrabold leading-tight "+ouro},   // revendedora sem atendimento hoje: "Realizar atendimento" já faz o acerto sem agendamento (o botão "Acerto sem agendamento" saiu)
     e(Icon,{n: menuAberto?"chevrondown":"chevron", s:11, className:"absolute right-1.5 top-1/2 -translate-y-1/2 opacity-80"}), "Realizar atendimento");
   var painelRealizar = sel && menuAberto && e("div",{className:"overflow-hidden rounded-2xl border "+LINHA_CARD+" bg-white shadow-sm"},
     opcoesAtend.map(function(op, i){ var on = op.id===situacaoAtend;
@@ -1212,14 +1220,12 @@ function AppRepresentante(p){
   var acertoSemAgenda = function(){ var hojeI = isoDia(new Date()), lh = s.listagens.find(function(x){ return x.rep===l.rep && x.data===hojeI && !x.fechada; });
     if(!lh){ var m = new Date(); var hh = String(m.getHours()).padStart(2,"0")+":"+(m.getMinutes()<30 ? "00" : "30"); d({type:"CRIAR_LISTAGEM", rep:l.rep, destino:"Curitiba", viagem:false, horario:hh, data:hojeI, porRep:true, semKit:true, semAgendamento:true}); }
     setSemAg(true); };
-  var botaoSemAgenda = sel && !sel.hoje && !sel.realizado && e("button",{type:"button", onClick:acertoSemAgenda, className:"h-8 w-full rounded-xl text-[13px] font-extrabold "+ouro}, "Acerto sem agendamento");
   useEffect(function(){ if(!abrirSemAg || !sel || !sel.hoje || !kitSel || !kitSel.semAgendamento) return; setAbrirSemAg(false); opcoesAtendimento[0].onClick(); }, [abrirSemAg, sel && sel.hoje, kitSel && kitSel.id]);   // eslint-disable-line react-hooks/exhaustive-deps
   var linhaAtendimento = sel && e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"grid grid-cols-2 gap-2"}, botaoAgendar, botaoRealizar),
-    botaoSemAgenda, blocoAgendaForm, painelRealizar);
-  var botaoPedidoData = sel && !sel.realizado && e("button",{onClick:function(){ setTela("pedidodata"); }, className:"h-8 w-full rounded-xl border border-[#C9A13B]/50 bg-white text-[11px] font-extrabold text-[#8A6A12]"}, "Alterar data do acerto");
+    blocoAgendaForm, painelRealizar);
   // Pré-acerto: a representante preenche antes (remarcações e dias de atraso); no acerto chegam travados
-  var botaoPreAcerto = sel && sel.hoje && kitSel && !jaAcertado && !soRepos && !soKitNovo && e("button",{onClick:function(){ setTela("preacerto"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-xl border border-[#C9A13B]/50 bg-white text-[11px] font-extrabold text-[#8A6A12]"},
+  var botaoPreAcerto = sel && sel.hoje && kitSel && !jaAcertado && !soRepos && !soKitNovo && e("button",{onClick:function(){ setTela("preacerto"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-xl border border-[#C9A13B]/50 bg-white text-[13px] font-extrabold text-[#8A6A12]"},
     e(Icon,{n:"calendario", s:13}), "Pré-acerto", (kitSel.remarcacoesLista||[]).length>0 || (kitSel.preAcerto && kitSel.preAcerto.atrasoDias>0) ? e("span",{className:"rounded-full bg-[#C9A13B] px-2 text-[11px] font-bold txt-branco"}, "Preenchido") : null);
   var janelaPergunta = sel && perguntaPre && e("div",{role:"dialog", "aria-label":"Atualizar remarcações e multas", className:"absolute inset-0 z-30 grid place-items-center bg-black/60 p-4"},   // absolute, não fixed: a janela fica DENTRO do celular (05/11/2026)
     e("div",{className:"flex w-full max-w-[300px] flex-col gap-3 rounded-2xl bg-[#1C1C1E] p-4"},
@@ -1228,7 +1234,7 @@ function AppRepresentante(p){
       e("button",{onClick:function(){ setPerguntaPre(false); setTela("preacerto"); }, className:"h-8 rounded-xl text-[13px] font-bold "+ouro}, "Sim, atualizar"),
       e("button",{onClick:function(){ setPerguntaPre(false); abrirAcertoNovo(); }, className:"h-8 rounded-xl bg-white/10 text-[13px] font-semibold text-white"}, "Não, seguir para o acerto")));
   var telaRev = sel && e("div",{className:"mt-3 flex flex-col gap-2"},
-    janelaPergunta, blocoNome, blocoStatusHoje, linhaAtendimento, botaoPreAcerto, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
+    janelaPergunta, blocoNome, blocoStatusHoje, linhaAtendimento, botaoPreAcerto, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
   var ponto = function(k){ return e("span",{className:"size-2 shrink-0 rounded-full "+PONTO_CEL[STATUS_TP[k.status]]}); };
   var fmtDataISO = function(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]; };
   var hojeISOStr = isoDia(new Date());
@@ -1290,14 +1296,14 @@ function AppRepresentante(p){
         !repCodDaConta() && e("p",{className:"px-2 pb-1 text-[12px] text-[#6B7280]"}, "Visualização da Diretoria: a foto e a saída são da conta dela."),
         msgFoto && e("p",{className:"px-2 pb-1 text-[12px] font-semibold text-[#B45309]"}, msgFoto)),
     e("div",{className:"relative mt-3 flex flex-col gap-1.5"},
-      [{lb:"Vendido Total", v:BK(painelApp && painelApp.vendido!=null ? painelApp.vendido : vendidoTotal), ic:"grafico", cor:"#F3D8A0"},
-        {lb:"Acerto Total", v:BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto : acertoTotal), ic:"wallet", cor:"#C6DFF8"},
-        {lb:"Comissão Rep.", v:BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto*PCT_COMISSAO_REP_CARD : comissaoRepTotal), ic:"coins", cor:"#C1EDD1"}].map(function(m){
+      [{lb:"Vendido Total", v:carregandoCarteira ? "…" : BK(painelApp && painelApp.vendido!=null ? painelApp.vendido : usaCarteira ? somaCarteiraV : vendidoTotal), ic:"grafico", cor:"#F3D8A0"},
+        {lb:"Acerto Total", v:carregandoCarteira ? "…" : BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto : usaCarteira ? somaCarteiraA : acertoTotal), ic:"wallet", cor:"#C6DFF8"},
+        {lb:"Comissão Rep.", v:carregandoCarteira ? "…" : BK(painelApp && painelApp.valorAcerto!=null ? painelApp.valorAcerto*PCT_COMISSAO_REP_CARD : usaCarteira ? Math.round(somaCarteiraA*PCT_COMISSAO_REP_CARD) : comissaoRepTotal), ic:"coins", cor:"#C1EDD1"}].map(function(m){
         return e("div",{key:m.lb, className:"flex items-center justify-between gap-2 rounded-2xl bg-white/8 px-3 py-2.5"},
           e("span",{className:"flex min-w-0 items-center gap-2"},
             e("span",{className:"grid size-10 shrink-0 place-items-center rounded-xl", style:{color:m.cor, background:m.cor+"26", boxShadow:"inset 0 0 0 1px "+m.cor+"55"}}, e(Icon,{n:m.ic, s:22, peso:"duotone"})),
-            e("b",{className:"text-[13px] font-semibold "+BR}, m.lb)),
-          e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[16px] font-extrabold text-amber-200"}, m.v));
+            e("b",{className:"text-[15px] font-semibold "+BR}, m.lb)),
+          e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[20px] font-extrabold text-amber-200"}, m.v));
       })));
   // lista da tela inicial no MESMO desenho do app da revendedora (cartão compacto, ícone 32 px, título 13 px e legenda 11 px) — padronização de 29/10/2026
   var listaInicio = e("div",{className:"mt-4 flex flex-col gap-3"}, LISTA_INICIO.map(function(m){

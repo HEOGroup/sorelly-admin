@@ -6,6 +6,7 @@
 //  - Tipo da condicional: Expositor (vendedor 04 ou previsão no ano 3000), Encomenda (vendedor 91), Reposição (marca S), Kit principal (o mais antigo sem a marca),
 //    Kit novo (criado 20 dias ou mais depois do principal) e Reposição / peças do próximo mês (criado antes de 20 dias). A funcionária vai poder corrigir o tipo (etapa 3).
 import { consultarTabela, todasAsPaginas } from "./devmaster2.js";
+import { consulta } from "./db.js";
 import { composicaoDoCliente, composicaoGeral, iniciarCargaBrindes, resumoVendas, situacaoBrindes, ultimasVendasDaMedia } from "./vendas-brinde.js";
 
 const TTL = 10 * 60 * 1000;
@@ -116,8 +117,26 @@ async function vendasDe(clientes) {
 }
 
 // A primeira leva: revendedoras com condicional aberto e previsão em 2026. Cache de 10 minutos.
+// CÓPIA NO BANCO (Marcus, 24/11/2026: "por que demora tanto para carregar as revendedoras?"): montar a lista lê 2.000+ clientes na DevMaster (~21 s). A memória some a cada partida a frio do
+// servidor da Vercel, então a representante esperava esses 21 s. Agora a lista pronta também fica no banco; quem chega a frio lê a cópia (menos de 1 hora) em milissegundos, e o agendador
+// (/api/automatico/aquecer-revendedoras, a cada 10 minutos) refaz a lista e a cópia.
+const CHAVE_CACHE = "revs_base_v11", IDADE_MAX_CACHE = 60 * 60 * 1000;
+async function lerCopia() {
+  try {
+    const r = await consulta("select valor, extract(epoch from now() - em) * 1000 as idade from sorelly.cache_servidor where chave = $1", [CHAVE_CACHE]);
+    const l = r.rows[0];
+    return l && Number(l.idade) < IDADE_MAX_CACHE ? l.valor : null;
+  } catch { return null; }
+}
+async function gravarCopia(dados) {
+  try {
+    await consulta("create table if not exists sorelly.cache_servidor (chave text primary key, valor jsonb not null, em timestamptz not null default now())");
+    await consulta("insert into sorelly.cache_servidor (chave, valor, em) values ($1, $2::jsonb, now()) on conflict (chave) do update set valor = excluded.valor, em = now()", [CHAVE_CACHE, JSON.stringify(dados)]);
+  } catch { /* sem cópia: a próxima partida a frio monta de novo */ }
+}
 async function listaBase({ forcar = false } = {}) {
   if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 11 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
+  if (!forcar) { const c = await lerCopia(); if (c && c.itens) { G.__sorellyRevs = { dados: c, em: Date.now(), v: 11 }; return c; } }
   const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc", "afi_obs"];
   const [c26, cExp, vend] = await Promise.all([
     todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { between: ["2026-01-01T00:00:00", "2026-12-31T23:59:59"] } }, campos }),
@@ -150,6 +169,7 @@ async function listaBase({ forcar = false } = {}) {
   }).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const dados = { geradoEm: new Date().toISOString(), total: itens.length, itens };
   G.__sorellyRevs = { dados, em: Date.now(), v: 11 };
+  await gravarCopia(dados);
   return dados;
 }
 
