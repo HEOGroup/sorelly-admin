@@ -9,6 +9,7 @@ import { apiAtiva, chamar, ehAdmin, repCodDaConta, guardaNomeRep } from "@/apps/
 import { AppRepresentante } from "@/apps/montagem/mobile/representante";
 import { ProtecaoRep } from "@/apps/montagem/mobile/protecao-rep";
 import { AvisoObrigatorioRep } from "@/apps/montagem/mobile/aviso-obrigatorio";
+import { AVISOS_LIGADOS } from "@/apps/montagem/domain/avisos-rep";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { ORDEM_SIT, SITUACOES, fotoDoServidor, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
@@ -179,7 +180,7 @@ function InicioRepresentante(){
   var repNome = cod ? (quem.nome || (dela[0] && dela[0].rep) || "Representante") : (ver ? ver.rep : String(nome||"").trim().split(/ +/).slice(0, 2).join(" "));
   var l = dela.find(function(x){ return !x.fechada; }) || dela[0] || {id:"rep-"+(cod || s.usuario), rep:repNome, data:"", horario:"", retiradas:[]};
   return e("div",{className:cod ? "flex min-h-0 w-full flex-1 flex-col" : "mx-auto flex w-full max-w-[430px] flex-col items-center py-2"}, e(ProtecaoRep,{key:"prot-"+(cod || l.id)}, e(AppRepresentante,{key:cod ? "rep-"+cod : l.id, l:l, foto:cod ? (quem ? quem.foto : "") : (ver ? fotoDoServidor(ver.id) || "" : ""), semMoldura:cod ? "cheia" : true})),
-    cod && avisosPend && avisosPend.length>0 && e(AvisoObrigatorioRep,{key:"avisos", avisos:avisosPend, onConfirmar:function(id){ return chamar("POST", "/representante/avisos", {id:id}); }, onFim:function(){ setAvisosPend([]); }}));
+    AVISOS_LIGADOS && cod && avisosPend && avisosPend.length>0 && e(AvisoObrigatorioRep,{key:"avisos", avisos:avisosPend, onConfirmar:function(id){ return chamar("POST", "/representante/avisos", {id:id}); }, onFim:function(){ setAvisosPend([]); }}));
 }
 function AbaInicioGeral(){ var cx = use(); return repCodDaConta() || grupoDe(cx.state.usuario)==="representante" ? e(InicioRepresentante) : e(AbaInicio); }
 export { AbaInicioGeral as AbaInicio };

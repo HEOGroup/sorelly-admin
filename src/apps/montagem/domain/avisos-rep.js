@@ -21,4 +21,5 @@ var AVISOS = [
     "**O motivo é obrigatório** em toda mudança. Perdoar multa só com motivo sério, prova e autorização do Marcus."]}
 ];
 var ESPERA_SEGUNDOS = 5;   // o botão fica escuro e travado até passar esse tempo
-export { AVISOS, ESPERA_SEGUNDOS };
+var AVISOS_LIGADOS = false;   // DESLIGADO por enquanto (Marcus, 25/11/2026): o aviso não aparece no app da representante nem na prévia. Para ligar de novo, troque para true.
+export { AVISOS, ESPERA_SEGUNDOS, AVISOS_LIGADOS };
