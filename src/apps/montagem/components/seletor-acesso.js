@@ -66,7 +66,7 @@ function PilulaSituacao(p){ p = p || {};
 function ContaMenu(p){
   var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"], navigate = useNavigate();
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], arq = useRef(null), rc = useState(null), recorte = rc[0], setRecorte = rc[1];
-  var comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28","44"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
+  var comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": SÓ o Marcus (decisão dele em 25/11/2026); os demais usam somente a própria conta
   var sSom = useState(sons.config()), som = sSom[0], setSom = sSom[1];
   useEffect(function(){ return sons.assinar(function(){ setSom(sons.config()); }); }, []);
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;

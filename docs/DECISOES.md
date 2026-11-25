@@ -3665,3 +3665,9 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 
 ## 24/11/2026 · Avisos obrigatórios no app da representante
 - Marcus: elas não leem as mensagens; o app mostra um aviso obrigatório no meio da tela ANTES de abrir, uma vez só, um por um (OBRIGATÓRIO A LEITURA / SE VOCÊ ASSINA, VOCÊ CONFIRMA QUE LEU E ENTENDEU). Li e entendi + OK, escuros por 5 s. O primeiro aviso é um recado do próprio Marcus explicando o alerta. Avisos em `domain/avisos-rep.js` (id novo a cada aviso); leitura gravada em `avrep`. Falta: tela para ver quem leu (a rota já devolve para a Diretoria) e tela para editar os avisos.
+
+## 25/11/2026 · Decisões do Marcus (questionário)
+- Meta de ILF: 30%. Alta da média: dezembro 10% e janeiro 15% (janeiro ainda a ligar). "Atuar como" outra pessoa: só o Marcus. A Priscila vê o Financeiro.
+- Pix acima de R$ 3.000 (interno ou de representante) sempre vira pergunta no Direcionar. Open Finance fica para 2027.
+- Setor passa a se chamar Cobrança. Fiscal continua setor próprio; o Lucas lança até 2027. Escrita de CNPJ e conta em todo o sistema: número - nome - banco (a construir).
+- Trava da produção no servidor (src/server/trava-producao.js): gravação de quem não é da Diretoria não muda dia fechado, produção externa nem o dia já lançado de uma funcionária.

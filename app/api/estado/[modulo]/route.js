@@ -11,6 +11,7 @@ import { podeModulo } from "@/server/permissoes";
 import { donoDaChave, ehModuloItens, gravarItens, versaoItens, respostaItens } from "@/server/estado-itens";
 import { gravarModulo } from "@/server/estado-modulo";
 import { protegerSaldos } from "@/server/trava-saldos";
+import { protegerProducao } from "@/server/trava-producao";
 import { respostaComisRep, respostaItensRep } from "@/server/rep-filtro";
 import { gravarItensRep } from "@/server/rep-gravar";
 import { gravarPagRep, respostaPagRep } from "@/server/rep-pag";
@@ -103,7 +104,9 @@ export const PUT = rota(async (req, { eu, params }) => {
   }
   // GRAVAÇÃO SEGURA (11/11/2026, src/server/estado-modulo.js): tela nova manda só a diferença ({patches}); tela antiga ({chaves}) junta sem apagar itens que ela não traz.
   // As duas ficam registradas em sorelly.estado_modulo_log.
-  const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id) : await gravarModulo(modulo, b.chaves, "chaves", eu.id);
+  // TRAVA DA PRODUÇÃO (19/11/2026, src/server/trava-producao.js): gravação de quem não é da Diretoria não muda dia fechado, produção externa nem o dia já lançado de uma funcionária (vale mesmo com a página antiga aberta).
+  const ajustar = modulo === "pr" && eu.perfil !== "ADMIN" ? (guardado, novo) => { const n = protegerProducao(guardado, novo); if (n) console.warn("[trava pr] gravação de " + eu.id + " mexia em " + n + " dia(s) travado(s); devolvido(s)"); return novo; } : undefined;
+  const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id, ajustar) : await gravarModulo(modulo, b.chaves, "chaves", eu.id, ajustar);
   // AVISOS DAS COMPRAS NO SORELLYCHAT (18/11/2026, src/server/compras-chat.js): DEPOIS de gravar, entrega os avisos novos dos pedidos. Nunca duplica (id fixo) e
   // nunca desfaz a gravação: se o chat falhar, o pedido continua salvo e o aviso fica pendente (o pedido mostra "Tentar de novo").
   if (modulo === "ce" && ((b.patches && b.patches.pedidos) || (b.chaves && b.chaves.pedidos))) {

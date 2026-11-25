@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.222", data:"2026-11-25", titulo:"Decisões do Marcus de 25/11: ILF, alta da média, acesso e trava da produção", itens:[
+  {tipo:"correção", area:"Fiscal", txt:"A meta de ILF volta a ser 30%. Estado salvo com 25% passa para 30%."},
+  {tipo:"correção", area:"Financeiro → Faturamento", txt:"A alta da média de dezembro passa de 12% para 10%. Janeiro em 15% ainda falta ligar."},
+  {tipo:"correção", area:"Acessos", txt:"\"Atuar como\" outra pessoa fica só para o Marcus (antes liberava quatro pessoas)."},
+  {tipo:"novo", area:"Produção (servidor)", txt:"Trava no servidor: quem não é da Diretoria não muda dia fechado, produção externa nem o dia já lançado de uma funcionária, mesmo com a página antiga aberta."}]},
  {v:"0.21.221", data:"2026-11-25", titulo:"Listagens e Condicionais no padrão compacto do Financeiro", itens:[
   {tipo:"melhoria", area:"Representantes & Kits → Listagens e Condicionais", txt:"Linha de 18 px, letra de 10 px, sem caixa alta. O Dia fica numa célula da barra. Abrir todas e Fechar todas viraram um botão só."},
   {tipo:"melhoria", area:"Atendimento interno → Listagens", txt:"Mesmo desenho da Listagens de Montagem, com todos os dias do mês, colunas Situação, Valor da venda e Valor do acerto (do registro do acerto) e o tipo marcado pela agenda da Tamara. Corrigido id repetido que deixava linhas sem fechar."},

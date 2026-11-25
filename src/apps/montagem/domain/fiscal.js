@@ -42,7 +42,7 @@ function yearMonth(ano, mes1){ return ano+"-"+p2(mes1); }
 function periodoDoDia(dia){ var d = Number(String(dia).slice(8,10)); return d<=10 ? 0 : d<=20 ? 1 : 2; }
 
 // ---------- configuração ----------
-var CONFIG_PADRAO = {sublimiteAnual:3600000, metaIlf:0.25, criticoIlf:0.15,
+var CONFIG_PADRAO = {sublimiteAnual:3600000, metaIlf:0.30, criticoIlf:0.15,
   minimoAtivo:1000,      // CNPJ com venda no ano abaixo disso = "sem movimento" (não dispara aviso)
   riscoPct:0.9,          // projeção acima de 90% do sublimite = ATENÇÃO
   usoLimitePct:0.85};    // contas futuras ≥ 85% do que ainda cabe = NO LIMITE
@@ -54,7 +54,7 @@ function aplicaAjustes(s){
   (a.notas||[]).forEach(function(d){ var o = clone(d); o.id = "n"+(++s.seq); s.notas.push(o); });
 }
 function fxDemo(){
-  var s = {v:2, seq:0, config:clone(CONFIG_PADRAO), empresas:[], notas:[], saidas:[], contas:[], log:[]};
+  var s = {v:3, seq:0, config:clone(CONFIG_PADRAO), empresas:[], notas:[], saidas:[], contas:[], log:[]};
   if(LOCAL){
     if(LOCAL.config) Object.assign(s.config, LOCAL.config);
     (LOCAL.empresas||[]).forEach(function(d){ var o = clone(d); if(o.id==null) o.id = "e"+(++s.seq); o.cnpjId = o.cnpjId||""; s.empresas.push(o); });
@@ -71,8 +71,10 @@ function fxMigrar(fx){
   Object.keys(base).forEach(function(k){ if(fx[k]===undefined) fx[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(fx.config[k]===undefined) fx.config[k] = CONFIG_PADRAO[k]; });
   if((fx.v||1)<2 && fx.config.metaIlf===0.3) fx.config.metaIlf = 0.25;   // meta de ILF passou a 25% (23/10/2026)
+  // meta de ILF voltou a 30% (Marcus, 25/11/2026: "a meta é 30%, tem que alterar"); estado salvo com 25% passa a 30%
+  if((fx.v||1)<3 && fx.config.metaIlf===0.25) fx.config.metaIlf = 0.3;
   aplicaAjustes(fx);
-  fx.v = 2; return fx;
+  fx.v = 3; return fx;
 }
 
 // ---------- regras puras ----------

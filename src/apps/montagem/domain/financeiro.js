@@ -207,7 +207,7 @@ function projetarAno(s, anoStr, janelaIdx, metaPct){
   return {porMes:porMes, ratioPB:ratioPB, ratioRP:ratioRP, ratioRPUsado:ratioRPUsado, mediaAcertoHist:mediaAcertoHist, mediaAtualMes:mediaAtualMes, fechados:fechados, revHoje:revHoje, mesAtual:mesAtual};
 }
 // Novembro e dezembro do ano corrente: a média por acerto é a média ATUAL do mês + 5% e + 15% (pedido do Marcus, 09/10/2026).
-var ALTA_MEDIA = {10:0.05, 11:0.12};   // dezembro 12% e janeiro 17% (Marcus, 28/10/2026; janeiro só na tela Resultado do mês)
+var ALTA_MEDIA = {10:0.05, 11:0.10};   // dezembro 10% (Marcus, 25/11/2026: "trabalhar com 10 e 15%"; antes 12%); janeiro 15% (antes 17%) ainda a ligar: achar onde janeiro entra na tela Resultado do mês
 // regra do mês i: o que o Marcus definiu no Configurador (s.altaMedia, null = sem regra) ou o padrão acima
 function altaDe(s, i){ var a = s.altaMedia; if(a && Object.prototype.hasOwnProperty.call(a, i)) return a[i]===null ? undefined : a[i]; return ALTA_MEDIA[i]; }
 function mediaMesAtual(s, anoStr, mes){
