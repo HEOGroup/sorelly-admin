@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Francelle: pedidos repetidos apagados, Lucas)
+- **Lucas:** o certo é o Pix de R$ 1.732,68 de 10/11/2026 para CNPJ 46 · Mayz Comércio de Moda · Sicredi Shopping 46; "pode apagar os repetidos".
+- **Feito:** apagados do Controle de pagamentos e do Direcionar os pedidos dos kits U1793983827059 (R$ 1.732,68, Marco Antonio) e U1793994513982 (R$ 1.505,94, sem conta). Nada deles tinha sido lançado em PIX revendedoras, Prestadores ou Pagamentos a fornecedores. Cópia de segurança guardada fora do Git. Os outros pagamentos sem comprovante foram ajustados pelo Lucas.
+
 ## 25/11/2026 (Representantes: comprovante obrigatório no acerto; nome da cliente no Pix, Lucas)
 - **Lucas: "precisa ser obrigatório, para conseguir finalizar o acerto, elas anexarem o comprovante de pagamento; muitas deixam sem informar o comprovante. Também sempre ficar com o nome da cliente nos lançamentos de Pix".**
 - **Causa:** a trava do app (semCompN) só contava o pagamento quando o pedido de conta já estava carregado no celular; sem ele, o Confirmar acerto liberava. Em 25/11/2026 havia 12 pagamentos de representantes sem comprovante no Controle de pagamentos.
