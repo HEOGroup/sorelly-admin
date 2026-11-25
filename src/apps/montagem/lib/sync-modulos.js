@@ -25,7 +25,9 @@ function fatiaCpe(s){ if(!s.cpe) return undefined; var h = s.cpe.hist; if(!Array
 // dpc: só a CONFIGURAÇÃO do Direcionar (a fila de pedidos segue no módulo pag)
 var CHAVES_DPC = ["contasRep", "contasRepExtra", "regras", "limiteAlto", "limite3000", "maqV"];
 function fatiaDpc(s){ if(!s.dp) return undefined; var o = {}; CHAVES_DPC.forEach(function(k){ if(s.dp[k]!==undefined) o[k] = s.dp[k]; }); return o; }
-function fatiaAci(s){ var o = {}; (s.acertosConsignado||[]).forEach(function(x){ if(x && x.id && x.origem==="interno" && x.internoId && !x.demo && x.data && x.data>="2026-11-09") o["a_"+x.id] = x; }); return o; }
+// 25/11/2026 (Nickolas, "Sem espaço para salvar neste navegador"): sobem TODOS os acertos de verdade (antes só os do atendimento interno de 09/11 em diante).
+// Os antigos e os de representante estavam só nos navegadores; agora ficam no banco, juntos no Consolidado. Demonstração nunca sobe.
+function fatiaAci(s){ var o = {}; (s.acertosConsignado||[]).forEach(function(x){ if(x && x.id && !x.demo) o["a_"+x.id] = x; }); return o; }
 function fatiaInt(s){ var o = {}, corte = new Date(Date.now()-2*86400000).toISOString().slice(0, 10); (s.internos||[]).forEach(function(x){ if(x && x.id && !x.demo && !x.demoHoje && x.data && x.data>=corte) o["i_"+x.id] = x; }); return o; }
 // fc = Fotos de catálogo (10/11/2026, 17 mil códigos): uma chave por código (c_<código>) e m = histórico/categorias/semeado. Assim duas pessoas marcando códigos diferentes não se apagam, e cada clique envia só o código mexido.
 // A lista de 17 mil é montada uma vez por versão do s.fc (cache pela identidade do objeto), senão cada tecla digitada em qualquer tela refaria tudo.
@@ -72,7 +74,19 @@ function chavesNoServidor(){
   try { var p = (localStorage.getItem(CHAVE_NO_SERVIDOR) || "").split("|"); if(p[0]===chaveSessao() && p[1]) p[1].split(",").forEach(function(k){ lista[k] = 1; }); } catch(x){}
   var out = []; Object.keys(lista).forEach(function(c){ if(FICAM_NO_NAVEGADOR.indexOf(c)>=0) return; (ESPELHO[c] || [c]).forEach(function(k){ out.push(k); }); }); return out;
 }
-function semDoServidor(st){ var ks = chavesNoServidor(); if(!ks.length || !st) return st; var o = Object.assign({}, st); ks.forEach(function(k){ delete o[k]; }); return o; }
+// NAVEGADOR LEVE (25/11/2026, Nickolas): pagamentos (s.lancFin) e acertos (s.acertosConsignado) têm as FOTOS dos comprovantes e as ASSINATURAS e enchiam o navegador (~6 MB).
+// Cada item que o banco já confirmou (igual ao que está lá, SNAPS = a última versão vista/enviada de cada chave) NÃO é mais guardado no navegador: ao abrir, vem do banco.
+// Só fica guardado o que ainda não chegou ao banco (lançado sem internet, ou mudado e ainda não enviado). Assim nada se perde e o espaço não acaba.
+var SNAPS = {};
+var LEVES = [["pag", "lancFin", "lf_"], ["aci", "acertosConsignado", "a_"]];
+function soNaoConfirmados(st, snaps){
+  var o = st;
+  LEVES.forEach(function(x){ var sn = snaps[x[0]], lista = st[x[1]]; if(!sn || !Array.isArray(lista)) return;
+    var fica = lista.filter(function(it){ return !(it && it.id && sn[x[2]+it.id]!==undefined && sn[x[2]+it.id]===json(it)); });
+    if(fica.length!==lista.length){ if(o===st) o = Object.assign({}, st); o[x[1]] = fica; } });
+  return o;
+}
+function semDoServidor(st){ if(!st) return st; var ks = chavesNoServidor(), o = st; if(ks.length){ o = Object.assign({}, st); ks.forEach(function(k){ delete o[k]; }); } return soNaoConfirmados(o, SNAPS); }
 // todas as chaves que podem faltar no estado salvo (a tela completa com o padrão ao abrir)
 var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ (ESPELHO[c] || [c]).forEach(function(k){ o.push(k); }); }); return o; })();
 
@@ -103,7 +117,7 @@ function useSyncModulos(s, d){
   var ref = useRef({mods:{}, s:s});   // por módulo: {versao, snaps:{chave: json}, pronto}
   ref.current.s = s;
   var lista = modulosLigados();
-  var mod = function(c){ return ref.current.mods[c] || (ref.current.mods[c] = {versao:0, snaps:{}, pronto:false}); };
+  var mod = function(c){ if(!ref.current.mods[c]){ ref.current.mods[c] = {versao:0, snaps:{}, pronto:false}; SNAPS[c] = ref.current.mods[c].snaps; } return ref.current.mods[c]; };   // SNAPS: o que o banco confirmou (navegador leve)
   // trata a resposta de UM módulo (vinda da leitura em lote)
   var receber = function(chave, r){
     var m = mod(chave);
@@ -196,4 +210,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, fatia as fatiaDoModulo, CHAVES_DPC, soNaoConfirmados };

@@ -3682,3 +3682,10 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Gravação: marca própria `pd.semNota` (pedido_add e pedido_editar), sem CNPJ fictício; o texto `cnpj` continua "Sem NF" como nos pedidos 100% sem nota de antes. Recusa "Sem nota" com valor com nota.
 - Reabrir/editar/consultar: `semNota` ou pedido antigo "Sem NF" 100% sem nota abrem com "Sem nota" (antes abriam no CNPJ 34). Nada muda no banco até salvar.
 - Teste: `scripts/testar-sem-nota-pf.mjs` (13 verificações).
+
+## 25/11/2026 — Navegador leve: fim do "Sem espaço para salvar neste navegador" (Nickolas, v0.21.225)
+- Causa (cópias de 69 navegadores em `sorelly.copia_navegador`): cada navegador guardava ~6 MB, quase tudo imagem: `s.lancFin` 3,6 MB (fotos de comprovante nas partes dos pagamentos) e `s.acertosConsignado` 2,2 MB (assinatura 1,3 MB + cópia do formulário). Esses registros já iam para o banco (módulos `pag` e `aci`), mas o navegador guardava a cópia inteira.
+- Correção (`lib/sync-modulos.js`, `soNaoConfirmados`): o navegador não guarda pagamento nem acerto que o banco já confirmou (igual à última versão vista/enviada); ao abrir, eles vêm do banco. Fica guardado só o que ainda não chegou ao banco ou mudou e não foi enviado. Estimativa com os dados reais: de ~6 MB para ~0,5 MB por navegador.
+- O módulo `aci` passa a receber TODOS os acertos de verdade (antes só atendimento interno de 09/11 em diante): os antigos e os de representante, que estavam só nos navegadores, sobem ao abrir o sistema e aparecem juntos no Consolidado. Demonstração nunca sobe.
+- As imagens continuam guardadas no banco, dentro dos registros. Passar as imagens para "arquivo anexado" fica como melhoria futura (só reduziria o volume baixado ao abrir; não é preciso para o aviso).
+- Teste: `scripts/testar-navegador-leve.mjs` (11 verificações).
