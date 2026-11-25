@@ -63,7 +63,9 @@ function AbaProdPagamentoProducao(){
       e(BlocoPainel,{titulo:ehExtT ? "Total da produção externa" : "Total das internas", compacto:true},
         e(TabelaPlanilha,{key:"tt"+func+mes, fina:true, cols:colsT, linhas:linhasT, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:rodapeT, vazio:"Nenhuma produção neste mês."})));
   }
-  if(interna){
+  // SERENITY e CASA são produções diferentes (Marcus, 24/11/2026): quem faz as duas (Crisbele) vê DUAS tabelas na mesma tela, uma em cima da outra. Em cima: Serenity, paga pela produção (bônus do dia, dinheiro dia 12). Embaixo: Casa, paga R$ 0,45 por peça (Pix na quinta).
+  var ehI = internas.indexOf(func)>=0, ehE = externas.indexOf(func)>=0, doisLados = ehI && ehE, preI = doisLados ? "Empresa · " : "", preE = doisLados ? "Casa · " : "", secI = [];
+  if(ehI){
     var li = pm.linhas.filter(function(l){ return l.nome===func; })[0] || {porDia:{}, bonusDia:{}, pecas:0, valor:0, f15:0, f20:0, f25:0};
     var dataPag = dataPagBonus(ym[0], ym[1]), mesFechado = mes<hoje.slice(0, 7);   // as internas recebem EM DINHEIRO, dia 12 do mês seguinte (segunda-feira se cair no fim de semana)
     var pagoBonus = (pr.pagos || {})["bonus|"+func+"|"+mes], situBonus = !mesFechado ? "Em andamento" : pagoBonus ? "Pago" : "A pagar";
@@ -73,23 +75,30 @@ function AbaProdPagamentoProducao(){
       {k:"situ", t:"Situação", cor:function(r){ return r.situ==="Pago" ? "text-success" : r.situ==="A pagar" ? "text-warning" : ""; }}];
     var totalI = function(ls){ return cols0(colsI, function(c, i){ return i===0 ? "TOTAL · "+ls.length : c.k==="pecas" ? formatarInteiro(soma(ls, function(r){ return r.pecas; })) : c.k==="bonus" ? formatarReais(soma(ls, function(r){ return r.bonus; })) : ""; }); };
     var nomeI = nomeMes(ym[0], ym[1]).toLowerCase()+" · "+func.split(" ")[0], dBr = dataPag.slice(8)+"/"+dataPag.slice(5, 7)+"/"+dataPag.slice(0, 4), diasTrab = diasI.length;
-    return e(Raiz,{cls:MIUDA}, barra,
-      e("div",{className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
-        bloco("d", "Dinheiro de "+nomeI, [["Valor dos dias", formatarReais(li.valor || 0)], ["Já recebeu", formatarReais(pagoBonus ? (li.valor || 0) : 0), "text-success"], ["A receber", formatarReais(pagoBonus ? 0 : (li.valor || 0)), pagoBonus ? "text-success" : "text-warning"], ["Pagar em dinheiro", dBr]]),
-        bloco("p", "Peças de "+nomeI, [["Peças do mês", n0(li.pecas || 0)], ["Dias com produção", n0(diasTrab)], ["Média por dia", diasTrab ? n0(Math.round((li.pecas || 0)/diasTrab)) : "—"], ["Faixas (R$ 15 · 20 · 25)", (li.faixas || faixasDe(func)).slice().reverse().map(function(f){ return f.min; }).join(" · ")+" peças"+(li.supervisora ? " · supervisora" : "")]]),
-        bloco("c", "Dias que valeram", [["Dias de R$ 15,00", n0(li.f15 || 0)], ["Dias de R$ 20,00", n0(li.f20 || 0)], ["Dias de R$ 25,00", n0(li.f25 || 0)], ["Situação", situBonus, situBonus==="Pago" ? "text-success" : situBonus==="A pagar" ? "text-warning" : ""]])),
-      e(BlocoPainel,{titulo:"Dias produzidos", compacto:true},
+    var sumI = doisLados ? bloco("sI", preI+"Resumo de "+nomeI, [["Valor dos dias", formatarReais(li.valor || 0)], ["Já recebeu", formatarReais(pagoBonus ? (li.valor || 0) : 0), "text-success"], ["A receber", formatarReais(pagoBonus ? 0 : (li.valor || 0)), pagoBonus ? "text-success" : "text-warning"], ["Pagar em dinheiro", dBr], ["Peças do mês", n0(li.pecas || 0)], ["Dias com produção", n0(diasTrab)]]) :
+      e("div",{key:"gridI", className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
+        bloco("d", preI+"Dinheiro de "+nomeI, [["Valor dos dias", formatarReais(li.valor || 0)], ["Já recebeu", formatarReais(pagoBonus ? (li.valor || 0) : 0), "text-success"], ["A receber", formatarReais(pagoBonus ? 0 : (li.valor || 0)), pagoBonus ? "text-success" : "text-warning"], ["Pagar em dinheiro", dBr]]),
+        bloco("p", preI+"Peças de "+nomeI, [["Peças do mês", n0(li.pecas || 0)], ["Dias com produção", n0(diasTrab)], ["Média por dia", diasTrab ? n0(Math.round((li.pecas || 0)/diasTrab)) : "—"], ["Faixas (R$ 15 · 20 · 25)", (li.faixas || faixasDe(func)).slice().reverse().map(function(f){ return f.min; }).join(" · ")+" peças"+(li.supervisora ? " · supervisora" : "")]]),
+        bloco("c", preI+"Dias que valeram", [["Dias de R$ 15,00", n0(li.f15 || 0)], ["Dias de R$ 20,00", n0(li.f20 || 0)], ["Dias de R$ 25,00", n0(li.f25 || 0)], ["Situação", situBonus, situBonus==="Pago" ? "text-success" : situBonus==="A pagar" ? "text-warning" : ""]]));
+    secI = [sumI,
+      e(BlocoPainel,{key:"diasI", titulo:preI+"Dias produzidos", compacto:true},
         e(TabelaPlanilha,{key:"pi"+func+mes, fina:true, cols:colsI, linhas:linhasI, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalI, vazio:"Nenhuma produção neste mês."})),
-      e(AbaProdPagamentos,{key:"gi"+func, func:func, interna:true, modo:"int", semRaiz:true}));
+      e(AbaProdPagamentos,{key:"gi"+func, func:func, interna:true, modo:"int", titulo:preI+"Pagamentos da produção", semRaiz:true})];
   }
-  return e(Raiz,{cls:MIUDA},
-    barra,
-    e("div",{className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
-      bloco("d", "Dinheiro de "+nome, [["Valor do mês", formatarReais(r.valor)], ["Já recebeu", formatarReais(r.recebido), "text-success"], ["A receber", formatarReais(r.aReceber), r.aReceber>0 ? "text-warning" : "text-success"], ["Enviado ao Financeiro", formatarReais(r.enviadoFin)]]),
-      bloco("p", "Peças de "+nome, [["Peças feitas e devolvidas", n0(r.pecas)], ["Dias com produção", n0(r.diasPecas)], ["Média por dia", r.diasPecas ? n0(Math.round(r.pecas/r.diasPecas)) : "—"], ["Valor por peça", formatarReais(CASA_POR_PECA)]]),
-      bloco("c", "Com ela agora", [["Enviadas a ela", n0(r.enviadoPecas)], ["Devolvidas à Sorelly", n0(r.devolvidoPecas), "text-success"], ["Com ela agora", n0(r.comEla), r.comEla>0 ? "text-warning" : "text-success"], ["Códigos com ela", n0(r.codigosComEla)]])),
-    e(BlocoPainel,{titulo:"Dias produzidos", compacto:true},
+  var sumE = doisLados ? bloco("sE", preE+"Resumo de "+nome, [["Valor do mês", formatarReais(r.valor)], ["Já recebeu", formatarReais(r.recebido), "text-success"], ["A receber", formatarReais(r.aReceber), r.aReceber>0 ? "text-warning" : "text-success"], ["Pagar por Pix", "Toda quinta-feira"], ["Peças feitas e devolvidas", n0(r.pecas)], ["Com ela agora", n0(r.comEla), r.comEla>0 ? "text-warning" : "text-success"]]) : null;
+  var secE = !ehE && ehI ? [] : [
+    sumE || e("div",{key:"gridE", className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
+      bloco("d", preE+"Dinheiro de "+nome, [["Valor do mês", formatarReais(r.valor)], ["Já recebeu", formatarReais(r.recebido), "text-success"], ["A receber", formatarReais(r.aReceber), r.aReceber>0 ? "text-warning" : "text-success"], ["Enviado ao Financeiro", formatarReais(r.enviadoFin)]]),
+      bloco("p", preE+"Peças de "+nome, [["Peças feitas e devolvidas", n0(r.pecas)], ["Dias com produção", n0(r.diasPecas)], ["Média por dia", r.diasPecas ? n0(Math.round(r.pecas/r.diasPecas)) : "—"], ["Valor por peça", formatarReais(CASA_POR_PECA)]]),
+      bloco("c", preE+"Com ela agora", [["Enviadas a ela", n0(r.enviadoPecas)], ["Devolvidas à Sorelly", n0(r.devolvidoPecas), "text-success"], ["Com ela agora", n0(r.comEla), r.comEla>0 ? "text-warning" : "text-success"], ["Códigos com ela", n0(r.codigosComEla)]])),
+    e(BlocoPainel,{key:"diasE", titulo:preE+"Dias produzidos", compacto:true},
       e(TabelaPlanilha,{key:"pp"+func+mes, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhuma produção externa neste mês."})),
-    e(AbaProdPagamentos,{key:"g"+func, func:func, modo:"ext", semRaiz:true}));
+    e(AbaProdPagamentos,{key:"g"+func, func:func, modo:"ext", titulo:preE+"Pagamentos da produção", semRaiz:true})];
+  if(doisLados){
+    // EMPRESA à esquerda e CASA à direita, lado a lado, cada linha com a MESMA altura (Marcus, 24/11/2026: "os blocos de casa do lado direito e da empresa do lado esquerdo")
+    var celulas = []; for(var ic=0; ic<3; ic++){ celulas.push(e("div",{key:"ci"+ic, className:"flex min-w-0 flex-col [&>div]:flex-1 [&_section]:flex-1"}, secI[ic])); celulas.push(e("div",{key:"ce"+ic, className:"flex min-w-0 flex-col [&>div]:flex-1 [&_section]:flex-1"}, secE[ic])); }
+    return e(Raiz,{cls:MIUDA}, barra, e("div",{key:"lado", className:"grid grid-cols-1 items-stretch gap-x-0 gap-y-[3px] bg-white lg:grid-cols-2"}, celulas));
+  }
+  return e(Raiz,{cls:MIUDA}, barra, secI, secE);
 }
 export { AbaProdPagamentoProducao };

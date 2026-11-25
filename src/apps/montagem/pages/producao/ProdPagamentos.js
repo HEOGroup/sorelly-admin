@@ -149,7 +149,7 @@ function AbaProdPagamentos(props){
   }
   if(props && props.auto) return null;   // montada em segundo plano (AutoProducao): só roda o efeito acima
   return casca(props && props.semRaiz,
-    e(BlocoPainel,{titulo:"Pagamentos da produção", dir:(props && props.interna) ? "Em dinheiro · dia 12" : "Toda quinta-feira", compacto:true},
+    e(BlocoPainel,{titulo:(props && props.titulo) || "Pagamentos da produção", dir:(props && props.interna) ? "Em dinheiro · dia 12" : "Toda quinta-feira", compacto:true},
       e(TabelaPlanilha,{key:"pag", fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhum pagamento a fazer."})),
     jan, jp);
 }
