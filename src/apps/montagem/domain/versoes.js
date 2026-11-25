@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.229", data:"2026-11-25", titulo:"Atendimento Sorelly: cartão pede bandeira e parcelas", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly → Pagamentos", txt:"Crédito e débito agora pedem a bandeira (obrigatória) e o crédito as parcelas antes de Adicionar. Bandeira e parcelas vão junto para o Financeiro e a Maquininha Banho lança o cartão já completo (débito = DÉBITO), sem A informar."}]},
  {v:"0.21.228", data:"2026-11-25", titulo:"Maquininha Banho: todo cartão da Getnet da Pontual entra sozinho", itens:[
   {tipo:"correção", area:"Financeiro → Maquininha Banho", txt:"Cartão (crédito ou débito) que a regra Maquininha única resolvia sozinha não entrava na Maquininha Banho; só o que passava pelo Direcionar entrava. Agora todo cartão da Getnet da Pontual entra sozinho, com bandeira e parcelas do comprovante (sem elas, A informar). Não entra o que já foi lançado à mão, o que é de antes de novembro, linha pendente e lançamento de teste."},
   {tipo:"correção", area:"Dados de 25/11/2026", txt:"Lançados na Maquininha Banho os 8 cartões que faltavam (R$ 6.595,90): Isabella, Eduarda, Bruna dos Santos, Kettlyn, Emanuelle, Caroline de Oliveira, Bianka e Camila Bonato."}]},

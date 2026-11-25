@@ -4,6 +4,7 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **Cartão pede bandeira e parcelas no Atendimento Sorelly (Lucas, 25/11/2026):** a Maquininha Banho lança completo, sem "A informar".
 - **Maquininha Banho, todo cartão da Pontual entra sozinho (Lucas, 25/11/2026):** inclusive o resolvido pela Maquininha única, sem passar pelo Direcionar; 8 que faltavam foram lançados (lista em `docs/DECISOES.md` de 25/11/2026).
 - **Direcionar, Pix do sócio na conta de prestador (Lucas, 25/11/2026):** entra em PIX revendedoras com a conta do prestador e o repasse sai sozinho; os que tinham ficado de fora e os da Pontual foram lançados (lista em `docs/DECISOES.md` de 25/11/2026).
 - **PIX revendedoras, conta Sicredi PF da Ana Maria no cartão do Marcus (Lucas, 25/11/2026):** o Pix entra na relação do Marcus; regra em `CONTAS_EXTRA_PIX` (`domain/financeiro-familiar.js`).

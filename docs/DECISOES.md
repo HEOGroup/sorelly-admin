@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Atendimento Sorelly: cartão pede bandeira e parcelas, Lucas)
+- **Lucas: "ao selecionar cartão na forma de pagamento, seja obrigatório as meninas informarem a bandeira e a quantidade de parcelas, para lançar automaticamente com todas as informações".**
+- **Decidido:** substitui a regra de 16/11/2026 (Marcus: bandeira só no link). Crédito e débito pedem bandeira (mesma lista do link) e o crédito as parcelas (1x a 6x); sem bandeira o botão Adicionar não libera. A bandeira e as parcelas seguem na linha do Controle de pagamentos (`bandeira`, `parcelas`) e entram na Maquininha Banho (`sincMaqUnica`; Direcionar para a Pontual também). Pagamento antigo sem bandeira continua "A informar".
+
 ## 25/11/2026 (Maquininha Banho: todo cartão da Pontual entra sozinho, Lucas)
 - **Lucas: "independente se passou por escolha de conta ou foi automático, preciso que caia no sistema; confira esses que foram diretos e corrija".**
 - **Causa:** a regra "Maquininha única" (px.maquininha, Getnet da Pontual) marcava o cartão como pago sem passar pelo Direcionar, e só o Direcionar lançava na Maquininha Banho.

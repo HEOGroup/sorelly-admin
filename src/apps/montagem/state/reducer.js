@@ -117,6 +117,9 @@ function sincMqBanho(s){
 // O Direcionar já lançava o cartão que passa por ele; o que a regra "Maquininha única: já pago" resolvia sozinha ficava de fora. Chave origemPix "LF:<lançamento>#<linha>" (não duplica).
 // Não lança o que já foi lançado à mão (mesma revendedora, valor até R$ 0,15 de diferença e até 3 dias) nem o que é de antes de novembro/2026.
 var MQ_UNICA_DESDE = "2026-11-01";
+// bandeira e parcela que a funcionária informou no pagamento, no formato da Maquininha Banho (MASTERCARD · 3x · DÉBITO); link só leva a bandeira
+function bandMqDe(l){ return l && l.bandeira ? String(l.bandeira).toUpperCase() : ""; }
+function parcMqDe(l){ if(!l || !l.bandeira) return ""; return l.forma==="debito" ? "DÉBITO" : l.forma==="credito" ? (l.parcelas || 1)+"x" : ""; }
 function sincMaqUnica(s){
   if(!s.pf || !Array.isArray(s.pf.mqPassadas) || !Array.isArray(s.lancFin)) return s;
   var nmQ = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }, prim = function(t){ return nmQ(t).split(/\s+/)[0]; };
@@ -131,7 +134,7 @@ function sincMaqUnica(s){
     var manual = s.pf.mqPassadas.some(function(p){ return !p.origemPix && prim(p.rev)===prim(x.nome) && Math.abs(p.valor-l.valor)<=0.15 && diasQ(p.data, data)<=3; }); if(manual) return;
     var pt = (l.partes||[])[0] || {};
     itens.push({origemPix:chave, lf:x.origem==="rep" && l.pid ? {repId:x.id, pid:l.pid} : x.internoId ? {internoId:x.internoId, li:li, k:0} : null, rev:x.nome, valor:l.valor, data:data, via:"maquininha", conta:pt.descricao||"",
-      band:pt.band||"", parc:pt.parc || (l.forma==="debito" ? "DÉBITO" : "")}); }); });
+      band:pt.band || bandMqDe(l), parc:pt.parc || parcMqDe(l) || (l.forma==="debito" ? "DÉBITO" : "")}); }); });
   if(!itens.length) return s;
   var r = pfReduz(s, {op:"pix_dir", itens:[], mq:itens});
   return r.patch && r.patch.pf ? Object.assign({}, s, {pf:r.patch.pf}) : s;
@@ -475,7 +478,7 @@ function reducer(s, a){
           var porLinha = {}; (pDp.partes||[]).forEach(function(pt, n){ var li = (pDp.linhas||[])[n]; if(li==null) return; var ds = (pDp.divisoes||[]).filter(function(d){ return d.parte===(pt.forma||"pix")+"#"+n; });
             if(ds.length) porLinha[li] = ds.map(function(d){ var pt0 = {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; if(ehMqBanho(d)) pt0.mqBanho = true; return pt0; }); });
           sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
-            return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
+            return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i].map(function(q){ return q.mqBanho && !q.band && bandMqDe(l) ? Object.assign({}, q, {band:bandMqDe(l), parc:parcMqDe(l) || q.parc}) : q; }), enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
       // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
       if(a.op==="confirma" && rDp.patch.dp){ var pFo = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFo && pFo.status==="direcionado" && sDp.pf){
@@ -1319,7 +1322,7 @@ function reducer(s, a){
     case "FIN_ENVIAR": {
       var antF = (s.lancFin||[]).find(function(x){ return x.internoId===a.internoId; });
       var linhasF = a.linhas.map(function(l){ var igual = antF && antF.linhas.find(function(o){ return o.tipo===l.tipo && o.forma===l.forma && o.valor===l.valor; });
-        return igual ? igual : Object.assign({isento:false}, l); });
+        return igual ? (l.bandeira ? Object.assign({}, igual, {bandeira:l.bandeira, parcelas:l.parcelas}) : igual) : Object.assign({isento:false}, l); });
       var chavePagF = function(ls){ return JSON.stringify(ls.filter(function(l){ return l.tipo==="pagamento"; }).map(function(l){ return [l.forma, l.valor]; })); };
       var mesmosPag = !!antF && chavePagF(linhasF)===chavePagF(antF.linhas);          // se os pagamentos não mudaram, a etapa dos comprovantes continua valendo
       var novoF = {id:"LF"+a.internoId, internoId:a.internoId, nome:a.nome, enviadoTs:agora, por:a.por||"", resumo:a.resumo || (antF && antF.resumo) || null, linhas:linhasF, etapaComprovantes:mesmosPag && !!antF.etapaComprovantes, finalizado:false, conferido:false};

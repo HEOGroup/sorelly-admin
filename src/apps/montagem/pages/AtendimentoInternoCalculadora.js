@@ -564,6 +564,7 @@ function AtendimentoInterno(){
   var lancFin = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }) || null;
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
   var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
+    if((p.forma==="credito" || p.forma==="debito" || p.forma==="link") && p.bandeira){ base.bandeira = p.bandeira; base.parcelas = p.forma==="debito" ? 1 : (p.parcelas || 1); }   // bandeira e parcelas do cartão seguem para a Maquininha Banho (Lucas, 25/11/2026)
     if(p.forma==="credito_cliente") return Object.assign(base, {isento:true, enviada:true, partes:[{descricao:"Crédito da cliente", valor:p.valor, comprovante:null, ok:true}]});   // saldo a favor: não é dinheiro novo, não passa pelo Direcionar
     if(p.pixFfId) return Object.assign(base, {pixFfId:p.pixFfId, partes:[{descricao:p.descricao || "PIX DIRETO", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Pix já pago antes do acerto (Financeiro familiar): não volta ao Direcionar"});   // 19/11/2026: já está em ff.pix com o repasse; o acerto só CONSOME o Pix
     return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
@@ -1000,8 +1001,8 @@ function AtendimentoInterno(){
 
   // ── estação 2: pagamentos (forma e valor; o financeiro define as contas) ──
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
-  // 16/11/2026 (Marcus): a bandeira só é pedida no LINK; cartão de crédito e débito na maquininha não pedem
-  var pedeBand = /link/i.test(fl.label||"");
+  // 16/11/2026 (Marcus): a bandeira só era pedida no LINK. 25/11/2026 (Lucas): cartão de crédito e débito também pedem a bandeira (obrigatória) e o crédito as parcelas, para a Maquininha Banho lançar sozinha com tudo
+  var pedeBand = /link/i.test(fl.label||"") || fl.k==="credito" || fl.k==="debito";
   var addPagB = function(){ if(pedeBand && !lancForm.bandeira) return; addPag(); };
   // Links de pagamento JÁ PAGOS desta revendedora (setor Link de pagamento): entram como pagamento já resolvido, sem esperar o financeiro definir conta (Marcus, 11/11/2026)
   var infoLinks = s.lp && sel ? linksParaAcertoPorNome(s, sel.nome) : null;
