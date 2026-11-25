@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 24/11/2026 (Listagens: o próximo passo em toda linha)
+- **Marcus: "não é intuitivo; deveria ter o status, depois um botão Montar que vai para a outra tela; depois de montado fica Bipar; depois Liberar para a representante".** A coluna **Fazer** (logo depois da Situação) mostra o próximo passo de TODO status: pendente → Montar · montando → Abrir · montado → Bipar · bipando → Finalizar · bipado → Liberar (abre a retirada) · aguardando valor → Definir valor · pegar condicionais → Pegar · conferir condicional e para conferir → Conferir. Quem não pode agir vê um texto (ex.: Aguarda bipar). Cada listagem da representante continua um bloco (faixa com representante, dia, horário e kits).
+- **Saíram** os botões Última hora e Retirada/Nada pronto da linha de cada representante (fica só Confirmar valores). **Preferências** mostra só Sim ou Não. **Cond.** vem antes da Montadora; Montadora e Bipadora mostram só o nome. **Sem setinhas de filtro** nos títulos e sem larguras fixas: a tabela tem que caber na tela, sem rolar para o lado. Títulos curtos aprovados por ele: Cond., Pref., Nova cond.
+- Pendente: depois de concluir uma montagem, abrir direto o próximo kit (vai ser do app das montadoras).
+
 ## 24/11/2026 (Ficha Montar kit: observações)
 - **Marcus: as observações da revendedora ficam em cima de Categorias, na segunda coluna** (painel próprio, some se não houver observação), e não mais no painel da revendedora.
 

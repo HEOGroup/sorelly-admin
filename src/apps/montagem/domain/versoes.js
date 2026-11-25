@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.214", data:"2026-11-24", titulo:"Listagens: próximo passo em toda linha, sem setinhas e cabendo na tela", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits → Listagens", txt:"Nova coluna Fazer logo depois da Situação: cada kit mostra o próximo passo (Montar, Abrir, Bipar, Finalizar, Liberar, Definir valor, Pegar, Conferir) e quem não pode agir vê um texto como Aguarda bipar. Preferências mostra só Sim ou Não. Cond. vem antes da Montadora. Sem as setinhas de filtro nos títulos e sem larguras fixas, para a tabela caber na tela. Saíram os botões Última hora e Retirada/Nada pronto da linha de cada representante (fica só Confirmar valores quando falta valor). Montadora e Bipadora mostram só o nome."}]},
  {v:"0.21.213", data:"2026-11-24", titulo:"Revendedoras abrem rápido, total do Início, ficha da revendedora e Listagens", itens:[
   {tipo:"melhoria", area:"Servidor", txt:"A lista de revendedoras (DevMaster) ficou guardada no banco e uma rotina a refaz a cada 10 minutos: a representante abre as revendedoras em cerca de 1 segundo, em vez de 21."},
   {tipo:"melhoria", area:"App da representante", txt:"Início: Vendido Total, Acerto Total e Comissão agora somam as revendedoras dela do mês escolhido (antes ficavam em R$ 0,00). Ficha da revendedora: fonte maior nos três números e nos botões; saíram os botões Acerto sem agendamento e Alterar data do acerto; Realizar atendimento faz o acerto sem agendamento; o botão Agendar vira Atendimento agendado · Mudar data."},

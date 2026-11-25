@@ -104,14 +104,31 @@ function FilaPlanilha(p){
   // Montar e clicar na revendedora levam SEMPRE à tela nova (ficha das preferências com Iniciar montagem) (Marcus, 24/11/2026)
   var abrirKit = function(k){ var rp = prefDoApp(k.rev); if(p.abrirMontar) p.abrirMontar(rp && rp.id!=null ? rp.id : null, k.id); else setFichaId(k.id); };   // sem cadastro no app, a tela nova avisa
   // Montar direto na linha: abre a janela do kit (preferências, condicionais e iniciar). Texto vermelho = kit sem montador informado.
+  // Quem montou: só o nome (Marcus, 24/11/2026). O botão fica na coluna "Fazer", logo depois da Situação.
   var celMont = function(k){
-    var sem = semMontador(k), grande = soEncomendas(k, s.cfg), proibido = euMont && grande && !ehEncomendas(s, s.usuario);
-    var montar = function(txt, off, titulo, principal){ return e(Bt,{principal:principal, off:off, titulo:titulo, onClick:function(){ abrirKit(k); }}, txt); };
-    if(sem) return e("span",{className:"font-semibold text-destructive", title:"Este kit não tem montador informado. A bipagem e a comissão da bipadora só valem com montador."}, "Sem montador");
-    if(k.status==="pendente" || k.status==="ajuste") return podeMontar ? montar("Montar", proibido || (k.status==="pendente" && !!k.designada && k.designada!==s.usuario && !sup),
-      proibido ? "Kit acima do limite: só o setor Encomendas monta ("+nomesEncomendas(s)+")" : k.designada && k.designada!==s.usuario && !sup ? "Pedido para "+nomeDe(k.designada) : "Abrir a janela do kit e iniciar a montagem", true) : vazio;
-    if(k.montId) return e("span",{className:"inline-flex items-center justify-center gap-2"}, e("span",null, nomeDe(k.montId)),
-      k.status==="montando" && (k.montId===s.usuario || sup) && montar("Abrir", false, "Abrir a janela deste kit", false));
+    if(semMontador(k)) return e("span",{className:"font-semibold text-destructive", title:"Este kit não tem montador informado. A bipagem e a comissão da bipadora só valem com montador."}, "Sem montador");
+    return k.montId ? nomeDe(k.montId) : vazio;
+  };
+  // PASSO A PASSO (Marcus, 24/11/2026: "status, um botão Montar que vai para a outra tela; depois de montado fica Bipar; depois Liberar para a representante"):
+  // todo status mostra o próximo passo: pendente → Montar · montando → Abrir · montado → Bipar · bipando → Finalizar · bipado → Liberar (retirada) · semvalor → Definir valor · condicional → Pegar · precond/supervisão → Conferir
+  var celFazer = function(l){
+    var k = l.k, st = k.status, grande = soEncomendas(k, s.cfg), proibido = euMont && grande && !ehEncomendas(s, s.usuario);
+    var botao = function(txt, off, titulo, principal, fn){ return e("div",{onClick:parar}, e(Bt,{principal:principal, off:off, titulo:titulo, onClick:fn}, txt)); };
+    var texto = function(t){ return e("span",{className:"whitespace-nowrap"}, t); };
+    var abrirFicha = function(){ setFichaId(k.id); };
+    if(st==="pendente" || st==="ajuste"){
+      var deOutra = st==="pendente" && !!k.designada && k.designada!==s.usuario && !sup;
+      return podeMontar ? botao("Montar", proibido || deOutra, proibido ? "Kit acima do limite: só o setor Encomendas monta ("+nomesEncomendas(s)+")" : deOutra ? "Pedido para "+nomeDe(k.designada) : "Abrir a ficha do kit e iniciar a montagem", true, function(){ abrirKit(k); }) : texto("Aguarda montar");
+    }
+    if(st==="montando") return (k.montId===s.usuario || sup) ? botao("Abrir", false, "Abrir a ficha deste kit", false, function(){ abrirKit(k); }) : texto("Em montagem");
+    if(st==="montado") return euBip ? botao("Bipar", !!euBipando, euBipando ? "Finalize o kit atual antes de iniciar outro" : "Iniciar a bipagem deste kit", true, function(){ d({type:"INICIAR_B", id:k.id, bipId:euBip}); }) : texto("Aguarda bipar");
+    if(st==="bipando") return (sup || k.bipId===euBip) ? botao("Finalizar", false, "Abrir a ficha e finalizar a bipagem", true, abrirFicha) : texto("Em bipagem");
+    if(st==="bipado") return sup ? botao("Liberar", false, "Fazer a retirada: liberar o kit para a representante", true, function(){ p.abrir("ret", l.l.id); }) : texto("Pronto");
+    if(st==="retirado") return texto("Liberado");
+    if(st==="semvalor") return sup ? botao("Definir valor", false, "Abrir a ficha e definir o valor do kit", true, abrirFicha) : texto("Aguarda valor");
+    if(st==="supervisao") return sup ? botao("Conferir", false, "Abrir a ficha e conferir o kit", true, abrirFicha) : texto("Em conferência");
+    if(st==="condicional") return botao("Pegar", false, "Abrir a ficha e marcar as condicionais pegas", true, abrirFicha);
+    if(st==="precond") return botao("Conferir", false, "Abrir a ficha e conferir a condicional", true, abrirFicha);
     return vazio;
   };
 
@@ -131,9 +148,9 @@ function FilaPlanilha(p){
       var media = semKit ? "—" : k.tipoKit.indexOf("kit_novo")===0 ? "Nova" : k.tipoKit==="reposicao" ? "Reposição" : k.status==="semvalor" ? "—" : k.vendas.length ? BK(media3(k.vendas)) : "Sem vendas";
       var sit = k.pausadoEm ? "Pausado" : STATUS_LB[k.status];
       linhas.push({id:k.id, k:k, l:l, grupo:g,
-        ordem:k.designada ? "Pedido" : pos>=0 ? (pos+1)+"º" : "—", hora:k.horaAtend || "—", nome:(k.prio ? "★ " : "")+k.rev, tipo:tipo[1], pref:textoPref(k),
+        ordem:k.designada ? "Pedido" : pos>=0 ? (pos+1)+"º" : "—", hora:k.horaAtend || "—", nome:(k.prio ? "★ " : "")+k.rev, tipo:tipo[1], pref:textoPref(k)==="Sem preferências" ? "Não" : "Sim",
         media:media, valor:semKit ? "—" : k.status==="semvalor" ? "Sem valor" : (k.valor!=null ? BK(k.valor) : "—"),
-        sit:sit, mont:k.montId ? nomeDe(k.montId) : (k.status==="pendente" || k.status==="ajuste" ? "Montar" : "—"),
+        sit:sit, mont:k.montId ? nomeDe(k.montId) : "—", fazer:k.status==="pendente" || k.status==="ajuste" ? "Montar" : k.status==="montando" ? "Abrir" : k.status==="montado" ? "Bipar" : k.status==="bipado" ? "Liberar" : "—",
         tmont:k.status==="montando" ? (k.pausadoEm ? "pausado" : "montando") : (tempoFim(k.tempoM, k.fimM) || "—"),
         cond:ac.total ? (ac.faltas ? ac.faltas+" falta" : ac.feitas+" de "+ac.total) : "—",
         bip:k.bipId ? nomeDe(k.bipId) : "—", tbip:k.status==="bipando" ? "bipando" : (k.fimB ? tempoFim(k.fimB-k.iniB, k.fimB) : "—"),
@@ -150,33 +167,28 @@ function FilaPlanilha(p){
       modalidadeDe(s, k.rev)==="prata" && tag("Prata", "Kit 100% Prata"));
   };
   var cols = [
-    {k:"hora", t:"Horário", w:60, render:function(v){ return e("span",{className:MONO+" whitespace-nowrap"}, horaCurta(v)); }},
-    {k:"nome", t:"Nome", w:230, render:function(v, l){ return celNome(l); }},
-    {k:"tipo", t:"Tipo", w:92},
-    {k:"pref", t:"Preferências", w:226, cor:function(l){ return l.pref==="Sem preferências" ? "" : (l.pref.indexOf("Pendente")===0 ? "text-white" : "text-success")+" font-semibold"; }}]
-    .concat(sup ? [{k:"media", t:"Média", w:80}, {k:"valor", t:"Valor do kit", w:100, render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
+    {k:"hora", t:"Horário", render:function(v){ return e("span",{className:MONO+" whitespace-nowrap"}, horaCurta(v)); }},
+    {k:"nome", t:"Nome", render:function(v, l){ return celNome(l); }},
+    {k:"tipo", t:"Tipo"},
+    {k:"pref", t:"Pref.", cor:function(l){ return l.pref==="Sim" ? "text-success font-semibold" : "text-destructive font-semibold"; }}]
+    .concat(sup ? [{k:"media", t:"Média"}, {k:"valor", t:"Valor do kit", render:function(v, l){ var k = l.k; return SEM_KIT[k.tipoKit] ? vazio : e("div",{onClick:parar}, e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})); }}] : [])
     .concat([
-    {k:"sit", t:"Situação", w:126, cor:function(l){ return (l.k.pausadoEm ? "text-white" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
-    {k:"mont", t:"Montadora", w:80, render:function(v, l){ return e("div",{onClick:parar}, celMont(l.k)); }},
-    {k:"tmont", t:"Montagem", w:72, render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-white"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
-    {k:"cond", t:"Condicionais", w:92, cor:function(l){ var ac = andamentoCond(l.k); return ac.faltas ? "text-destructive font-semibold" : ac.total && ac.feitas===ac.total ? "text-success font-semibold" : ""; }},
-    {k:"bip", t:"Bipadora", w:72, render:function(v, l){ var k = l.k;
-      if(k.bipId) return e("span",{className:k.bipId===euBip ? "font-semibold text-primary" : ""}, nomeDe(k.bipId));
-      if(euBip && k.status==="montado") return e("div",{onClick:parar}, e(Bt,{principal:true, off:euBipando, titulo:euBipando ? "Finalize o kit atual antes de iniciar outro" : "Iniciar a bipagem deste kit", onClick:function(){ d({type:"INICIAR_B", id:k.id, bipId:euBip}); }}, "Bipar"));
-      return vazio; }},
-    {k:"tbip", t:"Bipagem", w:72, render:function(v, l){ var k = l.k; return k.status==="bipando" ? e(RelogioB,{desde:k.iniB, curto:true, className:"font-semibold text-primary"}) : e("span",{className:MONO}, v); }},
-    {k:"nova", t:"Nova condicional", w:112},
-    {k:"acao", t:"Ações", w:56, render:function(v, l){ return sup ? e("div",{className:"flex justify-center", onClick:parar}, e(MenuAcoes,{k:l.k, abrirRetirada:function(){ p.abrir("ret", l.l.id); }, naLinha:function(){ setFichaId(l.k.id); }})) : vazio; }}]);
+    {k:"sit", t:"Situação", cor:function(l){ return (l.k.pausadoEm ? "text-white" : (COR_SIT[l.k.status] || ""))+" font-semibold"; }},
+    {k:"fazer", t:"Fazer", render:function(v, l){ return celFazer(l); }},
+    {k:"cond", t:"Cond.", cor:function(l){ var ac = andamentoCond(l.k); return ac.faltas ? "text-destructive font-semibold" : ac.total && ac.feitas===ac.total ? "text-success font-semibold" : ""; }},
+    {k:"mont", t:"Montadora", render:function(v, l){ return celMont(l.k); }},
+    {k:"tmont", t:"Montagem", render:function(v, l){ var k = l.k; return k.status==="montando" ? (k.pausadoEm ? e("span",{className:"text-white"}, "pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-primary"})) : e("span",{className:MONO}, v); }},
+    {k:"bip", t:"Bipadora", render:function(v, l){ var k = l.k; return k.bipId ? e("span",{className:k.bipId===euBip ? "font-semibold text-primary" : ""}, nomeDe(k.bipId)) : vazio; }},
+    {k:"tbip", t:"Bipagem", render:function(v, l){ var k = l.k; return k.status==="bipando" ? e(RelogioB,{desde:k.iniB, curto:true, className:"font-semibold text-primary"}) : e("span",{className:MONO}, v); }},
+    {k:"nova", t:"Nova cond."},
+    {k:"acao", t:"Ações", render:function(v, l){ return sup ? e("div",{className:"flex justify-center", onClick:parar}, e(MenuAcoes,{k:l.k, abrirRetirada:function(){ p.abrir("ret", l.l.id); }, naLinha:function(){ setFichaId(l.k.id); }})) : vazio; }}]);
 
   // linha do grupo: representante, dia, horário e, para a supervisão, os botões da listagem (Confirmar valores, Última hora, Retirada)
   var linhaGrupo = function(g, ls){
     var l = porGrupo[g] || ls[0].l, todos = s.kits.filter(function(k){ return k.lid===l.id; });
     var prontos = todos.filter(function(k){ return k.status==="bipado"; }).length, semValor = todos.filter(function(k){ return k.status==="semvalor"; }).length;
     var txt = e("span",null, l.rep+" · "+tituloAba(String(l.data||"sem-data").slice(0, 10))+" · "+horaCurta(l.horario)+(l.viagem ? " · viagem para "+l.destino : "")+" · "+ls.length+(ls.length===1 ? " kit" : " kits"));
-    var botoes = sup ? e("div",{className:"flex items-center gap-1.5", onClick:parar},
-      semValor>0 && e(Bt,{titulo:"Confirmar os valores sugeridos", onClick:function(){ d({type:"CONFIRMAR_SUGERIDOS", lid:l.id}); }}, "Confirmar valores"),
-      e(Bt,{titulo:"Incluir kit de última hora", onClick:function(){ p.abrir("kit", l.id); }}, "Última hora"),
-      e(Bt,{principal:true, off:!prontos, titulo:"Fazer retirada dos kits bipados", onClick:function(){ p.abrir("ret", l.id); }}, prontos ? "Retirada ("+prontos+")" : "Nada pronto")) : null;
+    var botoes = sup && semValor>0 ? e("div",{className:"flex items-center gap-1.5", onClick:parar}, e(Bt,{titulo:"Confirmar os valores sugeridos", onClick:function(){ d({type:"CONFIRMAR_SUGERIDOS", lid:l.id}); }}, "Confirmar valores")) : null;
     return {span:cols.length, rotulo:e("div",{className:"flex items-center justify-between gap-4"}, txt, botoes), resto:[]};
   };
 
@@ -184,7 +196,7 @@ function FilaPlanilha(p){
   return e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"},
     janelaKit && e(JanelaMontar,{key:janelaKit, kitId:janelaKit, fechar:function(){ setJanelaKit(null); }}),
     aberta && e(FichaKit,{key:aberta.id, s:s, d:d, k:aberta.k, l:aberta.l, sup:sup, euBip:euBip, lista:linhas, fechar:function(){ setFichaId(null); }, ir:setFichaId}),
-    e(TabelaPlanilha,{key:"fila", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
+    e(TabelaPlanilha,{key:"fila", semFiltro:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, semCaixaAlta:true, semMao:true,
       agrupar:"grupo", linhaGrupo:linhaGrupo, grupoEsquerda:true,
       grupoAberto:function(g){ return !p.fechadas[g]; }, aoGrupo:function(g){ var o = Object.assign({}, p.fechadas); o[g] = !p.fechadas[g]; p.setFechadas(o); },
       aoClicar:function(l){ abrirKit(l.k); },

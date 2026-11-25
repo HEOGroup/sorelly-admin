@@ -3,6 +3,7 @@
 Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam de representantes, da mais nova para a mais antiga.
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 
+- **24/11/2026** (Marcus, diário geral, seção "Listagens: o próximo passo em toda linha"): **Coluna Fazer com o próximo passo de todo status (Montar, Bipar, Liberar...), Preferências só Sim ou Não, Cond. antes da Montadora, sem setinhas e cabendo na tela; saíram Última hora e Retirada/Nada pronto da linha da representante.**
 - **24/11/2026** (Marcus, diário geral, seção "Ficha Montar kit: observações"): **Observações da revendedora em painel próprio, em cima de Categorias (segunda coluna) da ficha Montar kit.**
 - **24/11/2026** (Marcus, diário geral, seção "Fila de montagem removida"): **A tela Fila de montagem não existe mais;** a ficha Montar kit abre só pelas Listagens e o Voltar leva a elas. Não recriar.
 - **24/11/2026** (Marcus, diário geral, seção "Ficha Montar kit: visual de sistema, anéis por tamanho e vendas"): **Ficha Montar kit em quatro painéis claros dentro de moldura dourada até o fim da tela;** fotos duas lado a lado; anéis em barras com o que ela vendeu por tamanho nos últimos 4 meses (DevMaster) e o tamanho que escolheu em dourado; valor do kit só para supervisão e diretoria; venda no app do mês enquanto o ciclo estiver bloqueado no app; voltar leva às Listagens quando a ficha abre por lá.
