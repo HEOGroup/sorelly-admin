@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.218", data:"2026-11-25", titulo:"Fiscal: nota de entrada com mais de um CFOP", itens:[
+  {tipo:"melhoria", area:"Fiscal › Entradas › Lançar nota de entrada", txt:"Botão Adicionar CFOP: a nota pode ter vários CFOPs, cada um com o seu valor e a sua classificação (Lastro, Não lastro ou Operacional). O valor da nota é a soma. Na lista, a coluna CFOP mostra todos e a Classificação mostra o valor de cada uma quando a nota divide. Lastro, ILF, filtro e CSV contam cada CFOP pela sua classificação."}]},
  {v:"0.21.217", data:"2026-11-25", titulo:"Indicações: \"Já entrei em contato\" volta a ficar salvo", itens:[
   {tipo:"correção", area:"Cadastro de revendedoras → Indicações → Resgates", txt:"Desde 22/11 as ações das Indicações (Já entrei em contato, marcas do balcão, agendar, retirar, cancelar e moedas) só mudavam a tela e não iam para o servidor; na leitura seguinte voltavam como antes. Agora gravam de novo no banco e no app."}]},
  {v:"0.21.216", data:"2026-11-24", titulo:"Montar kit: observações embaixo e botão Voltar azul; Listagens sem a janela antiga nos botões", itens:[

@@ -3,6 +3,10 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 25/11/2026 (Fiscal: nota de entrada com mais de um CFOP, Lucas)
+- **Lucas: "na parte de lançar nota de entrada, apareça a opção de adicionar mais de um CFOP na nota. Tem fornecedores que lançam tudo em uma e outros que dividem; cada CFOP preciso definir se é lastro ou não lastro".**
+- **Decidido:** uma NF continua sendo UMA nota (conta uma vez em Notas). O 1º CFOP fica nos campos de sempre; "Adicionar CFOP" abre as outras linhas (CFOP, valor e classificação). Valor da nota = soma. Guardado em `itens` da nota (`domain/fiscal.js`, `fxPartes`/`fxValorCl`); nota antiga com um CFOP não muda. O lastro do ILF soma só os CFOPs marcados como Lastro.
+
 ## 24/11/2026 (Montar kit: observações embaixo; Listagens sem a janela antiga)
 - **Marcus: o botão Voltar para as listagens precisa de cor, e as observações (texto) ficam EMBAIXO, cobrindo a largura de Categorias e Fotos, que ficam em cima.** Botão azul; painel de observações com altura limitada e rolagem; some se não houver observação.
 - **Marcus: "porque aparece isso? ... quando estiver na fase de montagem, ir para a tela de preferências".** Na coluna Fazer das Listagens, os status Conferir condicional, Pegar condicionais e Aguardando valor mostram só texto (Na condicional, Falta valor); a janela antiga do kit só abre nos botões Finalizar (bipagem) e Conferir (Para conferir). Clicar na linha da revendedora sempre abre a tela de preferências (Montar kit).

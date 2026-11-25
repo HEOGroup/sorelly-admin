@@ -3,25 +3,38 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BarraFiltros, Dinheiro, Faixa, Indicador, LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CLASSIFICACOES, ROTULO_CLASSIFICACAO, ROTULO_PERIODO, MESES, fxNotasDe, fxSaidasDoMes, yearMonth } from "@/apps/montagem/domain/fiscal";
+import { CLASSIFICACOES, ROTULO_CLASSIFICACAO, ROTULO_PERIODO, MESES, fxNotasDe, fxPartes, fxSaidasDoMes, fxValorCl, yearMonth } from "@/apps/montagem/domain/fiscal";
+import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { CLASSE_COR, COR, ENTRADA, EXPLICA, Bt, Campo, Chip, Jan, Selo, Vazio, baixarCsv, fmt, hoje, useFx } from "@/apps/montagem/pages/fiscal/visual";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 
 var num = function(v){ return Number(v) || 0; };
 var rotCl = function(c){ return fmt.cap(ROTULO_CLASSIFICACAO[c].toLowerCase()); };
+var clsNota = function(n){ var l = []; fxPartes(n).forEach(function(i){ if(l.indexOf(i.classificacao)<0) l.push(i.classificacao); }); return l; };   // classificações da nota (mais de uma quando os CFOPs dividem)
+var rotNota = function(n){ var cs = clsNota(n); return cs.length===1 ? rotCl(cs[0]) : cs.map(function(c){ return rotCl(c)+" "+fmt.brl(fxValorCl(n, c)); }).join(" + "); };
 
 // ───────────── Entradas ─────────────
 // janela de lançamento: 3 colunas (empresa e documento | fornecedor e local | valor e classificação)
 function JanelaNota(p){
-  var f = p.f, emps = f.fx.empresas, st = useState({empresaId:p.empresaId || (emps[0] && emps[0].id) || "", data:hoje(), nf:"", fornecedor:"", cfop:"", uf:"", valor:0, classificacao:"LASTRO"}), v = st[0];
+  var f = p.f, emps = f.fx.empresas, st = useState({empresaId:p.empresaId || (emps[0] && emps[0].id) || "", data:hoje(), nf:"", fornecedor:"", cfop:"", uf:"", valor:0, classificacao:"LASTRO", extras:[]}), v = st[0];
   var set = function(o){ st[1](Object.assign({}, v, o)); };
-  var valido = v.empresaId && /^\d{4}-\d{2}-\d{2}$/.test(v.data) && v.valor>0;
+  // mais de um CFOP (Lucas, 25/11/2026): a 1ª linha fica nos campos de sempre; as outras entram em "Outros CFOPs da nota", cada uma com valor e classificação; o valor da nota é a soma
+  var ex = v.extras, multi = ex.length>0, totalNota = Math.round((v.valor + ex.reduce(function(t, x){ return t+(x.valor||0); }, 0))*100)/100;
+  var setEx = function(i, o){ set({extras:ex.map(function(x, k){ return k===i ? Object.assign({}, x, o) : x; })}); };
+  var valido = v.empresaId && /^\d{4}-\d{2}-\d{2}$/.test(v.data) && v.valor>0 && ex.every(function(x){ return x.valor>0; });
   var lancar = function(continuar){
     if(!valido) return;
-    f.envia(Object.assign({op:"nota_add"}, v));
-    if(continuar) set({nf:"", valor:0}); else p.fechar();
+    var env = Object.assign({op:"nota_add"}, v, {valor:totalNota}); delete env.extras;
+    if(multi) env.itens = [{cfop:v.cfop, valor:v.valor, classificacao:v.classificacao}].concat(ex);
+    f.envia(env);
+    if(continuar) set({nf:"", valor:0, extras:[]}); else p.fechar();
   };
+  var linhaCfop = function(x, i){ return e("div",{key:i, className:"flex flex-wrap items-center justify-center gap-2"},
+    e("input",{value:x.cfop, inputMode:"numeric", maxLength:5, placeholder:"CFOP", "aria-label":"CFOP "+(i+2), onChange:function(ev){ setEx(i, {cfop:ev.target.value.replace(/[^\d.]/g,"")}); }, className:INPUT+" h-8! w-24 text-center text-[13px]! "+MONO}),
+    e("div",{className:"w-44"}, e(Dinheiro,{value:x.valor, label:"Valor do CFOP "+(i+2), onChange:function(n){ setEx(i, {valor:num(n)}); }})),
+    e(Segmentado,{atual:x.classificacao, onMudar:function(c){ setEx(i, {classificacao:c}); }, opcoes:CLASSIFICACOES.map(function(c){ return [c, rotCl(c)]; })}),
+    e(Bt,{ic:"trash", rotulo:"Tirar este CFOP", titulo:"Tirar este CFOP", onClick:function(){ set({extras:ex.filter(function(z, k){ return k!==i; })}); }, className:"h-8 px-2"})); };
   return e(Jan,{t:"Lançar nota de entrada", sub:"Compras de mercadoria e demais entradas por empresa.", fechar:p.fechar,
     colunas:[
       e("div",{key:"a", className:"flex flex-col gap-2"},
@@ -33,10 +46,16 @@ function JanelaNota(p){
         e(Campo,{t:"CFOP"}, e("input",{value:v.cfop, inputMode:"numeric", maxLength:5, "aria-label":"CFOP", onChange:function(ev){ set({cfop:ev.target.value.replace(/[^\d.]/g,"")}); }, className:ENTRADA+" "+MONO})),
         e(Campo,{t:"UF de origem"}, e("input",{value:v.uf, maxLength:2, "aria-label":"UF de origem", onChange:function(ev){ set({uf:ev.target.value.toUpperCase().replace(/[^A-Z]/g,"")}); }, className:ENTRADA+" uppercase"}))),
       e("div",{key:"c", className:"flex flex-col gap-2"},
-        e(Campo,{t:"Valor da nota"}, e(Dinheiro,{value:v.valor, label:"Valor da nota", onChange:function(n){ set({valor:num(n)}); }})),
+        e(Campo,{t:multi ? "Valor do 1º CFOP" : "Valor da nota"}, e(Dinheiro,{value:v.valor, label:multi ? "Valor do 1º CFOP" : "Valor da nota", onChange:function(n){ set({valor:num(n)}); }})),
         e(Campo,{t:"Classificação"}, e("div",{className:"flex flex-wrap justify-center gap-1.5"}, CLASSIFICACOES.map(function(c){ return e(Chip,{key:c, on:v.classificacao===c, onClick:function(){ set({classificacao:c}); }}, rotCl(c)); }))),
-        e("p",{className:"rounded-lg bg-black/25 px-3 py-2 text-center text-[12.5px] text-white/85 ring-1 ring-white/10"}, EXPLICA[v.classificacao]))],
-    rodape:[e(Bt,{key:"l", tipo:"forte", ic:"check-circle", disabled:!valido, titulo:valido ? "" : "Informe empresa, data e valor", onClick:function(){ lancar(false); }}, "Lançar nota"),
+        e("p",{className:"rounded-lg bg-black/25 px-3 py-2 text-center text-[13px] text-white ring-1 ring-white/10"}, EXPLICA[v.classificacao])),
+      e("div",{key:"d", className:"flex flex-col items-center gap-2 border-t border-white/10 pt-3", style:{gridColumn:"1 / -1"}},
+        multi && e("span",{className:"text-[11px] font-bold uppercase tracking-wide text-white"}, "Outros CFOPs da nota"),
+        ex.map(linhaCfop),
+        e("div",{className:"flex flex-wrap items-center justify-center gap-3"},
+          e(Bt,{ic:"plus", onClick:function(){ set({extras:ex.concat([{cfop:"", valor:0, classificacao:"LASTRO"}])}); }}, "Adicionar CFOP"),
+          multi && e("span",{className:"text-[13px] font-semibold text-white"}, "Total da nota: "+fmt.brl(totalNota))))],
+    rodape:[e(Bt,{key:"l", tipo:"forte", ic:"check-circle", disabled:!valido, titulo:valido ? "" : "Informe empresa, data e valor de cada CFOP", onClick:function(){ lancar(false); }}, "Lançar nota"),
       e(Bt,{key:"n", ic:"plus", disabled:!valido, onClick:function(){ lancar(true); }}, "Lançar e continuar"), e(Bt,{key:"x", onClick:p.fechar}, "Cancelar")]});
 }
 
@@ -52,12 +71,12 @@ function AbaFxEntradas(p){
   var base = [];
   emps.forEach(function(x){ if(!filtro.emp || filtro.emp===x.id) base = base.concat(fxNotasDe(s, x.id, filtro.mes ? 0 : ano)); });
   var q = filtro.q.trim().toLowerCase();
-  var lista = base.filter(function(n){ return (!filtro.mes || String(n.data).slice(0,7)===filtro.mes) && (!filtro.cl || n.classificacao===filtro.cl) && (!q || (n.nf+" "+n.fornecedor+" "+n.cfop+" "+n.uf).toLowerCase().indexOf(q)>=0); })
+  var lista = base.filter(function(n){ return (!filtro.mes || String(n.data).slice(0,7)===filtro.mes) && (!filtro.cl || clsNota(n).indexOf(filtro.cl)>=0) && (!q || (n.nf+" "+n.fornecedor+" "+n.cfop+" "+n.uf).toLowerCase().indexOf(q)>=0); })
     .sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : 0; });
   var soma = function(fn){ return Math.round(lista.filter(fn).reduce(function(t, n){ return t+n.valor; }, 0)*100)/100; };
-  var tot = soma(function(){ return true; }), lastro = soma(function(n){ return n.classificacao==="LASTRO"; });
+  var tot = soma(function(){ return true; }), lastro = Math.round(lista.reduce(function(t, n){ return t+fxValorCl(n, "LASTRO"); }, 0)*100)/100;
   var ativo = !!(filtro.emp || filtro.mes || filtro.cl || filtro.q);
-  var csv = function(){ baixarCsv("notas-de-entrada-"+(filtro.mes || ano)+".csv", [["Data","Empresa","NF","Fornecedor","CFOP","UF","Valor","Classificação"]].concat(lista.map(function(n){ return [fmt.data(n.data), nomeEmp[n.empresaId], n.nf, n.fornecedor, n.cfop, n.uf, String(n.valor.toFixed(2)).replace(".", ","), rotCl(n.classificacao)]; }))); };
+  var csv = function(){ baixarCsv("notas-de-entrada-"+(filtro.mes || ano)+".csv", [["Data","Empresa","NF","Fornecedor","CFOP","UF","Valor","Classificação"]].concat(lista.map(function(n){ return [fmt.data(n.data), nomeEmp[n.empresaId], n.nf, n.fornecedor, n.cfop, n.uf, String(n.valor.toFixed(2)).replace(".", ","), rotNota(n)]; }))); };
   var excluir = function(id){ if(cf[0]===id){ f.envia({op:"nota_del", id:id}); cf[1](null); } else cf[1](id); };
   return e("div",{className:"flex flex-col gap-2.5"},
     e("div",{className:"flex flex-wrap justify-center gap-2"}, e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ jn[1](true); }}, "Lançar nota de entrada"), e(Bt,{ic:"download-simple", disabled:!lista.length, onClick:csv, titulo:"Baixar as notas filtradas em planilha"}, "Exportar CSV")),
@@ -73,7 +92,7 @@ function AbaFxEntradas(p){
     lista.length ? e(BlocoBarra,{cor:"turquesa", t:"Notas de entrada", compacto:true, dir:lista.length},
       e("div",{className:"p-2"}, e(Tab,{cols:["Data","Empresa","NF","Fornecedor","CFOP","UF","Valor","Classificação",""]}, lista.slice(0, ver).map(function(n){ var pede = cf[0]===n.id;
         return e("tr",{key:n.id, className:LINHA}, e(Td,{dinheiro:true}, fmt.data(n.data)), e(Td,{forte:true}, nomeEmp[n.empresaId]), e(Td,{dinheiro:true}, n.nf || "—"), e(Td,null, n.fornecedor || "—"), e(Td,{dinheiro:true}, n.cfop || "—"), e(Td,null, n.uf || "—"),
-          e(Td,{dinheiro:true, forte:true}, fmt.brl(n.valor)), e(Td,null, e(Selo,{cor:CLASSE_COR[n.classificacao]}, rotCl(n.classificacao))),
+          e(Td,{dinheiro:true, forte:true}, fmt.brl(n.valor)), e(Td,null, e(Selo,{cor:CLASSE_COR[clsNota(n).length===1 ? clsNota(n)[0] : "NAO_LASTRO"]}, rotNota(n))),
           e(Td,null, e(Bt,{tipo:pede ? "perigo" : "normal", ic:pede ? "warning-circle" : "trash", rotulo:pede ? "Confirmar exclusão" : "Excluir nota", titulo:pede ? "Clique de novo para confirmar" : "Excluir nota", onClick:function(){ excluir(n.id); }, className:"h-8 px-2"}, pede ? "Confirmar" : null))); })),
         ver<lista.length && e("div",{className:"flex justify-center pt-2"}, e(Bt,{ic:"caret-down", onClick:function(){ setVer(ver+30); }}, "Ver mais ("+(lista.length-ver)+")")))) : e(Vazio,{ic:"receipt"}, ativo ? "Nenhuma nota encontrada para este filtro." : "Nenhuma nota de entrada lançada em "+ano+"."),
     jn[0] && e(JanelaNota,{f:f, empresaId:filtro.emp, fechar:function(){ jn[1](false); }}));

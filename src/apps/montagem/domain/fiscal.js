@@ -21,6 +21,10 @@ var p2 = function(n){ return String(n).padStart(2,"0"); };
 var num = function(v){ var n = Number(typeof v==="string" ? v.replace(",", ".") : v); return isFinite(n) ? n : 0; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
 var trim = function(v){ return String(v==null ? "" : v).trim(); };
+// CFOPs da nota (Lucas, 25/11/2026: "tem fornecedores que lançam tudo em uma e outros que dividem"): nota com mais de um CFOP guarda itens [{cfop, valor, classificacao}], cada um lastro ou não;
+// nota antiga (um CFOP só) vira um item. Todo cálculo de lastro passa por aqui.
+function fxPartes(n){ return n && Array.isArray(n.itens) && n.itens.length ? n.itens : [{cfop:n ? n.cfop : "", valor:n ? n.valor : 0, classificacao:n ? n.classificacao : ""}]; }
+function fxValorCl(n, cl){ return fxPartes(n).reduce(function(t, i){ return t+(i.classificacao===cl ? (Number(i.valor)||0) : 0); }, 0); }
 var ehDia = function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")); };
 var ehYM = function(v){ return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||"")); };
 var MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
@@ -82,7 +86,7 @@ function ilfClass(ilf, temReceita, meta, critico){
 // um mês de um CNPJ: notas do mês e os 3 períodos de saída (null se não lançado)
 function mesCalc(notas, periodos, config){
   var entradas = r2(notas.reduce(function(t,n){ return t+n.valor; }, 0));
-  var lastro = r2(notas.filter(function(n){ return n.classificacao==="LASTRO"; }).reduce(function(t,n){ return t+n.valor; }, 0));
+  var lastro = r2(notas.reduce(function(t,n){ return t+fxValorCl(n, "LASTRO"); }, 0));
   var soma = function(k){ return r2(periodos.reduce(function(t,p){ return t+(p ? p[k] : 0); }, 0)); };
   var venda = soma("venda"), brindes = soma("brindes"), trocas = soma("trocas");
   var ilf = venda>0 ? lastro/venda : 0;
@@ -275,8 +279,16 @@ function fxReduz(s, a){
       if(!ehDia(a.data)) return recusa("Informe a data da nota.");
       var valor = num(a.valor); if(!(valor>0)) return recusa("O valor da nota precisa ser maior que zero.");
       var cl = trim(a.classificacao)||"LASTRO"; if(CLASSIFICACOES.indexOf(cl)<0) return recusa("Classificação inválida (lastro, não lastro ou operacional).");
-      var nota = {id:"n"+(++fx.seq), empresaId:en.id, data:a.data, nf:trim(a.nf), fornecedor:trim(a.fornecedor), cfop:trim(a.cfop), uf:trim(a.uf).toUpperCase(), valor:r2(valor), classificacao:cl, por:por, em:agora};
-      fx.notas.push(nota); return ok("Nota de entrada de "+formatarReais(nota.valor)+" lançada em "+en.nome+" ("+ROTULO_CLASSIFICACAO[cl]+")");
+      var itensN = null;
+      if(Array.isArray(a.itens) && a.itens.length>1){   // mais de um CFOP: cada um com o seu valor e a sua classificação; o valor da nota é a soma
+        itensN = []; for(var ii=0; ii<a.itens.length; ii++){ var it = a.itens[ii], vi = num(it.valor), ci = trim(it.classificacao)||"LASTRO";
+          if(!(vi>0)) return recusa("Informe o valor do CFOP "+(trim(it.cfop) || (ii+1))+"."); if(CLASSIFICACOES.indexOf(ci)<0) return recusa("Classificação inválida no CFOP "+(trim(it.cfop) || (ii+1))+".");
+          itensN.push({cfop:trim(it.cfop), valor:r2(vi), classificacao:ci}); }
+        valor = r2(itensN.reduce(function(t, i){ return t+i.valor; }, 0)); cl = itensN[0].classificacao;
+      }
+      var nota = {id:"n"+(++fx.seq), empresaId:en.id, data:a.data, nf:trim(a.nf), fornecedor:trim(a.fornecedor), cfop:itensN ? itensN.map(function(i){ return i.cfop; }).filter(Boolean).join(" + ") : trim(a.cfop), uf:trim(a.uf).toUpperCase(), valor:r2(valor), classificacao:cl, por:por, em:agora};
+      if(itensN) nota.itens = itensN;
+      fx.notas.push(nota); return ok("Nota de entrada de "+formatarReais(nota.valor)+" lançada em "+en.nome+(nota.itens ? " ("+nota.itens.length+" CFOPs)" : " ("+ROTULO_CLASSIFICACAO[cl]+")"));
     }
     case "nota_del": {
       var nd = fx.notas.filter(function(n){ return n.id===a.id; })[0]; if(!nd) return recusa("Nota não encontrada.");
@@ -311,5 +323,5 @@ function fxReduz(s, a){
   }
 }
 
-export { fxDemo, fxMigrar, fxReduz, ilfClass, mesCalc, mesesDoAno, mesesDecorridos, empCalc, fxVisaoGeral, fxAvisos, fxAindaCabe, fxDashboardAnual, fxNotasDe, fxSaidasDoMes, fxGradeContas, fxLancamentosDe,
+export { fxPartes, fxValorCl, fxDemo, fxMigrar, fxReduz, ilfClass, mesCalc, mesesDoAno, mesesDecorridos, empCalc, fxVisaoGeral, fxAvisos, fxAindaCabe, fxDashboardAnual, fxNotasDe, fxSaidasDoMes, fxGradeContas, fxLancamentosDe,
   fxSnapshotLegado, fiscalUnido, fxResumoTexto, anosDisponiveis, anoPadrao, periodoDoDia, yearMonth, CONFIG_PADRAO, CLASSIFICACOES, ROTULO_CLASSIFICACAO, ROTULO_PERIODO, MESES, MES_CURTO };
