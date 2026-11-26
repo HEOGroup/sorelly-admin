@@ -15,6 +15,7 @@ import { setBaixas, setClasse, setLancamentos, setPf, filtrar } from "@/apps/mon
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
 import { sugerir, LIMITE_ALTO_PADRAO } from "@/apps/montagem/domain/direcionar-pix";
 import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
+import { pagamentosDaProducao, hojeSP as hojeProd } from "@/apps/montagem/domain/producao";
 import { descontoCartao, fornecedoresDoMesPf, geradoEm, prestadoresAbertosPf } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
@@ -115,7 +116,6 @@ function avisosCerebro(s){
   var itens = filtrar("", "", "", "apagar", "sorelly", "").filter(function(i){ return i.venc && i.venc>="2020-01-01" && i.venc<="2100-12-31"; }).map(function(i){ return {filial:i.filial, venc:i.venc, valor:i.valor}; });
   return orientacaoDoDia(s.saldosContas, itens, hojeIsoCp());
 }
-var COLS_CEREBRO = [{k:"cnpj", t:"CNPJ"}, {k:"sit", t:"Urgência", cor:function(l){ return l.pri===1 ? "text-red-400 font-semibold" : l.pri===2 ? "text-amber-300 font-semibold" : ""; }}, {k:"tipo", t:"Tipo"}, {k:"texto", t:"Aviso"}, {k:"valor", t:"Valor", fmt:function(v){ return v>0 ? BKC(v) : "—"; }}, {k:"data", t:"Data"}];
 
 // Dívidas da família com PRAZO e saldo em aberto (Financeiro familiar, aba Prestadores). Só quem abre o Financeiro familiar vê (sócios). O destino é o prestador de mesmo nome em Controle de pagamentos.
 // Aba Família (12/11/2026, chamado do Marcus: "da família tudo errado"): mostrava só 2 dívidas de prestadores, uma delas de agosto. Agora traz o que a família tem a pagar: as CONTAS da casa não pagas do mês atual e do mês anterior (Financeiro familiar, fora pró-labore) mais as dívidas de prestadores com prazo no mesmo período (até o fim do mês atual: as parcelas dos próximos meses ficam no Financeiro familiar). Parcela mais velha fica no Financeiro familiar (muitas são de importação, pagas sem baixa).
@@ -165,7 +165,18 @@ function AbaDirecionar(){
   // TODO fornecedor com conta em aberto aparece na lista "Fornecedor" da conta (Lucas, 18/11/2026): quem ainda não tem destino (ex.: Madalosso, Ello Print) ganha o destino uma vez, com o nome do cadastro
   // e o PRESTADOR de serviço com conta em aberto no Lançamento de pagamentos também (Lucas, 18/11/2026: a Dávila, R$ 520,00, não aparecia para direcionar)
   var prestAbertos = prestadoresAbertosPf(s.pf, cp);
-  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["FORNECEDOR", String(f.nome).replace(/ \d{2}\/\d{2} à \d{2}\/\d{2}$/, "")]; })
+  // PRODUÇÃO EXTERNA (Marcus, 25/11/2026: "tem valor a Leci e a Dávila a pagar, sempre integrado"): o que falta pagar de cada uma (Produção > Pagamento por produção) aparece aqui com a quinta-feira do pagamento
+  var prodRows = (function(){
+    if(!s.pr) return [];
+    var porNome = {}, sa = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); };
+    pagamentosDaProducao(s.pr, hojeProd()).filter(function(q){ return q.tipo==="Produção externa" && !q.pago && q.valor>0.004; }).forEach(function(q){ var x = porNome[q.func] || (porNome[q.func] = {valor:0, ate:""}); x.valor = r2(x.valor+q.valor); if(!x.ate || q.data<x.ate) x.ate = q.data; });
+    return Object.keys(porNome).map(function(n){
+      var pri = sa(n).split(" ")[0], d = cp.destinos.filter(function(z){ return z.ativo && z.tipo==="PRESTADOR" && sa(z.nome).split(" ")[0]===pri; })[0];
+      return {id:"pr-"+n, nome:n.split(" ")[0]+" · produção", aPagar:porNome[n].valor, pago:0, saldo:porNome[n].valor, ate:porNome[n].ate, obs:"", destinoId:d ? d.id : "", pontual:false};
+    });
+  })();
+  fornAbertos = fornAbertos.concat(prodRows.map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; }));
+  var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId && String(f.id).indexOf("pr-")!==0; }).map(function(f){ return ["FORNECEDOR", String(f.nome).replace(/ \d{2}\/\d{2} à \d{2}\/\d{2}$/, "")]; })
     .concat(prestAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["PRESTADOR", f.nome]; }))
     .filter(function(x, i, a){ return x[1] && a.findIndex(function(y){ return y[1]===x[1]; })===i && !DEST_CRIADOS[x[1]]; }) : [];
   useEffect(function(){ semDestino.forEach(function(x){ DEST_CRIADOS[x[1]] = true; c.d({type:"CP", op:"destino_add", nome:x[1], tipo:x[0]}); }); }, [semDestino.map(function(x){ return x[1]; }).join("|")]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -203,7 +214,7 @@ function AbaDirecionar(){
   ctxCnpj.forEach(function(x){ var d = cp.destinos.filter(function(z){ return z.cnpjId===x.id; })[0]; if(d && (x.hoje+x.amanha)>0) faltam.push({id:d.id, nome:d.nome, tipo:"CNPJ", falta:r2(x.hoje+x.amanha), info:"vencem hoje e amanhã"}); });
   var sfm = useState("falta"), modoForn = sfm[0], setModoForn = sfm[1];
   var veFam = ACESSO_FF.indexOf(s.usuario)>=0 && !!(s.ff && s.ff.dividas), dividasFam = veFam ? dividasDaFamilia(s.ff, cp, hojeIsoCp()) : [], totalFam = r2(dividasFam.reduce(function(tt, x){ return tt+x.falta; }, 0)), famVenc = dividasFam.filter(function(x){ return x.dias<0; }).length;
-  var fornLista = fornecedoresDoMesPf(s.pf, cp, modoForn==="mes"), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
+  var fornLista = fornecedoresDoMesPf(s.pf, cp, modoForn==="mes").concat(prodRows), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
   var stt = useState({}), travados = stt[0], setTravados = stt[1];   // pagamentos confirmados (travados) até apertar Editar (Marcus, 12/11/2026)
   var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1], spv = useState({}), pendV = spv[0], setPendV = spv[1], sva = useState(false), verTodas = sva[0], setVerTodas = sva[1], sab = useState({}), abertosC = sab[0], setAbertosC = sab[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
   var optsDe = function(f){ var l = [["", f==="pix" ? "Escolha a conta" : "Escolha o CNPJ", ""]];
@@ -454,7 +465,7 @@ function AbaDirecionar(){
     e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
-    Painel("Avisos do dia", "", "", "#3B82F6", e(TabelaPlanilha,{cols:COLS_CEREBRO, linhas:avisosCerebro(s).map(function(a){ return Object.assign({}, a, {sit:["", "Urgente", "Atenção", "Observar"][a.pri], data:a.quando ? a.quando.slice(8, 10)+"/"+a.quando.slice(5, 7) : "—"}); }), chave:"id", escura:true, grade:true, limite:4, semContagem:true, semLimpar:true, vazio:"Sem avisos: as contas estão cobertas e positivas."})),   // cérebro v1 (18/11/2026)
+    (avisosCerebro(s), null),   // os Avisos do dia saíram da tela (Marcus, 25/11/2026); a chamada só carrega as contas no cálculo
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
     // 19/11/2026 (Marcus): o bloco "Pagamentos da Família" saiu do Direcionar da Sorelly (Financeiro familiar e empresa ficam separados; a família fica só no Financeiro familiar)
     // ── feitos

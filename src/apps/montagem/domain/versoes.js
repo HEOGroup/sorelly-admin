@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.234", data:"2026-11-25", titulo:"Charme e Linda passam a aparecer; produção da Leci e da Dávila no Direcionar", itens:[
+  {tipo:"correcao", area:"Financeiro › Negociações", txt:"O lançamento dos pedidos Charme e Linda não rodava porque a abertura do sistema não o chamava. Agora roda na próxima abertura."},
+  {tipo:"novo", area:"Financeiro › Direcionar", txt:"Pagamentos para Fornecedores mostra o que falta pagar da produção externa (Leci, Dávila e outras), com a quinta-feira do pagamento."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"O bloco Avisos do dia saiu da tela."}
+ ]},
  {v:"0.21.233", data:"2026-11-25", titulo:"Pedidos Charme e Linda lançados em Negociações, Direcionar e Contas a pagar", itens:[
   {tipo:"novo", area:"Financeiro › Negociações", txt:"Pedido Charme de R$ 3.576,00 (R$ 357,60 em Pix do CNPJ 67 Axis, com nota, até 27/11, e R$ 3.218,40 em Pix revendedora até 28/11) e pedido Linda de R$ 6.967,00 (R$ 1.967,00 em Pix do CNPJ 67 Axis até 27/11 e R$ 5.000,00 em Pix revendedora até 28/11). Charme e Linda passam ao ciclo \"No vencimento da parcela\": o Direcionar mostra cada valor com a sua data limite."},
   {tipo:"novo", area:"Financeiro › Contas a pagar", txt:"Dívidas do Pix do CNPJ 67 Axis com vencimento em 27/11: Charme R$ 357,60 e Linda R$ 1.967,00."},

@@ -520,7 +520,7 @@ function inicial(){
     s.cpc = cpcMigrar(s.cpc);   // Cadastro de peças: cria com os dados de teste ou completa campos novos
     s.pp = ppMigrar(s.pp);   // Pedidos de peças: cria vazio ou completa campos novos
     s.pr = prMigrar(s.pr);   // Produção de peças: cria vazio ou completa campos novos
-    if(!s.pf) s.pf = pfInicial(); else if(!s.pf.prestSemeados || !s.pf.helcioSemeado || !s.pf.elloSemeado || !s.pf.mqImp2 || (!s.pf.atuV1 && TEM_ATU_PF) || (!s.pf.atuV2c && TEM_ATU_PF) || (!s.pf.atuV5 && TEM_ATU_PF) || (!s.pf.atuV10 && TEM_ATU_PF) || (!s.pf.atuV11 && TEM_ATU_PF) || (!s.pf.atuV3 && TEM_ATU_PF) || !s.pf.lcAjustado || s.pf.fornecedores.some(function(f){ return !f.tipo; })) s.pf = pfMigrar(JSON.parse(JSON.stringify(s.pf)));
+    if(!s.pf) s.pf = pfInicial(); else if(!s.pf.prestSemeados || !s.pf.helcioSemeado || !s.pf.elloSemeado || !s.pf.charmeLindaSemeado || !s.pf.mqImp2 || (!s.pf.atuV1 && TEM_ATU_PF) || (!s.pf.atuV2c && TEM_ATU_PF) || (!s.pf.atuV5 && TEM_ATU_PF) || (!s.pf.atuV10 && TEM_ATU_PF) || (!s.pf.atuV11 && TEM_ATU_PF) || (!s.pf.atuV3 && TEM_ATU_PF) || !s.pf.lcAjustado || s.pf.fornecedores.some(function(f){ return !f.tipo; })) s.pf = pfMigrar(JSON.parse(JSON.stringify(s.pf)));
     if(s.rh && !s.rh.contratos){ s.rh.contratos = []; s.rh.modelos = []; s.rh.colunasRep = []; }   // Contratos do RH chegaram depois
     if(!s.datasPag) s.datasPag = {geral:15, setores:{}};
     if(!s.agend) s.agend = agendDemo(s);
