@@ -165,7 +165,7 @@ function useSyncModulos(s, d){
         var v = r.conteudo[k], j = json(v), base = m.snaps[k], lj = json(local[k]);
         m.snaps[k] = j;
         if(chave==="nav" && !m.pronto && TEM_COPIA) v = juntaPrimeira(v, local[k]);   // módulo nav: na 1ª leitura, item que só existe aqui fica e sobe
-        if(lj===j) return;
+        if(lj===j || (lj!==undefined && lj.length===j.length && mesmaOrdemLivre(lj, j))){ if(lj!==undefined && lj!==j) m.snaps[k] = lj; return; }   // mesmo conteúdo, outra ordem dos campos: nada muda
         // MUDANÇA AINDA NÃO ENVIADA (11/11/2026): a tela mexeu nesta chave e ainda não mandou. Antes o que vinha do servidor trocava tudo e o lançamento sumia.
         // Agora a mudança local é reaplicada em cima do que veio (a diferença entre a base e o que a tela tem) e segue para o servidor no próximo envio.
         if(porDif && m.pronto && base!==undefined && lj!==base){
@@ -202,6 +202,7 @@ function useSyncModulos(s, d){
     var atual = fatia(ref.current.s, chave) || {}, mudou = {}, patches = {}, n = 0;
     Object.keys(atual).forEach(function(k){
       var j = json(atual[k]); if(j===m.snaps[k]) return;
+      if(m.snaps[k]!==undefined && j.length===m.snaps[k].length && mesmaOrdemLivre(j, m.snaps[k])){ m.snaps[k] = j; return; }   // só a ordem dos campos mudou (o banco reordena): nada a gravar (Lucas, 26/11/2026)
       mudou[k] = atual[k]; n++;
       if(porDif){ var op = null; try { op = m.snaps[k]===undefined ? {$set:JSON.parse(j)} : diff(JSON.parse(m.snaps[k]), JSON.parse(j)); } catch(x){ op = {$set:atual[k]}; } if(op) patches[k] = op; }
     });

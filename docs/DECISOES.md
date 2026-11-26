@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar: erro contaDoDestino, Lucas)
+- **Lucas: print do Algo deu errado com o motivo "k.contaDoDestino is not a function"; "resolva tudo, analise tudo e não deixe perder nenhuma informação".**
+- **Causa:** a publicação 0ddb5e5 (v0.21.256, outra conversa) gravou domain/pf.js a partir de uma cópia antiga e apagou a função `contaDoDestino` e a trava de não duplicar o lançado à mão (`primD`) do `pix_dir`. O reducer chama `contaDoDestino` ao confirmar Pix para PRESTADOR: a tela quebrava (Dávila e outros prestadores). Nada era gravado (o erro acontece antes), então nenhum pedido se perdeu: ficaram na fila.
+- **Feito:** as duas partes voltaram. Conferência de 26/11/2026: todas as mudanças desta conversa de 25 e 26/11 estão no código (script de marcas); as outras linhas que sumiram em publicações recentes foram trocadas de propósito no mesmo assunto (ex.: preço da produção externa, Consolidado). **Regra para todas as conversas: antes de gravar um arquivo inteiro, puxar a master (git pull) e editar só o trecho; nunca colar uma cópia antiga por cima.**
+- **Erro 413 nos acertos (mesmo dia):** 4 telas abertas regravavam os mesmos 8 acertos (1,5 MB) a cada poucos segundos: o Postgres (jsonb) devolve os campos em outra ordem e `empurrar`/`receber` (lib/sync-modulos.js) comparavam o texto. Agora usam `mesmaOrdemLivre` (só a ordem dos campos; a ordem das listas continua contando). Conferido no banco: os acertos estavam todos salvos, nada se perdeu.
+
 ## 26/11/2026 (Direcionar: representantes voltam à lista de contas, Lucas)
 - **Lucas: "não consigo direcionar as contas para as representantes".**
 - **Causa:** na lista de contas do Direcionar, cada grupo mostra só quem tem valor pendente (regra de 26/10/2026). Representante só tinha pendência por orientação aberta em `cp.orientacoes`, e não existe nenhuma (nunca houve): o grupo Representante ficava vazio e sumia.

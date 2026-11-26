@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.259", data:"2026-11-26", titulo:"Direcionar: volta a direcionar para prestador (erro contaDoDestino)", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar Pix", txt:"Direcionar para um prestador (ex.: Dávila) dava Algo deu errado: a publicação v0.21.256 apagou sem querer a função contaDoDestino e a trava que não deixa duplicar o lançado à mão. As duas voltaram. Conferido: todas as outras mudanças de 25 e 26/11 continuam no código."},
+  {tipo:"correção", area:"Sistema → gravação no servidor", txt:"Os mesmos acertos (1,5 MB) eram regravados por várias telas a cada poucos segundos e às vezes passavam do limite (erro 413): o banco guarda os campos em outra ordem e a tela achava que tinha mudado. Agora mesmo conteúdo com outra ordem não é gravado de novo. Nenhum acerto se perdeu: todos estavam salvos."}]},
  {v:"0.21.258", data:"2026-11-26", titulo:"Tela de erro mostra o motivo", itens:[
   {tipo:"melhoria", area:"Sistema → Algo deu errado", txt:"O aviso Algo deu errado agora mostra o motivo técnico em letra pequena (para mandar print) e grava o erro no console. Versão nova publicada com a aba aberta (inclusive aviso de CSS) recarrega sozinha."}]},
  {v:"0.21.257", data:"2026-11-26", titulo:"Direcionar: representantes voltam à lista de contas", itens:[
