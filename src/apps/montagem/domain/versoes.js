@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.252", data:"2026-11-26", titulo:"Atendimento Sorelly: pedido sem conta direcionada pode ser todo mudado", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly · Financeiro → Direcionar Pix", txt:"Enquanto o Financeiro não direcionou a conta (pedido na fila) ou depois de Reabrir, a funcionária muda todos os pagamentos do pedido: troca forma e valor, tira e põe, e reenvia. O Reabrir agora também desfaz a conta escolhida nas linhas desse pedido (menos as que já têm comprovante), então o reenvio volta inteiro para a fila em vez de manter a conta antiga."},
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Pagamento que já tem comprovante fica travado (cadeado) até o Financeiro reabrir; os outros a funcionária muda à vontade, inclusive pôr um valor a mais."}]},
  {v:"0.21.251", data:"2026-11-26", titulo:"Reabrir no Direcionar libera os pagamentos no Atendimento Sorelly", itens:[
   {tipo:"melhoria", area:"Financeiro → Direcionar Pix → Reabrir · Atendimento interno → Atendimento Sorelly", txt:"Quando o Financeiro reabre um pedido de um acerto já registrado, a funcionária volta a poder mudar os pagamentos (forma, valor, tirar e pôr) e reenviar. O resto do acerto continua travado. Ao reenviar, os pagamentos travam de novo e o pedido novo entra no lugar do antigo na fila."}]},
  {v:"0.21.250", data:"2026-11-26", titulo:"Direcionar no celular; pedido trocado não volta", itens:[

@@ -262,7 +262,10 @@ function AtendimentoInterno(){
   // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
   var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
   var jaFeito = !!sel && sel.status==="acertado";
-  var jaFeitoAc = jaFeito, travaPag = jaFeito && !(sel && sel.pagAberto);   // pagAberto: o Financeiro reabriu o pedido no Direcionar; só os pagamentos voltam a mudar (Lucas, 26/11/2026)
+  var pedidoSemConta = !!sel && ((s.dp && s.dp.pix) || []).some(function(x){ return x.internoId===sel.id && x.status==="fila"; });   // conta ainda não direcionada pelo Financeiro (Lucas, 26/11/2026: "se a conta não for direcionada, elas podem mudar toda a solicitação")
+  var jaFeitoAc = jaFeito, travaPag = jaFeito && !(sel && sel.pagAberto) && !pedidoSemConta;
+  var compTravado = function(q){ if(!sel || sel.pagAberto || !q) return false; var lfT = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; });   // já tem comprovante: só muda depois que o Financeiro reabrir (Lucas, 26/11/2026)
+    return !!lfT && lfT.linhas.some(function(l){ return l.tipo==="pagamento" && l.forma===q.forma && Math.abs(l.valor-q.valor)<0.005 && (l.partes||[]).some(function(p){ return !!p.comprovante; }); }); };   // pagAberto: o Financeiro reabriu o pedido no Direcionar; só os pagamentos voltam a mudar (Lucas, 26/11/2026)
   // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
   // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras → finalizar (ninguém assina nada no sistema, 11/11/2026)
   var simples = !!sel && (sel.tipo==="indicacao" || sel.tipo==="reposicao" || sel.tipo==="troca");   // Brinde de indicação, Reposição e Troca de peça (Marcus, 11/11/2026): atendimento simples, sem acerto, sem escolha de kit
@@ -507,8 +510,8 @@ function AtendimentoInterno(){
   var revCred = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId; }) : null, credDisp = (revCred && revCred.credito) || 0;
   var mexeCredito = function(valor, motivo){ if(revCred) d({type:"REVINT_CREDITO", id:revCred.id, valor:valor, motivo:motivo, por:nomeDe(s.usuario), internoId:sel.id}); };
   var addPag = function(){ if(!lancOk || travaPag) return; if(lancForm.forma==="credito_cliente") mexeCredito(-lancForm.valor, "Usado no acerto de "+hoje.split("-").reverse().join("/")); up({pagamentos:form.pagamentos.concat([lancForm])}); setLancForm(Object.assign({}, LANC_VAZIO, {forma:lancForm.forma})); };
-  var editarPag = function(i){ if(travaPag) return; var p = form.pagamentos[i]; if(p.forma==="credito_cliente") mexeCredito(p.valor, "Devolvido (pagamento editado)"); setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
-  var cancelarPag = function(i){ if(travaPag) return; var pc = form.pagamentos[i]; if(pc && pc.forma==="credito_cliente") mexeCredito(pc.valor, "Devolvido (pagamento cancelado)"); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  var editarPag = function(i){ if(travaPag || compTravado(form.pagamentos[i])) return; var p = form.pagamentos[i]; if(p.forma==="credito_cliente") mexeCredito(p.valor, "Devolvido (pagamento editado)"); setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  var cancelarPag = function(i){ if(travaPag || compTravado(form.pagamentos[i])) return; var pc = form.pagamentos[i]; if(pc && pc.forma==="credito_cliente") mexeCredito(pc.valor, "Devolvido (pagamento cancelado)"); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
   var rot = function(t){ return e("span",{className:"text-[13px] font-semibold text-muted-foreground"}, t); };
   var LINHA_PAG = "grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_5.5rem] items-center gap-2";   // forma e conta têm a mesma largura (as linhas se alinham)
   var campoLado = function(nome, campo){ return e("label",{className:"flex min-w-0 items-center gap-2"}, e("span",{className:"w-12 shrink-0 text-[13px] font-semibold text-muted-foreground"}, nome), e("span",{className:"min-w-0 flex-1"}, campo)); };
@@ -1072,7 +1075,7 @@ function AtendimentoInterno(){
   var tabPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+GPAG}, e("span",null,"Forma"), e("span",null,"Parc."), e("span",null,"Valor"), e("span")),
     form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN.replace("min-h-9","min-h-8")+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
       e("span",{className:"whitespace-nowrap"}, rotForma(q.forma, formaDe(q.forma).label)+(q.bandeira ? " · "+q.bandeira : "")+(q.jaPagoLink ? " · já pago no link" : "")+(q.jaPagoPix ? " · já pago antes do acerto" : "")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
-      jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
+      (jaFeito || compTravado(q)) ? e("span",{title:compTravado(q) ? "Já tem comprovante: só muda se o Financeiro reabrir" : ""}, compTravado(q) ? "🔒" : "") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
     linhaKV("Valor do acerto", n15(pa ? din(dv.totalAPagar) : "—")), linhaKV("Pagamentos", n15(din(dv.totalPagoAtual), "text-success"), {z:true}),

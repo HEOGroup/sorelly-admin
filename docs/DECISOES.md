@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Atendimento Sorelly: pedido sem conta direcionada pode ser todo mudado, Lucas)
+- **Lucas: "elas só conseguem adicionar mais formas de pagamento. Preciso que, se a conta não for direcionada, elas possam mudar toda a solicitação".**
+- **Causa:** o Reabrir voltava o pedido para a fila, mas as linhas do Controle de pagamentos continuavam com a conta escolhida; no reenvio, a linha igual (mesma forma e valor) ficava com a conta antiga e só a linha nova ia para a fila.
+- **Decidido:** o Reabrir (pedido do atendimento interno) limpa a conta das linhas desse pedido, menos as que já têm comprovante, e tira o "finalizado" do lançamento. Na calculadora, os pagamentos ficam abertos também quando há pedido do atendimento na fila (`pedidoSemConta`), além do `pagAberto`.
+- **Complemento (Lucas, mesmo dia): "o que já foi adicionado o comprovante, deixa sem poder alterar até o financeiro reabrir".** Na calculadora, `compTravado`: pagamento com linha de mesma forma e valor que tem comprovante no Controle de pagamentos não se edita nem se remove (cadeado), a não ser com `pagAberto` (reaberto). O resto se muda à vontade, inclusive valor a mais.
+
 ## 26/11/2026 (Reabrir libera os pagamentos no Atendimento Sorelly, Lucas)
 - **Lucas: "quando eu reabrir essa venda, a pessoa que solicitou precisa poder alterar as informações do pedido; quando eu cancelo, as meninas não conseguem mudar os valores".**
 - **Causa:** depois de registrar o acerto, a calculadora trava tudo (`jaFeito` = acerto registrado), inclusive os pagamentos; o Reabrir do Direcionar só voltava o pedido para a fila.
