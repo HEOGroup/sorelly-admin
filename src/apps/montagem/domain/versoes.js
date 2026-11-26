@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.254", data:"2026-11-26", titulo:"Top 100: nome da revendedora não fica mais por cima dos valores", itens:[
+  {tipo:"correção", area:"Encomendas e reposições → Top 100", txt:"Ao rolar a tabela para o lado, as colunas fixas (Posição e Revendedora) tinham fundo transparente e o nome ficava por cima dos valores dos meses. Agora essas colunas têm fundo sólido, na mesma cor das outras linhas."}]},
  {v:"0.21.253", data:"2026-11-26", titulo:"Chave Pix dos fornecedores: regra fixa ou até o final do pedido", itens:[
   {tipo:"novo", area:"Pagamentos → Chaves Pix", txt:"Aba Fornecedores com a coluna Regra: Fixa até segunda ordem (Point, MegaSul, Art Ello, Xangai, Ellos Galvânica, Office Graf, Ello Print, Madeira Cor, Devmaster) ou Até o final de cada pedido (Pontual, Charme, Linda, Tucano). Charme, Linda e Tucano entram na lista. Quem é por pedido mostra a chave do pedido em aberto."},
   {tipo:"melhoria", area:"Negociações → pedidos", txt:"A chave do pedido de Charme e Linda (favorecido, banco, chave e folha) vira campo da parcela, em vez de texto solto. O Direcionar Pix lê a chave do pedido em aberto para o fornecedor por pedido, e a chave fixa para o fornecedor fixo."}]},

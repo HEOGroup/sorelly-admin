@@ -15,6 +15,9 @@ import { e, useState } from "@/shared/react";
 
 var FUNDO = "!bg-[#0f1729] [&_tbody_tr:hover]:!bg-[#1e2d4c]";   // azul-marinho da Home do Financeiro familiar
 var FINA = CLS_FINA_ESPACO+" [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]";   // padrao-ok: letra de 11 px e linhas de 20 px, igual à Home do Financeiro familiar (Marcus, 23/11/2026)
+// Colunas fixas (Posição e Revendedora) com fundo SEM transparência (26/11/2026, Encomendas: ao rolar para o lado, o nome ficava por cima dos valores).
+// A tabela fina pinta cada célula com 38% de --bloco-colunas; a célula fixa usa a mesma cor já misturada com o fundo do bloco (FUNDO), então fica igual às outras e tapa o que passa por baixo.
+var FIXA_OPACA = " [&_tbody_td[data-fixa]]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,color-mix(in_srgb,var(--bloco-colunas)_38%,#0f1729))]";
 var dia = function(v){ return String(v || "").slice(0, 10); };
 
 // Pedidos ao Marcus: uma linha por pedido de entrada ou saída
@@ -73,7 +76,7 @@ function AbaEncTop50(){
   return e(Pagina,{className:PAGINA_CHEIA},
     e(BlocoRegras,null),
     e(BlocoPainel,{titulo:titulo, compacto:true, cls:FUNDO}, barra,
-      e("div",{className:FINA, style:{"--lh":"20px"}}, vista==="pedidos" ? e(TabelaPedidos,{E:E, ir:ir}) : vista==="historico" ? e(TabelaHistorico,{E:E}) : e(TabelaRev,{E:E, grupo:"top50", ir:ir}))),
+      e("div",{className:FINA+FIXA_OPACA, style:{"--lh":"20px"}}, vista==="pedidos" ? e(TabelaPedidos,{E:E, ir:ir}) : vista==="historico" ? e(TabelaHistorico,{E:E}) : e(TabelaRev,{E:E, grupo:"top50", ir:ir}))),
     e(Janelas,{E:E, modal:md[0], ir:ir}));
 }
 export { AbaEncTop50 };
