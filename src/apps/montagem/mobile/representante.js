@@ -52,6 +52,9 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 import { AVISO_KIT_APOIO, KIT_APOIO } from "@/apps/montagem/domain/kit-apoio";
 import React from "react";
 
+// quanto do acerto já foi feito (peças bipadas, brindes, venda, pagamentos...): decide qual cópia é a mais completa (26/11/2026)
+function pontosAcerto(f){ f = f || {}; var lidos = (f.devolucaoBip && f.devolucaoBip.lidos) || {}, n = 0; Object.keys(lidos).forEach(function(k){ var q = Number(lidos[k]); n += q>0 ? q : 1; });
+  return n*3 + (f.brindes||[]).length*5 + (Number(f.vendaBruta)>0 ? 20 : 0) + (f.pagamentos||[]).length*4 + (f.trocas||[]).length*4 + (f.pecasProxCodigos||[]).length*2 + (f.condicionaisSelecionadas||[]).length + (Number(f.pecasVendidas)>0 ? 5 : 0); }
 // Moeda com centavos (,00) sempre visíveis: usada só no app da representante — o BK() global (lib/format) fica arredondado pras outras telas do admin.
 function BK(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); }
 var MESES_CHEIOS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -269,6 +272,9 @@ function AppRepresentante(p){
   // (volta ao início, vai para outra tela do app) ou termina o acerto.
   var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1", TELAS_RASCUNHO = ["pedidodata","preacerto","calcacerto","assinaracerto","entregakit","confkit","confdev","assinarrepos","reposicao","rev"], TELAS_SAIDA = ["inicio","revs","comissoes","listagens","novos","fechamento","resumokn","retirada","mensagens"];
   var rascRef = useRef(undefined), pularSalvar = useRef(false), rsS = useState(0), rascTick = rsS[0], setRascTick = rsS[1];
+  // CÓPIA POR KIT (Lucas, 26/11/2026: "não fique zerando até elas realmente finalizarem"): cada acerto em andamento fica guardado no SERVIDOR (rascunho por kit) até o acerto ser FINALIZADO;
+  // sair da tela, recarregar, versão nova ou erro não apagam. Ao abrir o acerto do kit de novo, volta tudo (peças bipadas, brindes, venda, pagamentos).
+  var maisCompleto = function(a, b){ if(!a) return b || null; if(!b) return a; return pontosAcerto(b.acertoForm)>pontosAcerto(a.acertoForm) ? b : a; };
   if(rascRef.current===undefined){ rascRef.current = null; try{ var rr = JSON.parse(localStorage.getItem(CHAVE_RASCUNHO)||"null"); if(rr && rr.rep===l.rep && Date.now()-(rr.em||0) < 12*3600*1000 && TELAS_RASCUNHO.indexOf(rr.tela)>=0) rascRef.current = rr; }catch(x){} }
   useEffect(function(){   // devolve a representante ao ponto onde estava assim que a lista de revendedoras carregar
     var r = rascRef.current; if(!r) return;
@@ -277,8 +283,9 @@ function AppRepresentante(p){
     rascRef.current = null; pularSalvar.current = true;   // pularSalvar: o efeito de guardar não apaga o rascunho no mesmo ciclo da restauração
     // só volta para uma tela do acerto se o kit de hoje ainda existe e o acerto ainda não foi registrado; senão volta na ficha da revendedora (nunca numa tela em branco)
     var kitR = alvo.hoje ? s.kits.find(function(k){ return k.id===alvo.id; }) : null, jaR = (s.acertosConsignado||[]).some(function(x){ return x.kitId===alvo.id && x.tipo==="acerto"; });
+    if(alvo.hoje && !kitR && !jaR && r.tela!=="rev" && Date.now()-(r.esperaDesde || (r.esperaDesde = Date.now())) < 20000){ rascRef.current = r; setTimeout(function(){ setRascTick(function(n){ return n+1; }); }, 1500); return; }   // kit ainda carregando: espera (26/11/2026: o acerto da Crislaine foi zerado aqui)
     var telaR = r.tela!=="rev" && (!kitR || jaR) ? "rev" : r.tela;
-    setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, telaR==="rev" ? {} : (r.acertoForm||{}))); setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(telaR);
+    setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, jaR ? {} : (r.acertoForm||{})));   // o acerto em andamento nunca é jogado fora (antes zerava ao voltar na ficha) setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(telaR);
   }, [cart.length, reais, rascTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){   // guarda o rascunho a cada mudança dentro do atendimento
     if(rascRef.current) return;   // ainda restaurando: não sobrescreve
@@ -1015,7 +1022,7 @@ function AppRepresentante(p){
       ["Próximo kit", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
     onAbrirRegras:function(){ setRegrasDaAssinatura("assinaracerto"); setTela("regrascom"); },
-    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:r.regrasLidas!==false, semAssinatura:r.semAssinatura||null})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
+    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:r.regrasLidas!==false, semAssinatura:r.semAssinatura||null})); if(kitSel){ if(apiAtiva()) chamar("DELETE", "/representante/rascunho?rep="+encodeURIComponent(l.rep)+"&kitId="+encodeURIComponent(kitSel.id)+"&final=1").catch(function(){}); } d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
   // Assinatura da reposição (03/11/2026): mesmo desenho do acerto: botão das regras, check de leitura e assinatura da revendedora
   var telaAssinarRepos = kitSel && kitSel.tipoKit==="reposicao" && (function(){ var tk = totaisKit(condicionaisDoKit(kitSel)), kcR = kitConfDe(kitSel.id);
     return e(TelaAssinatura,{titulo:"Assinatura da reposição", nome:sel.rev, modo:"unico", regras:[], rotuloBotao:"Concluir reposição",
@@ -1235,6 +1242,8 @@ function AppRepresentante(p){
     // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
     var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
     var pgsPedidos = pagamentosDoPedido(s.lancFin, kitSel.id, s);   // pagamentos que ela já lançou e pediu conta antes de sair da tela
+    if(apiAtiva()){ var kidB = kitSel.id; chamar("GET", "/representante/rascunho?rep="+encodeURIComponent(l.rep)+"&kitId="+encodeURIComponent(kidB)).then(function(j){ var x = j && j.rascunho; if(!x) return; var c = maisCompleto(x.dados, x.melhor); if(!c || pontosAcerto(c.acertoForm)<=0) return;
+      setAcertoForm(function(f0){ if(pontosAcerto(f0)>=pontosAcerto(c.acertoForm)) return f0; var f = Object.assign({}, FORM_ACERTO_VAZIO, c.acertoForm||{}); var ps = f.pagamentos||[]; (f0.pagamentos||[]).forEach(function(z){ if(!ps.some(function(y){ return y.pid===z.pid; })) ps = ps.concat([z]); }); f.pagamentos = ps; d({type:"AVISO", txt:"Acerto recuperado do servidor: continua de onde parou.", tom:"ok"}); return f; }); }).catch(function(){}); }
     setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : demoMarcia ? {vendaBruta:12268, condicionaisSelecionadas:["093801","093802"]} : {}, {vendasAnteriores:vendasAntSistema()}, pgsPedidos.length ? {pagamentos:pgsPedidos} : {}));
     if(demoAndrielle && !(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""});
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(0); setTela("calcacerto"); };

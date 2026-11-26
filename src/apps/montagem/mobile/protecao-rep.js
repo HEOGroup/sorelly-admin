@@ -9,7 +9,7 @@ var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1";
 class ProtecaoRep extends React.Component {
   constructor(p){ super(p); this.state = {erro:null, n:0}; }
   static getDerivedStateFromError(x){ return {erro:x}; }
-  componentDidCatch(x){ try{ localStorage.removeItem(CHAVE_RASCUNHO); }catch(y){} try{ console.error("App da representante:", x); }catch(y){} }
+  componentDidCatch(x){ try{ console.error("App da representante:", x); }catch(y){} }   // 26/11/2026 (Lucas): NÃO apaga mais o rascunho (o acerto da Crislaine se perdeu assim); a cópia do acerto fica no servidor até finalizar
   render(){
     if(!this.state.erro) return React.createElement(React.Fragment, {key:this.state.n}, this.props.children);
     var msg = String((this.state.erro && this.state.erro.message) || this.state.erro || "").slice(0, 140);
