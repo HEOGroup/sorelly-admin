@@ -12,6 +12,7 @@ import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chaveAdminDaConta, contaDaCaixa, extraSeed, extrasSeed, funcSeed } from "@/apps/montagem/domain/pix-regras";
 import { bancoDaConta, cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
+import { chavePedidoAberto } from "@/apps/montagem/lib/chave-do-destino";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { rotuloCnpj } from "@/apps/montagem/lib/nome-conta";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
@@ -59,7 +60,7 @@ export function blocosChavesPix(s, d, eu, viewFam){
   var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
   var gravaFunc = function(nome){ return function(pt){ d({type:"CP", op:"func_set", nome:nome, por:eu, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
   var gravaChave = function(id, base){ return function(pt){ d({type:"CP", op:"chave_set", id:id, por:eu, base:base, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
-  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, banco:k.banco || (base && base.banco) || "", fav:k.favorecido || "", chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
+  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, banco:k.banco || (base && base.banco) || "", fav:k.favorecido || "", chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", regra:k.regra||"", salva:gravaChave(id, base)}; };
 
   // ── CNPJs: contas bancárias (aplicações e dinheiro não têm chave Pix; retidos também não)
   var blocosCnpj = (sc.blocos||[]).map(function(b){
@@ -72,8 +73,11 @@ export function blocosChavesPix(s, d, eu, viewFam){
     var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = cnpjFormatado(rc.chave); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
-  var FORNECEDORES = [["Pontual", "Banho"], ["Ellos Galvânica", "Banho"], ["MegaSul", "Bruto"], ["Art Ello", "Bruto"], ["Xangai", "Bruto"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"], ["Madeira Cor", "—"]];
-  var rowsForn = FORNECEDORES.map(function(x){ return rowDeChave("forn|"+x[0], x[1], x[0], {grupo:"forn", nome:x[0], servico:x[1]}); });
+  var FORNECEDORES = [["Pontual", "Banho"], ["Ellos Galvânica", "Banho"], ["MegaSul", "Bruto"], ["Art Ello", "Bruto"], ["Xangai", "Bruto"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"], ["Madeira Cor", "—"], ["Charme", "Bruto"], ["Linda", "Bruto"], ["Tucano", "Bruto"]];
+  // 26/11/2026 (Marcus): fornecedor "até o final de cada pedido" mostra a chave do pedido em aberto (vem de Negociações); "fixa" mostra a chave guardada aqui
+  var rowsForn = FORNECEDORES.map(function(x){ var r = rowDeChave("forn|"+x[0], x[1], x[0], {grupo:"forn", nome:x[0], servico:x[1]});
+    var pp = r.regra==="pedido" ? chavePedidoAberto(s, x[0]) : null;
+    return pp ? Object.assign(r, {chave:pp.chave, tipo:pp.tipo, fav:pp.fav || r.fav, banco:pp.banco || r.banco, por:"Pedido "+pp.pedido, em:0}) : r; });
   var blocosForn = [{id:"forn", nome:"Fornecedores", cor:"#EA580C", fixo:true, rows:rowsForn}];
 
   // ── Funcionários: como na tela Funcionários do RH (por CNPJ ou por setor)
@@ -143,12 +147,12 @@ export function AbaChavesPixBancos(){
   var tituloDe = function(b){ return resumoDe(b.cnpjId!==undefined && NOME_BARRA[b.cnpjId] ? Object.assign({}, b, {nome:NOME_BARRA[b.cnpjId]}) : b); };
   // Padrão do Financeiro (Marcus, 12/11/2026): cada grupo é um BLOCO de barra azul (clicar na barra abre e fecha; fechado mostra só a barra), linhas brancas, letra de 11 px e a tabela com filtro nas colunas.
   var salvaChave = function(r, v){ v = v.trim(); if(v!==r.chave) r.salva({chave:v, tipo:r.tipo || tipoDe(v)}); };
-  var linhaDe = function(r){ return {id:r.id, c1:r.c1, c2:nome3(r.c2), banco:r.banco || "—", fav:resumoFav(r.fav) || "—", tipo:ROTULO[r.tipo] || "—", chave:r.chave || "sem chave", em:dh(r.chave ? Math.max(r.em || 0, DATA_CARGA) : 0), por:r.chave ? (!r.por || /carga|importa|sistema/i.test(r.por) ? "Marcus" : r.por) : "—", r:r}; };   // "Carga" não é pessoa: mostra Marcus (12/11/2026)
-  var colunasDe = function(H){ return [{k:"c1", t:H[0], w:"9.5rem"}, {k:"c2", t:H[1], w:"13rem", render:function(v, l){ return e("span",{title:l.r.c2, className:"font-semibold"}, v); }}].concat(temBanco ? [{k:"banco", t:"Banco", w:"7rem"}] : [], [{k:"fav", t:"Favorecido", w:"9rem"},
+  var linhaDe = function(r){ return {id:r.id, c1:r.c1, c2:nome3(r.c2), banco:r.banco || "—", fav:resumoFav(r.fav) || "—", tipo:ROTULO[r.tipo] || "—", regra:r.regra==="fixa" ? "Fixa até segunda ordem" : r.regra==="pedido" ? "Até o final de cada pedido" : "—", chave:r.chave || "sem chave", em:dh(r.chave ? Math.max(r.em || 0, DATA_CARGA) : 0), por:r.chave ? (!r.por || /carga|importa|sistema/i.test(r.por) ? "Marcus" : r.por) : "—", r:r}; };   // "Carga" não é pessoa: mostra Marcus (12/11/2026)
+  var colunasDe = function(H){ return [{k:"c1", t:H[0], w:"9.5rem"}, {k:"c2", t:H[1], w:"13rem", render:function(v, l){ return e("span",{title:l.r.c2, className:"font-semibold"}, v); }}].concat(temBanco ? [{k:"banco", t:"Banco", w:"7rem"}] : [], [{k:"fav", t:"Favorecido", w:"9rem"}].concat(aba==="forn" ? [{k:"regra", t:"Regra", w:"12rem"}] : [], [
     {k:"tipo", t:"Tipo", w:"6rem", render:function(v, l){ var r = l.r; return edita ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : v; }},
     {k:"chave", t:"Chave Pix", w:"22rem", render:function(v, l){ var r = l.r; return edita ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(r, ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
       : e("span",{className:"relative flex w-full items-center justify-center pr-14"}, e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave"), r.chave && e("span",{className:"absolute right-0 top-1/2 -translate-y-1/2"}, e(CopiarChave,{texto:r.chave, rot:"Copiar", pequeno:true, dados:{nome:r.c2, banco:r.banco, favorecido:r.fav, tipo:r.tipo}}))); }},
-    {k:"em", t:"Data de alteração", w:"9rem"}, {k:"por", t:"Quem alterou", w:"7.5rem"}]); };
+    {k:"em", t:"Data de alteração", w:"9rem"}, {k:"por", t:"Quem alterou", w:"7.5rem"}])); };
   return e("div",{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 flex flex-col gap-1.5 pl-3 md:-mx-3 md:-mb-3 md:pl-4"},   // mesma posição das outras telas de Pagamentos
     // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
     e("section",{className:"flex min-h-6 flex-wrap items-center gap-1 rounded-lg border-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-0.5 text-white"},   // barra azul do padrão: abas + busca dentro dela (Marcus, 12/11/2026)

@@ -115,12 +115,15 @@ function semearCharmeLinda(pf){
   var semear = function(nome, numero, total, comNF, semNF, chave, favorecido, folha){
     var fo = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()===nome.toLowerCase(); })[0];
     if(!fo){ fo = {id:pf.seq.F++, nome:nome, tipo:"fornecedor", cat:"Fornecedor de peças · bruto SP", cnpj:"A confirmar", tipoNeg:"Bruto", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(fo); }
-    if(pf.pedidos.some(function(p){ return p.fornId===fo.id && p.numero===numero; })) return;
+    // 26/11/2026 (Marcus): a chave do pedido vira CAMPO da parcela (favorecido, banco, chavePix, folha), para o Direcionar ler sem decifrar o texto da conta. Charme e Linda são "até o final de cada pedido".
+    var dados = {favorecido:favorecido.replace(/s*(.*)s*$/, ""), banco:(favorecido.match(/(([^)]+))/) || [])[1] || "", chavePix:chave, folha:folha};
+    var feito = pf.pedidos.filter(function(p){ return p.fornId===fo.id && p.numero===numero; })[0];
+    if(feito){ (feito.parcelas || []).forEach(function(pc){ if(!pc.chavePix){ Object.assign(pc, dados); mudou = true; } }); return; }
     mudou = true;
     fo.ciclo = {periodicidade:"venc", cortes:[31], prazoDias:0}; fo.formas = Object.keys(FORMAS);
     pf.pedidos.push({id:pf.seq.P++, fornId:fo.id, numero:numero, data:"2026-11-25", total:total, nfTipo:"misto", comNF:comNF, semNF:semNF, cnpj:"CNPJ 67 · Axis", nfNum:"", ref:"",
       descricao:"Pedido de 25/11/2026: R$ "+total.toFixed(2).replace(".", ",")+" = R$ "+comNF.toFixed(2).replace(".", ",")+" em Pix do CNPJ 67 Axis (com nota) até sexta, 27/11 + R$ "+semNF.toFixed(2).replace(".", ",")+" em Pix revendedora até sábado, 28/11. Favorecido: "+favorecido+" · chave Pix "+chave+". Na folha, anotar: "+folha+".",
-      parcelas:[{forma:"pix_empresa", venc:"2026-11-27", valor:comNF, conta:"Pix CNPJ 67 Axis · "+favorecido+" · "+chave, status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-28", valor:semNF, conta:"Pix revendedora · "+favorecido+" · "+chave+" · folha: "+folha, status:"Pendente"}]});
+      parcelas:[Object.assign({forma:"pix_empresa", venc:"2026-11-27", valor:comNF, conta:"Pix CNPJ 67 Axis · "+favorecido+" · "+chave, status:"Pendente"}, dados), Object.assign({forma:"pix_revendedora", venc:"2026-11-28", valor:semNF, conta:"Pix revendedora · "+favorecido+" · "+chave+" · folha: "+folha, status:"Pendente"}, dados)]});
   };
   semear("Charme", "Charme · 25/11/2026", 3576, 357.6, 3218.4, "31.921.691/0001-90", "DAVIP Comércio de Presentes (Santander)", "PIX CHARME");
   semear("Linda", "Linda · 25/11/2026", 6967, 1967, 5000, "(11) 96359-2891", "STAND ACESSORIOS LTDA", "PIX LINDA");

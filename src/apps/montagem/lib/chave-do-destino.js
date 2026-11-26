@@ -48,6 +48,22 @@ export function chavesParaGravar(s){
   return ((s.ff && s.ff.prest) || []).filter(function(x){ return x.ativo!==false && !chaveValida(x.chavePix); }).map(function(x){ var k = chaveDoPrestFam(s, x); return k ? {id:x.id, nome:x.nome, chave:k.chave, tipo:k.tipo} : null; }).filter(Boolean);
 }
 
+// 26/11/2026 (Marcus): regra da chave do fornecedor. "fixa" = vale até segunda ordem (cp.chaves[forn|Nome].regra); "pedido" = vale até o final de cada pedido, e a chave vem da parcela do pedido em aberto (Negociações).
+export function regraDoFornecedor(s, nome){
+  var cch = (s.cp && s.cp.chaves) || {}, k = Object.keys(cch).filter(function(id){ return id.indexOf("forn|")===0 && cch[id] && compacto(cch[id].nome || id.slice(5))===compacto(nome); })[0];
+  return k ? (cch[k].regra || "") : "";
+}
+// chave da parcela Pix revendedora em aberto mais antiga do fornecedor; null se o pedido não trouxe chave
+export function chavePedidoAberto(s, nome){
+  var pf = s.pf; if(!pf || !Array.isArray(pf.fornecedores) || !Array.isArray(pf.pedidos)) return null;
+  var fo = pf.fornecedores.filter(function(f){ return compacto(f.nome)===compacto(nome); })[0]; if(!fo) return null;
+  var melhor = null;
+  pf.pedidos.forEach(function(p){ if(p.fornId!==fo.id) return; (p.parcelas || []).forEach(function(pc){ if(pc.forma==="pix_revendedora" && pc.status!=="Pago" && chaveValida(pc.chavePix) && (!melhor || String(pc.venc) < String(melhor.pc.venc))) melhor = {p:p, pc:pc}; }); });
+  if(!melhor) return null;
+  var pc = melhor.pc;
+  return {folha:pc.folha || "", banco:pc.banco || "", fav:pc.favorecido || "", chave:String(pc.chavePix).trim(), tipo:tipoDe(pc.chavePix), regra:"pedido", venc:pc.venc, valor:pc.valor, pedido:melhor.p.numero || ""};
+}
+
 // devolve [{folha, banco, fav, chave, tipo}]; vazio = o destino ainda não tem chave cadastrada
 export function chavesDoDestino(s, d){
   var sc = s.saldosContas || {}, px = s.px || {}, cp = s.cp || {}, out = [];
@@ -63,11 +79,12 @@ export function chavesDoDestino(s, d){
     if(cc) return [paraSaida(cc)];
     var kf = chaveDoPrestFam(s, pf); return kf ? [kf] : out;   // prestador da família: a chave é a do cadastro dele
   }
+  if(d.tipo==="FORNECEDOR" && regraDoFornecedor(s, d.nome)!=="fixa"){ var pp = chavePedidoAberto(s, d.nome); if(pp) return [pp]; }   // fornecedor "até o final de cada pedido" (ou sem regra e com chave no pedido): vale a chave do pedido em aberto
   var mine = palavras(d.nome); if(!mine.length) return out;
   var casa = function(nome){ var o = palavras(nome); return o.length && mine.every(function(w){ return o.indexOf(w)>=0; }); };
   var cch = Object.assign({}, cp.chaves || {});
   extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; cch[x[0]] = Object.assign({}, cur, {nome:x[2] || cur.nome, banco:x[3] || cur.banco, favorecido:x[7] || cur.favorecido || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });   // arquivo local completa o que o estado salvo ainda não tem
-  Object.keys(cch).forEach(function(id){ var x = cch[id]; if(x && x.chave && casa(x.nome)) out.push({folha:"", banco:x.banco || "", fav:x.favorecido || "", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave)}); });
+  Object.keys(cch).forEach(function(id){ var x = cch[id]; if(x && x.chave && casa(x.nome)) out.push({folha:x.folha || "", banco:x.banco || "", fav:x.favorecido || "", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave), regra:x.regra || ""}); });   // 26/11/2026: fornecedor pode ter "folha" (numerário) e "regra" (fixa até segunda ordem)
   Object.keys(cp.func||{}).forEach(function(n){ var x = cp.func[n]; if(x && x.chave && casa(n)) out.push({folha:"", banco:x.banco || "", fav:"", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave)}); });
   if(!out.length && (d.tipo==="FORNECEDOR" || d.tipo==="PRESTADOR")){   // nome escrito diferente ("Mega Sul" x "MegaSul")
     Object.keys(cch).forEach(function(id){ var x = cch[id]; if(x && chaveValida(x.chave) && casaFrouxa(d.nome, x.nome)) out.push({folha:"", banco:x.banco || "", fav:x.favorecido || "", chave:String(x.chave).trim(), tipo:x.chaveTipo || tipoDe(x.chave)}); });
