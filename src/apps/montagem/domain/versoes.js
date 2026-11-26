@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.250", data:"2026-11-26", titulo:"Direcionar no celular; pedido trocado não volta", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar Pix (celular)", txt:"No celular a coluna Conta ficava com 35 px e o botão Confirmar, preso à direita, cobria a conta: não dava para escolher. Agora a Conta tem largura de uso, a linha do pagamento fica baixa, a grade rola para o lado e o Confirmar só fica preso em tela larga. A lista de contas abre com pelo menos 280 px, sem passar da tela. No computador nada muda."},
+  {tipo:"correção", area:"App da representante → Direcionar", txt:"Depois que o acerto é finalizado, o servidor não aceita mais pedido de conta de um pagamento que não está no acerto: o celular com cópia antiga não traz de volta o pedido trocado."}]},
  {v:"0.21.249", data:"2026-11-26", titulo:"Direcionar: um pedido por pagamento da representante", itens:[
   {tipo:"correção", area:"App da representante → Acerto e Financeiro → Direcionar Pix", txt:"Quando a representante troca um pagamento depois que o Financeiro já respondeu, o pedido antigo agora some (antes o servidor recusava e ficavam dois pedidos). O que o pedido antigo tinha lançado sozinho (Pagamentos a fornecedores sem comprovante, PIX revendedoras, Prestadores) sai junto. Pedido com comprovante nunca some sozinho."},
   {tipo:"correção", area:"Dados de 26/11/2026", txt:"Apagados 4 pedidos que tinham ficado para trás (acerto já finalizado sem eles, sem comprovante): Ana Caroline R$ 1.420,20, Keroli R$ 307,00 e R$ 280,50, Lanna R$ 402,00."}]},

@@ -25,6 +25,13 @@ async function kitsDaRep(codigos) {
   });
   return ids;
 }
+// pids dos pagamentos do acerto já finalizado do kit (null = acerto ainda aberto)
+async function pidsDoAcerto(kitId) {
+  const r = await consulta("select valor from sorelly.estado_item where modulo = 'rpf' and valor->>'kitId' = $1 and valor->>'tipo' = 'acerto'", [kitId]);
+  if (!r.rows.length) return null;
+  const pids = {}; r.rows.forEach((x) => ((x.valor && x.valor.pagamentos) || []).forEach((p) => { if (p && p.pid) pids[p.pid] = 1; }));
+  return pids;
+}
 const kitDaChave = (k, v) => (k.startsWith("lf_LFR_P") ? k.slice(8) : k.startsWith("dp_") && obj(v) ? String(v.kitId || "") : "");
 const ehDela = (k, v, kits) => obj(v) && v.origem === "rep" && !!kits[kitDaChave(k, v)];
 
@@ -66,7 +73,8 @@ export async function gravarPagRep(chaves, eu) {
   const kits = await kitsDaRep(eu.repCods && eu.repCods.length ? eu.repCods : cod);
   const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'pag'");
   const at = (r.rows[0] && r.rows[0].conteudo) || {};
-  const gravar = {}, devolver = {}, avisos = [], desfazer = [];
+  const gravar = {}, devolver = {}, avisos = [], desfazer = [], acertoDe = {};
+  const pidsFechados = async (kid) => { if (!(kid in acertoDe)) acertoDe[kid] = await pidsDoAcerto(kid); return acertoDe[kid]; };
   const nega = (k) => { devolver[k] = at[k] !== undefined && ehDela(k, at[k], kits) ? at[k] : null; };
   for (const [k, v] of Object.entries(chaves)) {
     const existe = at[k];
@@ -88,10 +96,12 @@ export async function gravarPagRep(chaves, eu) {
         if (novo !== existe) gravar[k] = novo; else devolver[k] = existe; continue;
       }
       if (!(Number(v.valor) > 0) || !v.pid) { nega(k); continue; }
+      const fech = await pidsFechados(kitId); if (fech && !fech[v.pid]) { nega(k); continue; }   // acerto finalizado sem esse pagamento: pedido trocado não volta (Lucas, 26/11/2026)
       gravar[k] = Object.assign({}, v, { origem: "rep", repOrigem: nome, quem: "Representante " + nome, status: "fila", divisoes: [], kitId });
     } else {
       const antigas = (existe && existe.linhas) || [], porPid = {}; antigas.forEach((l) => { if (l && l.pid) porPid[l.pid] = l; });
-      const linhas = (Array.isArray(v.linhas) ? v.linhas : []).filter((l) => obj(l) && l.pid && Number(l.valor) > 0).map((l) => {
+      const fechL = await pidsFechados(kitId);
+      const linhas = (Array.isArray(v.linhas) ? v.linhas : []).filter((l) => obj(l) && l.pid && Number(l.valor) > 0 && (!fechL || fechL[l.pid] || porPid[l.pid])).map((l) => {
         const a = porPid[l.pid];
         if (a && definida(a)) {   // conta já definida pelo Financeiro: vale a do servidor; da tela dela só entra o comprovante que faltava
           const c = ((l.partes || [])[0] || {}).comprovante;

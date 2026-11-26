@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar no celular; pedido trocado não volta, Lucas)
+- **Lucas: "as telas do admin ao abrir no celular não consigo utilizar algumas etapas; preciso que consiga utilizar tanto no celular como no computador. Exemplo: Direcionar Pix".**
+- **Causa (celular, 375 px):** na grade do pagamento a coluna Conta tinha mínimo 0 (`minmax(0,1.8fr)`) e ficava com 35 px; a linha esticava para 588 px; a coluna Confirmar (sticky) cobria a Conta; a lista do `SeletorConta` (centro) abria com a largura da célula.
+- **Decidido:** `GR` com Conta mínima de 15rem e grade de 54rem que rola para o lado (só abaixo de 64rem; no computador a grade usa subgrid e não muda); Confirmar preso só a partir de 40rem (`@[40rem]:sticky`); painel do `SeletorConta` com no mínimo 280 px e nunca maior que a tela. Testado no site em 375 px (simulando o desenho): Conta legível e escolhível, linha de 48 px.
+- **Pedido trocado voltando:** o celular da Maria Eduarda reenviou às 15h36 o pedido de R$ 1.420,20 da Ana Caroline que tinha sido apagado. Agora `gravarPagRep` recusa pedido (e linha) de pagamento que não está no acerto já finalizado do kit (`pidsDoAcerto`).
+
 ## 26/11/2026 (Direcionar: um pedido por pagamento da representante, Lucas)
 - **Lucas: "não duplique, sempre fique apenas 1 solicitação por operação. Caso precise alterar, vai sumir o que já estava e aparecer uma nova".**
 - **Causa:** o app da representante apaga o pedido antigo e cria um novo ao trocar o pagamento, mas o servidor (src/server/rep-pag.js) recusava apagar pedido já respondido pelo Financeiro. O antigo ficava (ex.: Ana Caroline R$ 1.420,20 na fila, acerto finalizado com R$ 1.220,20 + R$ 200,00 em dinheiro).
