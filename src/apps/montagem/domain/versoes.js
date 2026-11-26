@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.258", data:"2026-11-26", titulo:"Tela de erro mostra o motivo", itens:[
+  {tipo:"melhoria", area:"Sistema → Algo deu errado", txt:"O aviso Algo deu errado agora mostra o motivo técnico em letra pequena (para mandar print) e grava o erro no console. Versão nova publicada com a aba aberta (inclusive aviso de CSS) recarrega sozinha."}]},
  {v:"0.21.257", data:"2026-11-26", titulo:"Direcionar: representantes voltam à lista de contas", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix → Conta", txt:"O grupo Representante só aparecia quando havia meta de Pix direto aberta no Controle de pagamentos; sem nenhuma meta, sumia e não dava para direcionar para a conta de uma representante. Agora toda representante ativa aparece; o devido e o prazo aparecem quando há meta aberta."}]},
  {v:"0.21.256", data:"2026-11-26", titulo:"Numerários, Destinos e mensagem padrão do Pix publicados; regra dos numerários", itens:[
