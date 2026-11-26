@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar: prestador cai sozinho na conta em aberto, Lucas)
+- **Lucas: "independente se é prestador ou fornecedor, preciso que todo o processo seja automático; o que foi lançado manualmente só confirma que está ok; não quero nada duplicado".**
+- **Causa:** o Direcionar só lançava destino FORNECEDOR (`fornDoDestino` ignora prestador). A Dávila (prestador, produção externa) ficava sem lançamento.
+- **Decidido:** destino FORNECEDOR ou PRESTADOR da empresa (sem prestador da família) vira pagamento na conta em aberto (`contaDoDestino` em domain/pf.js). A ação `pix_dir` não lança se já existe lançamento manual do mesmo fornecedor, mesmo valor, até 5 dias e mesma cliente (vale o manual).
+- **Revisão de 26/11/2026:** 20 já ligados ao Direcionar; 7 já lançados à mão (Adrielly, Mayara, Jhenny, Mylena na Pontual; Nathalia na Dávila; Kimberly na Office Graf); lançados 3 na Dávila (Giovana R$ 915,85, Maria Fernanda R$ 204,00, Lanna R$ 402,00). Nathaly R$ 1.296,00 relançada a pedido do Lucas (nº 1715, aguarda comprovante; não havia lançamento manual). Não relançados: Mayara R$ 380,00 e Thaina R$ 50,00 (decididos em 25/11).
+
 ## 25/11/2026 (Francelle: pedidos repetidos apagados, Lucas)
 - **Lucas:** o certo é o Pix de R$ 1.732,68 de 10/11/2026 para CNPJ 46 · Mayz Comércio de Moda · Sicredi Shopping 46; "pode apagar os repetidos".
 - **Feito:** apagados do Controle de pagamentos e do Direcionar os pedidos dos kits U1793983827059 (R$ 1.732,68, Marco Antonio) e U1793994513982 (R$ 1.505,94, sem conta). Nada deles tinha sido lançado em PIX revendedoras, Prestadores ou Pagamentos a fornecedores. Cópia de segurança guardada fora do Git. Os outros pagamentos sem comprovante foram ajustados pelo Lucas.

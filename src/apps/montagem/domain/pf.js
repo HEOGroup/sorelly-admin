@@ -393,6 +393,12 @@ function fornDoDestino(pf, nomeDestino){   // destino do Direcionar (tipo FORNEC
   var lista = pf.fornecedores.filter(function(f){ return f.tipo!=="prestador"; });
   return lista.find(function(f){ return normBusca(f.nome)===n; }) || lista.find(function(f){ var m = normBusca(f.nome); return m.indexOf(n+" ")===0 || n.indexOf(m+" ")===0; }) || null;
 }
+// destino do Direcionar (FORNECEDOR ou PRESTADOR) -> fornecedor ou prestador do pf, pelo nome (ex.: "Dávila (produção externa)" acha a Dávila)
+function contaDoDestino(pf, nomeDestino){
+  var n = normBusca(nomeDestino); if(!n) return null;
+  var lista = pf.fornecedores || [];
+  return lista.find(function(f){ return normBusca(f.nome)===n; }) || lista.find(function(f){ var m = normBusca(f.nome); return m && (m.indexOf(n+" ")===0 || n.indexOf(m+" ")===0); }) || null;
+}
 // janela (data de pagamento) MAIS ANTIGA com valor em aberto; sem nenhuma aberta, a última
 function janelaMaisAntigaAberta(pf, fid){
   var js = janelasDoForn(pf, fid).slice().sort(function(a,b){ return a.limite.localeCompare(b.limite); });
@@ -1181,6 +1187,8 @@ function pfReduz(s, a){
     case "pix_dir": { var nNovos = 0;
       (a.itens||[]).forEach(function(it){
         if(!it.origemPix || !(it.valor>0) || pf.lancamentos.some(function(x){ return x.origemPix===it.origemPix; })) return;
+        var primD = function(t){ return normBusca(t).split(" ")[0]; }, diasD = function(a, b){ return Math.abs((Date.parse(a+"T12:00:00")-Date.parse(b+"T12:00:00"))/864e5); };
+        if(pf.lancamentos.some(function(x){ return !x.origemPix && x.fornId===it.fornId && Math.abs(x.valor-it.valor)<0.01 && diasD(x.data, it.data||hojeIso())<=5 && primD(x.revendedora)===primD(it.revendedora); })) return;   // já lançado à mão: vale o manual (Lucas, 26/11/2026)
         invalidar(pf); var jn2 = janelaMaisAntigaAberta(pf, it.fornId); if(!jn2) return;
         pf.lancamentos.push({id:pf.seq.L++, chave:jn2.chave, fornId:it.fornId, mes:jn2.mes, limite:jn2.limite, data:it.data||hojeIso(), revendedora:String(it.revendedora||"").trim()||"Pix do Direcionar", valor:r2(it.valor), conta:String(it.conta||"").trim()||"—", lf:it.lf||null,
           arqNome:"", arqTipo:"", arqData:"", chavePix:"", conferido:false, conferidoEm:"", origemPix:it.origemPix, aguardaComp:true, direcionadoPor:it.por||""});
@@ -1671,7 +1679,7 @@ function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
 }
 
 export {
-  conferidoDe, temComprovante, TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
+  conferidoDe, temComprovante, TEM_ATU_PF, fornDoDestino, contaDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, semearCharmeLinda, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,

@@ -31,7 +31,7 @@ import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { garantirCharmeLinda } from "@/apps/montagem/domain/charme-linda";
-import { pfReduz, fornDoDestino } from "@/apps/montagem/domain/pf";
+import { pfReduz, fornDoDestino, contaDoDestino } from "@/apps/montagem/domain/pf";
 import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
 import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
@@ -484,8 +484,8 @@ function reducer(s, a){
       // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
       if(a.op==="confirma" && rDp.patch.dp){ var pFo = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pFo && pFo.status==="direcionado" && sDp.pf){
-          var itFo = [], itMq = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
-            var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
+          var itFo = [], itMq = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || (dest.tipo!=="FORNECEDOR" && !(dest.tipo==="PRESTADOR" && !dest.prestFamId))) return;   // fornecedor ou prestador da empresa (Lucas, 26/11/2026)
+            var fo = dest.tipo==="FORNECEDOR" ? fornDoDestino(sDp.pf, dest.nome) : contaDoDestino(sDp.pf, dest.nome); if(!fo) return;
             var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
             if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
             // 23/11/2026 (Lucas): cartão ou link NÃO vira Pix do fornecedor; se o fornecedor é o da Maquininha Banho, vira passada na maquininha (bandeira e parcelas vêm do comprovante da funcionária)
