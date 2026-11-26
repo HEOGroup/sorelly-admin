@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.240", data:"2026-11-26", titulo:"App da representante: sem botão de peças vendidas e brinde com preço automático", itens:[
+  {tipo:"melhoria", area:"App representante › Calculadora de acertos › Condicionais", txt:"Saiu o botão Peças vendidas (anotar na mão). O total de vendidas vem do bip das peças que voltaram; sem bipar, Peças a devolver fica pendente."},
+  {tipo:"melhoria", area:"App representante › Calculadora de acertos › Brindes", txt:"Ao digitar o código da peça, o preço de venda vem sozinho da DevMaster. Sem preço ou sem ligação, a representante digita o valor."}
+ ]},
  {v:"0.21.239", data:"2026-11-26", titulo:"Direcionar no formato da Negociações", itens:[
   {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Blocos com pontas retas, encostados e separados por linha branca; tela preenchida nas laterais e no topo; sem a coluna Situação; sem os botões Atendimentos e Testar alerta. Amanda de Miranda passa a ser produção externa (Prod. Exter.)."},
  ]},

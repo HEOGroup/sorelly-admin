@@ -403,7 +403,7 @@ function AppRepresentante(p){
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
     if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo, ctx:ctxPed(comPag.pagamentos, d1, comPag.vendaBruta)}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
-    setAcertoForm(Object.assign({}, comPag, {pagamentos:comPag.pagamentos.concat(pagamentosDoPedido(s.lancFin, kitSel.id, s).filter(function(x){ return !comPag.pagamentos.some(function(y){ return y.pid===x.pid; }); })), garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
+    setAcertoForm(Object.assign({}, comPag, {pagamentos:comPag.pagamentos.concat(pagamentosDoPedido(s.lancFin, kitSel.id, s).filter(function(x){ return !comPag.pagamentos.some(function(y){ return y.pid===x.pid; }); })), garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : null, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
   }, [pendAbrir, selId, condicionaisRev.length]);
   var credGarantia = sel ? creditoDisponivel(s, sel.rev) : 0;
@@ -450,6 +450,15 @@ function AppRepresentante(p){
     setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.concat([{cat:cat, codigo:normalizarCodigo(f.codigo), valor:f.valor, origem:f.origem}])}));
     setBrindeIn(Object.assign({}, brindeIn, o));
   };
+  // Código da peça digitado no brinde: o preço vem sozinho da DevMaster (26/11/2026, Marcus). Sem preço ou sem ligação: a representante digita o valor, como antes.
+  var buscaPrecoBrinde = function(cat, codigo){
+    if(!codigoBrindeValido(cat, codigo) || !apiAtiva()) return;
+    var cod = normalizarCodigo(codigo);
+    chamar("GET", "/precos-pecas?codigos="+encodeURIComponent(cod)).then(function(r){ var p = r && r.itens && r.itens[cod];
+      if(!p || !(p.preco>0)) return;
+      setBrindeIn(function(b){ if(normalizarCodigo((b[cat]||{}).codigo)!==cod) return b; var o = {}; o[cat] = Object.assign({}, b[cat], {valor:p.preco}); return Object.assign({}, b, o); });
+    }).catch(function(){});
+  };
   // Brindes no mesmo desenho do bloco Condicionais (02/11/2026, Marcus): linhas, total logo abaixo, "Falta lançar" na última linha; formulário atrás de "+ Brinde".
   var blocoBrindesNovo = function(){
     var itens = acertoForm.brindes.map(function(b,i){ return {b:b, i:i}; });
@@ -465,7 +474,7 @@ function AppRepresentante(p){
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["antiga","Kit antigo","devolvendo","bg-[#F59E0B] txt-branco ring-transparent"],["nova","Kit novo","recebendo","bg-[#16A34A] txt-branco ring-transparent"]].map(function(o){ var on = origem===o[0];
           return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on, className:"h-8 whitespace-nowrap rounded-lg text-[13px] font-bold ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
         e("div",{className:"flex gap-1.5"},
-          e("input",{value:f.codigo, placeholder:cat==="bb" ? "BB0001" : "AB123", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ setF({codigo:limitarCodigo(ev.target.value)}); },
+          e("input",{value:f.codigo, placeholder:cat==="bb" ? "BB0001" : "AB123", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ var novoCod = limitarCodigo(ev.target.value); setF({codigo:novoCod}); buscaPrecoBrinde(cat, novoCod); },
             className:"h-8 w-[6.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-[13px] font-semibold tracking-wide text-white outline-none ring-1 ring-white/10 "+MONO+" uppercase"}),
           e(CampoReais,{value:f.valor, label:"Valor da peça", onChange:function(v){ setF({valor:v}); }, className:"h-8 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-right text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
           e("button",{disabled:!pronto, onClick:function(){ lancarBrinde(cat); }, className:"h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar")),
@@ -584,15 +593,7 @@ function AppRepresentante(p){
               className:"h-8 w-[4.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-center text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
             e("button",{disabled:!condManual.numero || !(+condManual.pecas>0), onClick:function(){ d({type:"REV_COND_ADD", rev:sel.rev, numero:condManual.numero, pecas:+condManual.pecas});
               setAcertoForm(Object.assign({}, acertoForm, {condicionaisSelecionadas:acertoForm.condicionaisSelecionadas.concat([condManual.numero])})); setCondManual({numero:"", pecas:""}); setCondFormAberto(false); },
-              className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Adicionar"))),
-        e("div",{key:"cv", className:"flex items-center justify-between gap-2 text-[13px]"},
-          e("span",{className:"font-semibold"},"Peças vendidas"),
-          e("div",{className:"flex items-center gap-1.5"},
-            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:Math.max(0,(acertoForm.pecasVendidas||0)-1)})); }, "aria-label":"Menos uma peça", className:"size-8 rounded-lg bg-white/10 font-bold"},"−"),
-            e("input",{inputMode:"numeric", value:acertoForm.pecasVendidas==null ? "" : acertoForm.pecasVendidas, placeholder:"0", "aria-label":"Total de peças vendidas",
-              onChange:function(ev){ var n = ev.target.value.replace(/\D/g,""); setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:n ? Number(n) : null})); },
-              className:"h-8 w-16 rounded-lg bg-black/50 px-2 text-center text-[13px] font-bold text-white outline-none ring-1 ring-white/10 "+MONO}),
-            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:(acertoForm.pecasVendidas||0)+1})); }, "aria-label":"Mais uma peça", className:"size-8 rounded-lg bg-white/10 font-bold"},"+")))]),
+              className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Adicionar")))]),   // 26/11/2026 (Marcus): saiu o botão "Peças vendidas" (anotar na mão); agora o total de vendidas vem do bip (peças que voltaram)
     // Multa por remarcação: SOMENTE LEITURA (02/11/2026, Marcus). Remarcações e dias de atraso vêm do Pré-acerto; aqui chegam travados ("é o sistema"). Valor pendente saiu: é da Inadimplência.
     blocoAcordeao(1, "calendario", "#7C3AED", "Multa por remarcação",
       (kitSel.remarcacoesLista||[]).length ? (kitSel.remarcacoesLista.length)+" remarcação(ões) · "+vezCobravel(kitSel.remarcacoesLista)+" com multa" : "Nenhuma remarcação neste kit",
@@ -938,7 +939,7 @@ function AppRepresentante(p){
           e("div",{className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,"Escolhidas"), e("b",{className:MONO}, acertoForm.pecasProxCodigos.length+" de "+dv.pecasProx.liberadas))),
         dv.pecasProx.liberadas===0 && e("p",{key:"p4", className:"text-[13px] font-semibold text-amber-200"},"Nenhuma peça liberada")]),
     blocoAcordeao(7, "caixa", "#CA8A04", "Devolução de peças",
-      pecasADevolver===null ? "Informe o total de vendidas nas condicionais" : pecasADevolver+" peças pra devolver",
+      pecasADevolver===null ? "Bipe as peças que voltaram nas condicionais" : pecasADevolver+" peças pra devolver",
       pecasADevolver===null ? badgeTxt("Pendente","#64748B") : badgeTxt(pecasADevolver+" peças","#CA8A04"),
       [e("div",{key:"dalerta", role:"alert", className:"flex flex-col gap-0.5 rounded-xl bg-amber-400/15 p-2.5 text-[13px] leading-snug"}, e("b",null,"⚠ Atenção: conte as peças"), e("span",null,"Conte quantas peças estão voltando para a empresa. Confira o número abaixo com a revendedora antes de levar.")),
        [["Peças das condicionais", pecasCondSelecionadas],["Total de vendidas", acertoForm.pecasVendidas||0],["Total de brindes", acertoForm.brindes.length],["Trocas deste kit (ficaram com ela)", dv.nTrocasMes]].map(function(c){
@@ -1454,7 +1455,7 @@ function AppRepresentante(p){
           e("b",{className:"min-w-0 flex-1 text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Peças que voltaram")),
         e("p",{className:"text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfDevolucao,{key:kitSel.id, cod:codDm, numeros:acertoForm.condicionaisSelecionadas, inicial:acertoForm.devolucaoBip||{},
-        aoSalvar:function(dados){ setAcertoForm(function(f){ return Object.assign({}, f, {devolucaoBip:Object.assign({}, f.devolucaoBip||{}, dados)}); }); }, aoVoltar:function(){ setTela("calcacerto"); }}))),
+        aoSalvar:function(dados){ setAcertoForm(function(f){ return Object.assign({}, f, {devolucaoBip:Object.assign({}, f.devolucaoBip||{}, dados)}, dados.resumo ? {pecasVendidas:dados.resumo.vendidas} : {}); }); }, aoVoltar:function(){ setTela("calcacerto"); }}))),
     tela==="pedidodata" && sel && e(PedidoDataRep,{key:"pd"+sel.id, s:s, d:d, l:l, rev:sel, onVoltar:function(){ setTela("rev"); }}),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
     tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(""); setTela(volta || "inicio"); }}),

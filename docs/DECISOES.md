@@ -3743,3 +3743,8 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Texto para as funcionárias onde aparece o destino: "anotar na folha PIX CHARME" e "anotar na folha PIX LINDA" (`lib/nome-conta.js`, `rotuloDestino`).
 - Os dados (chaves, CNPJ, valores) ficaram no código por pedido do Marcus; ele vai arrumar a regra do repositório público depois.
 - **Atenção:** quando a Bruna lançar a compra na DevMaster, o título pode aparecer em Contas a pagar junto com as dívidas lançadas aqui (duplicidade). Conferir e retirar a dívida manual (`cl-...`) se a DevMaster já tiver o título.
+
+## 26/11/2026 — App da representante: vendidas pelo bip e preço do brinde automático (Marcus, v0.21.240)
+- Saiu o botão Peças vendidas da etapa Condicionais (anotar na mão). Agora o total de vendidas = peças das condicionais marcadas − peças bipadas que voltaram, gravado ao tocar em Concluir e voltar ao acerto (`mobile/representante.js`, `mobile/conf-devolucao.js`).
+- O valor inicial de vendidas deixou de ser 40: fica vazio até bipar. Sem bipar, Peças a devolver mostra "—" e a etapa Devolução fica pendente.
+- Brindes: ao digitar um código de peça válido, o preço de venda vem da DevMaster pela rota `/api/precos-pecas` (só leitura, nunca devolve custo). Sem preço ou sem ligação, o campo Valor da peça fica livre para digitar.
