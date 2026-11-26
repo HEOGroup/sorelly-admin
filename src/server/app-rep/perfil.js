@@ -8,6 +8,7 @@ import { recusa, texto } from "../servico.js";
 import { revCodDe } from "./base.js";
 import { vivo } from "../../apps/montagem/domain/app-rep.js";
 import { casaDevMaster } from "./casa-devmaster.js";
+import { fichaDoKitNovo } from "./ficha-kits-novos.js";
 
 export const MAX_REFERENCIAS = 3;
 
@@ -48,6 +49,13 @@ export async function lerPerfil(revCod) {
   const r = await lerChaves("rpo", ["pr_" + c]);
   const perfil = paraApp(r["pr_" + c]);
   if (!perfil.enderecoResidencial) perfil.enderecoResidencial = await casaDevMaster(c);   // 26/11/2026: sem endereço da casa digitado, vale o do cadastro da DevMaster
+  // 26/11/2026: o que a Michele levantou em Kits novos (profissão, trabalho, referências) vale quando a representante ainda não preencheu
+  const kn = await fichaDoKitNovo(c).catch(() => null);
+  if (kn) {
+    if (!perfil.profissao) perfil.profissao = kn.profissao;
+    if (!perfil.enderecoTrabalho) perfil.enderecoTrabalho = kn.enderecoTrabalho;
+    if (!perfil.referencias.length) perfil.referencias = kn.referencias;
+  }
   return { perfil };
 }
 
