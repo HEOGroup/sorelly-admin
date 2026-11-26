@@ -9,6 +9,7 @@
 import { emTransacao, gravarItens, lerPrefixos, lerPrefixosCli } from "../estado-itens.js";
 import { gravarModulo, lerModulo, sem } from "./base.js";
 import { gravarModulo as gravarModuloSeguro } from "../estado-modulo.js";
+import { publicarFichas } from "./fichas-admin-rep.js";
 import { chamarApp, configurado, podeGravar } from "./cliente-app.js";
 import { MAX_LISTAGEM, PRAZO_PEDIDO_HORAS, capacidade, horasAteRetirada, montarKits, montarListagens, vivo } from "../../apps/montagem/domain/app-rep.js";
 import { PERFIS0 } from "../../apps/kits-novos/domain/regioes-rep.js";
@@ -198,13 +199,14 @@ async function avisarProntos(r) {
 // A hora da última rodada (em) também serve de trava para a rodada puxada pela tela (app/api/app-rep/sincronizar, ?rodar=1).
 async function guardarResultado(r) {
   try {
-    const resumo = { enviados: r.enviados, retirados: r.retirados, respostas: r.respostas, avisos: r.avisos, erros: r.erros.slice(0, 5) };
+    const resumo = { enviados: r.enviados, retirados: r.retirados, respostas: r.respostas, avisos: r.avisos, fichas: r.fichas || null, erros: r.erros.slice(0, 5) };
     await gravarModuloSeguro("knkommo", { appsinc: Object.assign({ em: r.em }, resumo) }, "chaves", "app-rep");
   } catch (e) { /* guardar o resultado nunca derruba a sincronização */ }
 }
 let rodando = false;
 export async function sincronizarApp() {
   const r = { enviados: 0, retirados: 0, respostas: 0, avisos: 0, erros: [], em: new Date().toISOString() };
+  try { r.fichas = await publicarFichas(); if (r.fichas.erros.length) r.erros.push(...r.fichas.erros); } catch (e) { r.erros.push("fichas: " + e.message); }   // ficha das revendedoras no admin das representantes (endereço da casa, trabalho, referências)
   if (!podeGravar()) { r.erros.push("Sincronização desligada (MOBILE_API_URL, MOBILE_API_KEY e APP_REP_SINCRONIZAR=1). configurado=" + configurado() + ", VERCEL_ENV=" + (process.env.VERCEL_ENV || "vazio") + ", NODE_ENV=" + (process.env.NODE_ENV || "vazio") + ", flag=" + (process.env.APP_REP_SINCRONIZAR || "vazio") + ", versao=1033a8c4"); await guardarResultado(r); return r; }
   if (rodando) { r.erros.push("Já está sincronizando."); return r; }
   rodando = true;

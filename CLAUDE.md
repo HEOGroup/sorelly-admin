@@ -99,3 +99,5 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 Branch `master`. O GitHub Actions (`.github/workflows/ci.yml`) roda lint e build em todo PR e push: com X vermelho, não fazer merge. Rodar `npm run verificar` antes de subir. Só commitar quando o Marcus pedir.
 
 - **REGRA FIXA (19/11/2026): blocos lado a lado têm a MESMA altura e a mesma barra de título; o botão de ação do bloco vai no CANTO ESQUERDO da barra azul (`acao` do `BlocoPainel`), nunca numa faixa extra.** Grade com `items-stretch`. Detalhes na seção "VALE HOJE" de `docs/design/PADRAO-VISUAL.md`.
+
+- **REGRA FIXA (26/11/2026): "ADMIN DAS REPRESENTANTES", nunca "app".** O app da representante não existe mais para o Marcus. Em toda resposta, tela e documento, o destino de kits novos, ficha da revendedora (endereço da casa, profissão, trabalho, contatos de referência) e dos avisos é o **admin das representantes**. Nomes de código (`app-rep`, `MOBILE_API_URL`) ficam como estão. Todo trabalho nessa ligação é registrado em `docs/DECISOES.md` e em `docs/setores/representantes/decisoes.md`.

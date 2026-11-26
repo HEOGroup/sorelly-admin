@@ -86,3 +86,16 @@ O texto é o original. Para a decisão completa, abra o diário na linha indicad
 
 ## 10/11/2026 (noite, 2ª rodada)
 - Limite de 15 kits novos por representante; comissão do acerto adiado paga quando o acerto acontecer; kit só com nota promissória assinada; compras de joias lançadas pela Amanda no admin (alerta a definir com Amanda e Nayale); grupos A e B mudam depois. Representante pode dar prazo extra só com autorização do Marcus.
+## 10/11/2026 (noite, 2ª rodada)
+- Limite de 15 kits novos por representante; comissão do acerto adiado paga quando o acerto acontecer; kit só com nota promissória assinada; compras de joias lançadas pela Amanda no admin (alerta a definir com Amanda e Nayale); grupos A e B mudam depois. Representante pode dar prazo extra só com autorização do Marcus.
+
+## 26/11/2026 · Admin das representantes: ficha e envio de Kits novos (pedido do Marcus)
+- Regra de nome: o destino é o **admin das representantes**. Não se fala mais em "app".
+- Kits novos direcionados sobem ao admin das representantes sozinhos: a tela de Kits novos pede a rodada a cada minuto; o resultado fica em `knkommo.appsinc` (enviados, erros). 41 kits subiram no primeiro teste; 2 ficaram sem representante com código no Agendamento (Jessica e Leticia).
+- Contatos de referência vão com o primeiro nome e o telefone com o 9. Planilha de Kits novos mostra o nome completo.
+- Ficha da revendedora (`GET /api/consignado/ingest/perfil`): endereço da casa vem da DevMaster (2.149 de 2.149 com condicional aberto têm endereço); profissão, local/endereço de trabalho e referências vêm de Kits novos (ligação pelo código DevMaster `dm.cod`). O que a representante digitar vale mais.
+- Quem nunca passou por Kits novos não tem contato de referência nem endereço de trabalho: o dado não existe em nenhum lugar.
+- Chamadas ao admin das representantes usam os certificados do sistema (Avast trocava o certificado e o `fetch` falhava).
+- Endereço antigo `/kits-novos/...` desligado: leva a `/cadastro-de-revendedoras/revendedoras-novas`.
+- Commits: 1e1643f7, 64a2da5b, 1033a8c4, 0f55ed33, 3e0d410c, d5365112.
+- Ficha das revendedoras no admin das representantes: o servidor grava sozinho pr_<código> (endereço da casa da DevMaster + profissão, trabalho e referências de Kits novos) para toda revendedora que a representante enxerga (400 por rodada, src/server/app-rep/fichas-admin-rep.js). Ficha digitada pela representante nunca é regravada.

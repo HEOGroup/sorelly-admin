@@ -3864,3 +3864,16 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - **Endereço da casa:** a ficha da revendedora que o app lê (`GET /api/consignado/ingest/perfil`) passa a trazer o endereço do cadastro da DevMaster (rua, número, complemento, bairro, CEP) quando a representante ainda não digitou o dela (`server/app-rep/casa-devmaster.js`). Vale para TODA revendedora, não só os Kits novos (hoje 2.151 têm condicional aberto). O que a representante digitar vale mais. A DevMaster não traz o nome da cidade (só um código), por isso a cidade não vai nesse texto.
 - **Ligação:** no site publicado o envio ao app liga sozinho (`VERCEL_ENV=production`); `APP_REP_SINCRONIZAR=0` desliga. Em localhost continua precisando de `=1`. Antes do ajuste nenhum kit tinha sido enviado (0 de 44 direcionados).
 - **Bipado pela DevMaster:** a Vercel não mantém relógio; entrou o agendador `/api/kits-novos-devmaster` a cada 10 minutos (`vercel.json`). `KITS_NOVOS_DEVMASTER=0` desliga.
+- **Ligação:** no site publicado o envio ao app liga sozinho (`VERCEL_ENV=production`); `APP_REP_SINCRONIZAR=0` desliga. Em localhost continua precisando de `=1`. Antes do ajuste nenhum kit tinha sido enviado (0 de 44 direcionados).
+- **Bipado pela DevMaster:** a Vercel não mantém relógio; entrou o agendador `/api/kits-novos-devmaster` a cada 10 minutos (`vercel.json`). `KITS_NOVOS_DEVMASTER=0` desliga.
+
+## 26/11/2026 · Admin das representantes: ficha e envio de Kits novos (pedido do Marcus)
+- Regra de nome: o destino é o **admin das representantes**. Não se fala mais em "app".
+- Kits novos direcionados sobem ao admin das representantes sozinhos: a tela de Kits novos pede a rodada a cada minuto; o resultado fica em `knkommo.appsinc` (enviados, erros). 41 kits subiram no primeiro teste; 2 ficaram sem representante com código no Agendamento (Jessica e Leticia).
+- Contatos de referência vão com o primeiro nome e o telefone com o 9. Planilha de Kits novos mostra o nome completo.
+- Ficha da revendedora (`GET /api/consignado/ingest/perfil`): endereço da casa vem da DevMaster (2.149 de 2.149 com condicional aberto têm endereço); profissão, local/endereço de trabalho e referências vêm de Kits novos (ligação pelo código DevMaster `dm.cod`). O que a representante digitar vale mais.
+- Quem nunca passou por Kits novos não tem contato de referência nem endereço de trabalho: o dado não existe em nenhum lugar.
+- Chamadas ao admin das representantes usam os certificados do sistema (Avast trocava o certificado e o `fetch` falhava).
+- Endereço antigo `/kits-novos/...` desligado: leva a `/cadastro-de-revendedoras/revendedoras-novas`.
+- Commits: 1e1643f7, 64a2da5b, 1033a8c4, 0f55ed33, 3e0d410c, d5365112.
+- Ficha das revendedoras no admin das representantes: o servidor grava sozinho pr_<código> (endereço da casa da DevMaster + profissão, trabalho e referências de Kits novos) para toda revendedora que a representante enxerga (400 por rodada, src/server/app-rep/fichas-admin-rep.js). Ficha digitada pela representante nunca é regravada.
