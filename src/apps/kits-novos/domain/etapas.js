@@ -17,7 +17,7 @@ var ETAPAS = [
 // As etapas antigas (Aceito, Em contato, Agendado, Montando, Retirado) saíram: a Michele não as usa. Registro antigo passa para a etapa mais próxima.
 var LEGADO = {aceito:"solicitado", contato:"solicitado", agendado:"solicitado", montando:"solicitado", retirado:"bipado"};
 // Colunas do quadro e abas da tela Kits: as etapas na ordem, com "Aguardando peça" logo depois de Liberado (Michele, 06/11/2026) e Cancelado no fim.
-function colunasQuadro(){ return ETAPAS.slice(0, 2).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(2), [{k:"cancelado", nome:"Cancelado"}]); }
+function colunasQuadro(){ return ETAPAS.concat([{k:"cancelado", nome:"Cancelado"}]); }   // Marcus, 26/11/2026: a coluna Aguardando peça saiu do quadro; o kit fica na etapa em que está (a barra âmbar do cartão avisa)
 function estadoAtual(st){ return LEGADO[st] || st; }
 var ETAPA = {}; ETAPAS.forEach(function(x){ ETAPA[x.k]=x; });
 function etapaDe(c){ return ETAPA[c.st]; }

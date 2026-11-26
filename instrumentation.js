@@ -21,4 +21,7 @@ export async function register() {
   // Kommo → Kits novos (25/11/2026): a aprovada na Kommo entra sozinha nos Kits novos, a cada 2 minutos. Só liga com KITS_NOVOS_KOMMO=1.
   const { agendarKommoKitsNovos } = await import("./src/server/kits-novos-kommo.js");
   agendarKommoKitsNovos();
+  // DevMaster → Kits novos (26/11/2026): kit com condicional aberto na DevMaster ganha o código e vira Bipado sozinho, a cada 10 minutos. Só liga com KITS_NOVOS_DEVMASTER=1.
+  const { agendarBipadoDevMaster } = await import("./src/server/kits-novos-devmaster.js");
+  agendarBipadoDevMaster();
 }

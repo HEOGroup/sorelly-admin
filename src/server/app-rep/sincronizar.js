@@ -12,6 +12,7 @@ import { gravarModulo as gravarModuloSeguro } from "../estado-modulo.js";
 import { chamarApp, podeGravar } from "./cliente-app.js";
 import { MAX_LISTAGEM, PRAZO_PEDIDO_HORAS, capacidade, horasAteRetirada, montarKits, montarListagens, vivo } from "../../apps/montagem/domain/app-rep.js";
 import { PERFIS0 } from "../../apps/kits-novos/domain/regioes-rep.js";
+import { enderecoDe, foneContato, primeiroNome, trabalhoDe } from "../../apps/kits-novos/domain/padroniza.js";
 
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const hash = (t) => { let h = 7; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 1000003; return String(h); };
@@ -47,21 +48,24 @@ function codigosDasReps(ag) {
     },
   };
 }
+// Endereço da casa que veio do cadastro da DevMaster (dm), se o kit não tem o campo end (Marcus, 26/11/2026: o endereço da casa também vai para o app)
+function casaDevMaster(d) { const m = (d && d.dm) || {}; return [enderecoDe(m.end), m.bai, m.cep ? String(m.cep).replace(/^(d{5})(d{3})$/, "$1-$2") : ""].filter(Boolean).join(" · "); }
 // corpo do PUT /admin/kits-novos/:externalId (validação do backend: kits-novos.validation.ts)
-function payloadKit(item, dados, repCod) {
+export function payloadKit(item, dados, repCod) {
   const d = dados || {};
   // contatos de referência: no kndados ficam em c1n/c1t/c1r, c2…, c3… (25/11/2026: antes o app recebia a lista vazia)
   const doKit = [1, 2, 3].map((n) => ({ nome: d["c" + n + "n"], fone: d["c" + n + "t"], rel: d["c" + n + "r"] }));
   const refs = (Array.isArray(d.refs) ? d.refs : Array.isArray(d.contatos) ? d.contatos : doKit)
-    .map((c) => ({ nome: texto(c.nome, 255) || "", telefone: texto(c.fone || c.telefone, 40) || "", relacao: texto(c.rel || c.relacao, 120) || "" }))
+    .map((c) => ({ nome: texto(primeiroNome(c.nome), 255) || "", telefone: texto(foneContato(c.fone || c.telefone), 40) || "", relacao: texto(c.rel || c.relacao, 120) || "" }))
     .filter((c) => c.nome || c.telefone).slice(0, 10);
   const prata = /prata/i.test(String(d.mod || item.mod || ""));
+  const tr = trabalhoDe({ prof: d.prof || item.profissao, trab: d.trab || item.trab, trabEnd: d.trabEnd || item.trabEnd });   // Marcus, 26/11/2026: profissão, local e endereço do trabalho padronizados também para o app
   return {
-    representanteCod: repCod, nome: texto(item.nome || d.nome, 255) || "Revendedora nova", telefone: texto(d.tel || d.fone || d.celular || d.whats || item.fone, 40),
+    representanteCod: repCod, nome: texto(item.nome || d.nome, 255) || "Revendedora nova", telefone: texto(foneContato(d.tel || d.fone || d.celular || d.whats || item.fone), 40),
     cidade: texto(item.cidade || d.cid, 255) || "Curitiba", bairro: texto(item.bairro || d.bai, 255),
     tipoKit: (prata ? "Kit Prata" : "Kit Misto") + (item.expositor || /EXPOSITOR/i.test(String(d.obs || "")) ? " + expositor" : ""), valor: r2(item.valor || d.val || 0),
-    profissao: texto(d.prof || item.profissao, 255), enderecoResidencial: texto(d.end || d.endereco || item.endereco, 500),
-    enderecoTrabalho: texto([d.trab || item.trab, d.trabEnd || item.trabEnd].filter(Boolean).join(" · "), 500), disponibilidade: texto(d.disp || item.disp, 500),
+    profissao: texto(tr.prof, 255), enderecoResidencial: texto(d.end || d.endereco || item.endereco || casaDevMaster(d), 500),
+    enderecoTrabalho: texto([tr.local, tr.end].filter(Boolean).join(" · "), 500), disponibilidade: texto(d.disp || item.disp, 500),
     contatos: refs,
   };
 }
