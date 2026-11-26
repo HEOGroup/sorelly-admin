@@ -11,6 +11,7 @@ import { atualizarEstoqueDoDia } from "./estoque-dia.js";
 import { atualizarCustoDasSaidas } from "./custo-saida.js";
 import { sincronizarFotosDm } from "./fotos-dm.js";
 import { copiaDiaria } from "./estado-modulo.js";
+import { atualizarNumerarios } from "./numerarios.js";
 
 export const HORA_AUTOMATICA = 10;
 
@@ -69,6 +70,7 @@ export async function rodarAutomaticoDoDia({ forcar = false, cron = false } = {}
   try { out.estoque = await atualizarEstoqueDoDia({ forcar: false }); } catch (e) { out.estoque = { erro: e && e.message }; }
   try { out.fotos = await sincronizarFotosDm(); } catch (e) { out.fotos = { erro: e && e.message }; }   // Fotos de catálogo (10/11/2026): produtos novos da DevMaster
   try { out.custoSaidas = await atualizarCustoDasSaidas({ mesAtual: agora.iso.slice(0, 7) }); } catch (e) { out.custoSaidas = { erro: e && e.message }; }   // Pedidos › resumo por mês: custo de tudo que saiu do estoque (16/11/2026)
+  try { out.numerarios = await atualizarNumerarios(); } catch (e) { out.numerarios = { erro: e && e.message }; }   // Financeiro › Cadastro › Numerários: cópia dos tipos de numerário da DevMaster (25/11/2026)
   try {
     const ontem = ontemBR();
     const dias = await faturamentoNFDoMes(ontem);

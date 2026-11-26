@@ -24,15 +24,15 @@ var detalheArrumar = function(l){ return l.arrumar ? e("div",{className:"px-2 py
 var corArrumar = function(l){ return l.arrumar ? "text-warning" : ""; };
 
 // lê a DevMaster uma vez e guarda para as duas telas (a troca de tela não lê de novo)
-var CACHE = {dados:null};
-function useCadastro(){
-  var sd = useState(CACHE.dados), dados = sd[0], se = useState(""), erroTxt = se[0], so = useState(false), lendo = so[0];
+var CACHES = {};
+function useCadastro(rota){
+  var r = rota || "/cadastro-fin", sd = useState((CACHES[r] || {}).dados || null), dados = sd[0], se = useState(""), erroTxt = se[0], so = useState(false), lendo = so[0];
   var carregar = useCallback(function(agora){
     so[1](true);
-    return chamar("GET", "/cadastro-fin"+(agora ? "?agora=1" : "")).then(function(j){ CACHE.dados = j; sd[1](j); se[1](""); })
+    return chamar("GET", r+(agora ? "?agora=1" : "")).then(function(j){ CACHES[r] = {dados:j}; sd[1](j); se[1](""); })
       .catch(function(x){ se[1](x && x.message || "Não consegui ler a DevMaster."); }).then(function(){ so[1](false); });
-  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(function(){ if(!CACHE.dados) carregar(false); }, [carregar]);
+  }, [r]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ if(!CACHES[r]) carregar(false); }, [carregar, r]);
   return {dados:dados, erroTxt:erroTxt, lendo:lendo, carregar:carregar};
 }
 function Casca(p){
@@ -96,4 +96,34 @@ function AbaFinBancos(){
       e(TabelaPlanilha,{key:sit+tipo+arr, fina:true, cols:COLS_BANCOS, linhas:linhas, chave:"id", grade:true, centro:true, semContagem:true, semLimpar:true, semMao:true, limite:500, totalRodape:totalBancos, detalhe:detalheArrumar, vazio:"Nenhum banco neste filtro."})));
 }
 
-export { AbaFinFormas, AbaFinBancos };
+// ── Numerários (25/11/2026): cópia diária dos tipos de numerário da DevMaster (/api/numerarios), com o banco ligado e o uso em PAGAMENTOS de 90 dias
+var COLS_NUMERARIOS = [
+  {k:"cod", t:"Código"}, {k:"nome", t:"Numerário"}, {k:"tipo", t:"Tipo"}, {k:"banco", t:"Banco ligado"}, {k:"dono", t:"Dono"},
+  {k:"natPagar", t:"Natureza de pagamento"}, {k:"natReceber", t:"Natureza de recebimento"}, {k:"situacao", t:"Situação"}, {k:"pdv", t:"No PDV"},
+  {k:"n90", t:"Pagamentos 90 d", cor:corUso}, {k:"v90", t:"Valor pago 90 d", fmt:BKC}, {k:"ult", t:"Último pagamento", fmt:dm, cor:corUso},
+  {k:"arrumar", t:"Conferir", render:verArrumar, cor:corArrumar}];
+var totalNumerarios = function(ls){ return ["Total", ls.length+" numerários", "", "", "", "", "", "", "", String(ls.reduce(function(t, l){ return t+l.n90; }, 0)), BKC(ls.reduce(function(t, l){ return t+l.v90; }, 0)), "", ls.filter(function(l){ return l.arrumar; }).length+" a conferir"]; };
+var OPS_USO = [["", "Todos"], ["com", "Com pagamento em 90 dias"], ["sem", "Sem pagamento em 90 dias"]];
+
+function AbaFinNumerarios(){
+  var c = useCadastro("/numerarios"), sb = useState(""), busca = sb[0], ss = useState("Ativo"), sit = ss[0], su = useState(""), uso = su[0], so = useState(""), op = so[0];
+  var q = semAc(busca.trim()), d = c.dados;
+  var ops = d ? d.linhas.map(function(n){ return n.tipo; }).filter(function(t, i, a){ return t && a.indexOf(t)===i; }).sort() : [];
+  var linhas = d ? d.linhas.filter(function(n){
+    return (sit==="todos" || n.situacao===sit) && (!op || n.tipo===op) && (!uso || (uso==="com" ? n.n90>0 : !n.n90))
+      && (!q || semAc([n.cod, n.nome, n.nomeDm, n.tipo, n.banco, n.dono, n.tambem, n.natPagar, n.natReceber, n.arrumar].join(" ")).indexOf(q)>=0);
+  }) : [];
+  var sn = d && d.baixasSemNumerario, st = d && d.titulosSemNumerario;
+  return e(Casca,{titulo:"Numerários", c:c, barra:[
+      e(BuscaMini,{key:"b", valor:busca, aoMudar:sb[1], ph:"Buscar: numerário, banco, dono...", rotulo:"Buscar nos numerários"}),
+      e(CampoMini,{key:"s", valor:sit, aoMudar:ss[1], rotulo:"Situação", ops:[["Ativo", "Ativos"], ["Inativo", "Inativos"], ["todos", "Todos"]]}),
+      e(CampoMini,{key:"o", valor:op, aoMudar:so[1], rotulo:"Tipo", ops:[["", "Todos os tipos"]].concat(ops.map(function(t){ return [t, t]; }))}),
+      e(CampoMini,{key:"u", valor:uso, aoMudar:su[1], rotulo:"Uso em pagamentos", ops:OPS_USO}),
+      d && d.aviso && e(AvisoMini,{key:"av", erro:true}, d.aviso),
+      d && sn && sn.n ? e(AvisoMini,{key:"sn", erro:true}, sn.n+" pagamentos em 90 dias sem numerário ("+BKC(sn.v)+")") : null,
+      d && st && st.n ? e(AvisoMini,{key:"st", erro:true}, st.n+" contas a pagar de 90 dias sem numerário ("+BKC(st.v)+")") : null]},
+    e("div",{ref:refCheia({"Código":"Código do numerário na DevMaster", "Banco ligado":"Banco ou caixa onde a DevMaster dá a baixa deste numerário", "Dono":"De quem é o banco ligado", "Natureza de pagamento":"Natureza usada quando uma conta a pagar usa este numerário", "Natureza de recebimento":"Natureza usada quando uma conta a receber usa este numerário", "No PDV":"Aparece na venda do PDV", "Pagamentos 90 d":"Baixas de contas a pagar com este numerário nos últimos 90 dias", "Valor pago 90 d":"Valor das baixas de pagamento em 90 dias", "Último pagamento":"Última baixa de pagamento com este numerário"}), className:CLS_FINA},
+      e(TabelaPlanilha,{key:sit+op+uso, fina:true, cols:COLS_NUMERARIOS, linhas:linhas, chave:"id", grade:true, centro:true, semContagem:true, semLimpar:true, semMao:true, limite:500, totalRodape:totalNumerarios, detalhe:detalheArrumar, vazio:"Nenhum numerário neste filtro."})));
+}
+
+export { AbaFinFormas, AbaFinBancos, AbaFinNumerarios };

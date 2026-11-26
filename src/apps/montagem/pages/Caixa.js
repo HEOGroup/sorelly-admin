@@ -9,7 +9,6 @@ import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
-import { ConfigContas } from "@/apps/montagem/pages/ConfigContas";
 import { bancoDeConta, junta, nomePropio, rotuloCnpj } from "@/apps/montagem/lib/nome-conta";
 import { filtrar, pixSemBaixa, servidorEm, setBaixas, setClasse, setLancamentos, setPf, totais } from "@/apps/montagem/domain/contas-empresa";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
@@ -108,7 +107,6 @@ function AbaCaixa(){
   var st = useState({a:hojeD.getFullYear(), m:hojeD.getMonth()}), per = st[0], setPer = st[1], ano = per.a, mes = per.m;
   var fs = useState("todos"), filtro = fs[0], setFiltro = fs[1];
   var sat = useState("saldos"), abaTopo = sat[0], setAbaTopo = sat[1];   // aba do bloco do topo: saldos | cnpj | devmaster
-  var cf = useState(false), cfg = cf[0], setCfg = cf[1];
   var lr = useState(false), ler = lr[0], setLer = lr[1];
   var oc = useState({}), ocultos = oc[0], setOcultos = oc[1];
   var gs = useState({}), gFech = gs[0], setGFech = gs[1];   // barras FECHADAS (o que não está aqui está aberto)
@@ -284,7 +282,7 @@ function AbaCaixa(){
       cols.indexOf(hoje)>=0 && e("button",{type:"button", className:ITEMP, title:"Reabre todos os CNPJs de hoje para editar", onClick:function(){ setPopPos(null); fechar(hoje, todosIds, false); }}, "Reabrir CNPJs de hoje"),
       e("button",{type:"button", className:ITEMP, title:"Empréstimo que entrou na conta: não é faturamento", onClick:function(){ setPopPos(null); setCform(Object.assign({}, cform, {data:cform.data || hoje})); setCredAberto(!credAberto); }}, credAberto ? "Fechar crédito bancário" : "Lançar crédito bancário"),
       e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); abrirGrupos(true); }}, "Abrir todos os blocos"), e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); abrirGrupos(false); }}, "Fechar todos os blocos"),
-      e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); setLer(!ler); }}, ler ? "Esconder como ler" : "Como ler esta tela"), e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); setCfg(!cfg); }}, cfg ? "Fechar contas" : "Contas (cadastro)"),
+      e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); setLer(!ler); }}, ler ? "Esconder como ler" : "Como ler esta tela"),
       e("p",{className:"border-t border-border px-3 py-1.5 text-center text-[11px] text-white"}, "A coluna base (último dia do mês anterior) aparece sempre.")));
   var abaDe = function(key){ var o = key.slice(0, 2); return o==="80" ? "resumo" : o==="81" ? "pag" : o==="82" ? "rec" : o==="83" ? "fat" : o==="90" ? "conf" : "saldos"; };
   // RESUMO DO MÊS (Marcus, 12/11/2026): bate Contas a receber e Contas pagas (DevMaster) com o saldo das contas.
@@ -345,7 +343,6 @@ function AbaCaixa(){
           lista.length>0 && e(TabelaPlanilha,{fina:true, semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:lista, cols:[{k:"dia", t:"Dia", w:"7rem"}, {k:"cnpj", t:"CNPJ", w:"12rem"}, {k:"valor", t:"Valor", w:"11rem", render:function(v){ return e("span",{className:"tabular-nums text-success"}, BK(v)); }}, {k:"obs", t:"Observação", w:"16rem"}, {k:"id", t:"", w:"7rem", render:function(v, l){ return e(Btn,{onClick:function(){ if(window.confirm("Excluir este crédito bancário de "+l.dia+"?")) cx.dispatch({type:"SALDO_APORTE", data:l.k, remover:v}); }}, "Excluir"); }}]})));
     })(),
     ler && e(ComoLer,{fontes:fontes, ontem:ontemIso, fl:fl, dA:baseData, dB:dEnd}),
-    cfg && e(BlocoPainel,{titulo:"Contas", compacto:true}, e("div",{className:"p-3"}, e(ConfigContas,{}))),
     aba==="saldos" && planilhaSaldos,
     blocosAba,
     dias.length===0 && e("p",{className:"text-center text-[13px] text-white"}, "Nenhum dia lançado neste mês ainda."));

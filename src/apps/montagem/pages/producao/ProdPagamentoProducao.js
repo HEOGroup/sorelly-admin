@@ -89,7 +89,7 @@ function AbaProdPagamentoProducao(){
   var secE = !ehE && ehI ? [] : [
     sumE || e("div",{key:"gridE", className:"grid grid-cols-1 items-stretch gap-0 md:grid-cols-3"},
       bloco("d", preE+"Dinheiro de "+nome, [["Valor do mês", formatarReais(r.valor)], ["Já recebeu", formatarReais(r.recebido), "text-success"], ["A receber", formatarReais(r.aReceber), r.aReceber>0 ? "text-warning" : "text-success"], ["Enviado ao Financeiro", formatarReais(r.enviadoFin)]]),
-      bloco("p", preE+"Peças de "+nome, [["Peças feitas e devolvidas", n0(r.pecas)], ["Dias com produção", n0(r.diasPecas)], ["Média por dia", r.diasPecas ? n0(Math.round(r.pecas/r.diasPecas)) : "—"], ["Valor por peça", formatarReais(CASA_POR_PECA)]]),
+      bloco("p", preE+"Peças de "+nome, [["Peças feitas e devolvidas", n0(r.pecas)], ["Dias com produção", n0(r.diasPecas)], ["Média por dia", r.diasPecas ? n0(Math.round(r.pecas/r.diasPecas)) : "—"], ["Valor por peça", formatarReais(precoPecaCasa(nome, hojeSP()))]]),
       bloco("c", preE+"Com ela agora", [["Enviadas a ela", n0(r.enviadoPecas)], ["Devolvidas à Sorelly", n0(r.devolvidoPecas), "text-success"], ["Com ela agora", n0(r.comEla), r.comEla>0 ? "text-warning" : "text-success"], ["Códigos com ela", n0(r.codigosComEla)]])),
     e(BlocoPainel,{key:"diasE", titulo:preE+"Dias produzidos", compacto:true},
       e(TabelaPlanilha,{key:"pp"+func+mes, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, totalRodape:totalRodape, vazio:"Nenhuma produção externa neste mês."})),

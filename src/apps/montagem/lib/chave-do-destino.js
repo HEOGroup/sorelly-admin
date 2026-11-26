@@ -65,7 +65,7 @@ export function chavePedidoAberto(s, nome){
 }
 
 // devolve [{folha, banco, fav, chave, tipo}]; vazio = o destino ainda não tem chave cadastrada
-export function chavesDoDestino(s, d){
+function chavesDoDestinoBase(s, d){
   var sc = s.saldosContas || {}, px = s.px || {}, cp = s.cp || {}, out = [];
   if(d.cnpjId){
     (sc.contas||[]).filter(function(c){ return c.bloco===d.cnpjId && c.tipo!=="CAIXA" && !c.bloqueada && !/rotativo|garantida/i.test(c.nome); }).forEach(function(c){
@@ -92,4 +92,11 @@ export function chavesDoDestino(s, d){
   }
   if(!out.length){ var cf = acharChaveCentral(s, d.nome, {grupos:["func", "prest", "ffp", "forn", "rep", "pes"]}); if(cf) out.push(paraSaida(cf)); }   // 24/11/2026: nome diferente do cadastro (Higor x Higor Fernando Goulart) ou chave só numa cópia antiga
   return out;
+}
+
+// 26/11/2026 (regra R3 de docs/regras/NUMERARIOS-ADMIN-X-DEVMASTER.md): o "Escrever na folha" é o NUMERÁRIO da DevMaster ligado ao destino. Sem numerário, vale o texto antigo de cada caso.
+export function chavesDoDestino(s, d){
+  var num = d && d.numerario ? (d.numerarioNome || d.numerario) : "";
+  var l = chavesDoDestinoBase(s, d);
+  return num ? l.map(function(k){ return Object.assign({}, k, {folha:num}); }) : l;
 }

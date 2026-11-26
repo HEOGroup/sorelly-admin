@@ -55,7 +55,7 @@ function cpReduz(s, a){
         if(ja){ if(!ja.prestFamId && ja.tipo==="PRESTADOR"){ ja.prestFamId = pr.id; if(!ja.personaId) ja.personaId = pr.responsavelId||""; nNovos++; } return; }   // destino de mesmo nome já existia sem a ligação: só liga
         cp.destinos.push({id:"dpf-"+pr.id, nome:pr.nome, tipo:"PRESTADOR", cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true, prestFamId:pr.id, personaId:pr.responsavelId||""}); nNovos++; });
       return nNovos ? ok(nNovos+" prestador(es) da família como destino") : recusa(""); }
-    case "destino_add": { var nm = String(a.nome||"").trim(); if(!nm || !TIPOS_DESTINO[a.tipo]) return recusa("Informe o nome e o tipo."); cp.destinos.push({id:uid("d"), nome:nm, tipo:a.tipo, cnpjId:a.cnpjId||"", banco:a.banco||"", chavePix:a.chavePix||"", obs:a.obs||"", ativo:true}); return ok("Destino criado"); }
+    case "destino_add": { var nm = String(a.nome||"").trim(); if(!nm || !TIPOS_DESTINO[a.tipo]) return recusa("Informe o nome e o tipo."); cp.destinos.push({id:uid("d"), nome:nm, tipo:a.tipo, cnpjId:a.cnpjId||"", banco:a.banco||"", chavePix:a.chavePix||"", obs:a.obs||"", ativo:true, numerario:String(a.numerario||""), numerarioNome:String(a.numerarioNome||"")}); return ok("Destino criado"); }   // numerário = código e nome na DevMaster (regra R1, docs/regras/NUMERARIOS-ADMIN-X-DEVMASTER.md); vazio = destino pendente
     case "func_set": { var nmf = String(a.nome||"").trim(); if(!nmf) return recusa("Informe o nome."); cp.func = cp.func||{}; cp.func[nmf] = Object.assign({chave:"", vinculo:""}, cp.func[nmf], a.patch||{}); return ok(a.novo ? "Prestador cadastrado" : undefined); }
     case "chave_set": { var idc = String(a.id||""); if(!idc) return recusa("Chave sem identificação."); cp.chaves = cp.chaves||{}; cp.chaves[idc] = Object.assign({}, cp.chaves[idc], a.base||{}, a.patch||{}); return ok(); }
     case "func_del": { if(cp.func && cp.func[a.nome] && cp.func[a.nome].extra) delete cp.func[a.nome]; return ok("Removido"); }
@@ -72,4 +72,6 @@ function cpReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { TIPOS_DESTINO, cpAjustar, SOCIOS_FAM, cpDemo, cpReduz, direcionado, faltaDe, sugestoes, hojeIso as hojeIsoCp };
+// Numerário da DevMaster ligado ao destino (26/11/2026): o que a funcionária escolhe na DevMaster ao dar a baixa. Vazio = pendente.
+var numerarioDoDestino = function(d){ return d && d.numerario ? {cod:d.numerario, nome:d.numerarioNome || d.numerario} : null; };
+export { numerarioDoDestino, TIPOS_DESTINO, cpAjustar, SOCIOS_FAM, cpDemo, cpReduz, direcionado, faltaDe, sugestoes, hojeIso as hojeIsoCp };

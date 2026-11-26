@@ -45,7 +45,7 @@ var plana = function(filhos, comFim){
 // p.cls: classes extras só desta tela (ex.: letra menor na Produção externa)
 // letra pequena e linhas de 18 px (igual à Home do Financeiro familiar e à Negociações; Marcus, 22/11/2026): só dentro dos blocos (section); a janela de lançar fica como está
 var MIUDA = "[&_section_td]:!text-[10px] [&_section_td_*]:!text-[10px] [&_section_th]:!text-[10px] [&_section_th_*]:!text-[10px] [&_section_label]:!text-[10px] [&_section_select]:!text-[10px] [&_section_select]:!h-5 [&_section_input]:!text-[10px] [&_section_input]:!h-5 [&_section_button]:!text-[10px] [&_section_button]:!h-5 [&_section_button]:!py-0 [&_section_tbody_td]:!h-[22px] [&_section_tfoot_td]:!h-[24px] [&_section_td]:!leading-none [&_section_tbody_td_button]:!h-[22px] [&_section_td_span]:!leading-none";   // padrao-ok: letra de 10 px e linha de 22 px (Marcus, 22/11/2026; subiu de 18 para 22 px em 24/11/2026: "um pouquinho mais alta")
-function Raiz(p){ return e(Pagina,{className:"-mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"}, e("div",{className:PLANA+(p.cls ? " "+p.cls : "")}, plana(p.children, true))); }
+function Raiz(p){ return e(Pagina,{className:"-m-4 min-h-full !bg-[var(--bloco-colunas)] md:-m-6"}, e("div",{className:PLANA+(p.cls ? " "+p.cls : "")}, plana(p.children, true))); }
 
 // semRaiz: a tela vai DENTRO de outra (Produção externa e Cadastro juntam duas telas numa só, 16/11/2026): só uma coluna de blocos, sem a margem da casca
 function casca(semRaiz){ var f = Array.prototype.slice.call(arguments, 1); return semRaiz ? e("div",{className:"flex min-w-0 flex-col gap-0"}, plana(f, false)) : e.apply(null, [Raiz, null].concat(f)); }

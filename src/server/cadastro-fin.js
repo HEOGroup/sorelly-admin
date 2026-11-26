@@ -15,7 +15,7 @@ const FORMA_NFE = { "01": "Dinheiro", "02": "Cheque", "03": "Cartão de crédito
 const BANCOS_REAIS = { "001": "Sicredi", "026": "Nubank", "033": "Santander", "104": "Caixa Econômica", "136": "Unicred", "197": "Stone", "237": "Bradesco", "341": "Itaú", "422": "Safra", "748": "Sicredi", "749": "Sicredi" };
 const PALAVRA_BANCO = [["SICREDI", "Sicredi"], ["SAFRA", "Safra"], ["ITAÚ", "Itaú"], ["ITAU", "Itaú"], ["BRADESCO", "Bradesco"], ["CAIXA ECON", "Caixa Econômica"], ["SANTANDER", "Santander"], ["UNICRED", "Unicred"], ["STONE", "Stone"], ["NUBANK", "Nubank"]];
 
-const bonito = (t) => limpa(t).toLowerCase().split(/(\s+|-)/).map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join("")
+export const bonito = (t) => limpa(t).toLowerCase().split(/(\s+|-)/).map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join("")
   .replace(/ (De|Da|Do|Dos|Das|E) /g, (m) => m.toLowerCase()).replace(/\bH&o\b/g, "H&O").replace(/\bPf\b/g, "PF").replace(/\bPj\b/g, "PJ").replace(/\bDevmaster\b/g, "DevMaster").replace(/\bMegasul\b/g, "Mega Sul").replace(/\bMardeira\b/g, "Madeira").replace(/\b3d\b/g, "3D").replace(/\bAcrilicos\b/g, "Acrílicos");
 
 // DONO de um banco pelo nome dele (a mesma regra vale para as formas, que herdam o dono do banco de destino)
@@ -52,7 +52,7 @@ function tipoDoBanco(b) {
   if (/^CAIXA /.test(n)) return "Caixa interno";
   return "Registro interno";
 }
-function tipoDaForma(desc, formaNfe) {
+export function tipoDaForma(desc, formaNfe) {
   const d = limpa(desc).toUpperCase();
   if (/^ACERTO/.test(d)) return "Acerto loja";
   if (/NOTA DE CR[EÉ]DITO/.test(d)) return "Nota de crédito";

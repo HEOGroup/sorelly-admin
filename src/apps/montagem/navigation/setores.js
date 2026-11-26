@@ -13,8 +13,8 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  {nome:"Pagamentos", itens:[M("Resumo geral","pfresumo"), M("Direcionar","direcionar"), M("Contas das representantes","dirregras"), M("Chaves Pix","chavespixbanco")]},   // Chaves Pix = TERCEIRA tela de Pagamentos (Marcus, 12/11/2026); antes ficava em Contas   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): duas telas, Direcionar e Contas das representantes (esta com Valor fora do normal e as Regras do Pix); a tela Regras e contas deixou de existir
-  M("Contas bancárias","caixa"),
+  {nome:"Pagamentos", itens:[M("Resumo geral","pfresumo"), M("Direcionar","direcionar"), M("Contas das representantes","dirregras"), M("Destinos","findestinos"), M("Chaves Pix","chavespixbanco")]},   // Chaves Pix = TERCEIRA tela de Pagamentos (Marcus, 12/11/2026); antes ficava em Contas   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): duas telas, Direcionar e Contas das representantes (esta com Valor fora do normal e as Regras do Pix); a tela Regras e contas deixou de existir
+  {nome:"Contas bancárias", itens:[M("Saldos","caixa"), M("Bancos","fincontas")]},   // Saldos = planilha por dia; Bancos = cadastro das contas com numerário (Marcus, 26/11/2026)
   M("Faturas","fffaturas"),   // só de faturas do cartão (Marcus, 19/11/2026); só os sócios abrem   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
@@ -23,12 +23,12 @@ var MENU_FINANCEIRO = [
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
-    {nome:"Representantes", itens:[M("Comissões dos representantes","comissoes")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
+    {nome:"Representantes", itens:[M("Comissões dos representantes","comissoes")]},   // 25/11/2026 (Marcus): o Consolidado dos representantes saiu do Financeiro; mora em Representantes & Kits
     ]},
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), {nome:"Contas", itens:[M("A pagar","ffcontas"), M("Pagas","ffpagas")]}, M("Gasto por casa","ffcasas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
   {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]},
-  {nome:"Cadastro", itens:[M("Bancos","finbancos"), M("Formas de pagamento","finformas")]},   // copia da DevMaster (Marcus, 20/11/2026): bancos e tipos de numerário, com dono e uso em 90 dias
+  {nome:"Cadastro", itens:[M("Bancos da DevMaster","finbancos"), M("Formas de pagamento","finformas"), M("Numerários","finnumerarios")]},   // copia da DevMaster (Marcus, 20/11/2026): bancos e tipos de numerário, com dono e uso em 90 dias
   {nome:"Controle", itens:[M("Arrumar na DevMaster","findm"), M("Atividades","finativ")]}   // só o Marcus (18/11/2026): o menu esconde para as demais pessoas e o servidor confere   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
 ];
 // Fiscal (Marcus, 12/11/2026): saiu do Financeiro e virou setor próprio, logo abaixo dele.
@@ -87,7 +87,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
-  M("Consolidado","consrep")
+  M("Consolidado","consrep")   // 25/11/2026 (Marcus): a tela Painel das representantes saiu do menu; sobra só "Consolidado", sem o grupo Representantes
   // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
@@ -156,9 +156,10 @@ var SETORES = [
     {nome:"Resultado", telas:[T("resultado","Resultado do mês")]},
     {nome:"Atividades", telas:[T("finativ","Atividades")]},
     {nome:"Arrumar na DevMaster", telas:[T("findm","Arrumar na DevMaster")]},
-    {nome:"Cadastro", telas:[T("finbancos","Bancos"), T("finformas","Formas de pagamento")]},
+    {nome:"Cadastro", telas:[T("finbancos","Bancos da DevMaster"), T("finformas","Formas de pagamento"), T("finnumerarios","Numerários")]},
+    {nome:"Bancos", telas:[T("fincontas","Bancos")]},
     {nome:"Faturas", telas:[T("fffaturas","Faturas do cartão")]},
-    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Contas das representantes")]},
+    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Contas das representantes"), T("findestinos","Destinos")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Contas Pix")]],

@@ -7,7 +7,8 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { Dinheiro, Janela } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { pfReduz } from "@/apps/montagem/domain/pf";
+import { pagoPix, pfReduz } from "@/apps/montagem/domain/pf";
+import { NUMERARIO_PRODUCAO } from "@/apps/montagem/lib/numerarios";   // Pix Produção de Peças (Marcus, 26/11/2026)
 import { LIMITE_EXCEDENTE, diaDaSemana, eCasa, formatarDia, formatarInteiro, formatarReais, hojeSP, pagamentosDaProducao, somaDias, valorDiaCasa } from "@/apps/montagem/domain/producao";
 import { Painel } from "@/apps/montagem/pages/compras/visualCompras";
 import { usePf } from "@/apps/montagem/pages/pf/ui";
@@ -27,7 +28,7 @@ function AbaProdPagamentos(props){
   var temDestino = function(f){ var ws = semAcento(f.nome).split(/\s+/).filter(Boolean), cp = cf.s.cp; return !!(cp && cp.destinos && cp.destinos.some(function(z){ var n = semAcento(z.nome); return z.ativo && z.tipo==="PRESTADOR" && ws.every(function(w){ return n.indexOf(w)>=0; }); })); };
   // destino já existente, mas sem banco e chave Pix (nasceu antes do cadastro estar completo): completa com os dados do prestador
   var completarDestino = function(f){ var cp = cf.s.cp; if(!f || !cp || !cp.destinos || !(f.chavePix || f.banco)) return; var ws = semAcento(f.nome).split(" ").filter(Boolean), dd = cp.destinos.filter(function(z){ var n = semAcento(z.nome); return z.ativo && z.tipo==="PRESTADOR" && ws.every(function(w){ return n.indexOf(w)>=0; }); })[0]; if(dd && !dd.chavePix && f.chavePix) cf.d({type:"CP", op:"destino_set", por:cf.por, id:dd.id, patch:{banco:f.banco||dd.banco||"", chavePix:f.chavePix}}); };
-  var garantirDestino = function(f){ completarDestino(f); if(f && cf.s.cp && !temDestino(f)) cf.d({type:"CP", op:"destino_add", por:cf.por, nome:f.nome, tipo:"PRESTADOR", banco:f.banco||"", chavePix:f.chavePix||""}); };
+  var garantirDestino = function(f){ completarDestino(f); if(f && cf.s.cp && !temDestino(f)) cf.d({type:"CP", op:"destino_add", por:cf.por, nome:f.nome, tipo:"PRESTADOR", banco:f.banco||"", chavePix:f.chavePix||"", numerario:NUMERARIO_PRODUCAO.cod, numerarioNome:NUMERARIO_PRODUCAO.nome}); };
   var pendentesEnvio = x.admin ? pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).map(function(q){ return q.func; }).join("|") : "";
   useEffect(function(){ pendentesEnvio.split("|").filter(Boolean).forEach(function(nome){ var f = ((cf.pf && cf.pf.fornecedores) || []).filter(function(g){ return g.tipo==="prestador" && mesmaPessoa(nome, g.nome); })[0]; garantirDestino(f); }); pagamentosDaProducao(x.pr, hoje).filter(function(q){ return q.envio && !q.pago; }).forEach(function(q){ if(!temConta(q)) criaConta(q); }); }, [pendentesEnvio, Object.keys(x.pr.envios||{}).join(), !!(cf.s.cp && cf.s.cp.destinos), !!(cf.s.cpe && cf.s.cpe.lanc)]);   // eslint-disable-line react-hooks/exhaustive-deps
   // ENVIO E BAIXA AUTOMÁTICOS (Marcus, 24/11/2026: "não precisa clicar em enviar ao financeiro, o negócio envia automático, é tudo automático"): rodam na tela e também em segundo plano (AutoProducao, montada no App para a Diretoria).
@@ -39,7 +40,10 @@ function AbaProdPagamentos(props){
       var chave = p.id+"|"+p.valor+"|"+(p.envio ? "e" : "n"); if(TENTOU[chave]) return;
       if(p.envio){
         var fo = prestadorDe(p.func), ped = fo && p.envio.numero ? ((cf.pf && cf.pf.pedidos) || []).filter(function(q){ return q.fornId===fo.id && q.numero===p.envio.numero; })[0] : null;
-        if(ped && (ped.parcelas||[]).length && ped.parcelas.every(function(q){ return q.status==="Pago"; })){ TENTOU[chave] = 1; pagar(p, p.valor); return; }
+        if(ped && (ped.parcelas||[]).length && ped.parcelas.every(function(q){ return q.status==="Pago"; })){
+          // o que SAIU de verdade pelo Direcionar (Pix às revendedoras) nessa data; se passou do devido, a diferença vira saldo e desconta do próximo pagamento (Marcus, 26/11/2026)
+          var enviado = ehInt(p) ? p.valor : Math.max(p.valor, pagoPix(cf.pf, fo.id+"|"+ped.parcelas[ped.parcelas.length-1].venc));
+          TENTOU[chave] = 1; pagar(p, enviado); return; }
         if(!ehInt(p) && Math.abs(p.envio.valor-p.valor)>0.005){ TENTOU[chave] = 1; reenviar(p, true); }
         return;
       }
@@ -54,7 +58,8 @@ function AbaProdPagamentos(props){
 
   // CONTA A PAGAR (Marcus, 17/11/2026: "sempre sobe no Contas a pagar e na aba de fornecedores, igual dos outros"): cada envio vira uma conta a pagar na quarta (natureza 3.01.01.19 Freelancer, Folha e pessoal); marcar pago dá a baixa nela
   var idConta = function(p){ return "prod-"+p.id; };
-  var ehInt = function(p){ return p.tipo==="Produção interna"; };   // as internas recebem EM DINHEIRO, no dia 12 do mês seguinte (ou dia útil)
+  var ehSerenity = function(p){ return p.tipo==="Produção Serenity" || p.tipo==="Produção interna"; };   // "Produção interna" é o nome antigo do bônus (hoje a interna é a Sorelly, que não paga)
+  var ehInt = function(p){ return ehSerenity(p); };   // as internas recebem EM DINHEIRO, no dia 12 do mês seguinte (ou dia útil)
   var itemConta = function(p){ return ehInt(p) ? {id:idConta(p), filial:"34", nat:"3.01.01.12", natNome:"Bônus (produção interna)", pref:"DIN", forn:p.func, nome:p.func+" · produção interna · "+p.detalhe.split(" · ")[0]+" · dinheiro", venc:p.data, valor:p.valor, status:"apagar", fam:false, saida:"Dinheiro", centro:"", hist:"Enviado pela Produção › Pagamento por produção · pagar EM DINHEIRO em "+formatarDia(p.data), emissao:hoje}
     : {id:idConta(p), filial:"34", nat:"3.01.01.19", natNome:"Freelancer (Taxa-salário)", pref:"PIX", forn:p.func, nome:p.func+" · "+p.tipo+" · "+formatarDia(p.data), venc:p.data, valor:p.valor, status:"apagar", fam:false, saida:"Pix", centro:"", hist:"Enviado pela Produção › Produção externa", emissao:hoje}; };
   var temConta = function(p){ return (((cf.s.cpe||{}).lanc)||[]).some(function(l){ return l.id===idConta(p); }); };
@@ -73,7 +78,7 @@ function AbaProdPagamentos(props){
   var enviar = function(p, auto){
     if(ehInt(p)){   // interna: só a conta a pagar, em dinheiro (sem pedido de prestadora nem Pix)
       if(p.aberto){ if(!auto) window.alert("O mês ainda está aberto. Dá para enviar ao Contas a pagar depois que ele fechar."); return; }
-      x.exec("pag_enviado", {id:p.id, valor:p.valor, numero:"Produção interna · "+p.func+" · "+formatarDia(p.data)+" · dinheiro"}); criaConta(p); return;
+      x.exec("pag_enviado", {id:p.id, valor:p.valor, numero:"Produção Serenity · "+p.func+" · "+formatarDia(p.data)+" · dinheiro"}); criaConta(p); return;
     }
     var f = prestadorDe(p.func);
     if(!f){ if(!auto) window.alert("Cadastre "+p.func+" em Financeiro › Pagamentos a fornecedores › Prestadores de serviço (com a chave Pix) antes de enviar."); return; }
@@ -104,9 +109,13 @@ function AbaProdPagamentos(props){
   };
 
   // PAGAMENTOS, um por CICLO (terça a segunda, paga na quinta; regra de 22/11/2026): semana, quando paga, peças, valor da semana, quanto já foi pago e quanto falta (Marcus, 19/11/2026: "arruma os pagamentos, está estranho")
-  var pecasDe = function(p){ return p.tipo==="Produção interna" ? null : p.dias.reduce(function(t, d){ return t+(((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===p.func && eCasa(l); }).reduce(function(t2, l){ return t2+(Number(l.qtd)||0); }, 0)); }, 0); };
-  var semanaDe = function(p){ return p.tipo==="Produção interna" ? p.detalhe.split(" · ")[0] : formatarDia(somaDias(p.data, -9)).slice(0, 5)+" a "+formatarDia(somaDias(p.data, -3)).slice(0, 5); };
-  var varias = lista.some(function(p){ return p.tipo==="Produção interna"; }) || lista.some(function(p){ return p.func!==lista[0].func; });   // com a pessoa escolhida só sobram as linhas dela
+  var pecasDe = function(p){ return ehSerenity(p) ? null : p.dias.reduce(function(t, d){ return t+(((x.pr.lancamentos||{})[d]||[]).filter(function(l){ return l.func===p.func && eCasa(l); }).reduce(function(t2, l){ return t2+(Number(l.qtd)||0); }, 0)); }, 0); };
+  // período do ciclo (terça a segunda) tirado dos DIAS TRABALHADOS, não da data de pagamento: se a quinta vira sexta (feriado), o período continua certo (26/11/2026)
+  var semanaDe = function(p){
+    if(ehSerenity(p)) return p.detalhe.split(" · ")[0];
+    var ref = p.dias[0] || somaDias(p.data, -9), ini = somaDias(ref, -((new Date(ref+"T00:00:00Z").getUTCDay()-2+7)%7));
+    return formatarDia(ini).slice(0, 5)+" a "+formatarDia(somaDias(ini, 6)).slice(0, 5); };
+  var varias = lista.some(function(p){ return ehSerenity(p); }) || lista.some(function(p){ return p.func!==lista[0].func; });   // com a pessoa escolhida só sobram as linhas dela
   var linhas = lista.map(function(p){
     var situ = p.pago ? "Pago" : p.envio ? (Math.abs(p.envio.valor-p.valor)>0.005 ? "Valor mudou" : "Enviado ao Financeiro") : p.data<hoje ? "Atrasado" : "Envio automático";
     var jaPago = p.pago ? p.pago.valor : Math.max(0, Math.round((p.total-p.bruto)*100)/100);

@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.256", data:"2026-11-26", titulo:"Numerários, Destinos e mensagem padrão do Pix publicados; regra dos numerários", itens:[
+  {tipo:"novo", area:"Financeiro → Cadastro → Numerários e Pagamentos → Destinos", txt:"Telas Numerários e Destinos (cada destino liga a um numerário da DevMaster), mensagem padrão do Pix, cartão Pix do app da representante e ajustes da produção externa. Regra em docs/regras/NUMERARIOS-ADMIN-X-DEVMASTER.md."},
+  {tipo:"correção", area:"Negociações → pedidos Charme e Linda", txt:"Favorecido e banco da chave do pedido eram lidos errado (faltava a barra invertida na expressão). Corrigido."}
+ ]},
  {v:"0.21.255", data:"2026-11-26", titulo:"Chaves Pix dos fornecedores: favorecido e banco novos, regra por período e campos para editar", itens:[
   {tipo:"melhoria", area:"Pagamentos → Chaves Pix", txt:"Lista do Lucas aplicada: favorecido de Point, Art Ello, Ellos, Xangai, Devmaster, Mega Sul e Pontual (Banho). Mega Sul e Pontual com chave nova. Pontual e Devmaster passam a ter a regra Muda a cada período de pagamento. No modo Editar, favorecido, banco e regra de cada fornecedor se alteram na própria linha."}
  ]},

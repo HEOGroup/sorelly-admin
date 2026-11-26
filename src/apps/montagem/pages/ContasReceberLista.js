@@ -13,7 +13,7 @@ import { contaDaCaixa } from "@/apps/montagem/domain/pix-regras";
 import { CONTA_GRUPO, GRUPOS_CONTA } from "@/apps/montagem/domain/contas-grupos";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chavesDoDestino } from "@/apps/montagem/lib/chave-do-destino";
-import { mensagemPixDaChave, mensagemPixPessoa } from "@/apps/montagem/lib/mensagem-pix";
+import { mensagemPixDaChave, mensagemPixPadrao, mensagemPixPessoa } from "@/apps/montagem/lib/mensagem-pix";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
@@ -498,6 +498,12 @@ function LancarPix(p){
     var dadosK = k1 ? {nome:destSel.nome, banco:k1.banco, favorecido:k1.fav, tipo:k1.tipo} : null;
     orient = {folha:(k1 && k1.folha) || nomeLeaf(destSel), chave:k1 ? k1.chave : "", dados:dadosK, msg:k1 ? (mensagemPixDaChave(cx.state, k1.chave) || mensagemPixPessoa(Object.assign({}, dadosK, {chave:k1.chave}))) : ""};
     orient.texto = orient.msg ? "Escrever na folha: *"+orient.folha+"*\n\n"+orient.msg : "";   // o texto da folha vai no INÍCIO da mensagem que o Lucas copia (Marcus, 23/11/2026)
+  }
+  // MENSAGEM PADRÃO (Marcus, 26/11/2026): a mesma de lib/mensagem-pix.js em todo lugar que manda Pix. Numerário no lugar do rótulo antigo quando a conta ou o destino já tem um.
+  if(orient && orient.chave){
+    var ctaNum = destSel && destSel.cnpjId && nomeConta ? (((cx.state.saldosContas || {}).contas) || []).find(function(c){ return c.bloco===destSel.cnpjId && c.nome===nomeConta; }) : null;
+    var numMsg = (ctaNum && ctaNum.numerarioNome) || (destSel && destSel.numerarioNome) || orient.folha;
+    orient.texto = mensagemPixPadrao({numerario:numMsg, valor:f.valor, favorecido:destSel ? destSel.nome : (orient.dados && orient.dados.nome) || "", tipo:(orient.dados && orient.dados.tipo) || "", chave:orient.chave});
   }
   // JANELA LATERAL (Marcus, 23/11/2026: "faz no mesmo estilo do Contas a pagar, mais lateral"): o mesmo desenho da janela Pagar conta: à esquerda os blocos 1 a 3;
   // à direita o painel "O que vai acontecer", com a mensagem para a revendedora (o que o Lucas copia e manda no WhatsApp); botões no rodapé.

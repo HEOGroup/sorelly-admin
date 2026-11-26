@@ -200,7 +200,10 @@ export const SLUG_DA_ABA = {
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
   fffaturas: "ff-faturas-do-cartao",   // Financeiro › Faturas (19/11/2026)
+  fincontas: "bancos-cadastro",   // Financeiro › Contas bancárias › Bancos (26/11/2026)
   finbancos: "bancos",   // Financeiro › Cadastro › Bancos (20/11/2026)
+  findestinos: "destinos-de-pagamento",   // Financeiro › Pagamentos › Destinos (26/11/2026)
+  finnumerarios: "numerarios",   // Financeiro › Cadastro › Numerários (25/11/2026)
   finformas: "formas-de-pagamento",   // Financeiro › Cadastro › Formas de pagamento (20/11/2026)
   findm: "arrumar-na-devmaster",   // Financeiro › Arrumar na DevMaster (19/11/2026)
   finativ: "atividades-do-financeiro",   // Financeiro › Atividades (18/11/2026): só o Marcus

@@ -1,47 +1,56 @@
 // Sorelly Admin · montagem — pages/cp/Destinos.js
-// Financeiro › Pagamentos › Controle de pagamentos › aba Destinos (10/11/2026, pedido do Marcus: o Lucas precisa ver banco, favorecido e chave Pix de cada destino).
-// Tabela em layout D (TabelaCampos). Nada é digitado de novo: banco, favorecido, chave e "Escrever na folha" vêm de Financeiro › Bancos › Chaves Pix (lib/chave-do-destino.js).
-// Destino sem chave cadastrada mostra "Sem chave Pix" em amarelo. O botão Copiar gera a mensagem de Pix (a mesma de Chaves Pix).
-import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
-import { BlocoFiltros, Botao, CAMPO, CampoSel, FileiraCampos, Rotulo, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
+// Financeiro › Pagamentos › Destinos (26/11/2026, Marcus: "sempre que se criar uma conta precisa conectar com a DevMaster nesses numerários").
+// Cada destino de pagamento (conta da empresa, sócio, fornecedor, representante, prestador) liga a UM numerário da DevMaster.
+// O numerário é o que a funcionária escolhe na DevMaster ao dar a baixa e o que se escreve na folha. A conta real (chave Pix) continua só para uso interno.
+// Regras: docs/regras/NUMERARIOS-ADMIN-X-DEVMASTER.md. Lista de numerários: lib/numerarios.js (cópia diária da DevMaster).
+// Visual: padrão compacto (components/planilha-cheia.js), igual a Formas de pagamento e Numerários.
+import { Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { AvisoMini, BarraMini, BuscaMini, CampoMini, CLS_FINA, PAGINA_CHEIA, refCheia } from "@/apps/montagem/components/planilha-cheia";
 import { TIPOS_DESTINO } from "@/apps/montagem/domain/controle-pagamentos";
+import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { chavesDoDestino } from "@/apps/montagem/lib/chave-do-destino";
-import { e, useEffect, useState } from "@/shared/react";
+import { opcoesNumerario, useNumerarios } from "@/apps/montagem/lib/numerarios";
+import { use } from "@/apps/montagem/state/context";
+import { e, useState } from "@/shared/react";
 
+var semAc = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 var tipoNome = function(t){ return (TIPOS_DESTINO[t] || ["—"])[0]; };
-var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
-// larguras pelo MAIOR texto de cada coluna (nada quebra e nada é cortado): o favorecido mais longo é "Mayz Comércio de Moda Praia, Lingeries e Acessórios Ltda"
-var COLUNAS = [{t:"Destino", w:"18rem"}, {t:"Tipo", w:"11rem"}, {t:"Escrever na folha", w:"17rem"}, {t:"Banco", w:"10rem"}, {t:"Favorecido", w:"28rem"}, {t:"Chave Pix", w:"19rem"}, {t:"Copiar", w:"6rem"}, {t:"Ativo", w:"5rem"}];
 
-// p.c = {s (estado), cp, d (dispatch), por, edita}, o mesmo objeto de ControlePagamentos.js
-function AbaDestinos(p){
-  var c = p.c, cp = c.cp, sq = useState(""), q = sq[0], setQ = sq[1], st = useState(""), tipo = st[0], setTipo = st[1], sn = useState({nome:"", tipo:"FORNECEDOR"}), nd = sn[0], setNd = function(x){ sn[1](Object.assign({}, nd, x)); };
-  // o estado vem do servidor e passa por cima da migração do navegador: quem edita cria o destino da conta "PIX - ITAÚ PJ - MARCO" (cnpjId ITM) uma vez, se ele ainda não existe
-  var falta = !cp.destinos.some(function(d){ return d.cnpjId==="ITM"; });
-  var dispatch = c.d, por = c.por, edita = c.edita;
-  useEffect(function(){ if(falta && edita) dispatch({type:"CP", op:"destino_add", por:por, nome:"Itaú Marco PJ", tipo:"CNPJ", cnpjId:"ITM"}); }, [falta, edita, dispatch, por]);
-  var lista = cp.destinos.filter(function(d){ return d.tipo!=="PRESTADOR" && (!tipo || d.tipo===tipo) && (!q || norm(d.nome).indexOf(norm(q))>=0); });
-  var acao = function(op, extra){ c.d(Object.assign({type:"CP", op:op, por:c.por}, extra)); };
-  var linhas = [];
-  lista.forEach(function(d){
-    var chs = chavesDoDestino(c.s, d), itens = chs.length ? chs : [null];
-    itens.forEach(function(k, i){
-      linhas.push(e(FileiraCampos,{key:d.id+"|"+i, cells:[
-        d.nome, tipoNome(d.tipo), k && k.folha ? k.folha : "—", k && k.banco ? k.banco : "—", k && k.fav ? k.fav : "—",
-        k ? k.chave : {v:"Sem chave Pix", cor:"#FBBF24"},
-        k ? e(CopiarChave,{texto:k.chave, rot:"Copiar", dados:{nome:d.nome, banco:k.banco, favorecido:k.fav, tipo:k.tipo}}) : "—",
-        i===0 ? e("input",{type:"checkbox", checked:!!d.ativo, disabled:!c.edita, "aria-label":"Ativo: "+d.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]", onChange:function(ev){ acao("destino_set", {id:d.id, patch:{ativo:ev.target.checked}}); }}) : ""]}));
-    });
+function AbaDestinos(){
+  var cx = use(), s = cx.state, cp = s.cp, edita = podeConferirPag(s.usuario) || podeFinanceiro(s.usuario), por = nomeDe(s.usuario);
+  var nm = useNumerarios(), sb = useState(""), busca = sb[0], st = useState(""), tipo = st[0], sn = useState("sem"), num = sn[0], sa = useState("ativo"), sit = sa[0];
+  var q = semAc(busca.trim());
+  var grava = function(id, cod){ var n = nm.lista.filter(function(x){ return x.cod===cod; })[0]; cx.dispatch({type:"CP", op:"destino_set", id:id, por:por, patch:{numerario:cod, numerarioNome:n ? n.nome : ""}}); };
+  var todas = (cp && cp.destinos || []).map(function(d){
+    var ch = chavesDoDestino(s, d)[0];
+    var nu = d.numerario ? nm.lista.filter(function(x){ return x.cod===d.numerario; })[0] : null;   // banco vem do numerário (R9), nunca se escolhe à parte
+    return {id:d.id, nome:d.nome, tipo:tipoNome(d.tipo), tipoCod:d.tipo, chave:ch ? ch.chave : "Sem chave Pix", numerario:d.numerario || "", numerarioNome:d.numerarioNome || "", banco:d.numerario ? (nu ? (nu.banco || "Sem banco ligado") : (nm.carregou ? "Numerário inativo" : "Lendo")) : "—", ativo:d.ativo ? "Ativo" : "Inativo"};
   });
-  return e("div",{className:"flex flex-col gap-3"},
-    e(BlocoFiltros,{titulo:"Destinos", onLimpar:(q || tipo) ? function(){ setQ(""); setTipo(""); } : null},
-      e(CampoSel,{t:"Tipo", id:"cd-t", value:tipo, onChange:setTipo, opcoes:[["", "Todos"]].concat(Object.keys(TIPOS_DESTINO).filter(function(t){ return t!=="PRESTADOR"; }).map(function(t){ return [t, tipoNome(t)]; }))}),
-      e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Buscar", id:"cd-q"}), e("input",{id:"cd-q", type:"search", value:q, onChange:function(ev){ setQ(ev.target.value); }, placeholder:"Nome do destino", className:CAMPO}))),
-    c.edita && e(BlocoFiltros,{titulo:"Novo destino"},
-      e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Nome", id:"cd-n"}), e("input",{id:"cd-n", type:"text", value:nd.nome, onChange:function(ev){ setNd({nome:ev.target.value}); }, className:CAMPO})),
-      e(CampoSel,{t:"Tipo", id:"cd-nt", value:nd.tipo, onChange:function(v){ setNd({tipo:v}); }, opcoes:Object.keys(TIPOS_DESTINO).map(function(t){ return [t, tipoNome(t)]; })}),
-      e("div",{className:"flex items-end"}, e(Botao,{principal:true, desabilitado:!nd.nome.trim(), onClick:function(){ acao("destino_add", {nome:nd.nome.trim(), tipo:nd.tipo, banco:"", chavePix:""}); setNd({nome:""}); }}, "Adicionar"))),
-    linhas.length ? e(TabelaCampos,{minW:"114rem", cols:COLUNAS}, linhas)
-    : e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhum destino neste filtro."));
+  var semNum = todas.filter(function(l){ return !l.numerario && l.ativo==="Ativo"; }).length;
+  var linhas = todas.filter(function(l){
+    return (sit==="todos" || (sit==="ativo" ? l.ativo==="Ativo" : l.ativo==="Inativo")) && (!tipo || l.tipoCod===tipo) && (!num || (num==="sem" ? !l.numerario : !!l.numerario))
+      && (!q || semAc([l.nome, l.tipo, l.numerarioNome, l.numerario].join(" ")).indexOf(q)>=0);
+  }).sort(function(a, b){ return (a.numerario ? 1 : 0)-(b.numerario ? 1 : 0) || a.nome.localeCompare(b.nome); });   // quem está sem numerário vem primeiro
+  var cols = [
+    {k:"nome", t:"Destino"}, {k:"tipo", t:"Tipo"}, {k:"chave", t:"Chave Pix da conta", cor:function(l){ return l.chave==="Sem chave Pix" ? "text-warning" : ""; }},
+    {k:"numerario", t:"Numerário na DevMaster", render:function(v, l){
+      return edita ? e(CampoMini,{valor:v, aoMudar:function(x){ grava(l.id, x); }, rotulo:"Numerário de "+l.nome, ops:opcoesNumerario(nm.lista, v ? {cod:v, nome:l.numerarioNome} : null)}) : (l.numerarioNome || "Sem numerário"); }},
+    {k:"banco", t:"Banco na DevMaster"},
+    {k:"folha", t:"Escrever na folha", cor:function(l){ return l.numerario ? "" : "text-warning"; }, render:function(v, l){ return l.numerarioNome || "Sem numerário"; }},
+    {k:"ativo", t:"Situação", render:function(v, l){
+      return edita ? e(CampoMini,{valor:v, aoMudar:function(x){ cx.dispatch({type:"CP", op:"destino_set", id:l.id, por:por, patch:{ativo:x==="Ativo"}}); }, rotulo:"Situação de "+l.nome, ops:[["Ativo", "Ativo"], ["Inativo", "Inativo"]]}) : v; }}];
+  return e(Pagina,{className:PAGINA_CHEIA+" [&_*]:!normal-case"},
+    e(BlocoPainel,{titulo:"Destinos de pagamento", compacto:true},
+      e(BarraMini,null,
+        e(BuscaMini,{key:"b", valor:busca, aoMudar:sb[1], ph:"Buscar: destino, numerário...", rotulo:"Buscar nos destinos"}),
+        e(CampoMini,{key:"t", valor:tipo, aoMudar:st[1], rotulo:"Tipo", ops:[["", "Todos os tipos"]].concat(Object.keys(TIPOS_DESTINO).map(function(t){ return [t, tipoNome(t)]; }))}),
+        e(CampoMini,{key:"n", valor:num, aoMudar:sn[1], rotulo:"Numerário", ops:[["", "Todos"], ["sem", "Sem numerário"], ["com", "Com numerário"]]}),
+        e(CampoMini,{key:"s", valor:sit, aoMudar:sa[1], rotulo:"Situação", ops:[["ativo", "Ativos"], ["inativo", "Inativos"], ["todos", "Todos"]]}),
+        semNum ? e(AvisoMini,{key:"av", erro:true}, semNum+" destinos ativos sem numerário") : null,
+        !nm.carregou ? e(AvisoMini,{key:"lendo"}, "Lendo os numerários da DevMaster") : null),
+      e("div",{ref:refCheia({"Numerário na DevMaster":"Forma de pagamento que a funcionária escolhe na DevMaster ao dar a baixa (lista da tela Numerários)", "Banco na DevMaster":"Banco ou caixa Pix que a DevMaster liga a este numerário. Vem do numerário: não se escolhe à parte", "Escrever na folha":"Nome do numerário. É o que aparece na folha e no Consolidado, nunca o nome da conta real"}), className:CLS_FINA+" [&_tbody_td_select]:!h-[14px] [&_tbody_td_select]:!leading-[12px] [&_tbody_td_input]:!h-[14px]"},   // padrao-ok: menu suspenso compacto, pedido do Marcus 26/11/2026
+        e(TabelaPlanilha,{key:sit+tipo+num, fina:true, cols:cols, linhas:linhas, chave:"id", grade:true, centro:true, semCaixaAlta:true, semContagem:true, semLimpar:true, semMao:true, limite:800, vazio:"Nenhum destino neste filtro."}))));
 }
 export { AbaDestinos };

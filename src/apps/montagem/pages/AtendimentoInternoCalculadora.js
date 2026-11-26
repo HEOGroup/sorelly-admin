@@ -630,14 +630,15 @@ function AtendimentoInterno(){
       lancFin.linhas.reduce(function(acc,l,i){ var sk = statusLinhaFin(l), st = STATUS_FIN[sk], nomeF = l.tipo==="brinde" ? "Diferença do brinde" : formaDe(l.forma).label;
         var partes = (sk!=="isento" && sk!=="aguardando") ? (l.partes||[]) : [];
         var linha = function(chave, contaNo, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 py-1.5 "+(acc.length%2 ? "bg-primary/[0.12]" : "bg-primary/[0.07]")}, e("b",null,nomeF), contaNo, e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
-        var contaNo = function(txt, ck){ var pt = String(txt||"").split(" · "), dupla = pt.length>=3;
+        var contaNo = function(txt, ck, valorP){ if(ck) ck = Object.assign({}, ck, {valor:valorP}); var pt = String(txt||"").split(" · "), dupla = pt.length>=3;
           return e("span",{className:"flex flex-col items-center gap-1.5 py-0.5", title:txt||""}, e("span",{className:"leading-tight"}, dupla ? pt.slice(0, pt.length-1).join(" · ") : (txt || "—"), dupla && e("b",{className:"text-[11px]"}, " · "+pt[pt.length-1])),
-            ck && e("span",{className:"inline-flex max-w-full items-center gap-2 overflow-hidden rounded-md border border-primary/25 bg-primary/[0.14] pl-2.5"}, e("span",{className:"break-all font-bold "+MONO, "aria-label":"Chave Pix da conta"}, ck.chave), e(CopiarChave,{texto:ck.chave, dados:ck.dados}))); };
+            ck && e("span",{className:"inline-flex max-w-full items-center gap-2 overflow-hidden rounded-md border border-primary/25 bg-primary/[0.14] pl-2.5"}, e("span",{className:"break-all font-bold "+MONO, "aria-label":"Chave Pix da conta"}, ck.chave), e(CopiarChave,{texto:ck.chave, dados:ck.dados, padrao:{numerario:ck.numerario, valor:ck.valor, favorecido:ck.favorecido, tipo:ck.tipo, chave:ck.chave}})),
+            ck && e("span",{className:"text-[11px] font-semibold "+(ck.numerario ? "" : "text-warning")}, ck.numerario ? "Escrever na folha/Sistema: "+ck.numerario : "Numerário não ligado a esta conta: avise o financeiro")); };   // 26/11/2026 (Marcus): a mesma mensagem padrão do app da representante (comprovante, folha, valor, chave)
         var marca = e("span",{className:"justify-self-center rounded-md px-2 py-0.5 text-[11px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0]);
         if(!partes.length){ acc.push(linha(i+"-s", contaNo("—", null), l.valor, marca)); return acc; }
         partes.forEach(function(p,j){
           var ckP = p.ok ? null : chaveDaParte(s, p.descricao);   // chave Pix da conta direcionada, para passar à revendedora: fica visível até o financeiro conferir (19/11/2026)
-          acc.push(linha(i+"-"+j, contaNo(p.descricao||"—", ckP), p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
+          acc.push(linha(i+"-"+j, contaNo(p.descricao||"—", ckP, p.valor), p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
             campoMq(i, j, p),
             p.ok ? e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"font-bold text-success"},"✓ conferido"),
               !p.comprovante && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Anexar comprovante",

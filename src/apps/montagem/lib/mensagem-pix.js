@@ -1,4 +1,5 @@
 import { chaveAdminDaConta } from "@/apps/montagem/domain/pix-regras";
+import { BKC } from "@/apps/montagem/lib/format";
 // Sorelly Admin · montagem — lib/mensagem-pix.js
 // Mensagem de Pix das CONTAS DA EMPRESA (formato escolhido pelo Marcus em 04/11/2026), pronta para colar no WhatsApp. Sem valor: o valor é combinado na conversa.
 //   *CHAVE PIX*
@@ -61,7 +62,31 @@ function dadosPixDaChave(s, chave){
   if(!conta || !k) return null;
   var empresa = empresaDoBloco(sc, conta.bloco); if(!empresa) return null;
   var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }) || chaveAdminDaConta(c.nome); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
-  return {banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch};
+  return {banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch, numerario:conta.numerarioNome || ""};   // numerário = o que se escreve na folha e na DevMaster (R3)
+}
+// MENSAGEM PADRÃO DE ENVIO (Marcus, 26/11/2026): a MESMA em todo lugar que manda Pix (Contas a receber/Lucas, Atendimento interno, app da representante). Cada tela só escolhe como mostrar.
+// d = {numerario, valor, favorecido, tipo, chave}. Aviso do comprovante no início; a chave na última linha. O nome do numerário vem da tela Numerários, nunca digitado.
+//   Comprovante: enviar assim que fizer o Pix.
+//   (linha vazia)
+//   Escrever na folha/Sistema:
+//   Pix - Marcus Hess - PF
+//   (linha vazia)
+//   Valor a pagar: R$ 1.250,00
+//   (linha vazia)
+//   Chave Pix:
+//   68 Gang Performance
+//   CNPJ
+//   49886705000147
+var AVISO_COMPROVANTE = "Comprovante: enviar assim que fizer o Pix.";
+function mensagemPixPadrao(d){
+  var l = [AVISO_COMPROVANTE, ""];
+  if(d.numerario) l.push("Escrever na folha/Sistema:", d.numerario, "");
+  if(Number(d.valor)>0) l.push("Valor a pagar: "+BKC(d.valor), "");
+  l.push("Chave Pix:");
+  if(d.favorecido) l.push(d.favorecido);
+  if(d.tipo) l.push(TIPO[d.tipo] || d.tipo);
+  l.push(d.chave);
+  return l.join("\n");
 }
 function mensagemPixDaChave(s, chave){ var d = dadosPixDaChave(s, chave); return d ? mensagemPixEmpresa(d) : ""; }
 // a conta escolhida pelo financeiro chega ao app como o rótulo do cadastro (ex.: "PIX - SICREDI - SERENITY - 59"): devolve os dados da chave dela
@@ -76,4 +101,4 @@ function dadosPixDaConta(s, rotulo){
   return ch ? dadosPixDaChave(s, ch) : null;
 }
 
-export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave, dadosPixDaChave, dadosPixDaConta };
+export { AVISO_COMPROVANTE, bancoDaConta, cnpjFormatado, mensagemPixPadrao, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave, dadosPixDaChave, dadosPixDaConta };

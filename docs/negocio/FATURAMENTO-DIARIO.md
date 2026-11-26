@@ -286,3 +286,6 @@ Valores ACUMULADOS do mês. Previsto = acertos feitos + Carregar + a realizar. F
 - Corrigem valores gravados antes: 03/11 (R$ 15.065,70, não 15.068,70), 06 a 08/11 (207 e R$ 149.507,61, antes 208), 09/11 (325, antes 326) e 10/11 (467 e R$ 370.713,30, antes 469 e R$ 371.460,40). A DevMaster hoje dá os mesmos números do relatório.
 - Código: dias em `state/fd-patches.js` (por valor, com `travado:true`) e previsto/Carregar por dia em `aplicaFatNov2` (`state/store.js`, flag `fatNov2V` = 1). Média arredondada para cima na metade, como o relatório (R$ 648,195 vira R$ 648,20).
 - Tela: Financeiro › Receber › Faturamento › Faturamento (aba Dia a dia).
+
+### Previstos por dia gravados no servidor (Marcus, 26/11/2026)
+Gravados em nav.restanteDia / nav.carregarDia com os números que o Marcus mandou no chat: 16/11 = 821 + 12 + 1.134 = 1.967 · 17/11 = 930 + 2 + 1.032 = 1.964 · 18/11 = 1.019 + 2 + 933 = 1.954 · 19/11 = 1.116 + 3 + 833 = 1.952 · 23/11 (fechamento) = 1.209 + 8 + 730 = 1.947 · 25/11 = 1.395 + 4 + 520 = 1.919. Dias 20, 21, 22 e 24 não têm número do Marcus: repetem o dia anterior. O dia 25 vale o que o Marcus passou (1.395 acertos e R$ 1.108.386,90), travado; o robô tinha trocado por 1.396 e R$ 1.107.457,70. 2.097 é o total de revendedoras, não de acertos.

@@ -9,6 +9,7 @@ import { globLocal } from "@/lib/glob-local";
 // Funcionárias e códigos são TEXTO nos lançamentos (sem vínculo): renomear não mexe no histórico, a menos que se peça (a.propagar).
 
 import { hojeSP, somaDias, ultimoDiaDoMes } from "./cadastro-leads";
+import { feriadosDe } from "./feriados";
 import { padronizarNome } from "./producao-nomes";
 import { DESDE as CASA_CONTROLE_DESDE, situacaoPorCodigo, validarEnvio } from "./producao-casa";
 
@@ -45,10 +46,11 @@ var CASA_POR_PECA = 0.45;   // 16/11/2026 (Marcus: "muda para R$ 0,45 por peça,
 var CASA_PECA_DESDE = "2026-11-16";
 // 25/11/2026 (Marcus): "até hoje pago 0,45 por peça, mas a partir do dia 26 vou pagar 0,35 por peça; o que receber amanhã já entra em 35 centavos. Dávila e minha tia mantêm 0,45."
 // Peça recebida de 26/11/2026 em diante vale R$ 0,35; Dávila e Leci (a tia do Marcus) ficam em R$ 0,45. A lista é por começo do nome, sem acento nem maiúscula.
-var CASA_POR_PECA_NOVO = 0.35;
-var CASA_PECA_NOVO_DESDE = "2026-11-26";
-var CASA_MANTEM_045 = ["davila", "leci"];
-/** Preço da peça na produção em casa: R$ 0,45 até 25/11/2026; de 26/11/2026 em diante R$ 0,35, menos Dávila e Leci, que seguem em R$ 0,45. */
+// 26/11/2026 (Marcus, substitui a linha acima): peça ENTREGUE até segunda 30/11/2026 vale R$ 0,45 para todas; de terça 01/12/2026 em diante vale R$ 0,30, menos Dávila, Leci e Didi, que seguem em R$ 0,45.
+var CASA_POR_PECA_NOVO = 0.30;
+var CASA_PECA_NOVO_DESDE = "2026-12-01";
+var CASA_MANTEM_045 = ["davila", "leci", "didi"];
+/** Preço da peça na produção externa: R$ 0,45 até 30/11/2026; de 01/12/2026 em diante R$ 0,30, menos Dávila, Leci e Didi, que seguem em R$ 0,45. */
 function precoPecaCasa(func, dia){
   if(dia<CASA_PECA_NOVO_DESDE) return CASA_POR_PECA;
   var n = String(func||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -73,7 +75,7 @@ var FAIXAS_BONUS = [{pct:60, valor:150}, {pct:80, valor:175}, {pct:100, valor:25
 var BONUS_DIAS = [{min:400, valor:25}, {min:350, valor:20}, {min:300, valor:15}];
 var BONUS_PAGA_DIA = 12;   // dia do mês seguinte em que as internas recebem, EM DINHEIRO (Marcus, 23/11/2026: "dia 12 ou dia útil do próximo mês"); caindo em sábado ou domingo, vai para a segunda-feira
 /** Data em que as funcionárias internas recebem a produção do mês (ano, mes = o mês produzido): dia 12 do mês seguinte, ou a segunda-feira se cair no fim de semana. */
-function dataPagBonus(ano, mes){ var a = mes===12 ? ano+1 : ano, m = mes===12 ? 1 : mes+1, d = a+"-"+p2(m)+"-"+p2(BONUS_PAGA_DIA), dow = new Date(utcDe(d)).getUTCDay(); return dow===6 ? somaDias(d, 2) : dow===0 ? somaDias(d, 1) : d; }
+function dataPagBonus(ano, mes){ var a = mes===12 ? ano+1 : ano, m = mes===12 ? 1 : mes+1, d = a+"-"+p2(m)+"-"+p2(BONUS_PAGA_DIA); return diaUtilPagamento(d); }
 // SUPERVISORA (Marcus, 23/11/2026: "pra menina que é supervisora a meta dela é 200, 250, 300: 100 a menos, porque ela ajuda as meninas"): a Crisbele tem as três faixas 100 peças mais baixas (200 = R$ 15, 250 = R$ 20, 300 = R$ 25; meta por dia 200). Para pôr outra supervisora, acrescente o primeiro nome aqui (minúsculo, sem acento).
 var SUPERVISORAS = {crisbele:100};
 function descontoMeta(nome){ var k = String(nome||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().split(" ")[0]; return SUPERVISORAS[k] || 0; }
@@ -214,7 +216,7 @@ function ajusteDoMes(pr, func, ano, mes){ return (pr.ajustes||[]).find(function(
 // peças do mês por funcionária (Sorelly + Serenity juntas, sem filtro de unidade)
 function pecasDoMes(pr, ano, mes){
   var m = ano+"-"+p2(mes), de = m+"-01", ate = ultimoDiaDoMes(m), por = {};
-  linhasDoPeriodo(pr, de, ate, null).forEach(function(l){ var q = num(l.qtd), v = q*num(l.valor); if(q<=0 && v<=0) return; if(!l.func || l.unidade==="CASA" || SEM_BONUS[l.func]) return; por[l.func] = (por[l.func]||0)+q; });   // produção em casa não entra no bônus
+  linhasDoPeriodo(pr, de, ate, null).forEach(function(l){ var q = num(l.qtd), v = q*num(l.valor); if(q<=0 && v<=0) return; if(!l.func || l.unidade==="CASA" || l.unidade==="SORELLY" || SEM_BONUS[l.func]) return; por[l.func] = (por[l.func]||0)+q; });   // produção em casa não entra no bônus
   return por;
 }
 // 16/11/2026 (Marcus: "refazer as metas, calcular pela quantidade de dias que elas vão lá"): a meta de cada funcionária passa a acompanhar os DIAS QUE ELA TRABALHOU no mês.
@@ -222,7 +224,7 @@ function pecasDoMes(pr, ano, mes){
 /** por[nome][dia] = peças feitas naquele dia (Sorelly + Serenity; produção externa e "sem bônus" ficam fora) */
 function pecasPorDia(pr, ano, mes){
   var m = ano+"-"+p2(mes), por = {};
-  linhasDoPeriodo(pr, m+"-01", ultimoDiaDoMes(m), null).forEach(function(l){ var q = num(l.qtd); if(q<=0 || !l.func || l.unidade==="CASA" || SEM_BONUS[l.func]) return; var x = por[l.func] || (por[l.func] = {}); x[l.dia] = (x[l.dia]||0)+q; });
+  linhasDoPeriodo(pr, m+"-01", ultimoDiaDoMes(m), null).forEach(function(l){ var q = num(l.qtd); if(q<=0 || !l.func || l.unidade==="CASA" || l.unidade==="SORELLY" || SEM_BONUS[l.func]) return; var x = por[l.func] || (por[l.func] = {}); x[l.dia] = (x[l.dia]||0)+q; });
   return por;
 }
 function diasTrabalhados(pr, ano, mes){
@@ -320,7 +322,9 @@ function situacaoCasa(pr, func){
 // 16/11/2026 (Marcus: "enviar em Pix revendedora toda quarta-feira, daí sobe para o Lucas pagar no Direcionar"): o dia trabalhado é pago na primeira quarta-feira DEPOIS dele (dia de semana 3). Dia já pago fica marcado em pr.diasPagos e sai do valor a pagar.
 function quartaApos(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return somaDias(dia, ((3-dow+7)%7) || 7); }
 /** CICLO da produção externa (regra NOVA do Marcus, 22/11/2026: "tudo que entregar até segunda entra no pagamento de quinta da mesma semana, Pix revendedora; domingo trabalha, segunda entrega, quinta recebe"): o ciclo vai de TERÇA a SEGUNDA (a segunda entra); fecha na segunda e é pago na QUINTA seguinte (segunda + 3 dias). Antes (17/11/2026): domingo fechava e quarta pagava. O nome da função ficou (quartaDaSemana) só para não mexer em quem a importa; devolve a QUINTA. */
-function quartaDaSemana(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return somaDias(dia, ((1-dow+7)%7)+3); }
+/** Dia de pagamento: se cair em feriado, sábado ou domingo, passa para o próximo dia útil (Marcus, 26/11/2026: "quinta feriado vale sexta ou o próximo dia útil"). */
+function diaUtilPagamento(dia){ for(var g = 0; g<14; g++){ var dow = new Date(utcDe(dia)).getUTCDay(); if(dow!==0 && dow!==6 && !feriadosDe(dia.slice(0, 4))[dia]) return dia; dia = somaDias(dia, 1); } return dia; }
+function quartaDaSemana(dia){ var dow = new Date(utcDe(dia)).getUTCDay(); return diaUtilPagamento(somaDias(dia, ((1-dow+7)%7)+3)); }
 /** Lista de pagamentos da produção: diária da produção em casa (por quinta) e bônus de mês fechado. pr.diasPagos = dias da casa já pagos; pr.pagos = bônus pagos; pr.envios = o que já foi enviado ao Financeiro. */
 function pagamentosDaProducao(pr, hoje){
   var out = [], grupos = {}, dp = pr.diasPagos || {};
@@ -345,7 +349,7 @@ function pagamentosDaProducao(pr, hoje){
     var ano = Number(m.slice(0, 4)), mes = Number(m.slice(5, 7)); if(m<BONUS_DESDE) return;
     var aberto = m>=String(hoje||hojeSP()).slice(0, 7);   // mês ainda aberto: aparece com o valor até agora, mas só envia ao Contas a pagar depois que o mês fecha
     var dataInt = dataPagBonus(ano, mes);
-    premiacaoDoMes(pr, ano, mes).linhas.forEach(function(l){ if(l.valor>0){ var id = "bonus|"+l.nome+"|"+m; out.push({id:id, data:dataInt, func:l.nome, tipo:"Produção interna", forma:"Dinheiro", aberto:aberto, dias:[], diasPagos:[], diasFalta:[], detalhe:nomeMes(ano, mes)+" · "+(l.f15+l.f20+l.f25)+" dias que valeram (R$ 15: "+l.f15+" · R$ 20: "+l.f20+" · R$ 25: "+l.f25+")", valor:r2(l.valor), total:r2(l.valor), pago:(pr.pagos||{})[id] || null}); } }); });
+    premiacaoDoMes(pr, ano, mes).linhas.forEach(function(l){ if(l.valor>0){ var id = "bonus|"+l.nome+"|"+m; out.push({id:id, data:dataInt, func:l.nome, tipo:"Produção Serenity", forma:"Dinheiro", aberto:aberto, dias:[], diasPagos:[], diasFalta:[], detalhe:nomeMes(ano, mes)+" · "+(l.f15+l.f20+l.f25)+" dias que valeram (R$ 15: "+l.f15+" · R$ 20: "+l.f20+" · R$ 25: "+l.f25+")", valor:r2(l.valor), total:r2(l.valor), pago:(pr.pagos||{})[id] || null}); } }); });
   out.forEach(function(x){ x.envio = (pr.envios||{})[x.id] || null; });
   return out.sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : (a.func<b.func ? -1 : 1); });
 }
@@ -597,6 +601,12 @@ function prReduz(s, a){
     case "pag_envio_apagar": {   // tira o registro de envio de um pagamento (usado quando o envio automático nasceu errado)
       if(!pr.envios || !pr.envios[a.id]) return recusa("Envio não encontrado.");
       delete pr.envios[a.id]; log("pag_envio_apagar", String(a.id)); return ok("Envio desfeito.");
+    }
+    case "saldo_somar": {   // soma (ou tira) valor do saldo da produção externa: positivo = foi enviado a mais (desconta do próximo pagamento); negativo = faltou pagar. Só diretoria.
+      if(!a.admin) return recusa("Só a diretoria acerta o saldo.");
+      var fs = trim(a.func), vs = r2(num(a.valor)); if(!fs || !vs) return recusa("Informe a pessoa e o valor.");
+      pr.saldoExterna = pr.saldoExterna || {}; pr.saldoExterna[fs] = r2(num(pr.saldoExterna[fs])+vs);
+      log("saldo_somar", fs+" · "+vs+(a.motivo ? " · "+a.motivo : "")); return ok("Saldo acertado.");
     }
     case "pag_desmarcar": {
       if(!pr.pagos || !pr.pagos[a.id]) return recusa("Pagamento não está marcado como pago.");

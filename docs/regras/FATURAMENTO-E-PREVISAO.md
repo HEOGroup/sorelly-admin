@@ -1,0 +1,23 @@
+﻿# Regras de faturamento, previsão e Contas a pagar diário (movido de domain/CLAUDE.md em 25/11/2026)
+
+Quem lança: Amanda, todo dia. Texto original, sem cortes. As regras de ACERTO, COMISSÃO e BRINDE estão em `docs/regras/REPRESENTANTES-E-COMISSOES.md`.
+
+## Faturamento (quem lança: Amanda, todo dia)
+- Ela lança: faturamento do dia, acertos (total ACUMULADO do mês, não o do dia: dia 1 = 10, dia 2 = 30 → o sistema calcula 20 no dia 2) e quantidade de revendedoras até o dia anterior.
+- Visão geral: só o gráfico de crescimento de revendedoras (janela até 90 dias, barras diárias, rolagem embaixo, tooltip com data, quantidade e variação).
+- Projeção: média diária da janela escolhida (7, 15 ou 30 dias). Em janeiro caem cerca de 100 revendedoras; em fevereiro retoma (queda fixa: a confirmar).
+- **Crescimento de revendedoras (06/10/2026):** o Marcus atualiza o total UMA vez por dia (às 10h), na Visão geral ("Atualizar hoje", só supervisão/diretoria; `REV_LANCAR` com `unico`, guarda a hora em `revAtualizadoEm`). Sábado, domingo e dia sem lançamento ficam no último valor (`completarDias` em financeiro.js). O gráfico tem botão "Tela cheia" (Esc fecha). A Visão geral tem a tabela "Revendedoras mês a mês" (1 a 12: começou com, terminou com, aumento/queda e %; o mês atual vai até hoje, em tempo real; `resumoMensalRevendedoras`). O lançamento "dia anterior" da Previsão de faturamento (Amanda) continua existindo e também grava revendedoras: confirmar se ele sai desse formulário.
+- **Projeção de revendedoras = média de crescimento DIÁRIO calculada dos lançamentos reais, conforme o filtro** (7/15/30/60/90 dias, mês atual ou história completa): variação na janela ÷ dias da janela, projetada até o dia 1 de cada mês (`crescimentoPorDia`/`taxaCrescimento` em financeiro.js; antes era número fixo). Dias sem aumento (fim de semana) entram na média. A quantidade aparece em cima das barras de projeção e da última barra real.
+- Tabela do ano: Mês, Contas a pagar (vermelho), Faturamento (verde), Resultado. Sem coluna Situação.
+- Tabela "Revendedoras / Previstos / Realizados", nesta ordem, com linha de média embaixo (usada para prever os próximos meses).
+- Fechamento do mês: base é o começo do dia 1. Setembro/2026 fechou com 2.023 revendedoras, R$ 1.446.262,20 e 1.809 acertos. Deve ser possível definir o resultado de um mês anterior depois do dia 1.
+- A confirmar: o que são os 94/95/96% no topo; quem lança Contas a pagar; de onde vem o sistema de estoque.
+
+- **Faturamento e Contas a pagar diário (09/10/2026):** a tela "Previsão de faturamento" agora se chama **Faturamento**. Registro OFICIAL = dia anterior (fixo; 08/10 = 291 acertos e R$ 207.855,36). Campo "Hoje" (`s.fatHoje`, ação `FAT_HOJE`) é só acompanhamento: entra na média e na previsão (`fatEfetivo` em financeiro.js) e deixa de valer no dia seguinte. Contas a pagar tem a aba **Diário** (`pages/ContasPagarDiario.js`, `s.contasPagasDiario`, `CPD_SET`): por dia, CNPJ 34/46/59/67, contas por fora, total, faturado, acertos e resultado; botão "Copiar resumo em texto". Mês com dias lançados (e não fixado): o PAGO do mês no resto do sistema = soma dos dias (`contasDoMes`), o A PAGAR = total previsto do mês − pago. Outubro/2026 (1 a 8) veio do Marcus (`VERSAO_CPD` em financeiro.js; o resumo dele tinha "contas por fora" total de R$ 65.651,60, mas a soma dos dias dá R$ 53.302,53 — valem os dias). **Previsão de nov/dez (09/10/2026):** média por acerto de novembro = média ATUAL do mês (com o "Hoje") + 5%, dezembro + 15% (`ALTA_MEDIA` em financeiro.js, fixo no código, mover para o Configurador quando o Marcus pedir); acertos = revendedoras (pela janela 7d/15d/30d/60d/90d/mês escolhida no botão da Visão geral) × % previstos × 95%. Outubro na tabela "Faturamento mês a mês" da Visão geral (`tabelaMeses` em resumo-financeiro.js) é PREVISÃO: meta × média atualizada. Hoje (09/10) até o momento: 329 acertos, R$ 239.256,21. Em Contas a pagar → Diário há o bloco "Pago e falta pagar por CNPJ" (previsto vem de Por CNPJ, pago = soma dos dias, falta = quanto enviar). Tabela "Crescimento por mês" (components/tabela-crescimento.js): mês, revendedoras, aumento e faturamento; na Visão geral e na Faturamento.
+
+## Cabeçalho do acerto
+Nome da revendedora fixo ao rolar. Consolidado travado no topo: Vendas / Comissão / Valor de Acerto / Pag. 1 (forma) / Valor restante. Ícone redondo no topo leva às regras. Endereço de casa e de trabalho com estrela de favorito.
+
+## Correções de 25/11/2026 (decisões do Marcus)
+- Alta da média: dezembro 10% e janeiro 15% (o texto acima, "dezembro + 15%", e o 17% de janeiro estão SUPERADOS). Dezembro já está no código (`domain/financeiro.js:210`); janeiro falta ligar.
+- Meta de acertos: 98% do previsto (os "94/95/96%" e "95%" acima são texto velho).

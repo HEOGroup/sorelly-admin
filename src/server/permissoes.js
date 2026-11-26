@@ -56,7 +56,7 @@ export const SETORES_DO_MODULO = {
 export const PESSOAS_DO_MODULO = { mod: [47, 61], metas: [47] };
 
 // Acesso total SEM o RH (Marcus, 24/11/2026): Priscila (37) e Amanda de Miranda (32) abrem tudo, menos os dados do RH (cadastro, folha, equipes).
-export const PESSOAS_SEM_RH = [37, 32];
+export const PESSOAS_SEM_RH = [37, 32, 63];   // 63 = Nicole (Marcus, 26/11/2026)
 const MODULOS_DO_RH = ["rh", "eq"];
 
 export function podeModulo(usuario, modulo) {
