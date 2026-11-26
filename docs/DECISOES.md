@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Reabrir libera os pagamentos no Atendimento Sorelly, Lucas)
+- **Lucas: "quando eu reabrir essa venda, a pessoa que solicitou precisa poder alterar as informações do pedido; quando eu cancelo, as meninas não conseguem mudar os valores".**
+- **Causa:** depois de registrar o acerto, a calculadora trava tudo (`jaFeito` = acerto registrado), inclusive os pagamentos; o Reabrir do Direcionar só voltava o pedido para a fila.
+- **Decidido:** Reabrir de pedido do atendimento interno marca `pagAberto` no atendimento (state/reducer.js). Na calculadora, `travaPag` = acerto registrado e não reaberto: a estação Pagamentos (forma, valor, editar, cancelar, Reenviar) abre; condicionais, venda, brindes e o registro do acerto continuam travados. Reenviar ao Financeiro tira o `pagAberto`; o pedido novo (mesmo id PI+atendimento) substitui o antigo na fila.
+
 ## 26/11/2026 (Direcionar no celular; pedido trocado não volta, Lucas)
 - **Lucas: "as telas do admin ao abrir no celular não consigo utilizar algumas etapas; preciso que consiga utilizar tanto no celular como no computador. Exemplo: Direcionar Pix".**
 - **Causa (celular, 375 px):** na grade do pagamento a coluna Conta tinha mínimo 0 (`minmax(0,1.8fr)`) e ficava com 35 px; a linha esticava para 588 px; a coluna Confirmar (sticky) cobria a Conta; a lista do `SeletorConta` (centro) abria com a largura da célula.

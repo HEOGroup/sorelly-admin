@@ -162,7 +162,7 @@ function AtendimentoInterno(){
   var ml = useState("padrao"), modLocal = ml[0], setModLocal = ml[1];             // kit mostrado na tabela quando ninguém está selecionada
   // PIX ADIANTADO: antes de enviar ao financeiro, o servidor MARCA os Pix usados neste atendimento (idempotente; se o Pix já foi usado em outro acerto, recusa e a linha sai). Sem Pix adiantado, envia direto.
   var enviarFin = function(){
-    var seguir = function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:ehInd ? 0 : (form.vendaBruta||0), aPagar:ehInd ? excInd : (dv.totalAPagar||0)}); };
+    var seguir = function(){ if(sel.pagAberto) d({type:"INT_ATUALIZAR", id:sel.id, patch:{pagAberto:false}}); d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:ehInd ? 0 : (form.vendaBruta||0), aPagar:ehInd ? excInd : (dv.totalAPagar||0)}); };
     var ids = linhasEnvio.filter(function(l){ return l.pixFfId; }).map(function(l){ return l.pixFfId; }), tinha = !!lancFin && lancFin.linhas.some(function(l){ return l.pixFfId; });
     if(!ids.length && !tinha) return seguir();
     chamar("POST", "/pix-adiantados", {internoId:sel.id, rev:sel.nome, ids:ids}).then(function(r){
@@ -262,6 +262,7 @@ function AtendimentoInterno(){
   // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
   var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
   var jaFeito = !!sel && sel.status==="acertado";
+  var jaFeitoAc = jaFeito, travaPag = jaFeito && !(sel && sel.pagAberto);   // pagAberto: o Financeiro reabriu o pedido no Direcionar; só os pagamentos voltam a mudar (Lucas, 26/11/2026)
   // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
   // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras → finalizar (ninguém assina nada no sistema, 11/11/2026)
   var simples = !!sel && (sel.tipo==="indicacao" || sel.tipo==="reposicao" || sel.tipo==="troca");   // Brinde de indicação, Reposição e Troca de peça (Marcus, 11/11/2026): atendimento simples, sem acerto, sem escolha de kit
@@ -505,9 +506,9 @@ function AtendimentoInterno(){
   // crédito da cliente: guardado na ficha dela (revInternas.credito); usar tira do saldo, cancelar devolve
   var revCred = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId; }) : null, credDisp = (revCred && revCred.credito) || 0;
   var mexeCredito = function(valor, motivo){ if(revCred) d({type:"REVINT_CREDITO", id:revCred.id, valor:valor, motivo:motivo, por:nomeDe(s.usuario), internoId:sel.id}); };
-  var addPag = function(){ if(!lancOk || jaFeito) return; if(lancForm.forma==="credito_cliente") mexeCredito(-lancForm.valor, "Usado no acerto de "+hoje.split("-").reverse().join("/")); up({pagamentos:form.pagamentos.concat([lancForm])}); setLancForm(Object.assign({}, LANC_VAZIO, {forma:lancForm.forma})); };
-  var editarPag = function(i){ if(jaFeito) return; var p = form.pagamentos[i]; if(p.forma==="credito_cliente") mexeCredito(p.valor, "Devolvido (pagamento editado)"); setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
-  var cancelarPag = function(i){ if(jaFeito) return; var pc = form.pagamentos[i]; if(pc && pc.forma==="credito_cliente") mexeCredito(pc.valor, "Devolvido (pagamento cancelado)"); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  var addPag = function(){ if(!lancOk || travaPag) return; if(lancForm.forma==="credito_cliente") mexeCredito(-lancForm.valor, "Usado no acerto de "+hoje.split("-").reverse().join("/")); up({pagamentos:form.pagamentos.concat([lancForm])}); setLancForm(Object.assign({}, LANC_VAZIO, {forma:lancForm.forma})); };
+  var editarPag = function(i){ if(travaPag) return; var p = form.pagamentos[i]; if(p.forma==="credito_cliente") mexeCredito(p.valor, "Devolvido (pagamento editado)"); setLancForm(Object.assign({}, LANC_VAZIO, p)); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
+  var cancelarPag = function(i){ if(travaPag) return; var pc = form.pagamentos[i]; if(pc && pc.forma==="credito_cliente") mexeCredito(pc.valor, "Devolvido (pagamento cancelado)"); up({pagamentos:form.pagamentos.filter(function(x,j){ return j!==i; })}); };
   var rot = function(t){ return e("span",{className:"text-[13px] font-semibold text-muted-foreground"}, t); };
   var LINHA_PAG = "grid grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_5.5rem] items-center gap-2";   // forma e conta têm a mesma largura (as linhas se alinham)
   var campoLado = function(nome, campo){ return e("label",{className:"flex min-w-0 items-center gap-2"}, e("span",{className:"w-12 shrink-0 text-[13px] font-semibold text-muted-foreground"}, nome), e("span",{className:"min-w-0 flex-1"}, campo)); };
@@ -583,7 +584,7 @@ function AtendimentoInterno(){
   var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor, l.pixFfId || ""]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
   var fechouPagamentos = ehInd || dv.quitado || dv.acordoValido || form.recusouNegociar;
-  var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito && (!ehInd || !excInd || !!sel.formaDifInd);   // brinde de indicação: a funcionária escolhe COMO a revendedora pagou a diferença (Edna, 19/11/2026: ia sempre como Pix e ela pagou no crédito)
+  var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !travaPag && (!ehInd || !excInd || !!sel.formaDifInd);   // brinde de indicação: a funcionária escolhe COMO a revendedora pagou a diferença (Edna, 19/11/2026: ia sempre como Pix e ela pagou no crédito)
   var linhasPagFin = lancFin ? lancFin.linhas.filter(function(l){ return l.tipo==="pagamento"; }) : [];
   var semPendencia = function(ls){ return ls.length>0 && ls.every(function(l){ return l.isento || (statusLinhaFin(l)!=="aguardando" && (l.partes||[]).every(function(q){ return !!q.comprovante || !!q.ok; })); }); };   // 17/11/2026 (Edna, Gislaine): conta já conferida pelo financeiro não trava o OK, mesmo sem comprovante anexado
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
@@ -999,6 +1000,7 @@ function AtendimentoInterno(){
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
 
+  jaFeito = travaPag;   // estação 2 (pagamentos): abre quando o Financeiro reabriu
   // ── estação 2: pagamentos (forma e valor; o financeiro define as contas) ──
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
   // 16/11/2026 (Marcus): a bandeira só era pedida no LINK. 25/11/2026 (Lucas): cartão de crédito e débito também pedem a bandeira (obrigatória) e o crédito as parcelas, para a Maquininha Banho lançar sozinha com tudo
@@ -1096,6 +1098,7 @@ function AtendimentoInterno(){
     // 16/11/2026 (Marcus: "compactar, tem que ter linhas de tabela"): totais, forma, entrada, pagamentos lançados e Financeiro num bloco só, linhas de 32 px
     cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, linhaCredito, blocoLinks, blocoPix, tabPag, pPag), "", "p-0")));
 
+  jaFeito = jaFeitoAc;   // daqui para baixo o acerto registrado volta a travar tudo
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){
     var lista = form.brindes.map(function(b,i){ return {b:b, i:i}; }).filter(function(x){ return x.b.cat===cat; });

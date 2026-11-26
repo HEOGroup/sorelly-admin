@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.251", data:"2026-11-26", titulo:"Reabrir no Direcionar libera os pagamentos no Atendimento Sorelly", itens:[
+  {tipo:"melhoria", area:"Financeiro → Direcionar Pix → Reabrir · Atendimento interno → Atendimento Sorelly", txt:"Quando o Financeiro reabre um pedido de um acerto já registrado, a funcionária volta a poder mudar os pagamentos (forma, valor, tirar e pôr) e reenviar. O resto do acerto continua travado. Ao reenviar, os pagamentos travam de novo e o pedido novo entra no lugar do antigo na fila."}]},
  {v:"0.21.250", data:"2026-11-26", titulo:"Direcionar no celular; pedido trocado não volta", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix (celular)", txt:"No celular a coluna Conta ficava com 35 px e o botão Confirmar, preso à direita, cobria a conta: não dava para escolher. Agora a Conta tem largura de uso, a linha do pagamento fica baixa, a grade rola para o lado e o Confirmar só fica preso em tela larga. A lista de contas abre com pelo menos 280 px, sem passar da tela. No computador nada muda."},
   {tipo:"correção", area:"App da representante → Direcionar", txt:"Depois que o acerto é finalizado, o servidor não aceita mais pedido de conta de um pagamento que não está no acerto: o celular com cópia antiga não traz de volta o pedido trocado."}]},
