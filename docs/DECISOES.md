@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar: um pedido por pagamento da representante, Lucas)
+- **Lucas: "não duplique, sempre fique apenas 1 solicitação por operação. Caso precise alterar, vai sumir o que já estava e aparecer uma nova".**
+- **Causa:** o app da representante apaga o pedido antigo e cria um novo ao trocar o pagamento, mas o servidor (src/server/rep-pag.js) recusava apagar pedido já respondido pelo Financeiro. O antigo ficava (ex.: Ana Caroline R$ 1.420,20 na fila, acerto finalizado com R$ 1.220,20 + R$ 200,00 em dinheiro).
+- **Decidido:** o servidor apaga o pedido trocado mesmo já direcionado, desde que não tenha comprovante, e tira o que ele lançou sozinho (pf.lancamentos aguardando comprovante, ff.pix e ff.repasses do Direcionar). Pedido ou linha com comprovante nunca some sozinho. Na tela, `rep_remover` tira o pedido sem comprovante em qualquer situação.
+- **Dados:** apagados 4 pedidos de acertos já finalizados sem eles e sem comprovante: Ana Caroline Macedo Santos R$ 1.420,20, Keroli de Campos da Silva R$ 307,00 e R$ 280,50 (pedido repetido), Lanna Eduarda Barbosa Marques R$ 402,00 (pedido repetido). Cópia de segurança fora do Git.
+
 ## 26/11/2026 (Direcionar: comprovante da representante aparece, Lucas)
 - **Lucas: "Ana Leticia Ducate, por que não aparece o comprovante anexado pela representante na aba de Direcionar?"**
 - **Causa:** o pedido da representante mora em `LFR_P`+kit (domain/pagamento-rep.js) e a tela procurava `LFR_`+kit; o comprovante estava salvo, mas a tela nunca achava. Valia para todos os Pix de representante.

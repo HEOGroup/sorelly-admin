@@ -7,6 +7,7 @@ import { lerPrefixos } from "./estado-itens.js";
 import { gravarModulo } from "./estado-modulo.js";
 import { nomeDaRep } from "./rep-filtro.js";
 import { vivo } from "../apps/montagem/domain/app-rep.js";
+import { diff } from "../apps/montagem/lib/estado-patch.js";
 
 const obj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const KIT = /^[A-Za-z0-9_-]{1,64}$/;
@@ -27,6 +28,24 @@ async function kitsDaRep(codigos) {
 const kitDaChave = (k, v) => (k.startsWith("lf_LFR_P") ? k.slice(8) : k.startsWith("dp_") && obj(v) ? String(v.kitId || "") : "");
 const ehDela = (k, v, kits) => obj(v) && v.origem === "rep" && !!kits[kitDaChave(k, v)];
 
+// pedido trocado pela representante depois de direcionado: tira o que ele lançou sozinho (Pagamentos a fornecedores sem comprovante, PIX revendedoras, repasse de prestador)
+async function desfazerLancamentos(ids, cod) {
+  const de = (v) => ids.some((id) => String(v || "").indexOf(id + "#") === 0);
+  const ler = async (m) => { const r = await consulta("select conteudo from sorelly.estado_modulo where modulo = $1", [m]); return (r.rows[0] && r.rows[0].conteudo) || null; };
+  const pf = await ler("pf");
+  if (pf && Array.isArray(pf.lancamentos)) {
+    const novo = pf.lancamentos.filter((l) => !(de(l.origemPix) && l.aguardaComp));
+    const d = diff(pf.lancamentos, novo); if (d) await gravarModulo("pf", { lancamentos: d }, "patch", "rep:" + cod + " (pedido trocado)");
+  }
+  const ff = await ler("ff");
+  if (ff && Array.isArray(ff.pix)) {
+    const sai = {}; ff.pix.forEach((x) => { if (de(x.origemDirecionar)) sai[x.id] = 1; });
+    const pix = ff.pix.filter((x) => !sai[x.id]), rps = (ff.repasses || []).filter((r) => !de(r.origemDirecionar) && !(r.origemPixLancId && sai[r.origemPixLancId]));
+    const p = {}, d1 = diff(ff.pix, pix), d2 = diff(ff.repasses || [], rps); if (d1) p.pix = d1; if (d2) p.repasses = d2;
+    if (Object.keys(p).length) await gravarModulo("ff", p, "patch", "rep:" + cod + " (pedido trocado)");
+  }
+}
+
 // leitura: só os pedidos dos kits dela
 export async function respostaPagRep(desde, repCod) {
   const cod = [].concat(repCod).map(String);
@@ -39,6 +58,7 @@ export async function respostaPagRep(desde, repCod) {
 }
 
 const definida = (linha) => (linha.partes || []).some((q) => q && (q.descricao || q.ok));   // o Financeiro já mexeu nesta linha
+const comComp = (linha) => (linha.partes || []).some((q) => q && q.comprovante);   // já tem comprovante: houve dinheiro, nunca some sozinho
 // gravação: {versao, aceitas, devolver, avisos}
 export async function gravarPagRep(chaves, eu) {
   const cod = String(eu.repCod || "").trim();   // principal (carimbo e nome)
@@ -46,7 +66,7 @@ export async function gravarPagRep(chaves, eu) {
   const kits = await kitsDaRep(eu.repCods && eu.repCods.length ? eu.repCods : cod);
   const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'pag'");
   const at = (r.rows[0] && r.rows[0].conteudo) || {};
-  const gravar = {}, devolver = {}, avisos = [];
+  const gravar = {}, devolver = {}, avisos = [], desfazer = [];
   const nega = (k) => { devolver[k] = at[k] !== undefined && ehDela(k, at[k], kits) ? at[k] : null; };
   for (const [k, v] of Object.entries(chaves)) {
     const existe = at[k];
@@ -54,9 +74,9 @@ export async function gravarPagRep(chaves, eu) {
     if (v === null) {   // apagar: só pedido dela que o Financeiro ainda não resolveu
       if (existe === undefined || existe === null) continue;
       if (!ehDela(k, existe, kits)) { nega(k); continue; }
-      const mexido = k.startsWith("dp_") ? existe.status !== "fila" : (existe.linhas || []).some(definida);
-      if (mexido) { nega(k); avisos.push("O Financeiro já respondeu esse pedido de conta. Ele não pode mais ser apagado."); continue; }
-      gravar[k] = null; continue;
+      const temComp = k.startsWith("dp_") ? !!existe.comprovante : (existe.linhas || []).some(comComp);
+      if (temComp) { nega(k); avisos.push("Esse pagamento já tem comprovante. Ele não pode mais ser apagado; fale com o Financeiro."); continue; }
+      gravar[k] = null; if (k.startsWith("dp_") && existe.status !== "fila") desfazer.push(existe.id); continue;
     }
     if (!obj(v) || JSON.stringify(v).length > 6 * 1024 * 1024) { nega(k); continue; }
     const kitId = kitDaChave(k, v);
@@ -81,7 +101,7 @@ export async function gravarPagRep(chaves, eu) {
         return { tipo: "pagamento", forma: String(l.forma || "pix"), valor: Number(l.valor), isento: false, pid: String(l.pid), parcelas: Math.max(1, Math.floor(Number(l.parcelas) || 1)), data: String(l.data || ""), pedidoTs: l.pedidoTs || Date.now(), enviada: false,
           partes: [{ descricao: "", valor: Number(l.valor), comprovante: c0, ok: false }] };
       });
-      antigas.forEach((a) => { if (a && a.pid && definida(a) && (a.partes || []).some((q) => q && q.ok) && !linhas.some((l) => l.pid === a.pid)) linhas.push(a); });   // pagamento que o Financeiro já confirmou não some
+      antigas.forEach((a) => { if (a && a.pid && ((definida(a) && (a.partes || []).some((q) => q && q.ok)) || comComp(a)) && !linhas.some((l) => l.pid === a.pid)) linhas.push(a); });   // pagamento confirmado pelo Financeiro ou com comprovante não some
       if (!linhas.length) { if (existe) gravar[k] = null; else devolver[k] = null; continue; }
       gravar[k] = { id: "LFR_P" + kitId, origem: "rep", pedidoRep: kitId, repAcertoId: (existe && existe.repAcertoId) || v.repAcertoId || null, nome: String(v.nome || (existe && existe.nome) || "").slice(0, 200), por: nome,
         enviadoTs: (existe && existe.enviadoTs) || v.enviadoTs || Date.now(), etapaComprovantes: true, finalizado: true, conferido: !!(existe && existe.conferido) && linhas.every((l) => (l.partes || []).every((q) => q.ok)), linhas };
@@ -90,5 +110,6 @@ export async function gravarPagRep(chaves, eu) {
   let versao = r.rows[0] ? Number(r.rows[0].versao) : 0;
   if (Object.keys(gravar).length) versao = await gravarModulo("pag", gravar, "chaves", "rep:" + cod);
   Object.keys(gravar).forEach((k) => { if (JSON.stringify(gravar[k]) !== JSON.stringify(chaves[k])) devolver[k] = gravar[k]; });
+  if (desfazer.length) await desfazerLancamentos(desfazer, cod);
   return { versao, aceitas: Object.keys(gravar), devolver, avisos };
 }

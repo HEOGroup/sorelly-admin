@@ -151,7 +151,7 @@ function dpReduz(s, a){
         x.vendas = ctx.vendas>0 ? ctx.vendas : 0; x.aPagar = ctx.aPagar>0 ? ctx.aPagar : x.valor;
         x.pagos = (ctx.pagos||[]).filter(function(p){ return p.pid!==x.pid && !dp.pix.some(function(y){ return y.pid && y.pid===p.pid && y.status==="fila"; }); }).map(function(p){ return {forma:p.forma, valor:p.valor, cnpj:p.cnpj||"", parc:p.parc||0, obs:p.obs||""}; }); }); return ok(); }
     case "rep_comp": { dp.pix.forEach(function(x){ if(x.pid===a.pid) x.comprovante = {nome:a.nome}; }); return ok(); }   // a representante pagou na conta e anexou o comprovante
-    case "rep_remover": { dp.pix = dp.pix.filter(function(x){ return !(x.pid===a.pid && x.status==="fila"); }); return ok(); }
+    case "rep_remover": { dp.pix = dp.pix.filter(function(x){ return !(x.pid===a.pid && !x.comprovante); }); return ok(); }   // um pedido por pagamento (Lucas, 26/11/2026): trocou, o antigo some, mesmo já direcionado, se ainda não tem comprovante
     // forma da DIFERENÇA DO BRINDE (Lucas, 19/11/2026): entra como Pix, mas a revendedora pode pagar no cartão ou no link. Troca só enquanto está na fila.
     // a.n = posição da parte no pedido, a.forma = "pix" | "maquininha" | "link". As contas já escolhidas para a forma antiga saem.
     case "parte_forma": { var pFm = pix(a.id); if(!pFm || pFm.status!=="fila") return recusa("Pedido não está mais na fila.");

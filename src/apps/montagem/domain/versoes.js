@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.249", data:"2026-11-26", titulo:"Direcionar: um pedido por pagamento da representante", itens:[
+  {tipo:"correção", area:"App da representante → Acerto e Financeiro → Direcionar Pix", txt:"Quando a representante troca um pagamento depois que o Financeiro já respondeu, o pedido antigo agora some (antes o servidor recusava e ficavam dois pedidos). O que o pedido antigo tinha lançado sozinho (Pagamentos a fornecedores sem comprovante, PIX revendedoras, Prestadores) sai junto. Pedido com comprovante nunca some sozinho."},
+  {tipo:"correção", area:"Dados de 26/11/2026", txt:"Apagados 4 pedidos que tinham ficado para trás (acerto já finalizado sem eles, sem comprovante): Ana Caroline R$ 1.420,20, Keroli R$ 307,00 e R$ 280,50, Lanna R$ 402,00."}]},
  {v:"0.21.248", data:"2026-11-26", titulo:"Conta do Nickolas: conferência do banco aceita campos em outra ordem", itens:[
   {tipo:"correção", area:"Sistema · dados", txt:"Fotos de catálogo e Inadimplência nunca apareciam como confirmados no banco porque o banco devolve os campos em outra ordem. Agora a conferência compara só o conteúdo, e a cópia antiga sai do navegador. Conferido na conta do Nickolas: cópia apagada, nada pendente, sistema abre do banco."}
  ]},
