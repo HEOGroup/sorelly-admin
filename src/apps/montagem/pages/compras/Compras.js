@@ -17,7 +17,7 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Abas, BarraFiltros, ESTADO, Faixa, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { ETAPA_ANALISE, PAGAVEL_STATUS, ROTULO_STATUS, STATUS_PEDIDO, TRANSICOES, dashboardCompras, diasEntre, formatarDia, formatarHoras, formatarReais, hojeSP, listarPedidos, pendenciasAnalise, podeAcaoPedido } from "@/apps/montagem/domain/compras-estoque";
+import { ETAPA_ANALISE, nfPendente, PAGAVEL_STATUS, ROTULO_STATUS, STATUS_PEDIDO, TRANSICOES, dashboardCompras, diasEntre, formatarDia, formatarHoras, formatarReais, hojeSP, listarPedidos, pendenciasAnalise, podeAcaoPedido } from "@/apps/montagem/domain/compras-estoque";
 import { AZUL, Avatar, Bt, Ind, Selo, cnpjCurto, corTempo, diasNaEtapa, norm, textoDias, useCompras } from "@/apps/montagem/pages/compras/pecas";
 import { useAcoes } from "@/apps/montagem/pages/compras/janelas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -29,22 +29,26 @@ import { e, useEffect, useState } from "@/shared/react";
 var COLUNAS = [
   {k:"ajustes", titulo:"Novo orçamento / ajustes", cor:ESTADO.alerta},
   {k:"solicitada", n:1, titulo:"Solicitada", cor:ESTADO.alerta},
-  {k:"aprovada", n:2, titulo:"Análise financeira", cor:AZUL},
-  {k:"liberada", n:3, titulo:"Liberada para compra", cor:"#93C5FD"},
-  {k:"efetuada", n:4, titulo:"Efetuada", cor:ESTADO.info},
-  {k:"transito", n:5, titulo:"Em transporte", cor:"#38BDF8"},
-  {k:"recebida", n:6, titulo:"Chegou na empresa", cor:"#34D399"},
-  {k:"entregue", n:7, titulo:"Entregue", cor:ESTADO.ok},
-  {k:"reprovada", n:8, titulo:"Reprovada", cor:ESTADO.ruim},
-  {k:"cancelada", n:9, titulo:"Cancelada", cor:ESTADO.neutro}];
-var NOME_COL = {ajustes:"Novo orçamento / ajustes", solicitada:"Solicitada", aprovada:"Análise financeira", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
+  {k:"aprovada", n:2, titulo:"Definição do CNPJ", cor:AZUL},   // 26/11/2026: etapas 2 (CNPJ) e 3 (pagamento) separadas; a chave "aprovada" continua sendo a etapa 2
+  {k:"pagamento", n:3, titulo:"Definição de pagamento", cor:AZUL},
+  {k:"liberada", n:4, titulo:"Liberada para compra", cor:"#93C5FD"},
+  {k:"efetuada", n:5, titulo:"Compra efetuada", cor:ESTADO.info},
+  {k:"transito", n:6, titulo:"Em transporte", cor:"#38BDF8"},
+  {k:"recebida", n:7, titulo:"Na logística", cor:"#34D399"},
+  {k:"entregue", n:8, titulo:"Entregue ao solicitante", cor:ESTADO.ok},
+  {k:"reprovada", n:9, titulo:"Reprovada", cor:ESTADO.ruim},
+  {k:"cancelada", n:10, titulo:"Cancelada", cor:ESTADO.neutro}];
+var NOME_COL = {ajustes:"Novo orçamento / ajustes", solicitada:"Solicitada", aprovada:"Definição do CNPJ", pagamento:"Definição de pagamento", liberada:"Liberada para compra", efetuada:"Compra efetuada", transito:"Em transporte", recebida:"Na logística", entregue:"Entregue ao solicitante", reprovada:"Reprovada", cancelada:"Cancelada"};
 var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"ajustes", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
   COMPRADA:"efetuada", EM_TRANSITO:"transito", RECEBIDA_PARCIAL:"transito", RECEBIDA:"recebida", ENTREGUE:"entregue", NEGADA:"reprovada", CANCELADA:"cancelada"};
-var ORDEM = {ajustes:-1, solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
+// coluna do pedido: a etapa financeira (2 CNPJ ou 3 pagamento) depende do CNPJ já definido (pedido antigo em "Análise financeira" cai na etapa certa sozinho)
+var colunaDe = function(p){ var k = COL_DE[p.status]; return k==="aprovada" && p.status!=="AGUARDANDO_CNPJ" && p.cnpjId ? "pagamento" : k; };
+var ORDEM = {ajustes:-1, solicitada:0, aprovada:1, pagamento:1.5, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
 var FINAIS = ["ENTREGUE", "NEGADA", "CANCELADA"];
 var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], EM_TRANSITO:["Em transporte", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
 // próxima operação natural de cada situação (botão "Concluir etapa ›")
 var PROXIMO = {NAO_VERIFICADA:"aprovar", AGUARDANDO:"aprovar", AGUARDANDO_ORCAMENTO:"aprovar", AGUARDANDO_AUTORIZACAO:"autorizar", AGUARDANDO_CNPJ:"liberar", AGUARDANDO_FORMA_PAGAMENTO:"liberar", APROVADA:"liberar", LIBERADA:"comprar", COMPRADA:"receber", EM_TRANSITO:"receber", RECEBIDA_PARCIAL:"receber", RECEBIDA:"entregar"};
+var proximoOp = function(p){ if(p.reanalise && p.status==="AGUARDANDO_ORCAMENTO") return "reanalise_aprovar"; return ETAPA_ANALISE.indexOf(p.status)>=0 ? (colunaDe(p)==="aprovada" ? "decisao" : "liberar") : PROXIMO[p.status]; };   // etapa 2: definir o CNPJ; etapa 3: pagamento e liberar
 var ultimoEm = function(p){ return p.eventos && p.eventos.length ? p.eventos[p.eventos.length-1].em : p.solicitadoEm; };
 var ALTURA = "h-9! text-[13px]!";
 var SEL = INPUT+" "+ALTURA+" w-auto max-w-[12rem] cursor-pointer text-center";
@@ -59,6 +63,7 @@ function mover(c, ac, pd, de, para){
   if(para==="cancelada") return ac.iniciar(pd, "cancelar");
   if(o1<o0) return aviso("Não é possível voltar a compra para \""+NOME_COL[para]+"\". Cancele a compra ou peça ajuste ao financeiro.");
   if(para==="aprovada") return ac.iniciar(pd, st==="AGUARDANDO_AUTORIZACAO" ? "autorizar" : "aprovar");
+  if(para==="pagamento") return o0===0 ? ac.iniciar(pd, st==="AGUARDANDO_AUTORIZACAO" ? "autorizar" : "aprovar") : ac.iniciar(pd, "decisao");   // da etapa 2: define o CNPJ
   if(para==="liberada"){   // de Solicitada: "Aprovar e liberar" (abre a análise financeira; tudo ou nada); da Análise financeira: abre a janela da análise
     if(st==="AGUARDANDO_AUTORIZACAO") return aviso("Autorize a compra antes de liberar para compra.");
     if(o0===0) return ac.aprovarLiberar(pd);
@@ -66,7 +71,7 @@ function mover(c, ac, pd, de, para){
   }
   if(para==="efetuada"){
     if(o0===0) return aviso("Aprove e libere a compra antes de efetuar.");
-    if(ETAPA_ANALISE.indexOf(st)>=0) return aviso("A análise financeira precisa definir o CNPJ e a forma de pagamento e liberar a compra antes de efetuar.");
+    if(ETAPA_ANALISE.indexOf(st)>=0) return aviso("O financeiro precisa definir o CNPJ e a forma de pagamento e liberar a compra antes de efetuar.");
     return ac.iniciar(pd, "comprar");
   }
   if(para==="transito"){ if(o0<3) return aviso("Efetue a compra antes de colocar em transporte."); if(st!=="COMPRADA") return aviso("Esta compra já saiu de Efetuada."); return ac.iniciar(pd, "transito"); }
@@ -90,8 +95,8 @@ var unicos = function(l, f){ var m = {}; l.forEach(function(x){ var v = f(x); if
 
 // ───────────── cartão do quadro ─────────────
 function CartaoCompra(p){
-  var pd = p.p, c = p.c, ac = p.ac, final = FINAIS.indexOf(pd.status)>=0, dias = diasNaEtapa(pd, p.hoje), op = PROXIMO[pd.status], tr = op ? TRANSICOES[op] : null;
-  var pode = !!tr && podeAcaoPedido(pd, op) && c.pode(tr, pd), selo = SELO_STATUS[pd.status] || (pd.status==="LIBERADA" && pd.liberacao ? (pd.liberacao.modo==="plano" ? ["CNPJ e pagamento definidos", "ok"] : ["Comprador define", "neutro"]) : null), pend = pendenciasAnalise(pd), urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[pd.urgencia];
+  var pd = p.p, c = p.c, ac = p.ac, final = FINAIS.indexOf(pd.status)>=0, dias = diasNaEtapa(pd, p.hoje), op = proximoOp(pd), tr = op ? TRANSICOES[op] : null;
+  var pode = !!tr && podeAcaoPedido(pd, op) && c.pode(tr, pd), selo = pd.reanalise && pd.status==="AGUARDANDO_ORCAMENTO" ? ["Reanálise · depende do financeiro", "info"] : SELO_STATUS[pd.status] || (pd.status==="LIBERADA" && pd.liberacao ? (pd.liberacao.modo==="plano" ? ["CNPJ e pagamento definidos", "ok"] : ["Comprador define", "neutro"]) : null), pend = pendenciasAnalise(pd), urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[pd.urgencia];
   var naoFecha = !final && pd.plano.length>0 && !pd.planoInfo.fecha;
   return e("div",{className:"flex flex-col items-center gap-1.5"},
     e("div",{className:"flex w-full items-start justify-center gap-1.5"}, e("b",{className:MONO+" text-[11px] text-[#BFDBFE]"}, "#"+pd.id), e("span",{className:"min-w-0 break-words text-[13px] font-bold leading-tight"}, pd.titulo)),   // título e fornecedor inteiros (16/11/2026)
@@ -105,7 +110,8 @@ function CartaoCompra(p){
       selo && e(Selo,{cor:selo[1]}, selo[0]),
       pend.map(function(x){ return e(Selo,{key:x, cor:x==="Pronto para liberar" ? "ok" : "alerta", ic:x==="Pronto para liberar" ? "check-circle" : "warning"}, x); }),
       pd.atrasado && e(Selo,{cor:"ruim", ic:"warning"}, "Atrasada"),
-      naoFecha && e(Selo,{cor:"alerta", ic:"warning", titulo:pd.planoInfo.aviso}, "Plano não fecha")),
+      naoFecha && e(Selo,{cor:"alerta", ic:"warning", titulo:pd.planoInfo.aviso}, "Plano não fecha"),
+      !final && nfPendente(pd) && e(Selo,{cor:"alerta", ic:"file-text"}, "Aguardando documento — NF")),
     tr && e(Bt,{tipo:"marca", disabled:!pode, semAut:true, titulo:tr.rotulo, className:"w-full py-1.5! text-[12px]!", onClick:function(ev){ ev.stopPropagation(); ac.iniciar(pd, op); }}, "Concluir etapa ›"),
     op==="aprovar" && pode && e(Bt,{disabled:!c.pode(TRANSICOES.liberar, pd), semAut:true, titulo:"Aprova e já faz a análise financeira (CNPJ e forma de pagamento)", ic:"lock-open", className:"w-full py-1.5! text-[11px]!", onClick:function(ev){ ev.stopPropagation(); ac.aprovarLiberar(pd); }}, "Aprovar e liberar"));
 }
@@ -119,7 +125,7 @@ function AbaCompraQuadro(props){
   var set = function(k, v){ var n = Object.assign({}, f); n[k] = v; st[1](n); };
   var todas = baseLista(c);
   var IND = {
-    solicitadas:function(p){ return COL_DE[p.status]==="solicitada"; },
+    solicitadas:function(p){ return colunaDe(p)==="solicitada"; },
     aguard:function(p){ return p.status==="NAO_VERIFICADA" || p.status==="AGUARDANDO_AUTORIZACAO"; },
     autoriz:function(p){ return p.status==="AGUARDANDO_AUTORIZACAO"; },
     aprovadas:function(p){ return ETAPA_ANALISE.indexOf(p.status)>=0; },
@@ -135,8 +141,8 @@ function AbaCompraQuadro(props){
   var ativo = !!(f.q || f.sol || f.setor || f.cls || f.urg || f.atr || f.ind);
   var clica = function(k){ return function(){ set("ind", f.ind===k ? "" : k); }; };
   var cols = COLUNAS.map(function(col){
-    var itens = lista.filter(function(p){ return COL_DE[p.status]===col.k; }).map(function(p){ return Object.assign({}, p, {arrastavel:FINAIS.indexOf(p.status)<0}); });
-    if(col.k==="solicitada" || col.k==="aprovada" || col.k==="liberada" || col.k==="efetuada" || col.k==="transito") itens.sort(function(a, b){ return String(ultimoEm(a)).localeCompare(String(ultimoEm(b))); });
+    var itens = lista.filter(function(p){ return colunaDe(p)===col.k; }).map(function(p){ return Object.assign({}, p, {arrastavel:FINAIS.indexOf(p.status)<0}); });
+    if(col.k==="solicitada" || col.k==="aprovada" || col.k==="pagamento" || col.k==="liberada" || col.k==="efetuada" || col.k==="transito") itens.sort(function(a, b){ return String(ultimoEm(a)).localeCompare(String(ultimoEm(b))); });
     else itens.sort(function(a, b){ return (a.status==="ENTREGUE" ? 1 : 0)-(b.status==="ENTREGUE" ? 1 : 0) || String(ultimoEm(b)).localeCompare(String(ultimoEm(a))); });
     return Object.assign({}, col, {itens:itens, aceita:true});
   });
@@ -219,4 +225,4 @@ function AbaCompraPlanilha(){
     ac.janelas());
 }
 
-export { csvDe, baixarCsv, AbaCompraQuadro, AbaCompraPlanilha, COLUNAS, COL_DE, FINAIS, CartaoCompra, baseLista, mover, ultimoEm };   // as peças do quadro também servem ao Painel (PainelComprasEstoque.js)
+export { csvDe, baixarCsv, AbaCompraQuadro, AbaCompraPlanilha, COLUNAS, COL_DE, colunaDe, FINAIS, CartaoCompra, baseLista, mover, ultimoEm };   // as peças do quadro também servem ao Painel (PainelComprasEstoque.js)

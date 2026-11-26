@@ -9,6 +9,15 @@ import { consulta } from "@/server/db";
 import { contatoDaConta } from "@/server/chat";
 import { contato } from "@/apps/montagem/domain/chat-contatos";
 
+// conversa pessoal de avisos de compras (26/11/2026): uma por pessoa, criada só quando chega o primeiro aviso para ela
+export const convPessoal = (cid) => "cpav_" + String(cid).replace(/[^A-Za-z0-9_.:-]/g, "");
+async function garantirConvPessoal(cid) {
+  const id = convPessoal(cid), ja = (await consulta("select 1 from sorelly.chat_conv where id = $1", [id])).rows[0];
+  if (ja) return id;
+  const agora = Date.now(), dados = { id, tipo: "grupo", nome: "Avisos de compras", membros: [cid], admins: [], criada: agora, base: agora - 1000, fixaPor: {}, descr: "Avisos das compras em que você precisa agir. Abra o pedido pelo botão do aviso." };
+  await consulta("insert into sorelly.chat_conv (id, dados, membros) values ($1, $2, $3) on conflict (id) do nothing", [id, dados, [cid]]);
+  return id;
+}
 export const convDoPedido = (id) => "compra_" + String(id).replace(/[^A-Za-z0-9_.:-]/g, "");
 
 // contato do chat de uma pessoa do sistema (pessoa_id), pela conta ATIVA dela. Mais de uma conta ativa com contatos diferentes = ambíguo: não entrega.
@@ -72,6 +81,13 @@ export async function entregarAvisos(ids) {
       await garantirConv(p, [sol, ...quem]);
       for (const ev of falta) {
         const t = Date.parse(String(ev.em).replace(" ", "T")) || Date.now();
+        // avisos pessoais ANTES do grupo: se falharem, o aviso fica pendente e tenta de novo (o id fixo evita duplicar)
+        for (const pid2 of (ev.aviso.pessoas || [])) {
+          const cidP = await cidDaPessoa(pid2); if (!cidP) continue;
+          const convP = await garantirConvPessoal(cidP);
+          const dP = { id: ev.aviso.aid + "_" + cidP, de: "sistema", t, tipo: "sistema", aviso: true, texto: ev.aviso.texto, compra: { id: p.id, titulo: p.titulo }, status: "lido", reacoes: {}, mencoes: [] };
+          await consulta("insert into sorelly.chat_msg (id, conv, de, t, dados) values ($1, $2, 'sistema', $3, $4) on conflict (id) do nothing", [dP.id, convP, t, dP]);
+        }
         const dados = { id: ev.aviso.aid, de: "sistema", t, tipo: "sistema", aviso: true, texto: ev.aviso.texto, compra: { id: p.id, titulo: p.titulo }, status: "lido", reacoes: {}, mencoes: [] };
         await consulta("insert into sorelly.chat_msg (id, conv, de, t, dados) values ($1, $2, 'sistema', $3, $4) on conflict (id) do nothing", [dados.id, convDoPedido(p.id), t, dados]);
         r.entregues.push(ev.aviso.aid);

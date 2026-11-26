@@ -20,6 +20,7 @@ export async function consulta(sql, p){ const B = globalThis.__BANCO;
   if(B.falhar && /chat_/.test(sql)) throw new Error("chat fora do ar");
   if(/select id from sorelly.chat_msg/.test(sql)) return { rows: p[0].filter((id) => B.msg.has(id)).map((id) => ({ id })) };
   if(/select dados, membros from sorelly.chat_conv/.test(sql) || /select membros from sorelly.chat_conv/.test(sql)) { const c = B.conv.get(p[0]); return { rows: c ? [c] : [] }; }
+  if(/select 1 from sorelly.chat_conv/.test(sql)) return { rows: B.conv.has(p[0]) ? [{}] : [] };   // conversa pessoal "Avisos de compras" (26/11/2026)
   if(/insert into sorelly.chat_conv/.test(sql)) { B.conv.set(p[0], { dados:p[1], membros:p[2] }); return { rows:[] }; }
   if(/insert into sorelly.chat_msg/.test(sql)) { if(!B.msg.has(p[0])) B.msg.set(p[0], { conv:p[1], dados:p[p.length-1] }); return { rows:[] }; }
   if(/select dados from sorelly.chat_msg/.test(sql)) return { rows: [...B.msg.values()].filter((m) => m.conv===p[0]).map((m) => ({ dados:m.dados })) };

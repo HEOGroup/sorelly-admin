@@ -11,7 +11,7 @@ import { CAMPO } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ETAPA_ANALISE, PAGAVEL_STATUS, ROTULO_SITUACAO, agruparPorStatus, formatarDia, formatarReais, hojeSP, pendenciasAnalise } from "@/apps/montagem/domain/compras-estoque";
 import { BTN, SEL } from "@/apps/montagem/components/faixa-azul";
-import { COLUNAS, COL_DE, FINAIS, baseLista, baixarCsv, csvDe, ultimoEm } from "@/apps/montagem/pages/compras/Compras";
+import { COLUNAS, colunaDe, FINAIS, baseLista, baixarCsv, csvDe, ultimoEm } from "@/apps/montagem/pages/compras/Compras";
 import { JanelaPedir } from "@/apps/montagem/pages/compras/EstoqueMaterial";
 import { useAcoes } from "@/apps/montagem/pages/compras/janelas";
 import { cnpjCurto, diasNaEtapa, normal, textoDias, useCompras } from "@/apps/montagem/pages/compras/pecas";
@@ -95,8 +95,8 @@ function PainelComprasEstoque(props){
   var lista = baseLista(c, {setorId:f.setor || undefined, urgencia:f.urg || undefined, classificacao:f.cls || undefined})
     .filter(function(p){ return (!f.sol || p.solicitante===f.sol) && passaSituacao(p, f.sit, mes); });
   var solicitantes = Object.keys(todas.reduce(function(o, p){ if(p.solicitante) o[p.solicitante] = 1; return o; }, {})).sort();
-  var colunas = COLUNAS.filter(function(col){ return lista.some(function(p){ return COL_DE[p.status]===col.k; }); }).map(function(col, i){
-    var it = lista.filter(function(p){ return COL_DE[p.status]===col.k; }), final = col.k==="entregue" || col.k==="reprovada" || col.k==="cancelada", lim = final ? LIMITE_FIM : LIMITE_COLUNA;
+  var colunas = COLUNAS.filter(function(col){ return lista.some(function(p){ return colunaDe(p)===col.k; }); }).map(function(col, i){
+    var it = lista.filter(function(p){ return colunaDe(p)===col.k; }), final = col.k==="entregue" || col.k==="reprovada" || col.k==="cancelada", lim = final ? LIMITE_FIM : LIMITE_COLUNA;
     it.sort(final ? function(a, b){ return String(ultimoEm(b)).localeCompare(String(ultimoEm(a))); } : function(a, b){ return String(ultimoEm(a)).localeCompare(String(ultimoEm(b))); });
     var atrC = it.filter(function(p){ return p.atrasado && FINAIS.indexOf(p.status)<0; }).length;
     return e("section",{key:col.k, className:"flex w-max min-w-[270px] shrink-0 flex-col gap-1.5 overflow-hidden rounded-md bg-black/20 pb-1.5"},

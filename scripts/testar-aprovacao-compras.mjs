@@ -35,7 +35,7 @@ t("sem NF com Dinheiro e Pix REV é aceito", passou(run("pedido_add", { forneced
 const SNF = ultimo().id;
 
 console.log("2. Aprovar → etapa 2 (Análise financeira)");
-t("aprovar leva à Análise financeira (não libera)", passou(run("pedido_aprovar", { id:A })) && ped(A).status==="APROVADA" && D.ROTULO_STATUS.APROVADA==="Análise financeira");
+t("aprovar leva à etapa 2, Definição do CNPJ (não libera)", passou(run("pedido_aprovar", { id:A })) && ped(A).status==="APROVADA" && D.rotuloStatusDe(ped(A))==="Definição do CNPJ");   // 26/11/2026: etapa 2 = Definição do CNPJ
 t("pendências: falta CNPJ e falta pagamento", D.pendenciasAnalise(ped(A), s.ce.config).join("|")==="Falta definir CNPJ|Falta definir pagamento");
 t("salvar análise só com CNPJ", passou(run("pedido_decisao", { id:A, cnpjId:"34" })) && ped(A).status==="APROVADA");
 t("pendência: falta pagamento", D.pendenciasAnalise(ped(A), s.ce.config).join("|")==="Falta definir pagamento");

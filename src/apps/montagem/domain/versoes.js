@@ -3,6 +3,14 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.262", data:"2026-11-26", titulo:"Compras: fluxo revisado (CNPJ e pagamento separados, limite aprovado, reanálise, NF pendente, transporte, conferência e confirmação do solicitante)", itens:[
+  {tipo:"melhoria", area:"Materiais e estoque → Compras", txt:"Etapas novas: 1 Solicitada, 2 Definição do CNPJ, 3 Definição de pagamento (forma + sugestão de negociação, sem valores nem vencimentos), 4 Liberada para compra, 5 Compra efetuada, 6 Em transporte, 7 Na logística, 8 Entregue ao solicitante. Pedidos antigos caem na etapa certa sozinhos."},
+  {tipo:"melhoria", area:"Compras → Compra efetuada", txt:"O valor aprovado vira o limite. Valor final igual ou menor conclui (botão Ajustar plano ao valor final, com histórico e aviso ao financeiro). Valor maior não confirma: vai para reanálise do financeiro com justificativa, mesmo número; aprovado, o limite muda e volta para Liberada (R$ 3.000 ou mais pede a autorização extra)."},
+  {tipo:"melhoria", area:"Compras → Nota fiscal", txt:"Compra efetuada sem número ou arquivo da NF fica Aguardando documento — NF; o número e o arquivo podem ser incluídos depois."},
+  {tipo:"melhoria", area:"Compras → Em transporte", txt:"Como chega (fornecedor, Retirada por João, Uber, transportadora, outro), responsável, previsão de chegada e observação. Quem retira fica em Configurações."},
+  {tipo:"melhoria", area:"Compras → Na logística", txt:"Conferência: conforme ou com divergência, descrição, fotos, quantidade aceita e recusada ou pendente. Só a aceita entra no estoque. Encerrar saldo que não será entregue, com motivo."},
+  {tipo:"melhoria", area:"Compras → Entregue ao solicitante", txt:"Depois da entrega, quem pediu confirma o recebimento ou informa problema (registro separado da logística). Avisos pessoais na conversa Avisos de compras do SorellyChat, com o botão que abre o pedido."}
+ ]},
  {v:"0.21.261", data:"2026-11-26", titulo:"App da representante: o acerto em andamento não se perde até finalizar", itens:[
   {tipo:"correção", area:"App da representante → Acerto", txt:"O acerto em andamento (peças bipadas, brindes, venda, pagamentos) fica guardado por kit no servidor até ser FINALIZADO. Sair da tela, recarregar, versão nova ou erro não apagam mais: ao abrir o acerto do kit de novo, volta de onde parou. O servidor guarda a versão mais completa e o histórico de 7 dias, e uma versão mais vazia nunca apaga a mais completa. Ao recarregar, o app espera o kit carregar em vez de zerar o acerto, e a tela de erro não apaga mais o rascunho."}]},
  {v:"0.21.260", data:"2026-11-26", titulo:"Produção: colunas travadas, valor sem quebra e Pix a mais vira saldo", itens:[
