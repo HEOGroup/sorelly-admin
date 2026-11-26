@@ -9,7 +9,7 @@
 import { emTransacao, gravarItens, lerPrefixos, lerPrefixosCli } from "../estado-itens.js";
 import { gravarModulo, lerModulo, sem } from "./base.js";
 import { gravarModulo as gravarModuloSeguro } from "../estado-modulo.js";
-import { chamarApp, podeGravar } from "./cliente-app.js";
+import { chamarApp, configurado, podeGravar } from "./cliente-app.js";
 import { MAX_LISTAGEM, PRAZO_PEDIDO_HORAS, capacidade, horasAteRetirada, montarKits, montarListagens, vivo } from "../../apps/montagem/domain/app-rep.js";
 import { PERFIS0 } from "../../apps/kits-novos/domain/regioes-rep.js";
 import { enderecoDe, foneContato, primeiroNome, trabalhoDe } from "../../apps/kits-novos/domain/padroniza.js";
@@ -208,7 +208,7 @@ async function guardarResultado(r) {
 let rodando = false;
 export async function sincronizarApp() {
   const r = { enviados: 0, retirados: 0, respostas: 0, avisos: 0, erros: [], em: new Date().toISOString() };
-  if (!podeGravar()) { r.erros.push("Sincronização desligada (MOBILE_API_URL, MOBILE_API_KEY e APP_REP_SINCRONIZAR=1)."); return r; }
+  if (!podeGravar()) { r.erros.push("Sincronização desligada (MOBILE_API_URL, MOBILE_API_KEY e APP_REP_SINCRONIZAR=1). configurado=" + configurado() + ", VERCEL_ENV=" + (process.env.VERCEL_ENV || "vazio")); await guardarResultado(r); return r; }
   if (rodando) { r.erros.push("Já está sincronizando."); return r; }
   rodando = true;
   try {
