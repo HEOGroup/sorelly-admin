@@ -259,7 +259,7 @@ function AppRepresentante(p){
   // ela volta na MESMA tela, com o acerto, as peças bipadas e os brindes como estavam. O rascunho fica só neste aparelho (localStorage), vale 12 horas e some quando ela sai do atendimento de propósito
   // (volta ao início, vai para outra tela do app) ou termina o acerto.
   var CHAVE_RASCUNHO = "sorelly_rep_rascunho_v1", TELAS_RASCUNHO = ["pedidodata","preacerto","calcacerto","assinaracerto","entregakit","confkit","confdev","assinarrepos","reposicao","rev"], TELAS_SAIDA = ["inicio","revs","comissoes","listagens","novos","fechamento","resumokn","retirada","mensagens"];
-  var rascRef = useRef(undefined), pularSalvar = useRef(false);
+  var rascRef = useRef(undefined), pularSalvar = useRef(false), rsS = useState(0), rascTick = rsS[0], setRascTick = rsS[1];
   if(rascRef.current===undefined){ rascRef.current = null; try{ var rr = JSON.parse(localStorage.getItem(CHAVE_RASCUNHO)||"null"); if(rr && rr.rep===l.rep && Date.now()-(rr.em||0) < 12*3600*1000 && TELAS_RASCUNHO.indexOf(rr.tela)>=0) rascRef.current = rr; }catch(x){} }
   useEffect(function(){   // devolve a representante ao ponto onde estava assim que a lista de revendedoras carregar
     var r = rascRef.current; if(!r) return;
@@ -270,15 +270,32 @@ function AppRepresentante(p){
     var kitR = alvo.hoje ? s.kits.find(function(k){ return k.id===alvo.id; }) : null, jaR = (s.acertosConsignado||[]).some(function(x){ return x.kitId===alvo.id && x.tipo==="acerto"; });
     var telaR = r.tela!=="rev" && (!kitR || jaR) ? "rev" : r.tela;
     setSel(alvo.id); setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, telaR==="rev" ? {} : (r.acertoForm||{}))); setBrindeIn(r.brindeIn || BRINDE_IN_VAZIO); setConfVolta(r.confVolta || "calcacerto"); setTela(telaR);
-  }, [cart.length, reais]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cart.length, reais, rascTick]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){   // guarda o rascunho a cada mudança dentro do atendimento
     if(rascRef.current) return;   // ainda restaurando: não sobrescreve
     if(pularSalvar.current){ pularSalvar.current = false; return; }
     try{
+      if(TELAS_RASCUNHO.indexOf(tela)>=0 && sel) enviarRasc({rep:l.rep, selId:sel.id, rev:sel.rev, tela:tela, confVolta:confVolta, acertoForm:acertoForm, brindeIn:brindeIn, em:Date.now()});   // vai para o banco (servidor)
+      else if(TELAS_SAIDA.indexOf(tela)>=0) encerrarRasc();
       if(TELAS_RASCUNHO.indexOf(tela)>=0 && sel){ try{ localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify({rep:l.rep, selId:sel.id, rev:sel.rev, tela:tela, confVolta:confVolta, acertoForm:acertoForm, brindeIn:brindeIn, em:Date.now()})); }catch(x){ localStorage.removeItem(CHAVE_RASCUNHO); } }
       else if(TELAS_SAIDA.indexOf(tela)>=0) localStorage.removeItem(CHAVE_RASCUNHO);
     }catch(x){}
   }, [tela, acertoForm, brindeIn, confVolta, selId]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // RASCUNHO NO SERVIDOR (26/11/2026, Marcus: a bateria da Jessica acabou antes de salvar o acerto): o mesmo rascunho vai para o admin (rota /api/representante/rascunho) 1 s depois de cada mudança.
+  // Sem sinal: fica pendente e sai sozinho a cada 15 s e quando a internet volta. Ao abrir o app, vale o rascunho mais novo entre o do aparelho e o do servidor (outro celular continua de onde parou).
+  var envRasc = useRef({t:null, pend:null, enviado:false});
+  function descarregarRasc(){ var r = envRasc.current.pend; if(!r || !apiAtiva()) return;
+    chamar("PUT", "/representante/rascunho", {rep:l.rep, kitId:String(r.selId), rev:r.rev, dados:r, em:r.em}).then(function(){ envRasc.current.enviado = true; if(envRasc.current.pend===r) envRasc.current.pend = null; }).catch(function(){}); }
+  function enviarRasc(r){ if(!apiAtiva()) return; envRasc.current.pend = r; clearTimeout(envRasc.current.t); envRasc.current.t = setTimeout(descarregarRasc, 1000); }
+  function encerrarRasc(){ clearTimeout(envRasc.current.t); envRasc.current.pend = null; if(!apiAtiva() || !envRasc.current.enviado) return; envRasc.current.enviado = false; chamar("DELETE", "/representante/rascunho?rep="+encodeURIComponent(l.rep)).catch(function(){}); }
+  useEffect(function(){ var iv = setInterval(function(){ if(envRasc.current.pend) descarregarRasc(); }, 15000), on = function(){ if(envRasc.current.pend) descarregarRasc(); };
+    window.addEventListener("online", on); return function(){ clearInterval(iv); window.removeEventListener("online", on); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ if(!apiAtiva()) return; var vivo = true;   // ao abrir: busca o rascunho do servidor; se for mais novo que o do aparelho, usa ele
+    chamar("GET", "/representante/rascunho?rep="+encodeURIComponent(l.rep)).then(function(j){ var x = j && j.rascunho; if(!vivo || !x || !x.dados) return;
+      var loc = rascRef.current; if(loc && (loc.em||0) >= (x.em||0)) return;
+      if(TELAS_RASCUNHO.indexOf(x.dados.tela)<0) return;
+      rascRef.current = x.dados; envRasc.current.enviado = true; setRascTick(function(n){ return n+1; }); }).catch(function(){});
+    return function(){ vivo = false; }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var lPed = minhasL.find(function(x){return x.id===lidPed;}) || minhasL[0];
   var pedir = function(tipo, opts){ opts = opts || {};
     var lidUse = opts.lid || (lPed && lPed.id), lUse = s.listagens.find(function(x){return x.id===lidUse;});
