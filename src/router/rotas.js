@@ -237,8 +237,11 @@ const montagem = {
     pagina("resultado-do-mes", () => import("@/apps/montagem/pages/ResultadoMes"), "AbaResultadoMes"),
     pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
     pagina("ff-faturas-do-cartao", () => import("@/apps/montagem/pages/FinFamiliarFaturas"), "AbaFfFaturas"),   // faturas do cartão conferidas com as contas (19/11/2026)
+    pagina("bancos-cadastro", () => import("@/apps/montagem/pages/ConfigContas"), "AbaContasCadastro"),   // Financeiro › Contas bancárias › Bancos (26/11/2026)
     pagina("bancos", () => import("@/apps/montagem/pages/CadastroFin"), "AbaFinBancos"),   // Financeiro › Cadastro (20/11/2026)
     pagina("formas-de-pagamento", () => import("@/apps/montagem/pages/CadastroFin"), "AbaFinFormas"),
+    pagina("numerarios", () => import("@/apps/montagem/pages/CadastroFin"), "AbaFinNumerarios"),
+    pagina("destinos-de-pagamento", () => import("@/apps/montagem/pages/cp/Destinos"), "AbaDestinos"),   // Financeiro › Pagamentos › Destinos (26/11/2026)   // Financeiro › Cadastro › Numerários (25/11/2026)
     pagina("arrumar-na-devmaster", () => import("@/apps/montagem/pages/ArrumarDevmaster"), "AbaArrumarDevmaster"),
     pagina("atividades-do-financeiro", () => import("@/apps/montagem/pages/AtividadesFinanceiro"), "AbaAtividadesFinanceiro"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
@@ -309,25 +312,12 @@ const montagem = {
   ],
 };
 
+// Endereço antigo do app de Kits novos (/kits-novos/...): desligado em 26/11/2026 a pedido do Marcus. Tudo leva à tela oficial.
 const kitsNovos = {
   path: "kits-novos",
-  errorElement: e(ErroRecarregar),
-  // Os ~2.000 registros da planilha chegam antes da casca montar, num .json
-  // servido à parte. Só quem abre este app paga esse download.
-  loader: async () => {
-    const { carregarDados } = await import("@/apps/kits-novos/data/dados");
-    await carregarDados();
-    return null;
-  },
-  lazy: async () => ({ Component: (await import("@/apps/kits-novos/App")).default }),
   children: [
-    { index: true, element: e(Navigate, { to: "kits", replace: true }) },
-    pagina("kits", () => import("@/apps/kits-novos/pages/Kits"), "AbaKits"),
-    pagina("pendencias", () => import("@/apps/kits-novos/pages/Pendencias"), "AbaPendencias"),
-    pagina("consolidado", () => import("@/apps/kits-novos/pages/Consolidado"), "AbaConsolidado"),
-    pagina("regras", () => import("@/apps/kits-novos/pages/Regras"), "AbaRegras"),
-    pagina("configurador", () => import("@/apps/kits-novos/pages/Config"), "AbaConfig"),
-    { path: "*", element: e(Navigate, { to: "/kits-novos/kits", replace: true }) },
+    { path: "*", element: e(Navigate, { to: "/cadastro-de-revendedoras/revendedoras-novas", replace: true }) },
+    { index: true, element: e(Navigate, { to: "/cadastro-de-revendedoras/revendedoras-novas", replace: true }) },
   ],
 };
 
