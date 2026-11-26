@@ -3,6 +3,17 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.237", data:"2026-11-25", titulo:"Negociações: produção externa com nome e \"- Prod. Extern.\", sem negrito", itens:[
+  {tipo:"melhoria", area:"Financeiro › Negociações", txt:"Quem vem da produção externa aparece como Nome - Prod. Extern., em letra normal; tabela sem negrito e com quebra de linha em tela estreita."},
+ ]},
+ {v:"0.21.236", data:"2026-11-25", titulo:"Direcionar: blocos compactos, em ordem de pagamento e com cor de prazo", itens:[
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Aguardando na fila, Contas negativas e Pagamentos para Fornecedores: letra sem negrito e linhas mais baixas."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Pagamentos para Fornecedores: sempre em ordem de data de pagamento; só o que é do mês atual (o do mês seguinte fica para o mês seguinte); vencido em vermelho e faltando até 3 dias em amarelo."}
+ ]},
+ {v:"0.21.235", data:"2026-11-25", titulo:"Charme e Linda: lançamento volta sozinho se o servidor trouxer a lista antiga", itens:[
+  {tipo:"correcao", area:"Financeiro › Negociações e Contas a pagar", txt:"Os pedidos Charme e Linda e as dívidas de 27/11 eram apagados quando o servidor devolvia a lista antiga. Agora o sistema confere pelo conteúdo e põe de volta o que faltar."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Pagamentos para Fornecedores: com mais de 8 linhas, as linhas ficam mais baixas."}
+ ]},
  {v:"0.21.234", data:"2026-11-25", titulo:"Charme e Linda passam a aparecer; produção da Leci e da Dávila no Direcionar", itens:[
   {tipo:"correcao", area:"Financeiro › Negociações", txt:"O lançamento dos pedidos Charme e Linda não rodava porque a abertura do sistema não o chamava. Agora roda na próxima abertura."},
   {tipo:"novo", area:"Financeiro › Direcionar", txt:"Pagamentos para Fornecedores mostra o que falta pagar da produção externa (Leci, Dávila e outras), com a quinta-feira do pagamento."},

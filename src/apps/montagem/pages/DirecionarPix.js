@@ -52,7 +52,7 @@ var partesDe = function(p){ var l = (p.partes && p.partes.length) ? p.partes : [
 var formaLonga = function(f){ return f==="maquininha" ? "Cartão (maquininha)" : f==="link" ? "Link de pagamento" : "Pix"; };
 var formaPalavra = function(f){ return f==="maquininha" ? "Cartão" : f==="link" ? "Link" : "Pix"; };
 // célula de nome: nunca abrevia, quebra em outra linha
-var TdN = function(p){ return e("td",{title:p.title, className:"h-8 whitespace-normal break-words border-b border-border px-2.5 py-1 text-left leading-snug "+(p.forte ? "font-semibold" : "")}, p.children); };
+var TdN = function(p){ return e("td",{title:p.title, className:"h-8 whitespace-normal break-words border-b border-border px-2.5 py-1 text-center leading-snug "+(p.forte ? "font-semibold " : "")+(p.cor||"")}, p.children); };
 // TabelaP com linha de total no fim (03/11/2026): rodape entra depois das linhas
 var TabelaT = function(p){ return e(TabelaP,{minW:p.minW, cols:p.cols}, p.children, p.rodape); };
 var tipoNome = function(t){ return (TIPOS_DESTINO[t] || ["—"])[0]; };
@@ -175,7 +175,7 @@ function AbaDirecionar(){
       return {id:"pr-"+n, nome:n.split(" ")[0]+" · produção", aPagar:porNome[n].valor, pago:0, saldo:porNome[n].valor, ate:porNome[n].ate, obs:"", destinoId:d ? d.id : "", pontual:false};
     });
   })();
-  fornAbertos = fornAbertos.concat(prodRows.map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; }));
+  fornAbertos = fornAbertos.concat(prodRows.map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; })).filter(function(f){ return !f.dMin || f.dMin.slice(0, 7)<=hojeIsoCp().slice(0, 7); });
   var semDestino = c.edita ? fornAbertos.filter(function(f){ return !f.destinoId && String(f.id).indexOf("pr-")!==0; }).map(function(f){ return ["FORNECEDOR", String(f.nome).replace(/ \d{2}\/\d{2} à \d{2}\/\d{2}$/, "")]; })
     .concat(prestAbertos.filter(function(f){ return !f.destinoId; }).map(function(f){ return ["PRESTADOR", f.nome]; }))
     .filter(function(x, i, a){ return x[1] && a.findIndex(function(y){ return y[1]===x[1]; })===i && !DEST_CRIADOS[x[1]]; }) : [];
@@ -214,7 +214,7 @@ function AbaDirecionar(){
   ctxCnpj.forEach(function(x){ var d = cp.destinos.filter(function(z){ return z.cnpjId===x.id; })[0]; if(d && (x.hoje+x.amanha)>0) faltam.push({id:d.id, nome:d.nome, tipo:"CNPJ", falta:r2(x.hoje+x.amanha), info:"vencem hoje e amanhã"}); });
   var sfm = useState("falta"), modoForn = sfm[0], setModoForn = sfm[1];
   var veFam = ACESSO_FF.indexOf(s.usuario)>=0 && !!(s.ff && s.ff.dividas), dividasFam = veFam ? dividasDaFamilia(s.ff, cp, hojeIsoCp()) : [], totalFam = r2(dividasFam.reduce(function(tt, x){ return tt+x.falta; }, 0)), famVenc = dividasFam.filter(function(x){ return x.dias<0; }).length;
-  var fornLista = fornecedoresDoMesPf(s.pf, cp, modoForn==="mes").concat(prodRows), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
+  var fornLista = fornecedoresDoMesPf(s.pf, cp, modoForn==="mes").concat(prodRows).filter(function(x){ return !x.ate || x.ate.slice(0, 7)<=hojeIsoCp().slice(0, 7); }).sort(function(x, y){ return (x.ate||"9999").localeCompare(y.ate||"9999") || y.saldo-x.saldo; }), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
   var stt = useState({}), travados = stt[0], setTravados = stt[1];   // pagamentos confirmados (travados) até apertar Editar (Marcus, 12/11/2026)
   var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1], spv = useState({}), pendV = spv[0], setPendV = spv[1], sva = useState(false), verTodas = sva[0], setVerTodas = sva[1], sab = useState({}), abertosC = sab[0], setAbertosC = sab[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
   var optsDe = function(f){ var l = [["", f==="pix" ? "Escolha a conta" : "Escolha o CNPJ", ""]];
@@ -280,12 +280,12 @@ function AbaDirecionar(){
     : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Nenhuma dívida da família com prazo em aberto.");
   var colsForn = modoForn==="mes" ? [{t:"Fornecedor"},{t:"A pagar", n:true, w:98},{t:"Pago", n:true, w:98},{t:"Falta", n:true, w:98},{t:"Limite", w:64},{t:"Situação", w:100}] : [{t:"Fornecedor"},{t:"Falta", n:true, w:96},{t:"Limite", w:68},{t:"Situação", w:84}];
   var blocoContas = Painel("Pagamentos para Fornecedores", "", "", "#f5c14b", e("div",{className:"flex flex-1 flex-col"},
-    modoForn==="familia" ? tabelaFam : fornLista.length ? e("div",{className:"flex min-w-0 flex-1 flex-col [&_.overflow-x-auto]:flex-1 [&_table]:h-full"}, e(TabelaT,{rodape:linhaTotal(modoForn==="mes" ? [{t:"Total"}, {t:BKC(r2(fornLista.reduce(function(tt, x){ return tt+(x.aPagar||0); }, 0))), d:true}, {t:BKC(r2(fornLista.reduce(function(tt, x){ return tt+(x.pago||0); }, 0))), d:true}, {t:BKC(totalFalta), d:true}, {t:""}, {t:""}] : [{t:"Total"}, {t:BKC(totalFalta), d:true}, {t:""}, {t:""}]), minW:modoForn==="mes" ? 540 : 320, cols:colsForn}, fornLista.map(function(x){ var venc = x.saldo>0.005 && x.ate && x.ate<hojeIsoCp(), pode = c.edita && x.destinoId && sel && temPix && restPix()>0.004 && x.saldo>0.005;
-        var falta = e(Td,{n:true, forte:true, cor:x.saldo>0.005 ? (venc ? "text-warning" : "") : "text-success"}, x.saldo>0.005 ? BKC(x.saldo) : "—");
-        var limite = e(Td,{title:x.obs||undefined, cor:venc ? "text-warning" : ""}, x.ate ? x.ate.slice(8,10)+"/"+x.ate.slice(5,7) : (x.obs ? "ver" : "—"));
-        var situacao = e("td",{className:"h-8 border-b border-border px-2.5 text-left"}, e("span",{className:"inline-block whitespace-nowrap rounded px-2 py-0.5 text-[13px] font-bold "+(x.saldo<=0.005 ? "bg-success/20 text-success" : venc ? "bg-warning/25 text-warning" : "bg-white/10 text-foreground")}, x.saldo<=0.005 ? "Pago" : (venc ? "Vencido" : "Aberto")));
+    modoForn==="familia" ? tabelaFam : fornLista.length ? e("div",{className:"flex min-w-0 flex-1 flex-col [&_.overflow-x-auto]:flex-1 [&_table]:h-full"}, e(TabelaT,{rodape:linhaTotal(modoForn==="mes" ? [{t:"Total"}, {t:BKC(r2(fornLista.reduce(function(tt, x){ return tt+(x.aPagar||0); }, 0))), d:true}, {t:BKC(r2(fornLista.reduce(function(tt, x){ return tt+(x.pago||0); }, 0))), d:true}, {t:BKC(totalFalta), d:true}, {t:""}, {t:""}] : [{t:"Total"}, {t:BKC(totalFalta), d:true}, {t:""}, {t:""}]), minW:modoForn==="mes" ? 540 : 320, cols:colsForn}, fornLista.map(function(x){ var venc = x.saldo>0.005 && x.ate && x.ate<hojeIsoCp(), breve = !venc && x.saldo>0.005 && x.ate && (new Date(x.ate+"T12:00:00")-new Date(hojeIsoCp()+"T12:00:00"))/864e5<=3, pode = c.edita && x.destinoId && sel && temPix && restPix()>0.004 && x.saldo>0.005;
+        var falta = e(Td,{forte:true, cor:x.saldo>0.005 ? (venc ? "text-destructive" : breve ? "text-warning" : "") : "text-success"}, x.saldo>0.005 ? BKC(x.saldo) : "—");
+        var limite = e(Td,{title:x.obs||undefined, cor:venc ? "text-destructive" : breve ? "text-warning" : ""}, x.ate ? x.ate.slice(8,10)+"/"+x.ate.slice(5,7) : (x.obs ? "ver" : "—"));
+        var situacao = e("td",{className:"h-8 border-b border-border px-2.5 text-center"}, e("span",{className:"inline-block whitespace-nowrap rounded px-2 py-0.5 text-[13px] font-bold "+(x.saldo<=0.005 ? "bg-success/20 text-success" : venc ? "bg-destructive/25 text-destructive" : breve ? "bg-warning/25 text-warning" : "bg-white/10 text-foreground")}, x.saldo<=0.005 ? "Pago" : (venc ? "Vencido" : breve ? "Vence em breve" : "Aberto")));
         return e(Tr,{key:x.id, apagado:x.saldo<=0.005, onClick:pode ? function(){ addDest(x.destinoId, Math.min(restPix(), x.saldo), 0, "", "Conta a pagar · falta "+BKC(x.saldo), "pix"); } : undefined, title:pode ? "Adicionar "+x.nome+" como destino do Pix aberto" : undefined},
-          e(TdN,{forte:true, title:x.nome}, x.nome), modoForn==="mes" && e(Td,{n:true}, BKC(x.aPagar)), modoForn==="mes" && e(Td,{n:true, cor:x.pago>0.005 ? "text-success" : "", forte:true}, BKC(x.pago)), falta, limite, situacao); })))
+          e(TdN,{forte:true, title:x.nome, cor:venc ? "text-destructive" : breve ? "text-warning" : ""}, x.nome), modoForn==="mes" && e(Td,{}, BKC(x.aPagar)), modoForn==="mes" && e(Td,{cor:x.pago>0.005 ? "text-success" : "", forte:true}, BKC(x.pago)), falta, limite, situacao); })))
       : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Sem saldo de fornecedores. Rode scripts/planilha-fornecedores.mjs com a planilha."),
     null));
   // Contas negativas
@@ -466,7 +466,7 @@ function AbaDirecionar(){
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
     (avisosCerebro(s), null),   // os Avisos do dia saíram da tela (Marcus, 25/11/2026); a chamada só carrega as contas no cálculo
-    e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
+    e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3 [&_td]:!font-normal [&_td_*]:!font-normal [&_td]:!h-5 [&_td]:!py-0 [&_td]:!leading-tight"}, blocoVendas, blocoNegativas, blocoContas),
     // 19/11/2026 (Marcus): o bloco "Pagamentos da Família" saiu do Direcionar da Sorelly (Financeiro familiar e empresa ficam separados; a família fica só no Financeiro familiar)
     // ── feitos
     (function(){

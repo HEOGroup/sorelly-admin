@@ -486,10 +486,10 @@ function ResumoGeral(){
     if(atuais.length){
       atuais.forEach(function(x, i){
         var extra = i===0 ? oldAb : 0, ch = "j|"+x.j.chave;
-        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:dataVenc(f, x.j), nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
+        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:dataVenc(f, x.j), nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j)+(tipo==="Produção externa" ? " - Prod. Extern." : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
       });
     } else {
-      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
+      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+(tipo==="Produção externa" ? " - Prod. Extern." : "")+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
     }
     grupos.push({nome:bonito(f.nome), tipo:tipo, linhas:linhas, total:linhas.reduce(function(t, l){ return t+l.total; }, 0)});
   });
@@ -637,7 +637,7 @@ function ResumoGeral(){
         : e("iframe",{src:verComp.url, title:verComp.nome, style:{width:Math.min(maxLarg, 900)+"px", height:maxAlt+"px"}, className:"block bg-white"})))) : null;
   var subTitulo = function(t){ return e("div",{className:"flex min-h-6 items-center justify-center border-y border-white/25 bg-[var(--bloco-titulo)] px-4 py-0.5 text-center text-[13px] font-bold uppercase leading-tight text-white"}, t); };   // faixa de título do bloco no mesmo tamanho da barra azul padrão do Financeiro (13 px)
   // TELA (Marcus, 20/11/2026): linha 1 = título RESUMO PAGAMENTOS; linha 2 = barra em tabela igual à Contas a pagar (busca, mês, vista, tipo, situação); embaixo os dois blocos.
-  return e("div",{ref:refRaiz, className:PAGINA_CHEIA+" [&_*]:!normal-case [&_table_tbody_tr:last-child_td]:!border-b [&_table]:!border [&_table]:!border-solid [&_table]:!border-white [&_tbody_td]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,transparent)] [&_tr.rg-sub_td]:!bg-[var(--bloco-colunas)] [&_tr.rg-sel_td]:!bg-[var(--bloco-titulo)] [&_tr.rg-dono_td]:!border-t-2 [&_tr.rg-dono_td]:!border-t-white [&_table_tfoot_td]:!bg-[var(--bloco-titulo)] "+CLS_FINA_ESPACO},   // padrao-ok: letra de 10 px da tela Contas a receber (Marcus, 20/11/2026)
+  return e("div",{ref:refRaiz, className:PAGINA_CHEIA+" [&_*]:!normal-case [&_table_tbody_tr:last-child_td]:!border-b [&_table]:!border [&_table]:!border-solid [&_table]:!border-white [&_tbody_td]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,transparent)] [&_tr.rg-sub_td]:!bg-[var(--bloco-colunas)] [&_tr.rg-sel_td]:!bg-[var(--bloco-titulo)] [&_td]:!font-normal [&_td_*]:!font-normal [&_td]:!break-words max-md:[&_td]:!px-1 [&_tr.rg-dono_td]:!border-t-2 [&_tr.rg-dono_td]:!border-t-white [&_table_tfoot_td]:!bg-[var(--bloco-titulo)] "+CLS_FINA_ESPACO},   // padrao-ok: letra de 10 px da tela Contas a receber (Marcus, 20/11/2026)
     e(BlocoPainel,{titulo:"Resumo - Pagamentos", compacto:true},
       e(BarraTabela,null,
         c.edita && e("div",{role:"button", tabIndex:0, title:"Lançar um pagamento (escolhe o fornecedor e a data)", onClick:function(){ setLancando("novo"); }, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); setLancando("novo"); } }, className:"flex min-w-[130px] cursor-pointer items-center justify-center border-r border-white/25 bg-[#E8B84B] px-3 text-[11px] font-semibold text-[#1a1306] outline-none hover:brightness-110 active:brightness-90 focus-visible:ring-2 focus-visible:ring-white"}, "Lançar pagamento"),   // padrao-ok: a célula inteira é o botão amarelo, sem rótulo, igual ao "+ Lançar recebimento" da Contas a receber (Marcus, 24/11/2026)

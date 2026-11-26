@@ -109,6 +109,24 @@ function pfDeDados(d){   // converte o formato do arquivo local (seqL, seqF...) 
 }
 // separa fornecedor de prestador e cadastra quem recebe por fora (idempotente: roda em estado novo e antigo)
 var PRESTADORES_INI = [["Amanda de Miranda","funcionario"],["Priscila","funcionario"],["Nickolas","socio"],["Lucas","socio"],["Lucas Castilho","dentro"]];
+// Charme e Linda (25/11/2026): sem marca de "já feito". Confere pelo conteúdo e põe de volta o que faltar, porque o que chega do servidor pode trazer a lista antiga de pedidos.
+function semearCharmeLinda(pf){
+  var mudou = false;
+  var semear = function(nome, numero, total, comNF, semNF, chave, favorecido, folha){
+    var fo = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()===nome.toLowerCase(); })[0];
+    if(!fo){ fo = {id:pf.seq.F++, nome:nome, tipo:"fornecedor", cat:"Fornecedor de peças · bruto SP", cnpj:"A confirmar", tipoNeg:"Bruto", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(fo); }
+    if(pf.pedidos.some(function(p){ return p.fornId===fo.id && p.numero===numero; })) return;
+    mudou = true;
+    fo.ciclo = {periodicidade:"venc", cortes:[31], prazoDias:0}; fo.formas = Object.keys(FORMAS);
+    pf.pedidos.push({id:pf.seq.P++, fornId:fo.id, numero:numero, data:"2026-11-25", total:total, nfTipo:"misto", comNF:comNF, semNF:semNF, cnpj:"CNPJ 67 · Axis", nfNum:"", ref:"",
+      descricao:"Pedido de 25/11/2026: R$ "+total.toFixed(2).replace(".", ",")+" = R$ "+comNF.toFixed(2).replace(".", ",")+" em Pix do CNPJ 67 Axis (com nota) até sexta, 27/11 + R$ "+semNF.toFixed(2).replace(".", ",")+" em Pix revendedora até sábado, 28/11. Favorecido: "+favorecido+" · chave Pix "+chave+". Na folha, anotar: "+folha+".",
+      parcelas:[{forma:"pix_empresa", venc:"2026-11-27", valor:comNF, conta:"Pix CNPJ 67 Axis · "+favorecido+" · "+chave, status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-28", valor:semNF, conta:"Pix revendedora · "+favorecido+" · "+chave+" · folha: "+folha, status:"Pendente"}]});
+  };
+  semear("Charme", "Charme · 25/11/2026", 3576, 357.6, 3218.4, "31.921.691/0001-90", "DAVIP Comércio de Presentes (Santander)", "PIX CHARME");
+  semear("Linda", "Linda · 25/11/2026", 6967, 1967, 5000, "(11) 96359-2891", "STAND ACESSORIOS LTDA", "PIX LINDA");
+  if(mudou) invalidar(pf);
+  return mudou;
+}
 function pfMigrar(pf){
   pf.fornecedores.forEach(function(f){ if(!f.tipo){ f.tipo = /^Prestador/.test(f.cat||"") ? "prestador" : "fornecedor"; if(f.tipo==="prestador"){ f.vinculo = f.vinculo || "funcionario"; var resto = (f.cat||"").split("·").slice(1).join("").trim().toLowerCase(); f.cat = PREST_CATS.filter(function(x){ return x.toLowerCase()===resto; })[0] || "Outros"; } } });
   pf.fornecedores.forEach(function(f){ if(f.nome==="Lucas Castilho" && f.vinculo==="externo" && !pf.lcAjustado){ f.vinculo = "dentro"; } });
@@ -142,20 +160,7 @@ function pfMigrar(pf){
   }
   // Charme e Linda (pedidos de 25/11/2026, pedido do Marcus): cada um se divide em Pix do CNPJ 67 Axis (com nota, até sexta 27/11) e Pix revendedora (até sábado 28/11).
   // O ciclo "No vencimento da parcela" faz o Direcionar mostrar cada valor com a sua data limite. Roda uma vez (idempotente pela marca).
-  if(!pf.charmeLindaSemeado){
-    var semear = function(nome, numero, total, comNF, semNF, chave, favorecido, folha){
-      var fo = pf.fornecedores.filter(function(f){ return f.nome.toLowerCase()===nome.toLowerCase(); })[0];
-      if(!fo){ fo = {id:pf.seq.F++, nome:nome, tipo:"fornecedor", cat:"Fornecedor de peças · bruto SP", cnpj:"A confirmar", tipoNeg:"Bruto", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(fo); }
-      if(pf.pedidos.some(function(p){ return p.fornId===fo.id && p.numero===numero; })) return;
-      fo.ciclo = {periodicidade:"venc", cortes:[31], prazoDias:0};
-      pf.pedidos.push({id:pf.seq.P++, fornId:fo.id, numero:numero, data:"2026-11-25", total:total, nfTipo:"misto", comNF:comNF, semNF:semNF, cnpj:"CNPJ 67 · Axis", nfNum:"", ref:"",
-        descricao:"Pedido de 25/11/2026: R$ "+total.toFixed(2).replace(".", ",")+" = R$ "+comNF.toFixed(2).replace(".", ",")+" em Pix do CNPJ 67 Axis (com nota) até sexta, 27/11 + R$ "+semNF.toFixed(2).replace(".", ",")+" em Pix revendedora até sábado, 28/11. Favorecido: "+favorecido+" · chave Pix "+chave+". Na folha, anotar: "+folha+".",
-        parcelas:[{forma:"pix_empresa", venc:"2026-11-27", valor:comNF, conta:"Pix CNPJ 67 Axis · "+favorecido+" · "+chave, status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-28", valor:semNF, conta:"Pix revendedora · "+favorecido+" · "+chave+" · folha: "+folha, status:"Pendente"}]});
-    };
-    semear("Charme", "Charme · 25/11/2026", 3576, 357.6, 3218.4, "31.921.691/0001-90", "DAVIP Comércio de Presentes (Santander)", "PIX CHARME");
-    semear("Linda", "Linda · 25/11/2026", 6967, 1967, 5000, "(11) 96359-2891", "STAND ACESSORIOS LTDA", "PIX LINDA");
-    invalidar(pf); pf.charmeLindaSemeado = true;
-  }
+  semearCharmeLinda(pf);
   // pagamentos novos da planilha (Pontual, setembro e outubro/2026): entra só o que ainda não existe (mesmo fornecedor, data e valor), sem duplicar
   if(!pf.atuV1 && ATU_PF && Array.isArray(ATU_PF.lancamentos)){
     var temL = {}; pf.lancamentos.forEach(function(l){ var k = l.fornId+"|"+l.data+"|"+l.valor.toFixed(2); temL[k] = (temL[k]||0)+1; });
@@ -1667,7 +1672,7 @@ function tokenPedidos(pf, fid, ids, por, boleto, sugerido){
 
 export {
   conferidoDe, temComprovante, TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
-  FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
+  FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, semearCharmeLinda, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,

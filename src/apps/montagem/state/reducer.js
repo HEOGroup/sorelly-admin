@@ -30,6 +30,7 @@ import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
 import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
+import { garantirCharmeLinda } from "@/apps/montagem/domain/charme-linda";
 import { pfReduz, fornDoDestino } from "@/apps/montagem/domain/pf";
 import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
@@ -1621,5 +1622,6 @@ function reducer(s, a){
 }
 
 // depois de qualquer ação: mudou o Controle de pagamentos, o cartão da maquininha única vai para a Maquininha Banho (sincMaqUnica)
-function reducerComSinc(s, a){ var n = reducer(s, a); return n && s && n!==s && n.lancFin!==s.lancFin && n.pf ? sincMaqUnica(n) : n; }
+function reducerComSinc(s, a){ var n = reducer(s, a); if(n && s && n!==s && (n.pf!==s.pf || n.cpe!==s.cpe)) n = garantirCharmeLinda(n);   // Charme e Linda (25/11/2026): o servidor pode devolver a lista antiga; o que faltar volta
+  return n && s && n!==s && n.lancFin!==s.lancFin && n.pf ? sincMaqUnica(n) : n; }
 export { reducerComSinc as reducer, sincMaqUnica };
