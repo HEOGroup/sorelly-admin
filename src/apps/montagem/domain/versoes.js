@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.242", data:"2026-11-26", titulo:"Direcionar: Direcionados compacto, linhas do topo alinhadas, Nova conta em azul", itens:[
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Direcionados: a mesma revendedora no mesmo dia fica junta, com o nome e o valor total uma vez só; data só com dia e mês; sem a coluna Forma e sem as setas nos títulos; tabela cabe na tela."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Bloco de cima: as linhas verticais de Origem, Nome, Resumo e Pagamento agora se encontram, nas mesmas colunas. A janela que abre em Nova conta tem fundo azul, cantos retos e colunas alinhadas."},
+  {tipo:"correção", area:"Financeiro › Direcionar", txt:"O texto \"anotar na folha PIX CHARME/LINDA\" saiu do Direcionar e das contas do Financeiro. Ele fica só para as telas de Atendimento interno e Admin da representante."},
+ ]},
  {v:"0.21.241", data:"2026-11-26", titulo:"App da representante: Próximo Kit Liberado, vendas pelo bip, links de pagamento e maleta", itens:[
   {tipo:"melhoria", area:"App da representante · Calculadora de acertos", txt:"O bloco Kit novo do acerto virou Próximo Kit Liberado: embaixo só o botão; ao tocar abre a confirmação das condicionais e um alerta para contar as peças e assinar."},
   {tipo:"melhoria", area:"App da representante · Conferir as peças", txt:"Novo botão Conferir só por contagem, ao lado da câmera. A assinatura continua no app."},

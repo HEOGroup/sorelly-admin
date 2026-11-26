@@ -56,7 +56,7 @@ function junta(partes){
 }
 
 /** Linha de um destino de pagamento (cp.destinos[]): destino = {nome, tipo, cnpjId, banco}; conta = texto da conta escolhida (opcional). */
-function rotuloDestino(d, conta){
+function rotuloDestino(d, conta, opcoes){
   if(!d) return "";
   var banco = bancoDeConta(conta) || bancoDeConta(d.banco) || nomePropio(d.banco || "");
   if(d.tipo==="CNPJ"){
@@ -66,7 +66,8 @@ function rotuloDestino(d, conta){
   }
   var nome = nomePropio(d.nome);
   if(d.tipo==="FAMILIA") return junta(["PF", nome, banco]);
-  if(d.tipo==="FORNECEDOR" && /^(charme|linda)\b/i.test(String(d.nome||"").trim())) return junta(["Sorelly", nome, banco, "anotar na folha PIX "+String(d.nome).trim().split(/\s+/)[0].toUpperCase()]);   // Marcus, 25/11/2026: a funcionária precisa saber o que escrever na folha (formas PIX CHARME e PIX LINDA da DevMaster)
+  // "anotar na folha PIX CHARME/LINDA" (Marcus, 25/11/2026) só aparece quando a tela PEDE (opcoes.folha): Atendimento interno e Admin da representante. No Financeiro (Direcionar, Contas a pagar) NÃO aparece (Marcus, 26/11/2026: "para o Lucas não é para aparecer").
+  if(d.tipo==="FORNECEDOR" && opcoes && opcoes.folha && /^(charme|linda)\b/i.test(String(d.nome||"").trim())) return junta(["Sorelly", nome, banco, "anotar na folha PIX "+String(d.nome).trim().split(/\s+/)[0].toUpperCase()]);
   if(d.tipo==="FORNECEDOR" || d.tipo==="PRESTADOR") return junta(["Sorelly", nome, banco]);
   return junta([nome, banco]);   // representante e funcionário
 }
