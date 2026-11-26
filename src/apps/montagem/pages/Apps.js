@@ -73,8 +73,8 @@ function Coluna(p){
 }
 
 // Revendedora e representante dividem o mesmo contexto (os kits da revendedora vêm da representante escolhida); cada um só aparece se estiver ligado em "Celulares"
-var DEMO_REV = "Francelle Schmidt Alves Pinto dos Santos";
-var CENARIO_COMPLETO = {garantia:100, venda:8278, conds:[{n:"99011", p:60}, {n:"99012", p:55}, {n:"99013", p:45}, {n:"99014", p:40}], vendidas:68, pago:4326, brindes:[
+var DEMO_REV = "Karine Exemplo";   // 26/11/2026 (Marcus): cliente fictícia para ver o acerto sempre preenchido
+var CENARIO_COMPLETO = {garantia:100, venda:10000, pendentePct:3, trocas:[{tipo:"anterior", antigaCod:"AB123", antigaValor:78, novaCod:"CD456", novaValor:78}, {tipo:"anterior", antigaCod:"EF321", antigaValor:98, novaCod:"GH654", novaValor:98}], conds:[{n:"99011", p:90}, {n:"99012", p:85}, {n:"99013", p:80}, {n:"99014", p:75}, {n:"99015", p:70}, {n:"99016", p:60}], vendidas:135, brindes:[
   {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
   {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
 // SIMULAÇÃO que a tela Apps abre sempre (Marcus, 03/11/2026): representante Anamaria com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída) e a revendedora Juliana, do app da revendedora, já com R$ 1.500,00 em vendas lançadas.
@@ -128,7 +128,7 @@ function ColsRepRev(p){
   if(rep.sim && lSim) ks = ks.concat(kitsSim.filter(function(k){ return !ks.some(function(x){ return x.id===k.id; }); }));   // simulação: todos os kits da Anamaria aparecem para escolher a revendedora
   var kAtual = ks.find(function(x){ return x.id===rev.id; }) || (rep.sim && ks.find(function(x){ return x.rev===SIM_REV_APP; })) || ks[0];
   var gruposRev = ks.length ? [{itens:ks.map(function(k){ return {id:k.id, nome:k.rev, sub:k.interno ? "Sorelly · atendimento interno" : listagemDe(s,k).rep+" · "+STATUS_LB[k.status]}; })}] : [];
-  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"KIT_NOVO_DEMO", nome:"Kit novo", cod:"exemplo"}, {id:"REPOSICAO_DEMO", nome:"Reposição", cod:"exemplo"}, {id:"LISTAGEM_DEMO", nome:"Listagem cheia", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
+  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo (R$ 10 mil)", cod:"exemplo"}, {id:"KIT_NOVO_DEMO", nome:"Kit novo", cod:"exemplo"}, {id:"REPOSICAO_DEMO", nome:"Reposição", cod:"exemplo"}, {id:"LISTAGEM_DEMO", nome:"Listagem cheia", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
   var entradaRev = e(Entrada,{titulo:"App da revendedora", onEntrar:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }, onTeste:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }});
   var entradaRep = e(Entrada,{altura:722, titulo:"App da representante", onEntrar:function(){ setRep({logado:true, id:lAtual.id}); }, onTeste:function(){ setRep({logado:true, id:lAtual.id}); }});
   return e(React.Fragment,null,

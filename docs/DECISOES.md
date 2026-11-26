@@ -3754,3 +3754,8 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - O valor vendido da bipagem preenche "Valor vendido" em Vendas e pagamentos (editável); comissão e valor a pagar saem dele.
 - Links de pagamento pagos e confirmados já aparecem nos pagamentos; a busca agora aceita nome parecido (e-SiTef x agenda). Link pago hoje só vale no próximo acerto (regra mantida).
 - Kit apoio bolsinhas (MP0063) é peça comum: bloco saiu; o que não voltar conta como vendido. Alerta para bipar a maleta no fim da bipagem. Últimas 4 vendas: mais antiga em cima, depois penúltima, última, venda de hoje e média.
+
+## 26/11/2026 — Exemplo Acerto completo: cliente fictícia de R$ 10.000,00 (Marcus, v0.21.243)
+- O exemplo Acerto completo (aba Apps) usa a cliente fictícia Karine Exemplo: 135 peças vendidas, 2 trocas, R$ 100,00 de crédito, 1 remarcação com multa, 9 dias de atraso, 2 links (1 pago hoje), 3 Pix, crédito, débito e dinheiro. Falta 3% do valor devido.
+- Regra do Marcus: o cálculo é sempre automático (tabela de comissão, atraso, remarcação, crédito, trocas, multa de 10% do pendente depois de finalizar). O exemplo só define quanto foi pago. Peças do próximo mês saem da regra (base 35 com 75% = cerca de 26), não de número fixo.
+- O link pago hoje conta só no exemplo; a regra real (`linksParaAcerto`) continua aceitando link pago antes de hoje. Aberta com o Marcus.

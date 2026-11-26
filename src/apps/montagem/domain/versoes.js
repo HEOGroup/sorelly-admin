@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.243", data:"2026-11-26", titulo:"Exemplo Acerto completo: 135 peças, links, 3 Pix e 3% em aberto", itens:[
+  {tipo:"melhoria", area:"App representante › Calculadora de acertos", txt:"O exemplo Acerto completo agora é de uma cliente fictícia (Karine Exemplo): 135 peças vendidas, venda de R$ 10.000,00, 2 trocas, R$ 100,00 de crédito, 1 remarcação com multa e 9 dias de atraso."},
+  {tipo:"melhoria", area:"App representante › Calculadora de acertos › Pagamentos", txt:"Pagamentos do exemplo: 2 links (1 pago ontem e 1 pago hoje), 3 Pix com comprovante, crédito, débito e dinheiro. Falta 3% do valor devido. Comissão, multas e total saem sempre do cálculo automático."},
+ ]},
  {v:"0.21.242", data:"2026-11-26", titulo:"Direcionar: Direcionados compacto, linhas do topo alinhadas, Nova conta em azul", itens:[
   {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Direcionados: a mesma revendedora no mesmo dia fica junta, com o nome e o valor total uma vez só; data só com dia e mês; sem a coluna Forma e sem as setas nos títulos; tabela cabe na tela."},
   {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Bloco de cima: as linhas verticais de Origem, Nome, Resumo e Pagamento agora se encontram, nas mesmas colunas. A janela que abre em Nova conta tem fundo azul, cantos retos e colunas alinhadas."},
