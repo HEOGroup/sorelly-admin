@@ -140,3 +140,6 @@ Lista de tipos, tirada dos 151 relatos:
 - Reposição e kit novo param depois do recebimento das condicionais.
 - Os valores em dinheiro e as contas de pagamento saem da tabela do agendamento e ficam no card ou em uma visão própria.
 - O card muda a ação conforme a etapa: agendamento (dinheiro, recebi o kit, condicionais), bipadora (conferência, diferenças, condicional do próximo mês), faturamento (venda fechada).
+
+### Ficha em 8 blocos (Marcus, 26/11/2026)
+A ficha tem 8 blocos fixos e numerados, 4 em cima e 4 embaixo. Bloco vazio continua na tela. 1) **Atendimento**: representante, revendedora, quem montou o kit e o Acerto. 2) **Pagamento**: situação, total a pagar, pagou, falta, formas de pagamento, dinheiro e multas. Cada valor aparece uma vez só (1 e 2 juntos mostram o acerto e todo o pagamento). 3) **Conferência** (botão "Iniciar conferência" à parte) e **Condicionais**. 4) **Informado pela representante** (tudo que o app grava). 5) **Retorno · bipar** e **Diferenças** (só quem bipa). 6) **Peças do acerto**. 7) **Peças do próximo mês**. 8) **Trocas**. Na tabela, o link virou **"Abrir"**: abrir a ficha não começa mais a conferência.

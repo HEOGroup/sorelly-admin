@@ -68,11 +68,11 @@ var numsCond = function(l){ return l.rec.condNums || l.r.condicionaisSelecionada
 // Conferência (primeira coluna da tabela): o botão abre a ficha da revendedora; "Iniciar" também começa a conferência (Marcus, 23/11/2026: a tabela só mostra as linhas, a conferência é feita na ficha)
 function Relogio(p){
   var rec = p.l.rec, ok = !!rec.ok, rodando = !!rec.inicioTs && !ok;
-  return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.onClick(); }, "aria-label":ok ? "Conferido: abrir a ficha" : rodando ? "Em conferência: abrir a ficha" : "Iniciar a conferência e abrir a ficha",
-    title:ok ? "Recebido em "+new Date(rec.fimTs||rec.em).toLocaleString("pt-BR")+(rec.quem ? " · por "+rec.quem : "") : rodando ? "Conferência em andamento desde "+hm(rec.inicioTs) : "Iniciar a conferência",
+  return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.onClick(); }, "aria-label":ok ? "Conferido: abrir a ficha" : rodando ? "Em conferência: abrir a ficha" : "Abrir a ficha do atendimento",
+    title:ok ? "Recebido em "+new Date(rec.fimTs||rec.em).toLocaleString("pt-BR")+(rec.quem ? " · por "+rec.quem : "") : rodando ? "Conferência em andamento desde "+hm(rec.inicioTs) : "Abrir a ficha. A conferência começa no botão da ficha.",
     className:"whitespace-nowrap text-[11px] font-semibold"},
     e("span",{className:"inline-flex items-center gap-1 "+(ok ? "text-success" : rodando ? "text-white" : "underline")}, e(Icon,{n:ok ? "check" : rodando ? "play" : "clock", s:11}),
-      ok ? "Conferido"+(rec.inicioTs && rec.fimTs ? " · "+duracao(rec.inicioTs, rec.fimTs) : "") : rodando ? "Em conferência" : "Iniciar"));
+      ok ? "Conferido"+(rec.inicioTs && rec.fimTs ? " · "+duracao(rec.inicioTs, rec.fimTs) : "") : rodando ? "Em conferência" : "Abrir"));
 }
 
 // Condicional: número + menu (A conferir, Assinada, Não assinada). condEstado resume a revendedora inteira para a tabela e para a ficha.
@@ -93,11 +93,12 @@ var TIPOS_DIF = [
 var ORIGENS_DIF = ["A definir", "Montagem", "Bipagem de saída", "Representante", "Revendedora", "Sistema"];
 var DIRS_DIF = [["", "Sem valor"], ["mais", "A mais"], ["menos", "A menos"]];
 function origemDoTipo(t){ var g = TIPOS_DIF.find(function(x){ return x[2].indexOf(t)>=0; }); return g ? g[1] : "A definir"; }
+function kitDe(kits, r){ return (kits || []).filter(function(k){ return nome(k.rev)===nome(r.rev) && (k.montId!=null || k.bipId!=null); }).sort(function(a, b){ return String(b.retEm || b.criadoEm || "").localeCompare(String(a.retEm || a.criadoEm || "")); })[0]; }
 function Diferencas(p){
   var r = p.l.r, lista = (p.l.rec.dif || []);
   var st = useState({tipo:"", cod:"", dir:"", valor:0, origem:"", obs:""}), f = st[0], setF = st[1];
   var set = function(k, v){ setF(Object.assign({}, f, (function(){ var o = {}; o[k] = v; return o; })())); };
-  var kit = (p.kits || []).filter(function(k){ return nome(k.rev)===nome(r.rev) && (k.montId!=null || k.bipId!=null); }).sort(function(a, b){ return String(b.retEm || b.criadoEm || "").localeCompare(String(a.retEm || a.criadoEm || "")); })[0];
+  var kit = kitDe(p.kits, r);
   var montou = kit && kit.montId!=null ? nomeDe(kit.montId) : "Sem registro", bipou = kit && kit.bipId!=null ? nomeDe(kit.bipId) : "Sem registro";
   var origem = f.origem || (f.tipo ? origemDoTipo(f.tipo) : "A definir");
   var registra = function(){ if(!f.tipo) return;
@@ -106,7 +107,7 @@ function Diferencas(p){
   var campo = function(t, ctl){ return e("div",{className:"grid min-h-6 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 border-b border-white/30 px-2 py-px text-center text-[11px]"}, e("span",null, t), ctl); };
   var opc = function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); };
   return e(Bloco,{t:"Diferenças · "+lista.length, dir:e("span",{className:lista.length ? "text-destructive" : "text-white"}, lista.length ? "Registradas" : "Nenhuma")},
-    e(Par,{t:"Montou o kit", v:montou}), e(Par,{t:"Bipou na saída", v:bipou}),
+    e(Par,{t:"Bipou na saída", v:bipou}),
     lista.map(function(x){ var cor = x.dir==="mais" ? "text-success" : x.dir==="menos" ? "text-destructive" : "";
       return e("div",{key:x.id, title:(x.obs ? x.obs+" · " : "")+"Registrado por "+(x.por || "—")+" em "+new Date(x.em).toLocaleString("pt-BR"), className:"grid min-h-6 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_1.5rem] items-center gap-2 break-words border-b border-white/30 px-2 py-px text-center text-[11px]"},
         e("span",{className:"font-semibold"}, x.tipo+(x.cod ? " · "+x.cod : "")),
@@ -140,23 +141,39 @@ function FichaConferencia(p){
   var adiciona = function(){ var n = v.trim(); setV(""); if(!n || nums.indexOf(n)>=0) return; grava(nums.concat([n]), assAtual()); };
   var define = function(n, val){ var o = assAtual(); if(val==="") delete o[n]; else o[n] = val==="sim"; grava(nums, o); };
   var tira = function(n){ var o = assAtual(); delete o[n]; grava(nums.filter(function(x){ return x!==n; }), o); };
+  var pecasDe = function(n){ var x = (r.condicionaisPecas||[]).filter(function(y){ return y.numero===n; })[0]; return x ? x.pecas : 0; };
   var multa = vc ? partesMulta(r, l.ac ? ((r.descontoRemarcacao||{}).comissaoPct||0)+(r.atrasoPct||0) : 0, l.falta) : [];
   var dinTxt = l.dinTot<=0 ? "Sem dinheiro" : !din.ok ? "Falta receber" : diverge ? "Divergente" : l.repDinOk ? "Recebido" : "Aguarda representante";
   var retTxt = !rec.ok ? "Aguarda recebimento" : rec.bip ? "Bipado por "+nome(rec.bip.por)+" · "+hm(rec.bip.ts) : "Falta bipar";
   var item = function(t, feito, txt){ return e("div",{key:t, className:PAR}, e("span",null, t), e("b",{className:feito ? "text-success" : "text-white"}, (feito ? "✓ " : "")+txt)); };
+  // INFORMADO PELA REPRESENTANTE (Marcus, 26/11/2026: "tudo que é registrado no admin da representante precisa aparecer aí"): tudo que o app grava no atendimento e ainda não tinha lugar na ficha
+  var linhasInfo = [], pI = function(tt, v, cor){ if(v===null || v===undefined || v==="" || v===false) return; linhasInfo.push(e(Par,{key:tt, t:tt, v:v, cor:cor})); };
+  if(l.ac){
+    if(vc){ pI("Venda bruta", BK(r.vendaBruta||0)); if(r.vendaDigitada && Math.abs((r.vendaDigitada||0)-(r.vendaBruta||0))>0.009) pI("Venda digitada", BK(r.vendaDigitada)); }
+    pI("Motivo da venda baixa", r.motivoVendaBaixa); if(vc && r.garantia>0) pI("Garantia", BK(r.garantia)); if(r.tagsDanificadas>0) pI("Etiquetas danificadas", r.tagsDanificadas+(vc && r.tagsValor>0 ? " · "+BK(r.tagsValor) : ""), "text-destructive");
+    if(vc && r.brindeNormal>0) pI("Brinde normal", BK(r.brindeNormal)); if(vc && r.brindeSelect>0) pI("Brinde BB", BK(r.brindeSelect));
+    if(vc && r.abatidoDivida>0) pI("Abatido da dívida", BK(r.abatidoDivida), "text-success"); if(r.recusouNegociar) pI("Negociação", "Recusou negociar", "text-destructive");
+    if(r.acordo && r.acordo.length>0) pI("Acordo", r.acordo.length+(r.acordo.length===1 ? " parcela" : " parcelas")+(vc ? " · "+BK(r.acordo.reduce(function(t2, x){ return t2+(x.valor||0); }, 0)) : ""));
+    if((r.creditosGarantiaUsados||[]).length>0) pI("Crédito de garantia", r.creditosGarantiaUsados.length+(r.creditosGarantiaUsados.length===1 ? " usado" : " usados"), "text-success");
+    if(r.pecasProxLiberadas>0) pI("Peças do próximo mês liberadas", r.pecasProxLiberadas);
+    pI("Kit novo no acerto", r.kitNovoOk ? "Representante confirmou" : null, "text-success");
+  } else {
+    var cfA = r.conferencia; if(cfA){ pI("Peças esperadas", cfA.esperadas); pI("Peças contadas", cfA.contadas); if(cfA.faltas>0) pI("Faltaram", cfA.faltas, "text-destructive"); if(cfA.sobras>0) pI("Sobraram", cfA.sobras, "text-destructive"); }
+    else if(r.pecasTotal!=null){ pI("Peças do kit", r.pecasTotal); if(r.pecasFaltaram>0) pI("Faltaram", r.pecasFaltaram, "text-destructive"); }
+    pI("Observação da divergência", r.obsDivergencia || (cfA && cfA.nota)); if(r.expositorFoto) pI("Foto do expositor", "Enviada", "text-success"); if(r.semCelular) pI("Revendedora", "Sem celular");
+  }
+  pI("Assinatura no app", r.assinatura ? "Assinou" : "Sem assinatura", r.assinatura ? "text-success" : "text-destructive"); pI("Regras lidas", r.regrasLidas ? "Sim" : null, "text-success");
+  var blocoInfo = e(Bloco,{key:"info", t:"Informado pela representante"}, linhasInfo,
+    e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, r.obs ? "Observação: "+r.obs : "Sem observação da representante."));
+  var kitA = kitDe(p.kits, r), montouKit = kitA && kitA.montId!=null ? nomeDe(kitA.montId) : "Sem registro";
   var colA = e("div",{key:"a", className:"flex flex-col"},
     e(Bloco,{t:"Atendimento"},
-      e(Par,{t:"Representante", v:nome(r.rep)||"—", grande:true}), e(Par,{t:"Revendedora", v:nome(r.rev), grande:true})),   // nomes em letra maior, no lugar das duas linhas do topo, mantendo a tabela (Marcus, 26/11/2026)
+      e(Par,{t:"Representante", v:nome(r.rep)||"—", grande:true}), e(Par,{t:"Revendedora", v:nome(r.rev), grande:true}), e(Par,{t:"Montou o kit", v:montouKit})),   // nomes em letra maior, no lugar das duas linhas do topo, mantendo a tabela (Marcus, 26/11/2026)
     e(Bloco,{t:"Acerto"},
       e(Par,{t:"Status", v:l.status, cor:corStatus(l.status)}), e(Par,{t:"Acerto", v:fmtData(r.data)+(r.hora ? " "+r.hora : "")}),
       vc && l.ac && e(Par,{t:"Vendas", v:BK(r.vendaLiquida||0)}), vc && l.ac && e(Par,{t:"Comissão", v:r.comissaoPct+"%"}), vc && l.ac && e(Par,{t:"Valor do acerto", v:BK(r.valorAcerto||0)}),
-      vc && l.ac && r.excedenteBrinde>0 && e(Par,{t:"Brinde a mais", v:BK(r.excedenteBrinde), cor:"text-destructive"}), vc && l.tx.taxa>0 && e(Par,{t:"Taxa", v:BK(l.tx.taxa)+(l.tx.paga ? " · paga" : " · não paga"), cor:l.tx.paga ? "text-success" : "text-destructive"}),
-      vc && l.ac && e(Par,{t:"Total a pagar", v:BK(l.devido)}), vc && l.ac && e(Par,{t:"Valor pago", v:BK(l.pago), cor:"text-success"}), vc && l.falta>0.009 && e(Par,{t:"Inadimplente", v:BK(l.falta), cor:"text-destructive"})),
-    multa.length>0 && e(Bloco,{t:"Multas e prazo"}, multa.map(function(m, i){ return e("div",{key:i, title:m.d, className:PAR}, e("span",null, m.l), e("b",{className:"tabular-nums "+m.c}, m.v)); })),
-    e(Bloco,{t:"Conferência", dir:e("span",{className:ok ? "text-success" : "text-white"}, ok ? "Conferido" : rodando ? "Em andamento" : "Não iniciada")},
-      rec.inicioTs && e(Par,{t:"Início", v:hmd(rec.inicioTs)+" "+hm(rec.inicioTs)}), rec.fimTs && e(Par,{t:"Fim", v:hmd(rec.fimTs)+" "+hm(rec.fimTs)+" · "+tempoEntre(r, rec.fimTs)}), rec.quem && e(Par,{t:"Conferido por", v:rec.quem}),
-      (l.condNec || nums.length>0) && item("Condicionais", l.condOk, ce.resumo), l.dinTot>0 && item("Dinheiro", din.ok && l.repDinOk && !diverge, dinTxt),
-      e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{principal:!ok, desabilitado:!agenda, onClick:p.onRelogio}, ok ? "Desfazer conferência" : rodando ? "Terminar conferência" : "Iniciar conferência"))));
+      vc && l.ac && r.excedenteBrinde>0 && e(Par,{t:"Brinde a mais", v:BK(r.excedenteBrinde), cor:"text-destructive"}), vc && l.tx.taxa>0 && e(Par,{t:"Taxa", v:BK(l.tx.taxa)+(l.tx.paga ? " · paga" : " · não paga"), cor:l.tx.paga ? "text-success" : "text-destructive"})));
+  var blocoMulta = multa.length>0 && e(Bloco,{key:"mu", t:"Multas e prazo"}, multa.map(function(m, i){ return e("div",{key:i, title:m.d, className:PAR}, e("span",null, m.l), e("b",{className:"tabular-nums "+m.c}, m.v)); }));
   // SITUAÇÃO DO PAGAMENTO (Marcus, 26/11/2026): em palavras, o que a revendedora pagou, o que falta e o que a regra manda fazer (multa, prazo, kit bloqueado, parcelas, jurídico)
   var NR = r.regrasNovas || null, pzS = vc && l.ac && l.falta>0.009 ? prazoPendente(r, isoDia(new Date())) : null, nadaPago = l.pago<=0.009, pctPago = l.devido>0 ? Math.round(l.pago/l.devido*100) : 0;
   var sitDir = l.falta<=0.009 ? "Quitado" : nadaPago ? "Não pagou nada" : "Pagou "+pctPago+"%";
@@ -176,37 +193,49 @@ function FichaConferencia(p){
   var blocoSit = vc && l.ac && e(Bloco,{key:"sit", t:"Situação do pagamento", dir:e("span",{className:l.falta<=0.009 ? "text-success" : "text-destructive"}, sitDir)},
     e(Par,{t:"Total a pagar", v:BK(l.devido)}), e(Par,{t:"Pagou", v:BK(l.pago)+" · "+pctPago+"%", cor:l.pago>0.009 ? "text-success" : ""}), l.falta>0.009 && e(Par,{t:"Falta pagar", v:BK(l.falta), cor:"text-destructive"}),
     pzS && e(Par,{t:"Prazo", v:pzS.atraso>0 ? pzS.atraso+" dias de atraso · +"+pzS.pct+"%" : "dia "+pzS.dias+" de "+pzS.prazo, cor:pzS.atraso>0 ? "text-destructive" : ""}),
-    linhasSit.map(function(x, i){ return e("p",{key:i, className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, x); }));
+    linhasSit.length>0 && e("details",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, e("summary",{className:"cursor-pointer font-semibold"}, "Regras da cobrança"), linhasSit.map(function(x, i){ return e("p",{key:i, className:"py-0.5"}, x); })));
+  var blocoConf = e(Bloco,{t:"Conferência", dir:e("span",{className:ok ? "text-success" : "text-white"}, ok ? "Conferido" : rodando ? "Em andamento" : "Não iniciada")},
+    rec.inicioTs && e(Par,{t:"Início", v:hmd(rec.inicioTs)+" "+hm(rec.inicioTs)}), rec.fimTs && e(Par,{t:"Fim", v:hmd(rec.fimTs)+" "+hm(rec.fimTs)+" · "+tempoEntre(r, rec.fimTs)}), rec.quem && e(Par,{t:"Conferido por", v:rec.quem}),
+    !rec.inicioTs && !ok && e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, "A conferência ainda não começou."),
+    e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{principal:!ok, desabilitado:!agenda, onClick:p.onRelogio}, ok ? "Desfazer conferência" : rodando ? "Terminar conferência" : "Iniciar conferência")));
   var colB = e("div",{key:"b", className:"flex flex-col"},
-    blocoSit,
-    !(l.repos || r.tipoKit==="saiu") && e(Bloco,{t:"Condicionais · "+nums.length},
+    blocoConf,
+    !(l.repos || r.tipoKit==="saiu") && e(Bloco,{t:"Condicionais · "+nums.length, dir:e("span",{className:l.condOk ? "text-success" : "text-white"}, ce.resumo)},
       nums.length===0 && e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Nenhuma condicional."),
       nums.map(function(n){ var a = assinadaDe(rec, n), c = a===true ? "text-success" : a===false ? "text-destructive" : "";
-        return e("div",{key:n, className:"grid min-h-7 grid-cols-[1fr_7rem_1.5rem] items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"},
-          e("b",{className:"tabular-nums "+c}, n),
+        return e("div",{key:n, className:"grid min-h-7 grid-cols-[1fr_6rem_1.5rem] items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"},
+          e("b",{className:"tabular-nums "+c}, n+(pecasDe(n)>0 ? " · "+pecasDe(n)+" peças" : "")),
           agenda ? e("select",{value:a===true ? "sim" : a===false ? "nao" : "", "aria-label":"Assinatura da condicional "+n, className:CAMPO, onChange:function(ev){ define(n, ev.target.value); }}, OPS_ASS.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); })) : e("span",{className:c}, a===true ? "Assinada" : a===false ? "Não assinada" : "A conferir"),
           agenda ? e("button",{type:"button", onClick:function(){ tira(n); }, "aria-label":"Tirar a condicional "+n, title:"Tirar a condicional "+n, className:"mx-auto grid size-5 place-items-center rounded hover:bg-white/20"}, "×") : e("span",null)); }),
       agenda && e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-2 border-b border-white/30 px-2 py-1"},
         e("input",{value:v, placeholder:"Nº da nova condicional", "aria-label":"Número da condicional", className:CAMPO, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") adiciona(); }}),
-        e(Botao,{onClick:adiciona, desabilitado:!v.trim()}, "Adicionar"))),
-    l.dinTot>0 && e(Bloco,{t:"Dinheiro", dir:e("span",{className:din.ok && l.repDinOk && !diverge ? "text-success" : "text-white"}, dinTxt)},
+        e(Botao,{onClick:adiciona, desabilitado:!v.trim()}, "Adicionar"))));
+  var blocoDin = l.dinTot>0 && e(Bloco,{key:"din", t:"Dinheiro", dir:e("span",{className:din.ok && l.repDinOk && !diverge ? "text-success" : "text-white"}, dinTxt)},
       e(Par,{t:"Valor lançado", v:BK(l.dinTot), cor:"text-success"}),
       din.ok && e(Par,{t:"Empresa", v:"✓ Recebido", cor:"text-success"}), din.ok && e(Par,{t:"Representante", v:l.repDinOk ? "✓ Confirmou" : "Aguarda", cor:l.repDinOk ? "text-success" : "text-white"}),
       diverge && e(Par,{t:"Contado", v:BK(din.contado)+" · falta "+BK(l.dinTot-din.contado), cor:"text-destructive"}),
       !din.ok && agenda && e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-2 border-b border-white/30 px-2 py-1"},
         e(MoneyInput,{value:contado==null ? l.dinTot : contado, label:"Dinheiro contado", className:"w-full h-[22px]! px-1! text-center! text-[11px]! bg-white/10! border-white/40!", onChange:setContado}),
         e(Botao,{principal:true, onClick:function(){ var c2 = contado==null ? l.dinTot : contado; p.onDin(Math.abs(c2-l.dinTot)>0.009 ? c2 : null); }}, "Recebi o dinheiro")),
-      din.ok && agenda && !ok && e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{onClick:p.onDinDesfaz}, "Desfazer"))),
-    vc && (r.pagamentos||[]).length>0 && e(Bloco,{t:"Pagamentos · "+(r.pagamentos||[]).length},
+      din.ok && agenda && !ok && e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{onClick:p.onDinDesfaz}, "Desfazer")));
+  var blocoPag = vc && (r.pagamentos||[]).length>0 && e(Bloco,{key:"pag", t:"Formas de pagamento · "+(r.pagamentos||[]).length},
       (r.pagamentos||[]).map(function(pg, i){ var f = FORMA_PALAVRA[pg.forma] || pg.forma, c = pg.descricao ? rotuloConta(pg.descricao, false) : "";
-        return e("div",{key:i, className:PAR}, e("span",null, c && c.toLowerCase()!==String(f).toLowerCase() ? f+" · "+c : f), e("b",{className:"tabular-nums"}, BK(pg.valor||0))); }),
-      e("div",{className:PAR+" font-bold"}, e("span",null, "Total"), e("span",{className:"tabular-nums"}, BK(r2((r.pagamentos||[]).reduce(function(t, x){ return t+(x.valor||0); }, 0)))))),
+        return e("div",{key:i, className:PAR}, e("span",null, c && c.toLowerCase()!==String(f).toLowerCase() ? f+" · "+c : f), e("b",{className:"tabular-nums"}, BK(pg.valor||0))); }));
+  var colP = e("div",{key:"p", className:"flex flex-col"}, blocoSit, blocoPag, blocoDin, blocoMulta, !blocoSit && !blocoPag && !blocoDin && e(Bloco,{t:"Pagamento"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Este atendimento não tem pagamento.")));
+  var colR = e("div",{key:"r", className:"flex flex-col"},
     e(Bloco,{t:"Retorno · bipar", dir:e("span",{className:rec.bip ? "text-success" : "text-white"}, rec.bip ? "Bipado" : !rec.ok ? "Aguarda recebimento" : "Falta bipar")},
       e("p",{className:"px-2 py-1 text-center text-[11px] "+(rec.bip ? "text-success" : "font-semibold text-white")}, retTxt),
       rec.ok && p.podeBip && e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{principal:!rec.bip, onClick:p.onBipar}, rec.bip ? "Desfazer" : "Bipei"))),
     l.ac && p.podeBip && e(Diferencas,{l:l, kits:p.kits, podeBip:p.podeBip, usuarioNome:p.usuarioNome, onDif:p.onDif, onDifTira:p.onDifTira}));
-  var colC = e("div",{key:"c", className:"flex flex-col"}, l.ac ? e(PecasMini,{l:l, agenda:agenda, receber:p.receber, todos:p.todos, usuario:p.usuario, podeProx:p.podeProx}) : e(Bloco,{t:"Peças e brindes"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Este atendimento não tem brindes nem trocas.")));
-  return e(FichaJanela,{t:"Ficha do atendimento", fechar:p.fechar, colunas:[colA, colB, colC]});
+  var pm = function(parte){ return e(PecasMini,{parte:parte, l:l, agenda:agenda, receber:p.receber, todos:p.todos, usuario:p.usuario, podeProx:p.podeProx}); };
+  var col = function(k, c){ return e("div",{key:k, className:"flex flex-col"}, c); };
+  var semPecas = e(Bloco,{t:"Peças e brindes"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Este atendimento não tem peças do acerto."));
+  var dois = function(k, a, b){ return e("div",{key:k, className:"flex flex-col"}, a, b); };
+  var vazio = function(k, titulo, msg){ return col(k, e(Bloco,{t:titulo}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, msg))); };
+  // 8 blocos fixos, numerados, 4 em cima e 4 embaixo (Marcus, 26/11/2026). 1 e 2 juntos mostram o acerto e todo o pagamento; os outros ficam como estão até ele melhorar.
+  var celulas = [colA, colP, colB, col("info", blocoInfo), colR, l.ac ? col("c5", pm("pecas")) : col("c5", semPecas), l.ac ? col("c6", pm("prox")) : vazio("c6", "Peças do próximo mês", "Não se aplica."), l.ac ? col("c7", pm("trocas")) : vazio("c7", "Trocas", "Não se aplica.")];
+  var cheias = celulas.map(function(c, i){ return e("div",{key:"n"+i, className:"relative flex flex-col"}, e("span",{className:"absolute left-1 top-0.5 z-10 grid size-4 place-items-center rounded-full bg-white/20 text-[10px] font-bold"}, i+1), c); });
+  return e(FichaJanela,{t:"Ficha do atendimento", fechar:p.fechar, colunas:cheias});
 }
 
 // Multa lançada pela representante no app: remarcação com multa ou isenta (com o motivo), atraso do Kit 100% Prata e as regras de 27/10/2026
@@ -239,11 +268,11 @@ function Botao(p){
 var FICHA_FINA = "[&_*]:!text-[10px] [&_.min-h-6]:!min-h-5 [&_.min-h-7]:!min-h-6 [&_button]:!h-[18px] [&_select]:!h-[18px] [&_input]:!h-[18px] [&_button]:!leading-none";   // padrao-ok: igual à Contas a pagar (10 px, 18 px)
 function FichaJanela(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-[#0b1530]/85 p-3", onClick:p.fechar},
-    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"max-h-[92vh] w-full max-w-7xl overflow-y-auto [&_*]:!normal-case "+FICHA_FINA+" "+PADRAO_BLOCOS},
+    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"max-h-[92vh] w-full max-w-[98vw] overflow-y-auto [&_*]:!normal-case "+FICHA_FINA+" "+PADRAO_BLOCOS},
       e(BlocoPainel,{titulo:p.t, dir:e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-6 place-items-center rounded hover:bg-white/20"}, "×")},
         e("div",{className:"bg-[#0f1729]"},
           p.sub && e("p",{className:"px-2 py-1 text-center text-[11px]"}, p.sub),
-          e("div",{className:"grid grid-cols-1 divide-y divide-white/30 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.6fr)] lg:divide-x lg:divide-y-0"}, p.colunas)))));
+          e("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 [&>*]:border-b [&>*]:border-white/30 lg:[&>*:not(:nth-child(4n))]:border-r"}, p.colunas)))));
 }
 function PecasMini(p){
   var cn = useState(""), numNova = cn[0], setNumNova = cn[1];
@@ -265,7 +294,7 @@ function PecasMini(p){
       e("div",{className:"grid min-h-6 grid-cols-2 items-center gap-2 border-b border-white/30 px-2 text-center text-[11px] font-bold"}, e("span",null,"Lançado"), e("span",{className:"tabular-nums"}, BK(somaDe(itens))))); };
   var celula = function(t, v){ return e("div",{key:t, className:"flex flex-col items-center border-r border-white/30 py-1 last:border-r-0"}, e("span",{className:"text-[11px]"}, t), e("b",{className:"text-[11px] tabular-nums"}, v==null || v==="" ? "—" : v)); };
   var pecas = e(Bloco,{t:"Peças do acerto"}, e("div",{className:"grid grid-cols-5 border-b border-white/30"}, celula("Total", r.pecasCond), celula("Vendidas", r.pecasVendidas), celula("Trocas", r.pecasTrocas||0), celula("Brindes", lista.length), celula("Retornadas", r.pecasADevolver)));
-  var brindes = e("div",{className:"grid md:grid-cols-2 md:divide-x md:divide-white/30"}, blocoBr("Brindes normal", normal), blocoBr("Brindes BB", bb));
+  var brindes = e("div",{className:"flex flex-col"}, blocoBr("Brindes normal", normal), blocoBr("Brindes BB", bb));
   var trocas = (r.trocas||[]).length>0 && e(Bloco,{key:"tr", t:"Trocas · "+r.trocas.length},
     r.trocas.map(function(t, i){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);
       return e("div",{key:i, className:"grid min-h-6 grid-cols-[1fr_1fr_1fr] items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"},
@@ -278,7 +307,9 @@ function PecasMini(p){
           e(Botao,{principal:true, desabilitado:!numNova, onClick:salvaNova}, "Salvar"))
       : e("p",{className:"px-2 py-1 text-center text-[11px] font-semibold text-white"}, "Aguardando quem faz a bipagem do retorno"));
   var tiradas = anterior && retiradas.length>0 && e(Bloco,{key:"mal", t:"Tiradas do kit novo · acerto de "+fmtData(anterior.data)}, retiradas.map(function(i){ return e("div",{key:i.codigo, className:"grid min-h-6 grid-cols-2 items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"}, e("b",{className:"tabular-nums"}, i.codigo), e("span",{className:"tabular-nums"}, i.valor!=null ? BK(i.valor) : "—")); }));
-  return e("div",{className:"flex flex-col"}, pecas, brindes, trocas, blocoProx, condNova, tiradas);
+  if(p.parte==="trocas") return e("div",{className:"flex flex-col"}, trocas || e(Bloco,{t:"Trocas · 0"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Nenhuma troca neste acerto.")));
+  if(p.parte==="prox") return e("div",{className:"flex flex-col"}, blocoProx || e(Bloco,{t:"Peças do próximo mês · "+(r.pecasProxLiberadas||0)}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, r.pecasProxLiberadas>0 ? r.pecasProxLiberadas+" peças liberadas pela representante. Os códigos não vieram do app." : "Nenhuma peça para o próximo mês.")), condNova, tiradas);
+  return e("div",{className:"flex flex-col"}, pecas, brindes);
 }
 
 // Passo a passo para quem atende a representante na empresa (abre pelo botão da barra)
@@ -409,7 +440,7 @@ function AbaConsolidadoRep(){
   var reais = function(k, t, mais){ return Object.assign({k:k, t:t, din:true, fmt:function(v){ return BK(v); }}, mais||{}); };
   var qtd = function(k, t){ return {k:k, t:t, qtd:true}; };
   var g1 = [
-    {k:"conf", t:"Conferência", render:function(v, row){ return e(Relogio,{l:row.l, agenda:agenda, onClick:function(){ abre(row.l, true); }}); }},
+    {k:"conf", t:"Conferência", render:function(v, row){ return e(Relogio,{l:row.l, agenda:agenda, onClick:function(){ abre(row.l, false); }}); }},
     {k:"data", t:"Acerto", data:true, fmt:function(v, row){ return fmtData(v).slice(0,5)+(row && row.hora ? " "+row.hora : ""); }},
     {k:"recebido", t:"Recebido", data:true, fmt:function(v){ return fmtData(v).slice(0,5); }, render:function(v, row){ var rec = row.l.rec; if(!rec.fimTs) return "";
       return e("span",{className:"whitespace-nowrap"}, hmd(rec.fimTs)+" "+hm(rec.fimTs)+" · ", e("span",{title:"Tempo entre o atendimento e o recebimento", className:"font-semibold"+(diasDepois(row.l.r.data, rec.fimTs)>0 ? " text-white" : "")}, tempoEntre(row.l.r, rec.fimTs))); }},
