@@ -23,7 +23,7 @@ export const GET = rota(async (req, { url }) => {
   if (!eu) return erro("Entre no sistema para continuar.", 401);
   // Sem agendador na Vercel (sem CRON_SECRET), quem dispara é a tela dos Kits novos: a cada minuto pede ?rodar=1 e o servidor só roda se a última rodada (guardada no banco) tem mais de 50 s. 26/11/2026.
   let guardada = (await lerModulo("knkommo")).appsinc || null, rodou = null;
-  if (url.searchParams.get("rodar") === "1" && podeGravar() && podeModulo(eu, "kndados") && (!guardada || !guardada.em || Date.now() - Date.parse(guardada.em) > 50000)) {
+  if (url.searchParams.get("rodar") === "1" && podeModulo(eu, "kndados") && (!guardada || !guardada.em || Date.now() - Date.parse(guardada.em) > 50000)) {
     rodou = await sincronizarApp();
     guardada = (await lerModulo("knkommo")).appsinc || guardada;
   }
