@@ -7,6 +7,13 @@
         ]
       }
     ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hook-caminho.mjs\"", "timeout": 10 }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Read",

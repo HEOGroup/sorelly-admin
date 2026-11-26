@@ -969,6 +969,19 @@ function reducer(s, a){
       return com(s, {kits: mapKit(s, a.id, function(){ return {preAcerto:{atrasoDias:Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), em:agora}}; })},
         "Pré-acerto salvo para "+k.rev);
     }
+    // MULTAS AUTOMÁTICAS (26/11/2026, Marcus): o sistema calcula o atraso e as remarcações (rota /api/representante/multas) e grava aqui; a representante só confirma.
+    // Zerar dias ou remarcações fica escondido (toque duplo) e cada edição é anotada em preAcerto.edicoes (quem, quando, de, para) para a tela de análise de depois.
+    case "KIT_MULTAS": {
+      k = kitDe(s, a.id); if(!k) return s;
+      return com(s, {kits: mapKit(s, a.id, function(x){
+          var cob = Math.max(0, Math.min(20, Math.floor(a.cobraveis||0))), isn = Math.max(0, Math.min(20, Math.floor(a.isentas||0))), lista = [], n;
+          for(n=0; n<cob; n++) lista.push({em:agora, isenta:false, motivo:"", auto:true});
+          for(n=0; n<isn; n++) lista.push({em:agora, isenta:true, motivo:"Autorizada", auto:true});
+          var pa = x.preAcerto||{};
+          return {remarcacoesLista:lista, remarcacoes:lista.length, preAcerto:{atrasoDias:Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), em:agora, auto:a.auto||pa.auto||null, confirmada:!!a.confirmada, editada:!!a.editada || !!pa.editada,
+            edicoes:(pa.edicoes||[]).concat(a.edicao ? [Object.assign({em:agora, por:a.por||""}, a.edicao)] : [])}}; })},
+        a.edicao ? "Multa editada em "+k.rev : "");
+    }
     // Fecha o acerto de um kit de revenda normal: calcula comissão/brinde pela regra carimbada no kit e grava no consolidado.
     case "ACERTO_REGISTRAR": {
       k = kitDe(s, a.id); if(!k) return s;

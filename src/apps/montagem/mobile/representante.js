@@ -103,6 +103,13 @@ function carteiraRep(s, rep, reais){
   var appDe = {}; (reais||[]).forEach(function(it){ if(it.vendaApp>0) appDe[semAcento(it.nome)] = it.vendaApp; });   // venda lançada no app da revendedora desde o último acerto
   var hojeK = s.kits.filter(function(k){return lids.indexOf(k.lid)>=0;}).map(function(k){
     return {vendaApp:appDe[semAcento(k.rev)]||0, cod:k.codRev||"", id:k.id, rev:k.rev, fone:k.fone||"", bairro:k.endereco||k.bairro, vendas:k.vendas||[], cond:k.valor, hora:k.horaAtend, hoje:true, data:dm(new Date()), nova:(k.tipoKit||"").indexOf("kit_novo")===0, tipoKit:k.tipoKit, status:k.status, lid:k.lid}; });
+  // 26/11/2026 (Marcus): "Ana Ca" mostrava "Ana Caroline" e "Ana Caroline Macedo Santos" (mesmo código, dois kits de hoje) e o toque na de baixo abria a de cima. Um código = um cartão: fica o nome mais completo e as vendas do outro entram se faltarem
+  (function(){ var porCod = {}, fora = [];
+    hojeK.forEach(function(k){ var c = k.cod; if(!c) return; var o = porCod[c]; if(!o){ porCod[c] = k; return; }
+      var manter = String(k.rev||"").length > String(o.rev||"").length ? k : o, solto = manter===k ? o : k;
+      if(!(manter.vendas||[]).some(function(v){ return v>0; })) manter.vendas = solto.vendas || manter.vendas;
+      porCod[c] = manter; fora.push(solto); });
+    hojeK = hojeK.filter(function(k){ return fora.indexOf(k)<0; }); })();
   // Revendedora que já fez o acerto neste mês: o card mostra "Acerto realizado · mês" e o vendido/acerto reais do acerto
   var mesAtual = isoDia(new Date()).slice(0,7);
   var feito = function(rev){ return (s.acertosConsignado||[]).find(function(a){ return a.tipo==="acerto" && a.rev===rev && (a.data||"").slice(0,7)===mesAtual; }); };
@@ -386,6 +393,18 @@ function AppRepresentante(p){
     if(chegou){ plim(); setAvisoConta(chegou); }
   }, [s.lancFin, acertoForm.pagamentos]);
   // Dias de atraso vêm do pré-acerto e ficam travados no acerto (02/11/2026, Marcus). Acerto já registrado mostra o que foi gravado.
+  // MULTAS AUTOMÁTICAS (26/11/2026, Marcus): ao abrir o acerto o sistema calcula o atraso e as remarcações (rota /representante/multas) e já aplica no kit; a representante só confirma.
+  // Zerar fica escondido atrás do toque duplo no bloco (ver blocoMultas). Sem a revendedora no atendimento interno, nada muda e o acerto segue como antes.
+  var mtS = useState({}), multasAuto = mtS[0], setMultasAuto = mtS[1], meS = useState(false), multaEdita = meS[0], setMultaEdita = meS[1], toqueMulta = useRef(0);
+  var codMulta = sel && sel.cod ? String(sel.cod) : "";
+  useEffect(function(){ if(tela!=="calcacerto" || !kitSel || jaAcertado || !codMulta || !apiAtiva()) return; var vivo = true;
+    chamar("GET", "/representante/multas?cod="+encodeURIComponent(codMulta)).then(function(j){ if(vivo && j) setMultasAuto(function(o){ var n = Object.assign({}, o); n[codMulta] = j; return n; }); }).catch(function(){});
+    return function(){ vivo = false; }; }, [tela, selId]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var maAuto = multasAuto[codMulta] || null, paK = (kitSel && kitSel.preAcerto) || {};
+  useEffect(function(){ if(!maAuto || !maAuto.achou || !kitSel || jaAcertado || paK.confirmada || paK.editada) return;
+    var cobK = vezCobravel(kitSel.remarcacoesLista||[]), isK = (kitSel.remarcacoesLista||[]).length - cobK, r0 = maAuto.remarcacoes || {};
+    if(!paK.auto || (paK.atrasoDias||0)!==maAuto.atrasoDias || cobK!==(r0.cobraveis||0) || isK!==(r0.isentas||0)) d({type:"KIT_MULTAS", id:kitSel.id, atrasoDias:maAuto.atrasoDias, cobraveis:r0.cobraveis||0, isentas:r0.isentas||0, auto:{atrasoDias:maAuto.atrasoDias, cobraveis:r0.cobraveis||0}});
+  }, [maAuto, kitSel && kitSel.id, paK.confirmada, paK.editada, paK.auto && 1]);   // eslint-disable-line react-hooks/exhaustive-deps
   var atrasoPre = kitSel && kitSel.preAcerto ? (kitSel.preAcerto.atrasoDias||0) : 0;
   useEffect(function(){ if(tela!=="calcacerto" || !kitSel || jaAcertado) return; if((acertoForm.atrasoDias||0)!==atrasoPre) setAcertoForm(function(f0){ return Object.assign({}, f0, {atrasoDias:atrasoPre}); }); }, [tela, atrasoPre, acertoForm.atrasoDias, selId]);
   useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
@@ -771,7 +790,7 @@ function AppRepresentante(p){
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
               es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : (ehPix ? null : e("span",null,"Faça o pagamento na conta: "+es.conta)),
-              !es.aguardando && ehPix && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot, lado:qi===0 ? ladoAnexo : null}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
+              !es.aguardando && ehPix && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot, valor:es.partes.length===1 && String(es.partes[0]).indexOf(" + ")<0 ? p.valor : 0, lado:qi===0 ? ladoAnexo : null}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
               !es.aguardando && !ehPix && (p.anexo
                 ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
                 : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
@@ -1226,7 +1245,7 @@ function AppRepresentante(p){
         var regVer = (s.acertosConsignado||[]).find(function(r){ return r.kitId===kitSel.id && r.tipo==="acerto"; });
         setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, regVer && regVer.formSnapshot ? regVer.formSnapshot : {}));
         setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(3); setTela("calcacerto"); return; }
-      if(sel.hoje){ if(!jaAcertado && kitSel) setPerguntaPre(true); }   // antes do acerto: "Você gostaria de atualizar remarcações e multas?"
+      if(sel.hoje){ if(!jaAcertado && kitSel) abrirAcertoNovo(); }   // 26/11/2026 (Marcus): sem a pergunta "atualizar remarcações e multas?"; as multas já vêm calculadas no topo do acerto
       else { setMostrarSolicitar(true); } }}];
   // 05/11/2026 (Marcus): o botão é sempre "Realizar atendimento". Ao tocar, o app já sabe a situação da revendedora (pelo tipo do kit que o sistema trouxe) e deixa SÓ a opção dela ligada; as outras ficam cinza.
   var soRepos = !!kitSel && kitSel.tipoKit==="reposicao" && !kitSel.reposicaoEntregue;   // reposição: o atendimento é só a entrega (contar as peças + condicional assinada)
@@ -1253,7 +1272,29 @@ function AppRepresentante(p){
     e("div",{className:"grid grid-cols-2 gap-2"}, botaoAgendar, botaoRealizar),
     blocoAgendaForm, painelRealizar);
   // Pré-acerto: a representante preenche antes (remarcações e dias de atraso); no acerto chegam travados
-  var botaoPreAcerto = sel && sel.hoje && kitSel && !jaAcertado && !soRepos && !soKitNovo && e("button",{onClick:function(){ setTela("preacerto"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-xl border border-[#C9A13B]/50 bg-white text-[13px] font-extrabold text-[#8A6A12]"},
+  var MOSTRAR_PRE_ACERTO = false;   // 26/11/2026 (Marcus): a representante não preenche mais multa na mão; o sistema calcula (blocoMultas, no acerto)
+  // BLOCO DE MULTAS no topo do acerto (26/11/2026, Marcus): o sistema já trouxe o atraso e as remarcações; ela só confirma. Depois de confirmar, fica fixo, sem botão à vista.
+  // Toque duplo no bloco abre a edição escondida: só dá para ZERAR os dias de atraso ou as remarcações (sem motivo); cada edição fica anotada em preAcerto.edicoes.
+  var blocoMultas = (function(){
+    if(!kitSel || jaAcertado || !maAuto || !maAuto.achou || tela!=="calcacerto") return null;
+    var N = versaoSel && versaoSel.novas, escM = (versaoSel && versaoSel.remarcacao) || [], dias = paK.atrasoDias||0, lista = kitSel.remarcacoesLista||[], cobM = vezCobravel(lista);
+    var at = N ? atrasoAcerto(dias, N) : {comissaoPct:0, brindePct:0, tudo:false}, rm = cobM>0 && escM.length ? escM[Math.min(cobM, escM.length)-1] : {comissaoPct:0, brindePct:0};
+    var perda = function(c, b){ return "Comissão −"+c+"% · Brinde −"+b+"%"; };
+    var atTxt = dias<=0 ? "No prazo" : at.tudo ? dias+" dias úteis · Perde tudo" : dias+(dias===1 ? " dia útil" : " dias úteis")+(at.comissaoPct>0 ? " · "+perda(at.comissaoPct, at.brindePct) : " · sem perda");
+    var rmTxt = cobM<=0 ? "Nenhuma" : cobM+(cobM===1 ? " com multa · " : " com multas · ")+perda(rm.comissaoPct, rm.brindePct);
+    var grava = function(extra){ d(Object.assign({type:"KIT_MULTAS", id:kitSel.id, atrasoDias:dias, cobraveis:cobM, isentas:lista.length-cobM, confirmada:true}, extra||{})); };
+    var toque = function(){ var t0 = Date.now(); if(t0-toqueMulta.current<400){ toqueMulta.current = 0; setMultaEdita(function(v){ return !v; }); } else toqueMulta.current = t0; };
+    var linhaM = function(k, rot, txt){ return e("div",{key:k, className:"flex min-h-8 items-center justify-between gap-3"}, e("span",{className:"text-[13px]"}, rot), e("b",{className:"text-right text-[13px]"}, txt)); };
+    return e("div",{key:"multas", className:"flex flex-col gap-1 rounded-xl bg-[#1C1C1E] px-3 py-1.5 ring-1 ring-amber-200/25", onClick:toque},
+      e("p",{className:"text-[13px] font-extrabold text-amber-200"}, "Multas"),
+      linhaM("a", "Atraso do acerto", atTxt), linhaM("r", "Remarcações", rmTxt),
+      !paK.confirmada && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); grava(); }, className:"mt-1 h-8 w-full rounded-xl text-[13px] font-bold "+ouro}, "Confirmar multas"),
+      multaEdita && e("div",{className:"mt-1 flex flex-col gap-1.5 border-t border-white/10 pt-1.5", onClick:function(ev){ ev.stopPropagation(); }},
+        e("button",{type:"button", disabled:dias<=0, onClick:function(){ grava({atrasoDias:0, editada:true, por:l.rep, edicao:{campo:"atraso", de:dias, para:0}}); }, className:"h-8 rounded-xl bg-white/10 text-[13px] font-semibold text-white disabled:opacity-40"}, "Zerar dias de atraso"),
+        e("button",{type:"button", disabled:lista.length<=0, onClick:function(){ grava({cobraveis:0, isentas:0, editada:true, por:l.rep, edicao:{campo:"remarcacoes", de:cobM, para:0}}); }, className:"h-8 rounded-xl bg-white/10 text-[13px] font-semibold text-white disabled:opacity-40"}, "Zerar remarcações"),
+        e("button",{type:"button", onClick:function(){ setMultaEdita(false); }, className:"h-8 rounded-xl text-[13px] font-semibold text-white"}, "Fechar")));
+  })();
+  var botaoPreAcerto = MOSTRAR_PRE_ACERTO && sel && sel.hoje && kitSel && !jaAcertado && !soRepos && !soKitNovo && e("button",{onClick:function(){ setTela("preacerto"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-xl border border-[#C9A13B]/50 bg-white text-[13px] font-extrabold text-[#8A6A12]"},
     e(Icon,{n:"calendario", s:13}), "Pré-acerto", (kitSel.remarcacoesLista||[]).length>0 || (kitSel.preAcerto && kitSel.preAcerto.atrasoDias>0) ? e("span",{className:"rounded-full bg-[#C9A13B] px-2 text-[11px] font-bold txt-branco"}, "Preenchido") : null);
   var janelaPergunta = sel && perguntaPre && e("div",{role:"dialog", "aria-label":"Atualizar remarcações e multas", className:"absolute inset-0 z-30 grid place-items-center bg-black/60 p-4"},   // absolute, não fixed: a janela fica DENTRO do celular (05/11/2026)
     e("div",{className:"flex w-full max-w-[300px] flex-col gap-3 rounded-2xl bg-[#1C1C1E] p-4"},
@@ -1418,6 +1459,7 @@ function AppRepresentante(p){
     tela==="preacerto" && kitSel && e(PreAcertoRep,{key:"pre"+kitSel.id, kit:kitSel, versao:versaoSel || versaoVigente(s), rev:sel.rev, prevista:previstaTxt, d:d,
       onVoltar:function(){ setTela("rev"); }, onSalvar:function(){ abrirAcertoNovo(); }, textoSalvar:"Salvar e ir para o acerto"}),
     tela==="calcacerto" && headerCalc,
+    blocoMultas,
     tela==="calcacerto" && avisoConta && e("button",{key:"avisoConta", type:"button", role:"alert", onClick:function(){ setAvisoConta(null); },
       className:"absolute inset-x-3 top-16 z-50 flex items-center gap-2 rounded-xl bg-[#16A34A] px-3 py-2 text-left text-white shadow-xl ring-1 ring-black/30"},
       e("span",{className:"text-[18px]"}, "💳"), e("span",{className:"min-w-0 flex-1 text-[12px] leading-tight"}, e("b",{className:"block"}, "Conta recebida: "+BK(avisoConta.valor)), e("span",{className:"block truncate"}, avisoConta.conta))),

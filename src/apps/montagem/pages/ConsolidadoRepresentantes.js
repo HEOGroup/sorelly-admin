@@ -1,5 +1,5 @@
 // Sorelly Admin — pages/ConsolidadoRepresentantes.js
-// Financeiro › Representantes › Consolidado: CONTROLE do que entrou. Tudo que a representante preenche no app (acerto, kit novo, reposição)
+// Representantes & Kits › Consolidado: CONTROLE do que entrou. Tudo que a representante preenche no app (acerto, kit novo, reposição)
 // aparece aqui sozinho e fica pendente até trazer na empresa: o agendamento confere e dá o OK. A comissão e as contas (Point, link…) ficam só em Comissões.
 // O agendamento vê quantidades e o que precisa conferir, nunca os totais de valores (veTotais em domain/equipe.js).
 // VISUAL REFEITO em 23/11/2026 (Marcus: "nas novas regras", igual a Contas a pagar): um bloco azul (BlocoPainel), barra em forma de tabela com menus suspensos
@@ -7,7 +7,7 @@
 // As contas (linha, relogio, receber) e as ações (CONSREP_RECEBER, RETORNO_BIPAR, COMIS_TERMO) são as mesmas de antes.
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { BarraMini, CLS_FINA_ESPACO, CampoMini, PAGINA_CHEIA } from "@/apps/montagem/components/planilha-cheia";
+import { BarraMini, BuscaMini, CLS_FINA_ESPACO, CampoMini, PAGINA_CHEIA } from "@/apps/montagem/components/planilha-cheia";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { analisar, comisEfetiva, itensComissao, pagoDe, prazoPendente, statusDe, taxaDe } from "@/apps/montagem/domain/comissoes";
 import { conferirBrindes } from "@/apps/montagem/domain/consignado";
@@ -21,6 +21,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { MoneyInput } from "@/apps/montagem/ui/input";
 import { e, useRef, useState } from "@/shared/react";
 
+var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 var r2 = function(n){ return Math.round(n*100)/100; };
 var nome = function(t){ return nomePropio(t||""); };   // nome de pessoa nunca em maiúsculas na tela (Marcus, 23/11/2026): "KARINE SOUZA" aparece "Karine Souza"
 var fmtData = function(iso){ return iso ? iso.split("-").reverse().join("/") : ""; };
@@ -216,7 +217,7 @@ function PecasMini(p){
 
 // Passo a passo para quem atende a representante na empresa (abre pelo botão da barra)
 var PASSOS = [
-  ["Ache a representante", "Clique no nome da coluna Representante e marque quem chegou."],
+  ["Selecione a representante", "No campo Representante, escolha quem chegou. A tela só mostra os atendimentos dela."],
   ["Inicie a conferência", "Na coluna Conferência, clique em Iniciar em cada atendimento dela."],
   ["Confira as condicionais", "Digite o número e clique em +. Em cada uma, escolha Assinada ou Não assinada."],
   ["Confira o dinheiro", "Conte e clique em Recebi o dinheiro. Se o valor for outro, digite o que contou."],
@@ -244,16 +245,30 @@ function AbaConsolidadoRep(){
   var kk = useState(false), knAberto = kk[0], setKnAberto = kk[1];
   var dt = useState(null), popId = dt[0], setPopId = dt[1];                    // atendimento com a janela de brindes e peças aberta
   var pc = useState(false), passosAberto = pc[0], setPassosAberto = pc[1];
-  var filtradas = useRef(null);                                                // o que está na tabela depois dos filtros das colunas (para exportar)
+  var ms = useState("pend"), mostra = ms[0], setMostra = ms[1];               // pend = acertos que a representante fez no app e ainda não foram conferidos na empresa (de qualquer mês) · todos = todos os do mês
+  var bu = useState(""), busca = bu[0], setBusca = bu[1];                      // busca da revendedora (acha o atendimento e a representante)
+  var filtradas = useRef(null);
+  var selAbertoSt = useState(false), selAberto = selAbertoSt[0], setSelAberto = selAbertoSt[1];
+  var digSt = useState(""), dig = digSt[0], setDig = digSt[1];   // a lista da representante está aberta (bloco amarelo com lista azul)                                              // o que está na tabela depois dos filtros das colunas (para exportar)
 
   var c = comisEfetiva(s), agenda = podeAgendar(s.usuario), ver = veTotais(s.usuario);
   var todos = (s.acertosConsignado||[]).filter(function(r){ return TIPOS.indexOf(r.tipo)>=0 && r.origem!=="interno"; });   // atendimento interno tem consolidado próprio
   var meses = todos.map(function(r){ return (r.data||"").slice(0,7); }).concat([mes]).filter(function(m,i,a){ return m && a.indexOf(m)===i; }).sort().reverse();
-  var linhas = todos.filter(function(r){ return (r.data||"").slice(0,7)===mes; }).map(function(r){ return linha(r, c); })
-    .sort(function(a,b2){ return (b2.r.data+(b2.r.hora||"")).localeCompare(a.r.data+(a.r.hora||"")); });
+  // 25/11/2026 (Marcus): a funcionária SEMPRE escolhe a representante (ou busca a revendedora) antes de ver os atendimentos. Aparecem os PENDENTES: acerto feito no app e ainda não conferido na empresa.
+  var doMes = todos.filter(function(r){ return (r.data||"").slice(0,7)===mes; });
+  var pendAll = todos.filter(function(r){ return !(r.recebimento && r.recebimento.ok); });
+  var exigeRep = vista==="lista", q = semAcento(busca).trim(), semRep = exigeRep && !repIni && !q;
+  var daRep = function(x){ return !repIni || nome(x.rep)===repIni; };
+  var cru = (exigeRep && mostra==="pend" ? pendAll : doMes).filter(function(r){ return (!exigeRep || !repIni || nome(r.rep)===repIni) && (!exigeRep || !q || semAcento(nome(r.rev)).indexOf(q)>=0); });
+  var linhas = (semRep ? [] : cru).map(function(r){ return linha(r, c); }).sort(function(a,b2){ return (b2.r.data+(b2.r.hora||"")).localeCompare(a.r.data+(a.r.hora||"")); });
+  var porRepPend = {}; pendAll.forEach(function(r){ var k = nome(r.rep) || "—", o = porRepPend[k] || (porRepPend[k] = {id:k, rep:k, qtd:0, desde:""}); o.qtd++; if(r.data && (!o.desde || r.data<o.desde)) o.desde = r.data; });
+  var linhasPend = Object.keys(porRepPend).map(function(k){ return porRepPend[k]; }).sort(function(a, b2){ return b2.qtd-a.qtd || a.rep.localeCompare(b2.rep); });
+  var repsOps = (mostra==="pend" ? pendAll : doMes).map(function(r){ return nome(r.rep) || "—"; }).filter(function(x, i, a){ return a.indexOf(x)===i; }).sort(function(a, b2){ return a.localeCompare(b2); })
+    .map(function(x){ var n = (porRepPend[x]||{}).qtd||0; return [x, x+(n ? " · "+n+(n===1 ? " pendente" : " pendentes") : "")]; });
+  if(repIni && !repsOps.some(function(o){ return o[0]===repIni; })) repsOps.unshift([repIni, repIni]);
   var formasCol = (s.formasPagamento||[]).filter(function(f){ return f.k==="dinheiro"; }).concat((s.formasPagamento||[]).filter(function(f){ return f.k!=="dinheiro"; }));
   var somaForma = function(l, k){ return (l.r.pagamentos||[]).filter(function(p){ return p.forma===k; }).reduce(function(t,p){ return t+(p.valor||0); }, 0); };
-  var kn = itensComissao(c, s, Date.now()).filter(function(i){ return i.tipo==="kitnovo" && (i.data||"").slice(0,7)===mes; }).sort(function(a,b2){ return b2.ts-a.ts; });
+  var kn = itensComissao(c, s, Date.now()).filter(function(i){ return i.tipo==="kitnovo" && (i.data||"").slice(0,7)===mes && daRep(i); }).sort(function(a,b2){ return b2.ts-a.ts; });
 
   var pessoasRecebem = BIPADORAS.concat([SUPERVISORA], AGENDAMENTO, FINANCEIRO);
   var usuarioNome = (pessoasRecebem.find(function(x){ return x.id===s.usuario; })||{}).nome || "";   // quem confere é quem está logada (cada uma tem seu login)
@@ -386,7 +401,7 @@ function AbaConsolidadoRep(){
   var semTermo = kn.filter(function(k){ return !k.termoOk; }).length;
 
   // ───────── erros de bipagem achados pela representante na conferência das peças (quem bipou o kit recebe o erro) ─────────
-  var erros = s.errosBipagem || [], veDesconto = papelDe(s.usuario)==="supervisao", perda = (s.cfg||{}).perdaFalta || 0, totalErros = erros.reduce(function(t, x){ return t+x.erros; }, 0);
+  var erros = (s.errosBipagem || []).filter(daRep), veDesconto = papelDe(s.usuario)==="supervisao", perda = (s.cfg||{}).perdaFalta || 0, totalErros = erros.reduce(function(t, x){ return t+x.erros; }, 0);
   var linhasErro = erros.map(function(x){ var h = new Date(x.em);
     return {id:x.id, data:x.data||"", hora:String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0"), rev:nome(x.rev), rep:nome(x.rep)||"—", bipadora:nome(x.bipadora), erros:x.erros, desconto:x.erros*perda,
       faltou:(x.faltas||[]).map(function(f){ return f.codigo+(f.qtd>1 ? " ×"+f.qtd : "")+" "+String(f.desc||"").toLowerCase(); }).join(" · "), sobras:(x.sobras||[]).map(function(y){ return y.codigo; }).join(", "),
@@ -396,26 +411,59 @@ function AbaConsolidadoRep(){
     [{k:"faltou", t:"Faltou"}, {k:"sobras", t:"Peça que não é do kit"}, {k:"conds", t:"Condicionais"}, {k:"conferidas", t:"Peças conferidas"}, {k:"montadora", t:"Montado por"}]);
 
   var fila = qtdFila(s), lp = popId ? linhas.find(function(x){ return x.r.id===popId; }) : null;
-  var tabelaLista = e(TabelaPlanilha,{key:"l"+mes+repIni, fina:true, cols:cols, cabAcima:cabAcima, linhas:linhasTab, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, limite:300, aoClicar:function(row){ abre(row.l, false); }, alturaMax:"calc(100vh - 6.6rem)",
-    filtroInicial:repIni ? {rep:new Set([repIni])} : undefined, onFiltradas:function(ls){ filtradas.current = ls; setRevUnica(ls.length>0 && ls.length<linhasTab.length && ls.every(function(x){ return x.rev===ls[0].rev; }) ? ls[0].rev : ""); }, totalRodape:rodape, vazio:"Nada em "+nomeMes(mes)+". O que a representante preencher no app aparece aqui."});
-  var tabelaRep = e(TabelaPlanilha,{key:"r"+mes, fina:true, cols:colsRep, linhas:linhasRep, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, alturaMax:"calc(100vh - 6.6rem)",
+  var tabelaLista = e(TabelaPlanilha,{key:"l"+mes+repIni, fina:true, cols:cols, cabAcima:cabAcima, linhas:linhasTab, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, tracoVazio:"---", limite:300, aoClicar:function(row){ abre(row.l, false); }, alturaMax:"calc(100vh - 6.6rem)",
+    onFiltradas:function(ls){ filtradas.current = ls; setRevUnica(ls.length>0 && ls.length<linhasTab.length && ls.every(function(x){ return x.rev===ls[0].rev; }) ? ls[0].rev : ""); }, totalRodape:rodape, vazio:"Nada em "+nomeMes(mes)+". O que a representante preencher no app aparece aqui."});
+  var tabelaRep = e(TabelaPlanilha,{key:"r"+mes, tracoVazio:"---", fina:true, cols:colsRep, linhas:linhasRep, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, alturaMax:"calc(100vh - 6.6rem)",
     aoClicar:function(row){ setRepIni(row.rep); setRevUnica(""); setVista("lista"); }, totalRodape:rodapeRep, vazio:"Nada em "+nomeMes(mes)+"."});
+
+  // sem representante escolhida: a funcionária vê as representantes com acerto aguardando a empresa (clicar escolhe) e, embaixo, o passo a passo do que confirmar (Marcus, 25/11/2026)
+  var tracoOk = "---";   // célula sem nada aparece com --- (Marcus, 25/11/2026)
+  var tabelaPend = e(TabelaPlanilha,{key:"pend", fina:true, cols:[{k:"rep", t:"Representante", titulo:true}, {k:"qtd", t:"Acertos aguardando a empresa", qtd:true}, {k:"desde", t:"Mais antigo", data:true, fmt:function(v){ return fmtData(v); }}], linhas:linhasPend, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true,
+    aoClicar:function(row){ setMostra("pend"); setRepIni(row.rep); }, vazio:"Nenhum acerto aguardando a empresa.", tracoVazio:tracoOk});
+  var tabelaPassos = e(TabelaPlanilha,{key:"passos", fina:true, cols:[{k:"n", t:"Passo"}, {k:"t", t:"O que confirmar"}, {k:"d", t:"Como"}], linhas:PASSOS.map(function(x, i){ return {n:i+1, t:x[0], d:x[1]}; }), chave:"n", grade:true, semFiltro:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, vazio:"", tracoVazio:tracoOk});
+  var textoSel = "Selecione a representante";
+  var primeiro = function(n){ return String(n||"").trim().split(/\s+/)[0] || ""; };   // só um nome: "Jessica Castro" vira "Jessica" (pedido do Marcus 25/11/2026)
+  var codDe = function(n){ var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); }, nn = semAcento(n); if(!nn) return ""; var reps = ((s.agend && s.agend.config && s.agend.config.representantes) || []).filter(function(r){ return r && r.codigo && r.ativo!==false; }); var achou = reps.filter(function(r){ return [r.nome].concat(r.apelidos||[]).map(semAcento).some(function(x){ return x && (x===nn || x.indexOf(nn+" ")===0 || nn.indexOf(x+" ")===0); }); }); var exato = achou.filter(function(r){ return semAcento(r.nome)===nn; })[0] || achou[0]; return exato ? String(exato.codigo) : ""; };   // código lido do cadastro do Agendamento (o código gravado no acerto às vezes traz o nome, Marcus 25/11/2026)
+  var rotuloBotao = repIni ? (codDe(repIni) ? codDe(repIni)+" · " : "")+primeiro(repIni) : textoSel;
+  var semAc = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); };
+  var listaSel = repsOps.map(function(p){ return p[0]; }).filter(function(o){ var q = semAc(dig); return !q || semAc(primeiro(o)).indexOf(q)>=0 || semAc(o).indexOf(q)>=0 || semAc(codDe(o))===q || semAc(codDe(o)).indexOf(q)===0; });
+  var semAc = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); };
+  var listaSel = repsOps.filter(function(o){ var q = semAc(dig); return !q || semAc(primeiro(o)).indexOf(q)>=0 || semAc(o).indexOf(q)>=0 || semAc(codDe(o))===q || semAc(codDe(o)).indexOf(q)===0; });
+  var escolheRep = function(v){ setRepIni(v); setRevUnica(""); filtradas.current = null; setSelAberto(false); };
+  var seletorRep = vista==="lista" && e("div",{className:"relative flex min-w-[180px]"},
+    e("button",{type:"button", "aria-haspopup":"listbox", "aria-expanded":selAberto, "aria-label":textoSel, title:textoSel, onClick:function(){ setSelAberto(!selAberto); },
+      className:"flex flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-[#FACC15] px-3 text-[10px] font-extrabold text-[#111111] outline-none focus-visible:ring-2 focus-visible:ring-white"},   // padrao-ok: botão amarelo, pedido do Marcus 25/11/2026
+      e("span",{className:"whitespace-nowrap"}, rotuloBotao),
+      e("span",{"aria-hidden":"true", className:"text-[10px] leading-none"}, selAberto ? "▲" : "▼")),
+    selAberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setSelAberto(false); }}),
+    selAberto && e("div",{role:"listbox", className:"absolute inset-x-0 top-full z-50 max-h-[60vh] overflow-y-auto border border-white bg-[var(--bloco-titulo)] shadow-lg"},
+      e("input",{type:"text", autoFocus:true, value:dig, placeholder:"Digite e aperte Enter", "aria-label":"Digitar a representante",
+        onChange:function(ev){ setDig(ev.target.value); },
+        onKeyDown:function(ev){ if(ev.key==="Escape"){ setSelAberto(false); } if(ev.key!=="Enter") return; ev.preventDefault(); if(!dig.trim()){ escolheRep(""); setDig(""); return; } if(listaSel[0]){ escolheRep(listaSel[0]); setDig(""); } },
+        className:"h-[26px] w-full border-b border-white bg-white/10 px-3 text-[12px] text-white outline-none placeholder:text-white/60"}),   // padrao-ok: campo de digitar a representante, pedido do Marcus 25/11/2026
+      listaSel.map(function(o){ var ativo = o===repIni; return e("button",{key:o, type:"button", role:"option", "aria-selected":ativo, onClick:function(){ escolheRep(o); setDig(""); },
+        className:"grid w-full grid-cols-[2.5rem_1fr] items-center gap-2 whitespace-nowrap border-b border-white/40 px-3 py-1.5 text-[12px] text-white hover:bg-white/15"+(ativo ? " bg-white/25 font-bold" : "")},   // padrao-ok: lista da representante em 12 px, com linha entre as linhas (pedido do Marcus 25/11/2026)
+        e("span",{className:"text-left font-bold tabular-nums"}, codDe(o)||"—"), e("span",{className:"text-left"}, primeiro(o))); })));   // padrao-ok: lista da representante em 12 px, para ler melhor (pedido do Marcus 25/11/2026)
 
   return e(Pagina,{className:PAGINA_CHEIA+" [&_*]:!normal-case"},
     e(BlocoPainel,{titulo:"Consolidado dos representantes", compacto:true},
-      e(BarraMini,null,
-        e(CampoMini,{valor:mes, aoMudar:function(m){ setMes(m); setRepIni(""); setRevUnica(""); filtradas.current = null; }, rotulo:"Mês", ops:meses.map(function(m){ return [m, nomeMes(m)]; })}),
-        e(CampoMini,{valor:vista, aoMudar:function(k){ setVista(k); setRepIni(""); setRevUnica(""); }, rotulo:"Visão", ops:[["lista", "Atendimentos"], ["rep", "Por representante"]]}),
-        vista==="lista" && e(CampoMini,{valor:pagModo, aoMudar:setPagModo, rotulo:"Colunas das contas de pagamento", ops:[["todas", "Contas: todas"], ["usadas", "Contas: com valor"], ["fechado", "Contas: fechado"]]}),
-        vista==="lista" && e(CampoMini,{valor:pecasModo, aoMudar:setPecasModo, rotulo:"Colunas de peças e brindes", ops:[["aberto", "Peças: abertas"], ["fechado", "Peças: fechadas"]]}),
+      e("div",{className:"flex items-stretch gap-0 bg-[var(--bloco-titulo)] pt-1.5"}, seletorRep, e("div",{className:"min-w-0 flex-1 [&>div]:!justify-start [&_input]:!h-[26px] [&_input]:!text-[12px]"}, e(BarraMini,null,   // padrao-ok: campo Buscar maior e botão de 20 px, pedido do Marcus (25/11/2026)
+        vista==="lista" && e(BuscaMini,{valor:busca, aoMudar:function(t){ setBusca(t); setRevUnica(""); filtradas.current = null; }, rotulo:"Buscar revendedora", ph:"Buscar revendedora", larg:"w-64"}),
+        vista==="lista" && e(CampoMini,{valor:mostra, aoMudar:function(k){ setMostra(k); filtradas.current = null; }, rotulo:"Mostrar", ops:[["pend", "Aguardando a empresa"], ["todos", "Todos do mês"]]}),
+        !(vista==="lista" && mostra==="pend") && e(CampoMini,{valor:mes, aoMudar:function(m){ setMes(m); setRevUnica(""); filtradas.current = null; }, rotulo:"Mês", ops:meses.map(function(m){ return [m, nomeMes(m)]; })}),
+        e(CampoMini,{valor:vista, aoMudar:function(k){ setVista(k); setRepIni(""); setBusca(""); setRevUnica(""); }, rotulo:"Visão", ops:[["lista", "Atendimentos"], ["rep", "Por representante"]]}),
+        vista==="lista" && !semRep && e(CampoMini,{valor:pagModo, aoMudar:setPagModo, rotulo:"Colunas das contas de pagamento", ops:[["todas", "Contas: todas"], ["usadas", "Contas: com valor"], ["fechado", "Contas: fechado"]]}),
+        vista==="lista" && !semRep && e(CampoMini,{valor:pecasModo, aoMudar:setPecasModo, rotulo:"Colunas de peças e brindes", ops:[["aberto", "Peças: abertas"], ["fechado", "Peças: fechadas"]]}),
         e("b",{title:"Kits que o agendamento já recebeu e ainda faltam bipar", className:"whitespace-nowrap px-1 text-[11px] tabular-nums", style:fila>0 ? {color:corDaFila(fila)} : undefined}, "Fila: "+fila+(fila===1 ? " kit" : " kits")),
         e("button",{type:"button", onClick:function(){ setPassosAberto(true); }}, "Passo a passo"),
-        ver && vista==="lista" && e("button",{type:"button", disabled:!linhas.length, onClick:exportar, className:"disabled:opacity-50"}, "Exportar CSV")),
-      e("div",{className:CLS_FINA_ESPACO}, vista==="rep" ? tabelaRep : tabelaLista)),
-    kn.length>0 && e(BlocoPainel,{titulo:"Kits novos · termo assinado · "+kn.length, compacto:true, aoTitulo:function(){ setKnAberto(!knAberto); }, fechado:!knAberto, dir:semTermo>0 ? e("span",{className:"text-[11px] text-white"}, semTermo+" sem termo") : null},
-      e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsKn, linhas:linhasKn, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, vazio:"Nenhum kit novo neste mês."}))),
-    erros.length>0 && e(BlocoPainel,{titulo:"Erros de bipagem · conferência da representante", compacto:true, dir:e("span",{className:"text-[11px]"}, totalErros+(totalErros===1 ? " peça com erro" : " peças com erro"))},
-      e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsErro, linhas:linhasErro, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true}))),
+        ver && vista==="lista" && !semRep && e("button",{type:"button", disabled:!linhas.length, onClick:exportar, className:"disabled:opacity-50"}, "Exportar CSV")))),
+      e("div",{className:CLS_FINA_ESPACO}, vista==="rep" ? tabelaRep : semRep ? tabelaPend : tabelaLista)),
+    semRep && vista==="lista" && e(BlocoPainel,{titulo:"O que confirmar, passo a passo", compacto:true},
+      e("div",{className:CLS_FINA_ESPACO}, tabelaPassos)),
+    (vista==="rep" || !!repIni) && kn.length>0 && e(BlocoPainel,{titulo:"Kits novos · termo assinado · "+kn.length, compacto:true, aoTitulo:function(){ setKnAberto(!knAberto); }, fechado:!knAberto, dir:semTermo>0 ? e("span",{className:"text-[11px] text-white"}, semTermo+" sem termo") : null},
+      e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsKn, linhas:linhasKn, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, tracoVazio:"---", vazio:"Nenhum kit novo neste mês."}))),
+    (vista==="rep" || !!repIni) && erros.length>0 && e(BlocoPainel,{titulo:"Erros de bipagem · conferência da representante", compacto:true, dir:e("span",{className:"text-[11px]"}, totalErros+(totalErros===1 ? " peça com erro" : " peças com erro"))},
+      e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsErro, linhas:linhasErro, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, tracoVazio:"---"}))),
     passosAberto && e(PassoAPasso,{fechar:function(){ setPassosAberto(false); }}),
     // janela por cima de tudo: brindes, trocas e peças do próximo mês do atendimento escolhido
     lp && e(FichaConferencia,{key:lp.r.id, l:lp, agenda:agenda, vc:vc, usuario:s.usuario, podeBip:podeBip, podeProx:podeBipRetorno(s.usuario), todos:todos, receber:receber, fechar:function(){ setPopId(null); },

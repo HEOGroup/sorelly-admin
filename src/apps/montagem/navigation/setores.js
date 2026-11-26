@@ -23,7 +23,7 @@ var MENU_FINANCEIRO = [
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
-    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
+    {nome:"Representantes", itens:[M("Comissões dos representantes","comissoes")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
     ]},
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), {nome:"Contas", itens:[M("A pagar","ffcontas"), M("Pagas","ffpagas")]}, M("Gasto por casa","ffcasas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
@@ -87,7 +87,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
-  {nome:"Representantes", itens:[M("Consolidado","consrep")]}
+  M("Consolidado","consrep")
   // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
@@ -178,7 +178,7 @@ var SETORES = [
         E("Histórico de contas",["Faturamento vs Contas a Pagar → Histórico de contas"])]],
       ["Contas a receber", [T("revreceber","Contas a receber")]],
       ["Interno e estoque", [T("intcons","Consolidado interno"), T("estoquesorelly","Estoque Sorelly")]]]),
-    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6")]},
+    {nome:"Representantes", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6")]},
     {nome:"Comissões", telas:[Ti("comisstodos","Comissão interna","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
     Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
   ]},

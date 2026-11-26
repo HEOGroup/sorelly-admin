@@ -9,11 +9,20 @@ import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO, MoneyInput } from "@/apps/montagem/ui/input";
 import { Modal } from "@/apps/montagem/ui/modal";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
+// 26/11/2026 (Marcus): revendedora não se cria à mão, vem da DevMaster. A lista é lida uma vez; o campo só busca e escolhe.
+var LISTA_DM = null;
+function listaDm(){ if(!LISTA_DM) LISTA_DM = chamar("GET", "/revendedoras").then(function(j){ return j.itens || []; }, function(x){ LISTA_DM = null; throw x; }); return LISTA_DM; }
+var semAcDm = function(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 function DlgNovoKit(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
-  var st = useState({rev:"", bairro:"", v1:0, v2:0, v3:0, prio:false, tipo:"acerto_kit"}), f = st[0], set = st[1];   // tipo: acerto + kit ou reposição (05/11/2026: o agendamento também agenda reposição)
+  var VAZIO = {rev:"", cod:"", fone:"", bairro:"", v1:0, v2:0, v3:0, prio:false, tipo:"acerto_kit"};
+  var st = useState(VAZIO), f = st[0], set = st[1], bq = useState(""), busca = bq[0], setBusca = bq[1], ls = useState(null), lista = ls[0], setLista = ls[1], er = useState("");
+  useEffect(function(){ if(!p.lid || lista || !apiAtiva()) return; var vivo = true; listaDm().then(function(l){ if(vivo) setLista(l); }, function(x){ if(vivo) er[1](x && x.message ? x.message : "Não consegui ler as revendedoras da DevMaster."); }); return function(){ vivo = false; }; }, [p.lid]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var achadas = !f.cod && lista && semAcDm(busca).length>=3 ? lista.filter(function(i){ return semAcDm(i.nome).indexOf(semAcDm(busca))>=0 || String(i.cod).indexOf(busca.trim())===0; }).slice(0, 8) : [];
+  function escolher(i){ var v = (i.vendas||[]).map(function(x){ return Number(x.v)||0; }); set(Object.assign({}, f, {rev:i.nome, cod:String(i.cod).padStart(6,"0"), fone:i.celular||"", bairro:i.cidade||f.bairro, v1:v[0]||0, v2:v[1]||0, v3:v[2]||0})); setBusca(i.nome); }   // tipo: acerto + kit ou reposição (05/11/2026: o agendamento também agenda reposição)
   function up(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); }
   var vendas = [f.v1,f.v2,f.v3].filter(function(x){return x>0;});
   var campo = function(lb, ch){ return e("label",{className:"flex flex-col gap-1.5"}, e("span",{className:"text-sm font-medium"}, lb), ch); };
@@ -22,12 +31,16 @@ function DlgNovoKit(p){
   return e(Modal,{open:!!p.lid, titulo:"Kit de \u00faltima hora",
       sub: cheia ? "Listagem cheia ("+kitsNaListagem(s,p.lid)+"/"+capacidadeListagem(lig)+"): escolha outra listagem" : "Entra como aguardando valor at\u00e9 a Deysiane confirmar",
       confirmar:"Incluir kit", icone:"plus",
-      desabilitado:!f.rev.trim() || cheia, onClose:p.fechar,
-      onConfirmar:function(){ var rep = f.tipo==="reposicao"; d({type:"ADD_KIT", lid:p.lid, rev:f.rev.trim(), bairro:f.bairro.trim(), vendas:rep ? [] : vendas, prio:f.prio, tipoKit:rep ? "reposicao" : "acerto_kit"}); set({rev:"",bairro:"",v1:0,v2:0,v3:0,prio:false,tipo:"acerto_kit"}); p.fechar(); }},
+      desabilitado:!f.cod || cheia, onClose:p.fechar,
+      onConfirmar:function(){ var rep = f.tipo==="reposicao"; d({type:"ADD_KIT", lid:p.lid, rev:f.rev.trim(), cod:f.cod, fone:f.fone, bairro:f.bairro.trim(), vendas:rep ? [] : vendas, prio:f.prio, tipoKit:rep ? "reposicao" : "acerto_kit"}); set(VAZIO); setBusca(""); p.fechar(); }},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       campo("Tipo", e("select",{className:INPUT+" h-8 text-[13px]", value:f.tipo||"acerto_kit", "aria-label":"Tipo do atendimento", onChange:function(ev){up("tipo",ev.target.value);}},
         e("option",{value:"acerto_kit"},"Acerto + kit"), e("option",{value:"reposicao"},"Reposição"))),
-      campo("Revendedora", e("input",{className:INPUT, value:f.rev, onChange:function(ev){up("rev",ev.target.value);}})),
+      campo("Revendedora (DevMaster)", e("div",{className:"flex flex-col gap-1"},
+        e("input",{className:INPUT, value:busca, placeholder: apiAtiva() ? "Digite 3 letras do nome ou o código" : "Sem conexão com a DevMaster", onChange:function(ev){ setBusca(ev.target.value); if(f.cod) set(Object.assign({}, f, {rev:"", cod:"", fone:""})); }}),
+        achadas.map(function(i){ return e("button",{key:i.cod, type:"button", onClick:function(){ escolher(i); }, className:"h-8 rounded-md border border-white/20 px-2 text-left text-[13px]"}, i.nome+" · "+String(i.cod).padStart(6,"0")); }),
+        !f.cod && lista && semAcDm(busca).length>=3 && !achadas.length && e("span",{className:"text-[13px]"}, "Nenhuma revendedora com esse nome na DevMaster."),
+        er[0] && e("span",{className:"text-[13px]"}, er[0]))),
       campo("Bairro", e("input",{className:INPUT, value:f.bairro, onChange:function(ev){up("bairro",ev.target.value);}})),
       campo("\u00daltima venda", e(MoneyInput,{value:f.v1, onChange:function(v){up("v1",v);}})),
       campo("2\u00aa venda", e(MoneyInput,{value:f.v2, onChange:function(v){up("v2",v);}})),

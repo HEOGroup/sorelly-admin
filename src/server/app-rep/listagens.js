@@ -3,6 +3,7 @@
 // Regras iguais ao protótipo: 15 revendedoras por listagem em Curitiba, viagem sem limite (destino diferente de Curitiba), dia não pode ser passado,
 // não repete representante + dia + horário + destino aberta, menos de 48 h para a retirada = "atrasado", no máximo 10 reposições por semana (segunda a domingo).
 import { emTransacao, gravarItens, lerPrefixos, lerPrefixosCli } from "../estado-itens.js";
+import { listaDevmaster } from "../devmaster.js";
 import { recusa, ehData, ehHora, ehId, texto, novoId, hojeSP } from "../servico.js";
 import {
   LAPIDE, MAX_LISTAGEM, PRAZO_PEDIDO_HORAS, REPOSICOES_SEMANA, SEM_KIT, STATUS_TIRAR, TIPOS_KIT_APP,
@@ -48,7 +49,12 @@ export async function incluirRevendedora(rep, lid, b) {
   if (!ehId(lid)) throw recusa("Listagem não encontrada.", 404);
   const revendedoraId = Number(b.revendedoraId);
   if (!Number.isInteger(revendedoraId) || revendedoraId <= 0) throw recusa("Revendedora inválida.", 422);
-  const nome = texto(b.nome, 120);
+  // 26/11/2026 (Marcus): revendedora não se cria, vem da DevMaster. O nome gravado é o do cadastro dela (o app mandava "Ana Caroline" e gerava um segundo kit para "Ana Caroline Macedo Santos", mesmo código).
+  const cod = String(revendedoraId).padStart(6, "0");
+  let nome = texto(b.nome, 120), noCadastro = null;
+  try { noCadastro = (await listaDevmaster()).find((x) => String(x.codigo).padStart(6, "0") === cod); } catch { /* DevMaster fora do ar: vale o nome que o app mandou */ }
+  if (noCadastro) nome = texto(noCadastro.nome, 120);
+  else if (noCadastro === undefined) throw recusa("Revendedora não encontrada na DevMaster.", 422);
   if (!nome) throw recusa("Nome da revendedora obrigatório.", 422);
   const tipoKit = TIPOS_KIT_APP.includes(b.tipoKit) ? b.tipoKit : "acerto_kit";
   const horaAtend = b.horaAtendimento == null || b.horaAtendimento === "" ? null : String(b.horaAtendimento);

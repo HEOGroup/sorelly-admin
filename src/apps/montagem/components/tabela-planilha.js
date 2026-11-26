@@ -212,7 +212,7 @@ function TabelaPlanilha(p){
   var cartoesEl = null;
   if(celular){
     var lista = [], ult2;
-    var conteudo = function(c, l, aberta){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); var r = c.render ? c.render(l[c.k], l, aberta) : tx; return (r===null || r===undefined || r===false || r==="") ? null : r; };
+    var conteudo = function(c, l, aberta){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); var r = c.render ? c.render(l[c.k], l, aberta) : tx; return (r===null || r===undefined || r===false || r==="") ? (p.tracoVazio || null) : r; };
     vis.forEach(function(l, i){
       if(p.agrupar && l[p.agrupar]!==ult2){ ult2 = l[p.agrupar]; var q2 = 0; for(var j2=i;j2<vis.length && vis[j2][p.agrupar]===ult2;j2++) q2++;
         var gv2 = ult2, gl2 = p.linhaGrupo ? p.linhaGrupo(ult2, vis.slice(i, i+q2)) : null;
