@@ -13,9 +13,9 @@ const obj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const KIT = /^[A-Za-z0-9_-]{1,64}$/;
 
 // ids dos kits dela (kit do app com o código dela, ou kit da equipe numa listagem dela)
-async function kitsDaRep(codigos) {
+async function kitsDaRep(codigos, rpo0) {
   const cods = [].concat(codigos).map(String);   // conta com mais de um cadastro: kit de qualquer um deles
-  const rpo = await lerPrefixos("rpo", ["l_", "k_", "kx_"]);
+  const rpo = rpo0 || await lerPrefixos("rpo", ["l_", "k_", "kx_"]);
   const minhas = {}; Object.keys(rpo).forEach((c) => { if (c.startsWith("l_") && vivo(rpo[c]) && cods.includes(String(rpo[c].repCod || ""))) minhas[c.slice(2)] = 1; });
   const ids = {};
   Object.keys(rpo).forEach((c) => {
@@ -24,6 +24,13 @@ async function kitsDaRep(codigos) {
     if (c.startsWith("kx_") && v._full && minhas[v.lid]) ids[c.slice(3)] = 1;
   });
   return ids;
+}
+// nomes das revendedoras dos kits dela (26/11/2026): a rota dos links pagos (/api/representante/links) só entrega revendedora de um kit dela
+export async function revendedorasDaRep(codigos) {
+  const rpo = await lerPrefixos("rpo", ["l_", "k_", "kx_"]);
+  const ids = await kitsDaRep(codigos, rpo), nomes = new Set();
+  Object.keys(ids).forEach((id) => [rpo["k_" + id], rpo["kx_" + id]].forEach((v) => { if (vivo(v) && v.rev) nomes.add(String(v.rev)); }));
+  return [...nomes];
 }
 // pids dos pagamentos do acerto já finalizado do kit (null = acerto ainda aberto)
 async function pidsDoAcerto(kitId) {

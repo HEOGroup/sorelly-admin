@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.263", data:"2026-11-26", titulo:"Link de pagamento: comprovante obrigatório e entra sozinho no acerto da representante", itens:[
+  {tipo:"novo", area:"Link de pagamento → Solicitações", txt:"Coluna Comprovante (Anexado ou Falta) com os botões Anexar e Ver. A foto ou o PDF vai para o servidor de anexos do sistema."},
+  {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Confirmar pagamento pede o comprovante antes: sem ele o link não vira Pago. O link pago pelo e-SiTef continua entrando sozinho e fica com Falta até alguém anexar; a importação avisa quantos pagos ficaram sem comprovante."},
+  {tipo:"novo", area:"Admin das representantes → Acerto", txt:"O link pago até ontem entra sozinho como pago, com o valor do link e o comprovante do setor de links (mesma regra do Atendimento Sorelly). Link maior que o acerto: o resto fica para o próximo acerto."},
+  {tipo:"novo", area:"Admin das representantes → Acerto", txt:"Lançar pagamento → Link mostra os links pagos da revendedora para tocar, sem digitar valor. Linha Link com o mesmo valor de um link recebe o comprovante sozinha; com valor diferente, aparece Usar o link de R$ X. O botão Usar como pagamento saiu."}]},
  {v:"0.21.262", data:"2026-11-26", titulo:"Compras: fluxo revisado (CNPJ e pagamento separados, limite aprovado, reanálise, NF pendente, transporte, conferência e confirmação do solicitante)", itens:[
   {tipo:"melhoria", area:"Materiais e estoque → Compras", txt:"Etapas novas: 1 Solicitada, 2 Definição do CNPJ, 3 Definição de pagamento (forma + sugestão de negociação, sem valores nem vencimentos), 4 Liberada para compra, 5 Compra efetuada, 6 Em transporte, 7 Na logística, 8 Entregue ao solicitante. Pedidos antigos caem na etapa certa sozinhos."},
   {tipo:"melhoria", area:"Compras → Compra efetuada", txt:"O valor aprovado vira o limite. Valor final igual ou menor conclui (botão Ajustar plano ao valor final, com histórico e aviso ao financeiro). Valor maior não confirma: vai para reanálise do financeiro com justificativa, mesmo número; aprovado, o limite muda e volta para Liberada (R$ 3.000 ou mais pede a autorização extra)."},

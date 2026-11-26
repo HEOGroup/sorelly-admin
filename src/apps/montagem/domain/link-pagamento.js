@@ -7,7 +7,10 @@ import { globLocal } from "@/lib/glob-local";
 // NUNCA guardar senha, chave ou nome de pessoa no código: nos acessos só URL, identificação (usuário) e uma NOTA de onde a senha está guardada.
 // Funções puras (sem React/DOM). Dinheiro em reais; datas ISO no fuso America/Sao_Paulo ("2026-10-16" ou "2026-10-16T14:30:00").
 // Planilha de 2026 (Jan a Out): carregada de link-pagamento.local.js. Campos opcionais das solicitações importadas: autorizacao, vendaComLink, descontado, importado, mesPlanilha, suspeitaDuplicada, suspeitaDados.
-// Ações (type "LP", op = nome): bonus_salvar, meio_salvar, meio_ativo, meio_excluir, vinc_salvar, vinc_excluir, rev_vincular, rev_remover, sol_criar, sol_mover, sol_obs, expirar, config_salvar. Toda ação guarda a.por.
+// Ações (type "LP", op = nome): bonus_salvar, meio_salvar, meio_ativo, meio_excluir, vinc_salvar, vinc_excluir, rev_vincular, rev_remover, sol_criar, sol_mover, sol_obs, sol_comprovante, expirar, config_salvar. Toda ação guarda a.por.
+// COMPROVANTE OBRIGATÓRIO (26/11/2026, Leonardo): o setor de links anexa a foto ou o PDF do comprovante (servidor de anexos, módulo "lp"; a solicitação guarda só comprovante = {key, nome, mime, em, por}).
+//   Confirmar o pagamento à mão (sol_mover para "pago") só com comprovante. O e-SiTef continua confirmando sozinho; o link fica com "Falta" na coluna Comprovante até alguém anexar.
+//   No acerto do admin das representantes, a linha "Link" lançada por ela recebe esse comprovante sozinha (linksDosPagamentos + /api/representante/links): ela não anexa nada.
 // App da revendedora (19/10/2026): sol_criar com canal "app" + semMeio (a equipe escolhe o link ao gerar); campos novos da solicitação: linkUrl (endereço do link, a equipe cola), acertoId/usadoEm/usadoValor/excedente (link já descontado num acerto: usarLinksNoAcerto).
 // Pendências: "conta mais negativa" para o Pix restante depende do módulo de caixa; Pagamentos a fornecedores recebe só o dado gerado por passadaParaFornecedor (não é lançado sozinho).
 
@@ -411,6 +414,26 @@ function taxaDaSolicitacao(s, x){ var m = meioDe(s, x.meioId); return calcularTa
 var mesDe = function(iso){ return diaDe(iso).slice(0,7); };
 var foiGerado = function(x){ return !!x.geradoEm; };
 var foiPago = function(x){ return x.status==="pago" || x.status==="comprovante"; };
+// tem comprovante anexado: o novo (servidor de anexos) ou a foto antiga guardada dentro do pedido (link pago por fora, Atendimento Sorelly)
+var temComprovante = function(x){ return !!(x && ((x.comprovante && x.comprovante.key) || x.comprovanteImg)); };
+var comprovanteValido = function(c){ return !!(c && typeof c==="object" && /^an_[a-z0-9]{6,40}$/.test(String(c.key||"")) && /^(image\/(jpeg|png|webp)|application\/pdf)$/.test(String(c.mime||""))); };
+// Links pagos de UMA revendedora que ainda podem entrar num acerto (nome parecido, não importados da planilha antiga, pagos nos últimos 60 dias). Usado pelo servidor (/api/representante/links).
+function linksPagosDaRevendedora(sols, nome, hoje){
+  var desde = somaDias(hoje || hojeSP(), -60);
+  return (sols || []).filter(function(x){ return x && foiPago(x) && !x.importado && !x.descontado && diaDe(x.pagoEm)>=desde && nomeParecido(x.revendedora, nome); });
+}
+// LINHA "LINK" DO ACERTO × LINK PAGO (26/11/2026): a representante lança "Link" com o valor; o sistema acha o link pago da revendedora com o MESMO valor, ainda não usado em acerto,
+// e liga os dois (linkSolId). Um link serve para uma linha só. links = linksPagosDaRevendedora (ou o resumo do servidor); devolve {pid: link}.
+function linksDosPagamentos(links, pagamentos){
+  var usados = {}, o = {};
+  (pagamentos || []).forEach(function(p){ if(p && p.linkSolId) usados[p.linkSolId] = 1; });
+  (pagamentos || []).forEach(function(p){
+    if(!p || p.forma!=="link" || !p.pid || p.linkSolId) return;
+    var x = (links || []).find(function(y){ return !usados[y.id] && !y.acertoId && r2(y.saldo!=null ? y.saldo : y.valor)===r2(num(p.valor)); });
+    if(x){ usados[x.id] = 1; o[p.pid] = x; }
+  });
+  return o;
+}
 var mesDoLink = function(x){ return mesDe(x.geradoEm || x.criadoEm); };
 // mes = "2026-10" (padrão: o mês de hoje). Valor pago = links pagos (inclui comprovante enviado) no mês do pagamento.
 // geradosMes/pagosCoorte/valorCoorte: links gerados no mês e quantos deles viraram pagamento; conversao = pagos/gerados (%).
@@ -507,12 +530,14 @@ function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje)}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:linkUsavel(x, hoje)}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
   return o;
 }
+// Link que conta no acerto de hoje: emitido e pago até o dia anterior, ou pedido pelo próprio atendimento (a revendedora está na empresa). Usado também pelo servidor (/api/representante/links).
+function linkUsavel(x, hoje){ hoje = hoje || hojeSP(); return !!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje); }
 // Atendimento Sorelly (Marcus, 11/11/2026): o nome da agenda nem sempre é igual ao do pedido do link ("Sabryna dos Santos" × "Sabryna dos Santos Romero").
 // Parecido = mesmas palavras, ou todas as palavras do nome mais curto (2 ou mais) estão no mais longo. Devolve o mesmo formato de linksParaAcerto.
 function nomeParecido(a, b){
@@ -726,7 +751,10 @@ function lpReduz(s, a){
         } else cI++;
       });
       lp.esitefIgnorados = ignorados.slice(-3000);
-      return ok("e-SiTef: "+cN+" nova"+(cN===1 ? "" : "s")+", "+cA+" atualizada"+(cA===1 ? "" : "s")+", "+cI+" sem mudança"+(cF ? ", "+cF+" deixada"+(cF===1 ? "" : "s")+" de fora" : ""));
+      // 26/11/2026 (Leonardo): o e-SiTef confirma o pagamento, mas não traz o comprovante. Avisa quantos pagos deste arquivo ficaram com "Falta" na coluna Comprovante.
+      var nsusArq = {}; plano.forEach(function(it){ if(it.para==="pago") nsusArq[String(it.linha.nsu || "").trim()] = 1; });
+      var semComp = lp.solicitacoes.filter(function(x){ return x.esitefNsu && nsusArq[String(x.esitefNsu)] && foiPago(x) && !temComprovante(x); }).length;
+      return ok("e-SiTef: "+cN+" nova"+(cN===1 ? "" : "s")+", "+cA+" atualizada"+(cA===1 ? "" : "s")+", "+cI+" sem mudança"+(cF ? ", "+cF+" deixada"+(cF===1 ? "" : "s")+" de fora" : "")+(semComp ? ". "+semComp+" pago"+(semComp===1 ? "" : "s")+" sem comprovante: anexe na coluna Comprovante" : ""));
     }
     case "sol_mover": {
       var x = sol1(); if(!x) return recusa("Solicitação não encontrada.");
@@ -741,6 +769,9 @@ function lpReduz(s, a){
       }
       if(para==="pago"){
         var pg = a.pagoEm || agora; if(x.expiraEm && minutosDe(pg)>minutosDe(x.expiraEm)) return recusa("Pagamento posterior à validade do link ("+cfg.validadeHoras+" h): solicite um novo link.");
+        if(a.comprovante!==undefined && !comprovanteValido(a.comprovante)) return recusa("Comprovante inválido. Anexe a foto ou o PDF de novo.");
+        if(!temComprovante(x) && !a.comprovante) return recusa("Anexe o comprovante antes de confirmar o pagamento.");   // 26/11/2026: comprovante obrigatório
+        if(a.comprovante) x.comprovante = {key:a.comprovante.key, nome:trim(a.comprovante.nome).slice(0, 120), mime:a.comprovante.mime, em:agora, por:por};
         x.pagoEm = pg;
       }
       if(para==="comprovante"){ x.comprovanteEm = agora; x.comprovantePor = por; }
@@ -759,6 +790,16 @@ function lpReduz(s, a){
       if(rp2 && !repDaRevendedora(lp, ed.revendedora)) lp.revendedoras.push({id:"R"+(++lp.seq), nome:ed.revendedora, representante:rp2});
       ed.historico.push({em:agora, por:por, de:ed.status, para:ed.status, nota:"Dados editados"});
       return ok("Solicitação atualizada");
+    }
+    // Anexar ou trocar o comprovante (26/11/2026). Só em link gerado ou pago; o arquivo já foi gravado no servidor (lib/anexo.js enviarAnexo("lp", ...)).
+    case "sol_comprovante": {
+      var xc = sol1(); if(!xc) return recusa("Solicitação não encontrada.");
+      if(!comprovanteValido(a.comprovante)) return recusa("Comprovante inválido. Anexe a foto ou o PDF de novo.");
+      if(!(xc.status==="gerado" || foiPago(xc))) return recusa("Só link gerado ou pago recebe comprovante.");
+      var troca = temComprovante(xc);
+      xc.comprovante = {key:a.comprovante.key, nome:trim(a.comprovante.nome).slice(0, 120), mime:a.comprovante.mime, em:agora, por:por};
+      (xc.historico = xc.historico || []).push({em:agora, por:por, de:xc.status, para:xc.status, nota:troca ? "Comprovante trocado" : "Comprovante anexado"});
+      return ok(troca ? "Comprovante trocado" : "Comprovante anexado");
     }
     case "sol_obs": { var y = sol1(); if(!y) return recusa("Solicitação não encontrada."); y.observacao = trim(a.observacao); return ok("Observação salva"); }
     // Hellen, 19/11/2026: "como eu incluo os links que foram descontados na aba Descontados no acerto". Lançamento à mão de um link pago (acertoId "manual"); só ele pode ser desfeito.
@@ -802,4 +843,5 @@ export { indicePorNome, nomeProprio, agruparTentativas, retentativa, esitefPlane
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,
-  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago };
+  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago,
+  temComprovante, linksPagosDaRevendedora, linksDosPagamentos, nomeParecido, linkUsavel };

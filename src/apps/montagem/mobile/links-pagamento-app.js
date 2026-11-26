@@ -1,10 +1,14 @@
 // Sorelly Admin · montagem — mobile/links-pagamento-app.js
 // Link de pagamento nos apps de celular (19/10/2026; regras em docs/negocio/LINK-DE-PAGAMENTO.md, lógica em domain/link-pagamento.js):
 //  · TelaLinksRev: app da REVENDEDORA — botão "Solicitar link" (valor + parcelas) e "Meus links" com o andamento de cada pedido.
-//  · LinksDoAcerto: app da REPRESENTANTE — mostra os links PAGOS da revendedora (botão "Usar como pagamento" lança a linha no acerto) e avisa dos cancelados/com erro.
+//  · LinksDoAcerto: app da REPRESENTANTE — mostra os links PAGOS da revendedora e avisa dos cancelados/com erro (o botão "Usar como pagamento" saiu em 26/11/2026: o link entra sozinho).
+//  · useLinksPagos + comprovanteDoLink (26/11/2026): os links pagos da revendedora vêm do SERVIDOR (/api/representante/links), porque a conta de representante não abre o módulo lp.
+//    A linha "Link" do acerto recebe sozinha o comprovante que o setor de links anexou (a representante não anexa nada).
 // Dados reais ficam no estado s.lp (nunca neste arquivo). Estilo do app: cartões brancos, cores sólidas, sem degradê.
 import { BANDEIRAS, agoraSP, hojeSP, formatarDia, formatarDataHora, formatarReais, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, meioDe, nomeMeio, parcelasPermitidas, situacaoParaRevendedora, textoFaixas, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { listagemDe } from "@/apps/montagem/domain/regras";
+import { chamar } from "@/apps/montagem/lib/api";
+import { fotoPequenaDeUrl } from "@/apps/montagem/lib/comprovante";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -88,19 +92,12 @@ function TelaLinksRev(p){
 }
 
 // Bloco da calculadora de acertos da representante. rev = nome da revendedora; usados = pagamentos já lançados (para não repetir); falta = quanto ainda falta pagar;
-// formasLink = descrições da forma "link" (ex.: "LINK - SICREDI - SERENITY - 59"); onUsar(linha) acrescenta o pagamento ao acerto.
+// 26/11/2026 (Leonardo): o botão "Usar como pagamento" saiu. O link pago até ontem entra SOZINHO no acerto (mobile/representante.js, com o saldo vindo do servidor); este bloco só informa.
 function LinksDoAcerto(p){
   var s = use().state, lp = s.lp; if(!lp) return null;
   var info = linksParaAcertoPorNome(s, p.rev), jaNoAcerto = {}; (p.pagamentos || []).forEach(function(x){ if(x.linkSolId) jaNoAcerto[x.linkSolId] = 1; });
   var pagos = info.pagos.filter(function(x){ return !jaNoAcerto[x.sol.id]; });
   if(!pagos.length && !info.avisos.length && !info.aguardando.length) return null;
-  var contaDe = function(sol){
-    var m = meioDe(s, sol.meioId), lista = p.formasLink || [], dsc = m && m.cnpjId ? lista.find(function(c){ return String(c).replace(/\s+/g, " ").endsWith(" - "+m.cnpjId); }) : null;
-    return dsc || (lista.length===1 ? lista[0] : (m ? m.nome : "")); };
-  var usar = function(x){
-    var sol = x.sol, valor = Math.min(sol.valor, Math.round(Math.max(0, p.falta||0)*100)/100), conta = contaDe(sol);
-    if(!(valor>0)) return;
-    p.onUsar({forma:"link", descricao:conta, parcelas:sol.parcelas || 1, data:sol.pagoEm ? String(sol.pagoEm).slice(0, 10) : hojeSP(), valor:valor, anexo:null, linkSolId:sol.id, jaPagoLink:true}); };
   var linha = function(k, bg, cor, ic, txt, sub, acao){
     return e("div",{key:k, className:"flex items-center gap-2 rounded-lg px-2.5 py-1.5", style:{background:bg}},
       e("span",{className:"shrink-0", style:{color:cor}}, e(Icon,{n:ic, s:15})),
@@ -109,8 +106,7 @@ function LinksDoAcerto(p){
     e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-emerald-300"}, "Links de pagamento da revendedora"),
     pagos.map(function(x){ var sol = x.sol, sobra = Math.max(0, sol.valor-Math.max(0, p.falta||0));
       return linha(sol.id, "rgba(16,185,129,.12)", "#6EE7B7", "check", "Pago por link · "+formatarReais(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : ""),
-        "Pago em "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")+(x.usavel && sobra>0 ? " · sobram "+formatarReais(sobra)+" de crédito" : ""),
-        x.usavel && e("button",{disabled:!(p.falta>0), onClick:function(){ usar(x); }, className:"h-8 shrink-0 rounded-lg bg-emerald-500 px-2.5 text-[11.5px] font-bold text-white disabled:opacity-40"}, "Usar como pagamento")); }),
+        "Pago em "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje")+(x.usavel && sobra>0 ? " · sobram "+formatarReais(sobra)+" de crédito" : "")); }),
     info.avisos.map(function(x){ var sit = situacaoParaRevendedora(x);
       return linha(x.id, "rgba(239,68,68,.12)", "#FCA5A5", "alert", "Link: "+sit.titulo+" · não conta · "+formatarReais(x.valor), formatarDia(x.criadoEm)+" · "+sit.detalhe); }),
     info.aguardando.map(function(x){ var sit = situacaoParaRevendedora(x);
@@ -118,4 +114,30 @@ function LinksDoAcerto(p){
     e("p",{className:"text-[10.5px] leading-snug text-[#8E8E93]"}, "Só valem links emitidos e pagos até o dia anterior ao acerto. O valor não é devolvido em dinheiro: o que passar do acerto vira crédito."));
 }
 
-export { TelaLinksRev, LinksDoAcerto };
+// Links pagos de UMA revendedora, do servidor. Recarrega a cada minuto enquanto o acerto está aberto: o setor de links pode anexar o comprovante durante o acerto.
+// Devolve {links:[{id, valor, parcelas, pagoEm, acertoId, comprovante:{nome, mime} | null}], versao} (versao muda só quando a lista muda).
+function useLinksPagos(rev){
+  var st = useState({links:[], versao:0, txt:"[]"}), set = st[1];
+  useEffect(function(){
+    if(!rev){ set({links:[], versao:0, txt:"[]"}); return undefined; }
+    var vivo = true;
+    var busca = function(){ chamar("GET", "/representante/links?rev="+encodeURIComponent(rev)).then(function(r){ if(!vivo) return; var l = (r && r.itens) || [], t = JSON.stringify(l);
+      set(function(o){ return o.txt===t ? o : {links:l, versao:o.versao+1, txt:t}; }); }, function(){}); };
+    busca(); var tm = setInterval(busca, 60000);
+    return function(){ vivo = false; clearInterval(tm); };
+  }, [rev]);   // eslint-disable-line react-hooks/exhaustive-deps
+  return st[0];
+}
+// Baixa o comprovante do link e devolve o anexo no formato do acerto ({nome, tipo, dados, tamanho, link}), igual ao que a representante anexaria: foto vira JPEG pequeno; PDF até ~1 MB.
+function comprovanteDoLink(rev, id){
+  return chamar("GET", "/representante/links?rev="+encodeURIComponent(rev)+"&comprovante="+encodeURIComponent(id)).then(function(r){
+    return new Promise(function(res, rej){
+      var pronto = function(nome, tipo, dados){ res({nome:nome, tipo:tipo, dados:dados, tamanho:Math.round(dados.length*0.75), link:id}); };
+      if(/^data:image\//.test(r.url || "")) return fotoPequenaDeUrl(r.url, r.nome || "comprovante.jpg", function(c){ if(c) pronto(c.nome, "image/jpeg", c.url); else rej(new Error("Não consegui abrir o comprovante.")); });
+      if(/^data:application\/pdf/.test(r.url || "") && r.url.length<=1400000) return pronto(r.nome || "comprovante.pdf", "application/pdf", r.url);
+      rej(new Error("Comprovante grande demais para o celular."));
+    });
+  });
+}
+
+export { TelaLinksRev, LinksDoAcerto, useLinksPagos, comprovanteDoLink };

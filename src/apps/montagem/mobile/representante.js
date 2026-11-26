@@ -20,7 +20,8 @@ import { passouPrazo, prazoDaListagem } from "@/apps/montagem/domain/listagem-re
 import { PreAcertoRep } from "@/apps/montagem/mobile/pre-acerto-rep";
 import { TelaAssinatura } from "@/apps/montagem/mobile/assinatura";
 import { CampoReaisAuto, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
-import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
+import { LinksDoAcerto, comprovanteDoLink, useLinksPagos } from "@/apps/montagem/mobile/links-pagamento-app";
+import { linksDosPagamentos } from "@/apps/montagem/domain/link-pagamento";
 import { EntregaKNRep } from "@/apps/montagem/mobile/kn-entrega-rep";
 import { ConfPecas, ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
 import { ConfDevolucao } from "@/apps/montagem/mobile/conf-devolucao";
@@ -415,6 +416,44 @@ function AppRepresentante(p){
   var atrasoPre = kitSel && kitSel.preAcerto ? (kitSel.preAcerto.atrasoDias||0) : 0;
   useEffect(function(){ if(tela!=="calcacerto" || !kitSel || jaAcertado) return; if((acertoForm.atrasoDias||0)!==atrasoPre) setAcertoForm(function(f0){ return Object.assign({}, f0, {atrasoDias:atrasoPre}); }); }, [tela, atrasoPre, acertoForm.atrasoDias, selId]);
   useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
+  // LINK DE PAGAMENTO NO ACERTO (26/11/2026, Leonardo: "a representante não tem que anexar o comprovante"; "o importante é o link: tem comprovante e foi pago, não pode ter divergência").
+  // O valor vem SEMPRE do link (servidor: /api/representante/links, com o saldo de cada link). Três caminhos:
+  //  1. Link pago até ontem entra sozinho como "✓ pago por link", com o comprovante do setor de links (mesma regra do Atendimento Sorelly: cobre até o que falta; o resto fica para o próximo acerto).
+  //  2. "+ Lançar pagamento → Link" mostra os links pagos para ela tocar, sem digitar valor. Linha "Link" digitada com o MESMO valor de um link é ligada a ele e recebe o comprovante sozinha.
+  //  3. Linha "Link" digitada com valor DIFERENTE: o cartão avisa e oferece "Usar o link de R$ X" (troca a linha pela do link). Enquanto houver linha assim, o sistema não lança link sozinho (não duplica).
+  var lkPg = useLinksPagos(tela==="calcacerto" && kitSel && !jaAcertado && apiAtiva() ? sel.rev : ""), lkBaixando = useRef({});
+  var linkDaLinha = function(pg){ return pg.linkSolId ? lkPg.links.find(function(x){ return x.id===pg.linkSolId; }) || null : null; };
+  var linksLivres = function(lista){ var ja = {}; (lista || acertoForm.pagamentos).forEach(function(q){ if(q.linkSolId) ja[q.linkSolId] = 1; }); return lkPg.links.filter(function(x){ return !ja[x.id] && !x.acertoId && x.saldo>0.009; }); };
+  var contaDoLinkRep = function(x){ var lista = formaDe("link").descricoes || [], dsc = x.cnpjId ? lista.find(function(c){ return String(c).replace(/\s+/g, " ").endsWith(" - "+x.cnpjId); }) : null; return dsc || (lista.length===1 ? lista[0] : (x.meio || "LINK")); };
+  var linhaDoLink = function(x, valor){ return {forma:"link", descricao:contaDoLinkRep(x), parcelas:x.parcelas || 1, bandeira:x.bandeira || "", data:String(x.pagoEm || "").slice(0, 10) || isoDia(new Date()), valor:valor,
+    anexo:x.comprovante ? {nome:x.comprovante.nome, tipo:x.comprovante.mime, link:x.id} : null, linkSolId:x.id, jaPagoLink:true}; };
+  // põe o link no acerto (no lugar de "trocar", se vier): valor = saldo do link, até o que falta pagar
+  var usarLink = function(x, trocar){
+    var resto = acertoForm.pagamentos.filter(function(q){ return q!==trocar; }), falta = Math.max(0, Math.round(((dv.restanteTotal||0)+(trocar ? Number(trocar.valor)||0 : 0))*100)/100), valor = Math.min(x.saldo, falta);
+    if(!(valor>0.009)) return;
+    var novos = resto.concat([linhaDoLink(x, valor)]);
+    if(trocar && trocar.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:trocar.pid, ctx:ctxPed(novos)}); else if(kitSel) d({type:"REP_PAG", op:"ctx", kitId:kitSel.id, ctx:ctxPed(novos)});
+    setAcertoForm(Object.assign({}, acertoForm, {pagamentos:novos}));
+  };
+  var linhaDivergente = function(pg){ return pg.forma==="link" && pg.pid && !pg.linkSolId; };
+  useEffect(function(){
+    if(!kitSel || jaAcertado || !lkPg.links.length) return;
+    var liga = linksDosPagamentos(lkPg.links, acertoForm.pagamentos);
+    if(Object.keys(liga).length){ setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ var y = x.pid && liga[x.pid]; return y && !x.linkSolId ? Object.assign({}, x, {linkSolId:y.id}) : x; })}); }); return; }
+    // 1. link pago até ontem entra sozinho (um por vez; não entra se ela já digitou uma linha Link sem link, para não duplicar)
+    var auto = dv.previaBase && (dv.restanteTotal||0)>0.009 && !acertoForm.pagamentos.some(linhaDivergente) ? linksLivres().find(function(x){ return x.usavel; }) : null;
+    if(auto){ usarLink(auto); return; }
+    // comprovante anexado depois no setor de links: a linha do link já lançada recebe a marca
+    if(acertoForm.pagamentos.some(function(q){ var x = q.jaPagoLink && !q.anexo && linkDaLinha(q); return x && x.comprovante; })) setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(q){ var x = q.jaPagoLink && !q.anexo && linkDaLinha(q); return x && x.comprovante ? Object.assign({}, q, {anexo:{nome:x.comprovante.nome, tipo:x.comprovante.mime, link:x.id}}) : q; })}); });
+    acertoForm.pagamentos.forEach(function(pg){
+      var x = linkDaLinha(pg), es = estPag(pg); if(!x || !x.comprovante || pg.anexo || !es || es.aguardando || Date.now()-(lkBaixando.current[pg.pid]||0)<60000) return;   // falhou: tenta de novo depois de 1 minuto
+      lkBaixando.current[pg.pid] = Date.now(); var kid = kitSel.id;
+      comprovanteDoLink(sel.rev, x.id).then(function(an){
+        setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(z){ return z.pid===pg.pid && !z.anexo ? Object.assign({}, z, {anexo:an}) : z; })}); });
+        d({type:"REP_PAG", op:"comprovante", kitId:kid, pid:pg.pid, anexo:an});
+      }, function(){ lkBaixando.current[pg.pid] = Date.now(); });
+    });
+  }, [lkPg.versao, acertoForm.pagamentos, s.lancFin, kitSel && kitSel.id]);   // eslint-disable-line react-hooks/exhaustive-deps
   var abriuRef = useRef(null);
   useEffect(function(){ if(!EXEMPLO) return; var lg = s.listagens.find(function(x){ return x.rep===l.rep && !x.fechada; }) || s.listagens.find(function(x){ return x.rep===l.rep; });
     if(!lg){ d({type:"CRIAR_LISTAGEM", rep:l.rep, destino:"Curitiba", horario:"10:00"}); return; }
@@ -770,7 +809,7 @@ function AppRepresentante(p){
       previaAcerto && previaAcerto.semFaixa && e("p",{key:"v4", className:"text-[13px] font-semibold text-amber-200"},
         "Abaixo de "+BK(versaoSel.gerais.minRenovar)+" de venda líquida não existe faixa: a comissão é zero."),
       !previaBase ? null : e(React.Fragment,{key:"pg"},
-          e(LinksDoAcerto,{key:"lkacerto", rev:sel.rev, pagamentos:acertoForm.pagamentos, falta:faltaAtual, formasLink:formaDe("link").descricoes, onUsar:function(lin){ setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([lin])})); }}),
+          e(LinksDoAcerto,{key:"lkacerto", rev:sel.rev, pagamentos:acertoForm.pagamentos, falta:faltaAtual}),
           // Pagamentos (02/11/2026, Marcus): uma linha por pagamento (✓ = já pago por link, sem ×); "+ Lançar pagamento" é um acordeão com menus suspensos de forma e conta (a lista de contas é a do Financeiro; a revendedora define em qual pagou)
           e("div",{key:"pagbox", className:"flex flex-col gap-1.5 rounded-xl border border-[#C9A13B]/70 p-1.5"},
           e("div",{key:"lanc0", className:"flex flex-col"},
@@ -783,7 +822,9 @@ function AppRepresentante(p){
                   e("b",{className:MONO+" text-[14px]"}, BK(p.valor)),
                   p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid, ctx:ctxPed(acertoForm.pagamentos.filter(function(x,j){return j!==i;}))});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
-                    "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
+                    "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); }),
+            acertoForm.pagamentos.filter(function(q){ var x = q.jaPagoLink && linkDaLinha(q); return x && x.saldo-(Number(q.valor)||0)>0.009; }).map(function(q){ var x = linkDaLinha(q);   // link maior que o acerto: o resto fica para o próximo (26/11/2026)
+              return e("p",{key:"sobra"+x.id, className:"py-1 text-[11px]"}, "Sobram "+BK(x.saldo-q.valor)+" do link para o próximo acerto"); })),
           acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p), ehPix = p.forma==="pix";
             var inputAnexo = function(){ return e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante do pagamento", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
               var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
@@ -796,12 +837,17 @@ function AppRepresentante(p){
               : e("label",{className:"flex min-h-8 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg px-2 text-center text-[11px] font-bold leading-tight ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, e("span",null,"Anexar"), e("span",null,"comprovante"), inputAnexo());
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
+              linhaDivergente(p) && linksLivres().length>0 && e(React.Fragment,null,   // o valor digitado não bate com o link pago: vale o link (26/11/2026)
+                e("span",{className:"font-semibold text-amber-200"}, "Valor diferente do link pago"),
+                linksLivres().map(function(x){ return e("button",{key:"usar"+x.id, type:"button", onClick:function(){ usarLink(x, p); }, className:"mt-1 h-8 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Usar o link de "+BK(x.saldo)); })),
               es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : (ehPix ? null : e("span",null,"Faça o pagamento na conta: "+es.conta)),
               !es.aguardando && ehPix && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot, valor:es.partes.length===1 && String(es.partes[0]).indexOf(" + ")<0 ? p.valor : 0, lado:qi===0 ? ladoAnexo : null}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
               !es.aguardando && !ehPix && (p.anexo
-                ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
-                : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
-                    e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"), inputAnexo()))); }),
+                ? e("span",{className:"font-semibold"}, p.anexo.link ? "✓ Comprovante anexado pela Sorelly" : "✓ Comprovante anexado")   // link: o comprovante veio do setor de links (26/11/2026)
+                : e(React.Fragment,null,
+                    linkDaLinha(p) && e("span",null, "Link pago em "+String(linkDaLinha(p).pagoEm||"").slice(0, 10).split("-").reverse().slice(0, 2).join("/")+(linkDaLinha(p).comprovante ? ": buscando o comprovante" : ": a Sorelly anexa o comprovante")),
+                    e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
+                      e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"), inputAnexo())))); }),
           acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
             var chave = chavePixRep(s.cp && s.cp.chaves, l.rep);   // chave cadastrada em Financeiro › Chaves Pix › Representantes
             return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
@@ -845,6 +891,9 @@ function AppRepresentante(p){
                         if(validas.length && Math.abs(soma-restanteTotal)<=0.01){ setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); } }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Salvar acordo"),
                     e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true, acordoParcelas:[], acordoSalvo:false})); setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Não quis negociar")),
                   acertoForm.acordoSalvo && e("p",{className:"text-[13px] font-semibold"}, Math.abs(acordoSoma-restanteTotal)<=0.01 ? "Acordo fecha o valor: libera o kit novo, não o brinde." : "As parcelas ainda não fecham o valor em aberto.")),
+                fm==="link" && linksLivres().map(function(x){   // links pagos da revendedora: o valor vem do link, ela só toca (26/11/2026)
+                  return e("button",{key:"lk"+x.id, type:"button", onClick:function(){ usarLink(x); setLancAberto(false); setLancForm(LANC_VAZIO); }, className:"h-8 w-full rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
+                    "Usar link pago de "+BK(x.saldo)+" · "+String(x.pagoEm||"").slice(0, 10).split("-").reverse().slice(0, 2).join("/")); }),
                 fm && fm!=="acerto_loja" ? e("div",{className:"flex items-center gap-2"},
                   formaDe(fm).parcelas && e("select",{value:lancForm.parcelas, "aria-label":"Parcelas", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); }, className:campoSel+" w-[5.2rem]! shrink-0"},
                     PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })

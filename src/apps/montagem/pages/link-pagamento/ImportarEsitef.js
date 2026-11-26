@@ -33,6 +33,7 @@ function ImportarEsitef(p){
   var marcada = function(x){ var n = x.linha.nsu; return alt[n]!==undefined ? alt[n] : !x.fora; };
   var marcarTodas = function(v){ var o = {}; plano.forEach(function(x){ if(escolhivel(x)) o[x.linha.nsu] = v; }); al[1](o); };
   var qtMarcadas = plano.filter(function(x){ return escolhivel(x) && marcada(x); }).length, qtEscolhiveis = plano.filter(escolhivel).length;
+  var qtPagos = plano.filter(function(x){ return escolhivel(x) && marcada(x) && x.para==="pago"; }).length;   // entram como Pago com "Falta" na coluna Comprovante (26/11/2026)
   var escolher = function(ev){
     var f = ev.target.files && ev.target.files[0]; if(!f) return;
     var r = new FileReader();
@@ -59,7 +60,8 @@ function ImportarEsitef(p){
       s.linhas && e("div",{className:"flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/20 px-3 py-2 text-[13px]"},
         e("span",null, s.nome), e("span",null, "Linhas ", e("b",null, String(plano.length))), e("span",null, "Novas ", e("b",{className:"text-success"}, String(cont("nova")))),
         e("span",null, "Atualizam ", e("b",null, String(cont("atualizar")+cont("vincular")))), e("span",null, "Sem mudança ", e("b",null, String(cont("igual")))),
-        cont("ignorar")>0 && e("span",null, "Ignoradas ", e("b",{className:"text-[#FBBF24]"}, String(cont("ignorar")))), e("span",null, "Marcadas ", e("b",null, qtMarcadas+" de "+qtEscolhiveis)), e("span",{className:"flex-1"}),
+        cont("ignorar")>0 && e("span",null, "Ignoradas ", e("b",{className:"text-[#FBBF24]"}, String(cont("ignorar")))), e("span",null, "Marcadas ", e("b",null, qtMarcadas+" de "+qtEscolhiveis)),
+        qtPagos>0 && e("span",{title:"O e-SiTef confirma o pagamento, mas não traz o comprovante. Depois de importar, anexe na coluna Comprovante (26/11/2026)."}, "Pagos sem comprovante ", e("b",{className:"text-[#FBBF24]"}, String(qtPagos))), e("span",{className:"flex-1"}),
         qtEscolhiveis>0 && e(Botao,{onClick:function(){ marcarTodas(qtMarcadas<qtEscolhiveis); }}, qtMarcadas<qtEscolhiveis ? "Marcar todas" : "Desmarcar todas"),
         e(Botao,{principal:true, desabilitado:!mudou, onClick:importar}, mudou ? "Importar "+mudou+" linha"+(mudou===1 ? "" : "s") : "Nada para importar")),
       s.linhas && e("div",{className:"overflow-auto"}, e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true}))));

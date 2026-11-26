@@ -2,6 +2,18 @@
 
 Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste setor, da mais nova para a mais antiga.
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
+
+## 26/11/2026 (Link de pagamento: comprovante obrigatório e entra sozinho no acerto da representante, Leonardo)
+- **Leonardo: "no Link de pagamento tem que poder anexar o comprovante e ver se tem ou não; só pode marcar como pago com o comprovante. Depois esse comprovante tem que aparecer no acerto da representante já anexado: ela não tem que anexar, isso dá muito trabalho para ela".**
+- **Onde fica o arquivo:** no servidor de anexos do próprio sistema (`/api/anexos`, tabela `sorelly.anexo_modulo`, módulo `lp`). O backend do admin antigo não entra. O link guarda só `comprovante = {key, nome, mime, em, por}`.
+- **Setor de links (Solicitações):** coluna **Comprovante** (Anexado · Falta) com Anexar e Ver; no detalhe, Anexar/Trocar e Abrir comprovante. **Confirmar pagamento à mão só com comprovante** (o reducer recusa `sol_mover` para Pago sem ele; a janela pede a foto ou o PDF e confirma no mesmo passo).
+- **e-SiTef:** a importação continua confirmando o pagamento sozinha (é o registro da operadora); o link fica com **Falta** na coluna até alguém anexar.
+- **Admin das representantes (acerto):** a conta da representante não abre o módulo `lp`; a rota nova `GET /api/representante/links?rev=` entrega só os links pagos daquela revendedora (só de kit dela) e o arquivo do comprovante. A linha **Link** que ela lança é ligada ao link pago com o **mesmo valor**, ainda não usado em acerto (`linksDosPagamentos`). Quando a conta do financeiro chega, o comprovante entra sozinho na linha ("✓ Comprovante anexado pela Sorelly") e vai ao financeiro pelo mesmo caminho do anexo dela. Sem comprovante no link, aparece "Link pago em dd/mm: a Sorelly anexa o comprovante" e o botão Anexar continua como reserva.
+- **Link já usado:** link que entrou num acerto finalizado das representantes (pagamento com `linkSolId` em `rpf`) não é ligado de novo.
+- **Respostas do Leonardo (mesmo dia):** (1) pode subir; (2) e-SiTef continua marcando Pago, com **Falta** na coluna e **aviso** (a janela de importação mostra "Pagos sem comprovante" e a mensagem final diz quantos ficaram sem); (3) **"o importante é o link: ele tem comprovante e foi pago; não pode ter divergência"**.
+- **Sem divergência = o valor vem sempre do link:** (a) link pago até ontem (ou pedido do atendimento) entra **sozinho** como "✓ pago por link", com o comprovante, valor = saldo do link até o que falta (mesma regra do Atendimento Sorelly de 11/11/2026; o botão "Usar como pagamento" saiu); (b) "+ Lançar pagamento → Link" mostra os links pagos para tocar, sem digitar valor; (c) linha Link digitada com valor diferente mostra "Valor diferente do link pago" e o botão "Usar o link de R$ X" (troca a linha pela do link e tira o pedido de conta do Direcionar); enquanto houver linha assim, o link não entra sozinho (não duplica).
+- **Link maior que o acerto:** o resto fica para o próximo acerto. A rota calcula o **saldo** de cada link (valor − o que entrou em acertos finalizados das representantes, `rpf`). Janela: links pagos nos últimos 60 dias.
+- O Atendimento Sorelly (link pago por fora) continua com a foto opcional.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
 - **Direcionar, comprovante da representante aparece (Lucas, 26/11/2026):** a tela procurava o pagamento pelo código errado; cada linha mostra só o comprovante do seu Pix.

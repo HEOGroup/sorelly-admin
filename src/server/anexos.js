@@ -7,7 +7,7 @@ export const LIMITE_ANEXO = 12 * 1024 * 1024;   // caracteres do data URL (≈ 9
 export const PEDACO_ANEXO = 3.2 * 1024 * 1024;
 export const MAX_PARTES = 5;
 export const pedacoValido = (p) => typeof p === "string" && p.length > 0 && p.length <= PEDACO_ANEXO && /^[A-Za-z0-9+/=:;,-]+$/.test(p);
-export const MODULOS_COM_ANEXO = ["cpc", "er", "ff", "ce", "pf", "rh", "sg", "contasreceber"];   // contasreceber = comprovante do Pix antes do acerto, lançado em Contas a receber (20/11/2026)   // pf = comprovantes dos pagamentos a fornecedores (16/11/2026)   // ff = Financeiro familiar: PDF do orçamento das dívidas de prestadores (10/11/2026) · ce = foto do material do Estoque de material (16/11/2026)
+export const MODULOS_COM_ANEXO = ["cpc", "er", "ff", "ce", "pf", "rh", "sg", "contasreceber", "lp"];   // lp = comprovante do link de pagamento, anexado pelo setor de links (26/11/2026)   // contasreceber = comprovante do Pix antes do acerto, lançado em Contas a receber (20/11/2026)   // pf = comprovantes dos pagamentos a fornecedores (16/11/2026)   // ff = Financeiro familiar: PDF do orçamento das dívidas de prestadores (10/11/2026) · ce = foto do material do Estoque de material (16/11/2026)
 export const chaveAnexoValida = (k) => typeof k === "string" && /^an_[a-z0-9]{6,40}$/.test(k);
 export const urlAnexoValida = (u) => typeof u === "string" && /^data:(image\/(jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(u);
 
