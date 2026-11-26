@@ -3,6 +3,7 @@
 Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam de representantes, da mais nova para a mais antiga.
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 
+- **26/11/2026** (Lucas, diário geral, seção "Direcionar: representantes voltam à lista de contas"): **toda representante ativa aparece no Direcionar** para receber Pix direto, com ou sem meta aberta.
 - **26/11/2026** (Lucas, diário geral, seção "Direcionar: um pedido por pagamento da representante"): **Trocou o pagamento, o pedido antigo some** (se ainda não tem comprovante), junto com o que ele lançou sozinho.
 - **25/11/2026** (Lucas, diário geral, seção "Representantes: comprovante obrigatório no acerto"): **Comprovante obrigatório para finalizar o acerto:** todo pagamento com conta pedida ao Financeiro precisa do comprovante; o Pix aparece no Financeiro com o nome da cliente.
 - **24/11/2026** (Marcus, diário geral, seção "Montar kit: observações embaixo; Listagens sem a janela antiga"): **Observações embaixo de Categorias e Fotos, botão Voltar azul; na coluna Fazer, Conferir condicional/Pegar condicionais/Aguardando valor só mostram texto, e clicar na linha abre a tela de preferências.**

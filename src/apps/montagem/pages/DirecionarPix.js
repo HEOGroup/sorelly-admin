@@ -359,7 +359,9 @@ function AbaDirecionar(){
       var itens = []; if(contas.length) itens.push({nome:"Contas "+curto, itens:contas}); if(prests.length) itens.push({nome:"Prestadores de serviço", itens:prests});
       return itens.length ? {nome:d.nome, itens:itens} : {nome:d.nome, id:d.id, conta:""}; };
     var devedores = function(tp){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp && pend[d.id]; }).map(function(d){ return folhaDev(d.nome, pend[d.id].valor, pend[d.id].prazo, d.id, "", escritaDm(d) ? "DevMaster: "+escritaDm(d) : ""); }); };
-    return Object.keys(TIPOS_DESTINO).map(function(tp){ return {nome:tp==="CNPJ" ? "Empresa" : tipoNome(tp), itens:tp==="CNPJ" ? cnpjs : tp==="FAMILIA" ? cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).map(socio) : devedores(tp)}; }).filter(function(g){ return g.itens.length; }); };
+    // REPRESENTANTE (Lucas, 26/11/2026: "não consigo direcionar as contas para as representantes"): toda representante ativa aparece, com ou sem meta aberta; o devido e o prazo só quando há orientação aberta
+    var reps = function(){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo==="REPRESENTANTE"; }).sort(function(x, y){ return String(x.nome).localeCompare(String(y.nome)); }).map(function(d){ return pend[d.id] ? folhaDev(d.nome, pend[d.id].valor, pend[d.id].prazo, d.id, "") : {nome:d.nome, cols:[d.nome, "—", "—"], w:[46, 30, 24], heads:["Nome", "Devido", "Prazo"], id:d.id, conta:""}; }); };
+    return Object.keys(TIPOS_DESTINO).map(function(tp){ return {nome:tp==="CNPJ" ? "Empresa" : tipoNome(tp), itens:tp==="CNPJ" ? cnpjs : tp==="FAMILIA" ? cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).map(socio) : tp==="REPRESENTANTE" ? reps() : devedores(tp)}; }).filter(function(g){ return g.itens.length; }); };
   var renderParte = function(p){
     var id = p.id, f = p.forma, ld = divDe(id), rest = restDe(id), pl = planos[id] || [], dest = optsDe(f), sug = !ld.length;
     var toDiv = function(x, valor){ return {destinoId:x.destinoId, valor:valor==null ? x.valor : valor, regra:x.regra, conta:x.conta, via:f, parte:id, motivo:x.motivo}; };

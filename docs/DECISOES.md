@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar: representantes voltam à lista de contas, Lucas)
+- **Lucas: "não consigo direcionar as contas para as representantes".**
+- **Causa:** na lista de contas do Direcionar, cada grupo mostra só quem tem valor pendente (regra de 26/10/2026). Representante só tinha pendência por orientação aberta em `cp.orientacoes`, e não existe nenhuma (nunca houve): o grupo Representante ficava vazio e sumia.
+- **Decidido:** o grupo Representante lista toda representante ativa (`reps` em pages/DirecionarPix.js); com orientação aberta mostra o devido e o prazo, sem ela mostra "—". Fornecedor e prestador continuam só com pendência.
+
 ## 26/11/2026 (Chaves Pix dos fornecedores: lista do Lucas e regra por período)
 - Pontual (Banho) e Devmaster: regra `periodo` = a chave muda a cada período de pagamento. Point, Art Ello, Ellos, Xangai e Mega Sul: fixa. Charme, Linda e Tucano: até o final de cada pedido.
 - Pontual agora é Nisis Joias Ltda (Itaú) e Mega Sul é Full Acessórios Moda (Santander); as chaves antigas ficam em `chaveAnterior`.
