@@ -124,14 +124,16 @@ var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ 
 // A versão do sistema que está no ar vem de /api/saude; se for diferente da versão desta tela, aparece o aviso "Atualizar agora". NEXT_PUBLIC_BUILD é gravado na hora do build (vazio no computador de teste: sem aviso).
 function mostraAvisoVersao(){
   if(document.getElementById("aviso-versao")) return;
-  var d = document.createElement("div"); d.id = "aviso-versao"; d.setAttribute("role", "alert");
-  // 16/11/2026 (Edna, Emilli: o navegador ficou com a versão antiga e ela não viu o botão novo): o aviso agora é uma faixa dourada no TOPO, impossível de perder
-  d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 12px;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif";
-  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize agora para ver os botões e telas novas e não perder lançamentos."; d.appendChild(t);
-  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#1F1B12;color:#fff;font:600 13px Inter,system-ui,sans-serif;cursor:pointer";
+  // 16/11/2026 (Edna, Emilli: o navegador ficou com a versão antiga e ela não viu o botão novo): o aviso fica no TOPO, impossível de perder.
+  // 25/11/2026 (Marcus): um botão só, de ponta a ponta no topo: "Nova atualização" e, menor, "Nada será perdido, pode atualizar a qualquer momento." (o rascunho do acerto volta sozinho depois de atualizar)
+  var b = document.createElement("button"); b.id = "aviso-versao"; b.type = "button"; b.setAttribute("role", "alert");
+  var t1 = document.createElement("span"); t1.textContent = "Nova atualização"; t1.style.cssText = "display:block;font:800 16px/1.3 Inter,system-ui,sans-serif";
+  var t2 = document.createElement("span"); t2.textContent = "Nada será perdido, pode atualizar a qualquer momento."; t2.style.cssText = "display:block;margin-top:2px;font:500 13px/1.3 Inter,system-ui,sans-serif";
+  b.appendChild(t1); b.appendChild(t2);
+  b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2147483000;padding:12px 16px;border:0;border-bottom:2px solid #1F1B12;border-radius:0;background:#D6B25C;color:#1F1B12;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3)";
   // atualiza de verdade: limpa o cache guardado pelo navegador e abre de novo com um carimbo novo no endereço
   b.onclick = function(){ var fim = function(){ try{ var u = new URL(location.href); u.searchParams.set("v", String(Date.now())); location.replace(u.toString()); }catch(x){ location.reload(); } }; try{ var ps = []; if(window.caches && caches.keys) ps.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })); if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ps.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })); Promise.all(ps).then(fim, fim); }catch(x){ fim(); } };
-  d.appendChild(b); document.body.appendChild(d);
+  document.body.appendChild(b);
 }
 function vigiaVersao(){
   var minha = String(process.env.NEXT_PUBLIC_BUILD || ""); if(!minha) return undefined;
