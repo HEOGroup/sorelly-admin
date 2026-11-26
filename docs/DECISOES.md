@@ -3759,3 +3759,7 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - O exemplo Acerto completo (aba Apps) usa a cliente fictícia Karine Exemplo: 135 peças vendidas, 2 trocas, R$ 100,00 de crédito, 1 remarcação com multa, 9 dias de atraso, 2 links (1 pago hoje), 3 Pix, crédito, débito e dinheiro. Falta 3% do valor devido.
 - Regra do Marcus: o cálculo é sempre automático (tabela de comissão, atraso, remarcação, crédito, trocas, multa de 10% do pendente depois de finalizar). O exemplo só define quanto foi pago. Peças do próximo mês saem da regra (base 35 com 75% = cerca de 26), não de número fixo.
 - O link pago hoje conta só no exemplo; a regra real (`linksParaAcerto`) continua aceitando link pago antes de hoje. Aberta com o Marcus.
+
+## 26/11/2026 — Karine Teste na conta de representante Sorelly (Marcus, v0.21.244)
+- A cliente fictícia Karine Teste (`domain/acerto-exemplo.js`) é a primeira revendedora da conta de representante cujo nome no app é Sorelly. Ao tocar nela, o acerto abre preenchido (cenário Acerto completo). Na aba Apps o exemplo continua igual.
+- O Marcus autorizou os pedidos de Pix dela irem ao Financeiro de verdade (Nayale e Ana Maria veem pedidos de Karine Teste: são de teste). Telefone e código dela são falsos.

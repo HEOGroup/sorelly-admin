@@ -38,6 +38,7 @@ import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/dom
 import { chavePixRep } from "@/apps/montagem/domain/pix-regras";
 import { CartaoPixConta } from "@/apps/montagem/mobile/cartao-pix-conta";
 import { creditoDisponivel, creditosDaRevendedora } from "@/apps/montagem/domain/garantias-rev";
+import { DEMO_REV, CENARIO_COMPLETO } from "@/apps/montagem/domain/acerto-exemplo";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -115,12 +116,13 @@ function carteiraRep(s, rep, reais){
     // 26/11/2026 (Marcus: Ana Claudia da Lysie mostrava no mês atual a venda do mês anterior): "vendas" são as 3 últimas vendas, não os 3 meses. Os botões atual/anterior/retrasado usam o mês de calendário (vm); sem vm, fica como antes.
     if(it.vm){ var hj = new Date(); vs = [0,1,2].map(function(i){ var dd = new Date(hj.getFullYear(), hj.getMonth()-i, 1); return it.vm[dd.getFullYear()+"-"+String(dd.getMonth()+1).padStart(2,"0")] || 0; }); }
     return comPedido(comFeito({vendaApp:it.vendaApp||0, id:"R"+it.cod, rev:it.nome, fone:it.celular||"", bairro:it.cidade||"", vendas:vs, cond:Math.round(md/500)*500, hora:null, hoje:false, data:dmISO(String(it.prevDevol||"").slice(0,10)), cod:it.cod})); });
-  return hojeK.map(comFeito).concat(reaisC).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
+  return hojeK.map(comFeito).sort(function(a, b){ return (b.rev===DEMO_REV ? 1 : 0) - (a.rev===DEMO_REV ? 1 : 0); }).concat(reaisC).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
     var ag = (perfis[c.rev]||{}).agendado;
     return comPedido(comFeito(Object.assign({id:"C"+i, hoje:false, data: ag && ag.data ? dmISO(ag.data) : dm(dt), hora: ag ? (ag.hora||null) : c.hora}, c))); }));
 }
 function AppRepresentante(p){
   var cx = use(), s = cx.state, d = cx.dispatch, l = p.l;
+  var EXEMPLO = !!repCodDaConta() && String(l.rep||"").toLowerCase()==="sorelly", abrirEf = p.abrir || (EXEMPLO ? {rev:DEMO_REV, n:"exemplo", cenario:CENARIO_COMPLETO} : null);   // 26/11/2026 (Marcus): na conta de representante "Sorelly" a Karine Teste é a primeira revendedora e o acerto dela abre preenchido
   var chatSt = useChat(), chatCid = contatoDaRepresentante(l.rep), chatNaoLidas = chatCid && chatSt.config.representantes ? totalNaoLidas(chatCid) : 0;
   var tb = useState("inicio"), tela = tb[0], setTela = tb[1];
   var kab = useState(false), kitAbertoConf = kab[0], setKitAbertoConf = kab[1];   // 26/11/2026 (Marcus): "Próximo Kit Liberado" fecha; ao tocar abre a confirmação das condicionais
@@ -388,11 +390,15 @@ function AppRepresentante(p){
   useEffect(function(){ if(tela!=="calcacerto" || !kitSel || jaAcertado) return; if((acertoForm.atrasoDias||0)!==atrasoPre) setAcertoForm(function(f0){ return Object.assign({}, f0, {atrasoDias:atrasoPre}); }); }, [tela, atrasoPre, acertoForm.atrasoDias, selId]);
   useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
   var abriuRef = useRef(null);
+  useEffect(function(){ if(!EXEMPLO) return; var lg = s.listagens.find(function(x){ return x.rep===l.rep && !x.fechada; }) || s.listagens.find(function(x){ return x.rep===l.rep; });
+    if(!lg){ d({type:"CRIAR_LISTAGEM", rep:l.rep, destino:"Curitiba", horario:"10:00"}); return; }
+    if(!s.kits.some(function(k){ return k.lid===lg.id && k.rev===DEMO_REV; })) d({type:"ADD_KIT", lid:lg.id, rev:DEMO_REV, bairro:"Curitiba", vendas:[], cod:"999999", fone:"41900000000", tipoKit:"acerto_kit", porApp:true, hora:null}); }, [EXEMPLO, s.listagens.length, s.kits.length]);
+  useEffect(function(){ if(!EXEMPLO || !sel || sel.rev!==DEMO_REV || !kitSel || jaAcertado || pendAbrir || acertoForm.vendaBruta!=null || abriuRef.current==="ex:"+sel.id) return; abriuRef.current = "ex:"+sel.id; setPendAbrir("exemplo"); }, [EXEMPLO, selId, kitSel && kitSel.id, acertoForm.vendaBruta]);
   useEffect(function(){ if(!p.abrir || abriuRef.current===p.abrir.n) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(!alvo) return; abriuRef.current = p.abrir.n; setSel(alvo.id);
     if(p.abrir.destino==="kitnovo") setTela("entregakit"); else if(p.abrir.destino==="reposicao"){ setTela("reposicao"); } else setPendAbrir(p.abrir.n); }, [p.abrir && p.abrir.n, cart.length]);   // atalhos da aba Apps: Acerto completo, Kit novo e Reposição
   useEffect(function(){
-    if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
-    var cz = p.abrir.cenario;   // 02/11/2026 (Marcus): opção "Acerto completo" da aba Apps: um acerto 100% preenchido para visualizar
+    if(!pendAbrir || !abrirEf || !kitSel || !sel || sel.rev!==abrirEf.rev || !versaoBaseSel) return;
+    var cz = abrirEf.cenario;   // 02/11/2026 (Marcus): opção "Acerto completo" da aba Apps: um acerto 100% preenchido para visualizar
     var iguais = !cz || (condicionaisRev.length===cz.conds.length && cz.conds.every(function(c){ return condicionaisRev.some(function(x){ return x.numero===c.n && x.pecas===c.p; }); }));
     if(!iguais){ d({type:"REV_COND_DEFINIR", rev:sel.rev, lista:cz.conds.map(function(c){ return {numero:c.n, pecas:c.p, manual:true}; })}); return; }   // exemplo: a revendedora fica com exatamente estas condicionais; roda de novo quando entrarem
     var conds = cz ? cz.conds.map(function(c){ return c.n; }) : condicionaisRev.slice(0,2).map(function(c){ return c.numero; }), hoje = isoDia(new Date());

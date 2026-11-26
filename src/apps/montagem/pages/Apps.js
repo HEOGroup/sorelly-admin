@@ -17,6 +17,7 @@ import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
+import { DEMO_REV, CENARIO_COMPLETO } from "@/apps/montagem/domain/acerto-exemplo";
 
 var titulo = function(t){ return String(t||"").toLowerCase().replace(/(^|\s)([a-zà-ú])/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/ (De|Da|Do|Dos|Das|E) /g, function(m){ return m.toLowerCase(); }); };
 // app da "representante Sorelly": quantidade de acertos, total vendido e total pago do atendimento interno (a visão do Marcus; ele usa direto o admin)
@@ -73,10 +74,6 @@ function Coluna(p){
 }
 
 // Revendedora e representante dividem o mesmo contexto (os kits da revendedora vêm da representante escolhida); cada um só aparece se estiver ligado em "Celulares"
-var DEMO_REV = "Karine Exemplo";   // 26/11/2026 (Marcus): cliente fictícia para ver o acerto sempre preenchido
-var CENARIO_COMPLETO = {garantia:100, venda:10000, pendentePct:3, trocas:[{tipo:"anterior", antigaCod:"AB123", antigaValor:78, novaCod:"CD456", novaValor:78}, {tipo:"anterior", antigaCod:"EF321", antigaValor:98, novaCod:"GH654", novaValor:98}], conds:[{n:"99011", p:90}, {n:"99012", p:85}, {n:"99013", p:80}, {n:"99014", p:75}, {n:"99015", p:70}, {n:"99016", p:60}], vendidas:135, brindes:[
-  {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
-  {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
 // SIMULAÇÃO que a tela Apps abre sempre (Marcus, 03/11/2026): representante Anamaria com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída) e a revendedora Juliana, do app da revendedora, já com R$ 1.500,00 em vendas lançadas.
 var CHAVE_REP_APP = "sorelly_app_rep";   // última representante aberta (também gravada pelo Painel das representantes › Ver no app)
 var SIM_REP = "Anamaria", SIM_REV_APP = "Juliana Martins Souza";
@@ -115,7 +112,7 @@ function ColsRepRev(p){
   // Francelle (revendedora real da Nagela), venda R$ 8.278,00, 95% pago, brindes lançados, tudo preenchido na Calculadora.
   var demoKit = rep.demo ? s.kits.find(function(k){ var l0 = listDe("Nagela"); return k.rev===DEMO_REV && k.status!=="acertado" && l0 && k.lid===l0.id; }) : null;
   useEffect(function(){ if(!rep.demo || demoKit) return; var l0 = listDe("Nagela"); if(!l0) return;
-    cx0.dispatch({type:"ADD_KIT", lid:l0.id, rev:DEMO_REV, bairro:"Curitiba", vendas:[], cod:"004439", fone:"41996029727", tipoKit:"acerto_kit", porApp:true, hora:null}); }, [rep.demo, rep.n, s.listagens.length, s.kits.length]);
+    cx0.dispatch({type:"ADD_KIT", lid:l0.id, rev:DEMO_REV, bairro:"Curitiba", vendas:[], cod:"999999", fone:"41900000000", tipoKit:"acerto_kit", porApp:true, hora:null}); }, [rep.demo, rep.n, s.listagens.length, s.kits.length]);
   var lSim = rep.sim ? listDe(SIM_REP) : null, kitsSim = lSim ? s.kits.filter(function(k){ return k.lid===lSim.id; }) : [];
   var faltaSim = lSim ? SIM_REVS.find(function(x){ return !kitsSim.some(function(k){ return k.rev===x.rev; }); }) : null;
   var difSim = lSim ? kitsSim.find(function(k){ var x = SIM_REVS.find(function(y){ return y.rev===k.rev; }); return x && ((k.vendas||[])[0]||0)!==(x.vendas[0]||0); }) : null;   // o vendido da simulação volta ao combinado
