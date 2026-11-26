@@ -444,6 +444,11 @@ function inicial(){
     if(!s.rh) s.rh = rhDemo();
     if(!s.metasSet) s.metasSet = metasPadrao();
     if(!s.cpe) s.cpe = {classe:{}, lanc:[]}; if(!s.cpe.lanc) s.cpe.lanc = [];
+    // Charme e Linda (25/11/2026, Marcus): o Pix do CNPJ 67 Axis (com nota) entra como dívida em Contas a pagar até sexta, 27/11. O Pix revendedora vive em Negociações e no Direcionar (domain/pf.js, charmeLindaSemeado).
+    if(!s.cpeCharmeLinda){ s.cpeCharmeLinda = true; var jcl = s.cpe.lanc.map(function(x){ return x.id; });
+      s.cpe = Object.assign({}, s.cpe, {lanc:s.cpe.lanc.concat([
+        {id:"cl-charme-2026-11-27", filial:"67", nat:"5.01.01", natNome:"Bruto", pref:"PIX", forn:"Charme", nome:"Charme · Pix CNPJ 67 Axis (nota NF AXIS)", venc:"2026-11-27", valor:357.6, status:"apagar"},
+        {id:"cl-linda-2026-11-27", filial:"67", nat:"5.01.01", natNome:"Bruto", pref:"PIX", forn:"Linda", nome:"Linda · Pix CNPJ 67 Axis (com nota)", venc:"2026-11-27", valor:1967, status:"apagar"}].filter(function(x){ return jcl.indexOf(x.id)<0; }))}); }
     if(!s.cpeNick){ s.cpeNick = true; var ja = s.cpe.lanc.map(function(x){ return x.id; }); s.cpe = Object.assign({}, s.cpe, {lanc:s.cpe.lanc.concat(bonusNickolas().filter(function(x){ return ja.indexOf(x.id)<0; }))}); }   // bônus mensal do Nickolas (19/10/2026)
     if(!s.cpeNick2){ s.cpeNick2 = true; var vn = s.cpe.lanc.filter(function(x){ return !/^nick-/.test(x.id); }), jn = vn.map(function(x){ return x.id; }); s.cpe = Object.assign({}, s.cpe, {lanc:vn.concat(bonusNickolas().filter(function(x){ return jn.indexOf(x.id)<0; }))}); }   // dia 10 e 23, e o de 10/10 pago em dinheiro (20/10/2026)
     if(s.ff && !s.ffImp4){ s.ffImp4 = true; var ffZ = ffLocal(); if(ffZ){ var tira = ffZ.removerDividas||[]; s.ff.dividas = (s.ff.dividas||[]).filter(function(x){ return tira.indexOf(x.id)<0; });

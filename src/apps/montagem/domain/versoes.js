@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.233", data:"2026-11-25", titulo:"Pedidos Charme e Linda lançados em Negociações, Direcionar e Contas a pagar", itens:[
+  {tipo:"novo", area:"Financeiro › Negociações", txt:"Pedido Charme de R$ 3.576,00 (R$ 357,60 em Pix do CNPJ 67 Axis, com nota, até 27/11, e R$ 3.218,40 em Pix revendedora até 28/11) e pedido Linda de R$ 6.967,00 (R$ 1.967,00 em Pix do CNPJ 67 Axis até 27/11 e R$ 5.000,00 em Pix revendedora até 28/11). Charme e Linda passam ao ciclo \"No vencimento da parcela\": o Direcionar mostra cada valor com a sua data limite."},
+  {tipo:"novo", area:"Financeiro › Contas a pagar", txt:"Dívidas do Pix do CNPJ 67 Axis com vencimento em 27/11: Charme R$ 357,60 e Linda R$ 1.967,00."},
+  {tipo:"melhoria", area:"Direcionar e acertos", txt:"Onde aparece o destino Charme ou Linda, o texto traz \"anotar na folha PIX CHARME\" ou \"anotar na folha PIX LINDA\"."}
+ ]},
  {v:"0.21.232", data:"2026-11-25", titulo:"Conta do Nickolas: nada guardado no navegador", itens:[
   {tipo:"melhoria", area:"Sistema · dados", txt:"Na conta do Nickolas, o sistema não guarda mais cópia no navegador: tudo vem do banco ao abrir. A cópia antiga sai sozinha quando o banco confirma que tem tudo. Fechar a aba com algo ainda não enviado pede para esperar. As outras contas não mudam."},
   {tipo:"correção", area:"Sistema · dados", txt:"Navegador sem cópia (novo ou limpo) não sobe dados de exemplo para o banco ao abrir."}

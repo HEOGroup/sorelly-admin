@@ -66,6 +66,7 @@ function rotuloDestino(d, conta){
   }
   var nome = nomePropio(d.nome);
   if(d.tipo==="FAMILIA") return junta(["PF", nome, banco]);
+  if(d.tipo==="FORNECEDOR" && /^(charme|linda)\b/i.test(String(d.nome||"").trim())) return junta(["Sorelly", nome, banco, "anotar na folha PIX "+String(d.nome).trim().split(/\s+/)[0].toUpperCase()]);   // Marcus, 25/11/2026: a funcionária precisa saber o que escrever na folha (formas PIX CHARME e PIX LINDA da DevMaster)
   if(d.tipo==="FORNECEDOR" || d.tipo==="PRESTADOR") return junta(["Sorelly", nome, banco]);
   return junta([nome, banco]);   // representante e funcionário
 }

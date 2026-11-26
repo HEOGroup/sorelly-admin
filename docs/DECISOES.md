@@ -3735,3 +3735,11 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Correção para todos: a junção do módulo `nav` na primeira leitura (item só deste navegador sobe) só vale se havia cópia no navegador; sem cópia, o estado do código não sobe como dado.
 - Fica no navegador do Nickolas: login, preferências de tela e a cópia própria do Kits novos (os kits já estão no banco, módulo `kndados`).
 - Não foi conferido na tela (navegador embutido sem login e Chrome sem conexão); o Nickolas pediu para subir sem testar.
+
+## 25/11/2026 — Pedidos Charme e Linda (Marcus, v0.21.233)
+- **Charme:** pedido de R$ 3.576,00 = R$ 357,60 (10% da nota NF AXIS) em Pix do CNPJ pelo CNPJ 67 Axis, até sexta 27/11, + R$ 3.218,40 em Pix revendedora, até sábado 28/11. Chave Pix (CNPJ) 31.921.691/0001-90, DAVIP Comércio de Presentes (Santander), para os dois valores.
+- **Linda:** pedido de R$ 6.967,00 = R$ 1.967,00 em Pix do CNPJ 67 Axis (com nota), até sexta 27/11, + R$ 5.000,00 em Pix revendedora, até sábado 28/11. Chave Pix celular da Stand Acessórios.
+- Lançados em Negociações (`domain/pf.js`, marca `charmeLindaSemeado`); Charme e Linda passam ao ciclo "No vencimento da parcela" para o Direcionar mostrar cada data limite. O Pix do CNPJ entra como dívida em Contas a pagar (`state/store.js`, marca `cpeCharmeLinda`, lançamentos `cl-charme-...` e `cl-linda-...`).
+- Texto para as funcionárias onde aparece o destino: "anotar na folha PIX CHARME" e "anotar na folha PIX LINDA" (`lib/nome-conta.js`, `rotuloDestino`).
+- Os dados (chaves, CNPJ, valores) ficaram no código por pedido do Marcus; ele vai arrumar a regra do repositório público depois.
+- **Atenção:** quando a Bruna lançar a compra na DevMaster, o título pode aparecer em Contas a pagar junto com as dívidas lançadas aqui (duplicidade). Conferir e retirar a dívida manual (`cl-...`) se a DevMaster já tiver o título.
