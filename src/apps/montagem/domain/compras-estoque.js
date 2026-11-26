@@ -406,6 +406,14 @@ function pedidoAtrasado(p, agora, cfg){ if(p.status!=="NAO_VERIFICADA") return f
 // ações possíveis neste status (a tela filtra por papel com podeCompras(papel, a.cap) e, se a.decide, podeAprovarCompra; "operar_ou_solicitante" vale para quem opera ou é o solicitante do pedido)
 function acoesDoPedido(p){ return Object.keys(TRANSICOES).filter(function(k){ return TRANSICOES[k].de.indexOf(p.status)>=0; }).map(function(k){ return {op:k, rotulo:TRANSICOES[k].rotulo, cap:TRANSICOES[k].cap, decide:TRANSICOES[k].decide||false}; }); }
 function podeAcaoPedido(p, op){ return !!TRANSICOES[op] && TRANSICOES[op].de.indexOf(p.status)>=0; }
+// quem está logado (uid = pessoa da conta, nome = nome da conta) é o solicitante do pedido? Pedido com a conta ligada (solicitanteId, desde 18/11/2026): vale a conta.
+// Pedido antigo, sem conta: vale o nome sem acento, sem maiúscula e sem letra dobrada ("Hellen Garmier" = "Helen Garmier"; chamado da Helen, compra #927, 26/11/2026)
+var nomeSolic = function(t){ return norm(t).replace(/\s+/g, " ").replace(/([a-z])\1+/g, "$1"); };
+function ehSolicitante(p, uid, nome){
+  if(!p) return false;
+  if(p.solicitanteId!=null && p.solicitanteId!=="") return uid!=null && String(p.solicitanteId)===String(uid);
+  var a = nomeSolic(p.solicitante); return !!a && a===nomeSolic(nome);
+}
 var temEntradaVigente = function(ce, p){ return (p.recebimentos||[]).some(function(r){ return r.itens.some(function(i){ return i.entradaId && ce.movimentos.some(function(m){ return mesmoId(m.id, i.entradaId) && !m.estornado; }); }); }); };
 // item pronto para a tela
 function itemVisto(s, i){ var m = i.materialId ? porId(s.ce.materiais, i.materialId) : null, c = classif(s.ce.config, i.classificacao); return Object.assign({}, i, {rotuloUnidade:ROTULO_UNIDADE[i.unidade]||i.unidade, materialNome:m ? m.material : "", classificacaoNome:c ? c.nome : i.classificacao, entraEstoque:!!(c && c.entraEstoque), pendente:Math.max(0, i.quantidade-i.qtdRecebida), semMaterial:!!(c && c.entraEstoque && !i.materialId)}); }
@@ -1215,5 +1223,5 @@ export { ehCategoriaGrafica, ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDia
   formatarReais, formatarDia, formatarDataHora, formatarHoras, padronizarUnidade, padronizarFornecedor, estoqueDaSolicitacao,
   papelCompras, podeCompras, veFunilCompleto, podeAprovarCompra, podeEfetuarCompra, podeEditarPlano, capacidadesEstoque, podeEstoque,
   rotuloConta, rotuloCnpj, opcoesCnpj, contasDoCnpj, orcamentosExigidos, textoOrcamentos, entraNoEstoque, planoSituacao, totalDaCompra, compraParaPedidoPagamentos, compraParaOrientacoes,
-  pedidoAtrasado, acoesDoPedido, podeAcaoPedido, pedidoVista, listarPedidos, pedidoDe, indicadoresPedidos, dashboardCompras, pagamentosAPagar,
+  pedidoAtrasado, acoesDoPedido, podeAcaoPedido, ehSolicitante, pedidoVista, listarPedidos, pedidoDe, indicadoresPedidos, dashboardCompras, pagamentosAPagar,
   saldoMaterial, statusMaterial, materialVisto, alertasDoTipo, agruparPorStatus, resumoAba, dashboardGeral, consumoDoMes, movimentosDe, historicoMaterial, listarSolicitacoes, proximaContagem, listaParaComprar };

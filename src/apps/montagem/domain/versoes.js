@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.245", data:"2026-11-26", titulo:"Compras: o solicitante é reconhecido pela conta, e não só pelo nome", itens:[
+  {tipo:"correção", area:"Materiais e estoque → Compras", txt:"Quem pediu a compra volta a ver Reenviar para aprovação e Editar compra mesmo com o nome da conta escrito de outro jeito (ex.: Helen e Hellen). Pedido ligado à conta vale pela conta; pedido antigo, sem conta, vale pelo nome sem acento, sem maiúscula e sem letra dobrada. A lista de quem não vê o funil inteiro segue a mesma regra. Chamado da Helen, compra #927."},
+ ]},
  {v:"0.21.244", data:"2026-11-26", titulo:"Karine Teste: primeira revendedora da conta Sorelly, com o acerto de exemplo pronto", itens:[
   {tipo:"melhoria", area:"App representante › Revendedoras", txt:"Na conta de representante Sorelly a cliente fictícia Karine Teste aparece como primeira revendedora. Ao abrir, o acerto vem preenchido (135 peças, links, 3 Pix, trocas, crédito e 3% em aberto); os pedidos de Pix chegam ao Financeiro de verdade."},
  ]},

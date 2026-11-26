@@ -6,7 +6,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { degrade, ESTADO } from "@/apps/montagem/components/padrao";
 import { COMPACTO } from "@/apps/montagem/components/bloco-painel";
 import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
-import { ceReduz, diasEntre, formatarDataHora, hojeSP, papelCompras, podeAprovarCompra, podeCompras, podeEfetuarCompra, veFunilCompleto } from "@/apps/montagem/domain/compras-estoque";
+import { ceReduz, diasEntre, ehSolicitante, formatarDataHora, hojeSP, papelCompras, podeAprovarCompra, podeCompras, podeEfetuarCompra, veFunilCompleto } from "@/apps/montagem/domain/compras-estoque";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect } from "@/shared/react";
@@ -107,8 +107,9 @@ function useCompras(){
   var cx = use(), s = cx.state, d = cx.dispatch, uid = s.usuario, por = nomeDe(uid), dir = DIRETORIA.some(function(x){ return x.id===uid; }), papel = papelCompras(s, uid, dir);
   var c = {s:s, d:d, ce:s.ce, uid:uid, por:por, dir:dir, papel:papel, veTodas:veFunilCompleto(papel) || podeEfetuarCompra(s, uid), opera:podeCompras(papel, "operar")};
   c.aviso = function(txt, tom){ d({type:"AVISO", txt:txt, tom:tom || "alerta"}); return false; };
+  c.ehSolicitante = function(p){ return ehSolicitante(p, uid, por); };   // pela conta; pedido antigo sem conta, pelo nome (26/11/2026)
   c.pode = function(a, p){
-    var cap = a.cap, ok = cap==="membro" ? true : cap==="operar_ou_solicitante" ? (c.opera || norm(p.solicitante)===norm(por)) : podeCompras(papel, cap);
+    var cap = a.cap, ok = cap==="membro" ? true : cap==="operar_ou_solicitante" ? (c.opera || c.ehSolicitante(p)) : podeCompras(papel, cap);
     if(!ok) return false;
     if(a.decide===true || (a.decide==="depois_de_solicitada" && p.status!=="NAO_VERIFICADA")) return podeAprovarCompra(s, uid);
     if(a.decide==="efetua") return podeEfetuarCompra(s, uid);

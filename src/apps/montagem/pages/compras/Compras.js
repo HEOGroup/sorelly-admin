@@ -77,7 +77,7 @@ function mover(c, ac, pd, de, para){
 // lista com as regras do domínio; quem não vê o funil completo só enxerga as próprias solicitações
 function baseLista(c, o){
   var r = listarPedidos(c.s, Object.assign({escopo:"todos", limite:100000}, o || {})).itens;
-  return c.veTodas ? r : r.filter(function(x){ return norm(x.solicitante)===norm(c.por); });
+  return c.veTodas ? r : r.filter(function(x){ return c.ehSolicitante(x); });
 }
 function Busca(p){
   return e("div",{className:"relative min-w-48 max-w-sm flex-1 basis-56"}, e(Ph,{n:"magnifying-glass", s:15, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/60"}),
