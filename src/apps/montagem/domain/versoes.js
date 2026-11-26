@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.255", data:"2026-11-26", titulo:"Chaves Pix dos fornecedores: favorecido e banco novos, regra por período e campos para editar", itens:[
+  {tipo:"melhoria", area:"Pagamentos → Chaves Pix", txt:"Lista do Lucas aplicada: favorecido de Point, Art Ello, Ellos, Xangai, Devmaster, Mega Sul e Pontual (Banho). Mega Sul e Pontual com chave nova. Pontual e Devmaster passam a ter a regra Muda a cada período de pagamento. No modo Editar, favorecido, banco e regra de cada fornecedor se alteram na própria linha."}
+ ]},
  {v:"0.21.254", data:"2026-11-26", titulo:"Top 100: nome da revendedora não fica mais por cima dos valores", itens:[
   {tipo:"correção", area:"Encomendas e reposições → Top 100", txt:"Ao rolar a tabela para o lado, as colunas fixas (Posição e Revendedora) tinham fundo transparente e o nome ficava por cima dos valores dos meses. Agora essas colunas têm fundo sólido, na mesma cor das outras linhas."}]},
  {v:"0.21.253", data:"2026-11-26", titulo:"Chave Pix dos fornecedores: regra fixa ou até o final do pedido", itens:[

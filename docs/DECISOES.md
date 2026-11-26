@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Chaves Pix dos fornecedores: lista do Lucas e regra por período)
+- Pontual (Banho) e Devmaster: regra `periodo` = a chave muda a cada período de pagamento. Point, Art Ello, Ellos, Xangai e Mega Sul: fixa. Charme, Linda e Tucano: até o final de cada pedido.
+- Pontual agora é Nisis Joias Ltda (Itaú) e Mega Sul é Full Acessórios Moda (Santander); as chaves antigas ficam em `chaveAnterior`.
+- Chaves Pix > Fornecedores: no modo Editar, favorecido, banco e regra se editam na linha. O texto da folha segue o numerário do destino (R3).
+
 ## 26/11/2026 (Chave Pix dos fornecedores: fixa até segunda ordem x até o final de cada pedido)
 - **Marcus:** a chave Pix de cada fornecedor precisa ir para os pedidos, com duas regras: **fixa até segunda ordem** (exemplo: Point, Prime Brutos Ltda, folha "PIX - POINT") e **até o final de cada pedido** (Pontual, Charme, Linda).
 - **Regras:** todos os fornecedores com chave são **fixa**, menos Pontual, Charme e Linda (**pedido**). O Tucano segue a regra de Charme e Linda até o Marcus dizer o contrário. Na regra **pedido**, a chave vem do pedido em aberto em Negociações; acabou o pedido, a chave sai.
