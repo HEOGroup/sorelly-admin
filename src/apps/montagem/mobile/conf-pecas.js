@@ -27,6 +27,7 @@ function ConfPecas(p){
   var nt = useState(""), notaTxt = nt[0], setNotaTxt = nt[1];   // peças que faltaram, anotadas pela representante (opcional)
   var qt = useState({}), contadas = qt[0], setContadas = qt[1];   // quantidade contada de cada condicional (sem bipagem)
   var ab = useState(null), aberta = ab[0], setAberta = ab[1], cf = useState(false), confirmar = cf[0], setConfirmar = cf[1];
+  var mc = useState(false), soContagem = mc[0], setSoContagem = mc[1];   // 26/11/2026 (Marcus): botão "Conferir só por contagem" no lugar da câmera
   var cm = useState(true), camera = cm[0], setCamera = cm[1];   // a câmera abre sozinha ao começar a bipar; "Fechar a câmera" deixa só o campo de digitar
   var bipadora = k.bipId ? nomeDe(k.bipId) : "—", montadora = k.montId ? nomeDe(k.montId) : "—";
   var lido = function(c, i){ return Math.min(i.qtd, (conf.lidos||{})[c.numero+"|"+i.codigo]||0); };
@@ -54,7 +55,7 @@ function ConfPecas(p){
     e("p",{className:"text-[12.5px] text-[#374151]"},"Depois de explicar as regras para a revendedora, libere o kit para entregar e conferir as peças."), resumo,
     e("button",{onClick:function(){ d({type:"CONF_LIBERAR", kitId:k.id}); }, className:BTN},"Liberar kit"));
   // 2) sem bipagem: a representante digita quantas peças contou em cada condicional
-  if(!conf.ini && !BIPAR_ATIVO){
+  if(!conf.ini && (!BIPAR_ATIVO || soContagem)){
     var total = contadas.total, temTotal = total!==undefined && total!=="";
     var muda = function(v){ setContadas({total: v==="" ? "" : Math.max(0, parseInt(v, 10)||0)}); };
     return e("div",{className:"flex flex-col gap-2.5"},
@@ -72,7 +73,8 @@ function ConfPecas(p){
   // 2) começar a bipar
   if(!conf.ini) return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-2 text-center text-[13px] font-bold text-[#161616]"},"✓ Kit liberado"), resumo,
-    e("button",{onClick:function(){ d({type:"CONF_INICIAR", kitId:k.id}); }, className:BTN},"Começar a bipar"));
+    e("button",{onClick:function(){ d({type:"CONF_INICIAR", kitId:k.id}); }, className:BTN},"Começar a bipar com a câmera"),
+    e("button",{onClick:function(){ setSoContagem(true); }, className:"h-12 w-full rounded-2xl bg-[#3F3F46] text-[14px] font-bold txt-branco"},"Conferir só por contagem"));
   // 4) resultado
   if(conf.fim){ var r = conf.resultado; return e("div",{className:"flex flex-col gap-2.5"},
     r.erros===0 ? e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#DCFCE7] px-3 py-2.5"}, e("b",{className:"text-[13px] text-[#15803D]"},"Conferência concluída: "+r.lidas+" de "+r.esperadas+" peças, sem faltas."), r.nSobras>0 && e("span",{className:"text-[12px] text-[#92400E]"}, r.porQuantidade ? "Sobraram "+r.nSobras+" peça(s) no total." : "Peça(s) de outro kit (ficaram com a revendedora, só registrado): "+r.sobras.map(function(x){ return x.codigo; }).join(", ")))

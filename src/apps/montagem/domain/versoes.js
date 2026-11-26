@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.241", data:"2026-11-26", titulo:"App da representante: Próximo Kit Liberado, vendas pelo bip, links de pagamento e maleta", itens:[
+  {tipo:"melhoria", area:"App da representante · Calculadora de acertos", txt:"O bloco Kit novo do acerto virou Próximo Kit Liberado: embaixo só o botão; ao tocar abre a confirmação das condicionais e um alerta para contar as peças e assinar."},
+  {tipo:"melhoria", area:"App da representante · Conferir as peças", txt:"Novo botão Conferir só por contagem, ao lado da câmera. A assinatura continua no app."},
+  {tipo:"melhoria", area:"App da representante · Vendas e pagamentos", txt:"O valor vendido da bipagem (Peças que voltaram) preenche Valor vendido sozinho; comissão e valor a pagar saem dele."},
+  {tipo:"correção", area:"App da representante · Pagamentos", txt:"Links de pagamento pagos agora aparecem também quando o nome do e-SiTef é parecido com o da agenda (mesma busca do Atendimento Sorelly)."},
+  {tipo:"melhoria", area:"App da representante · Peças que voltaram", txt:"Alerta para bipar a maleta antes de concluir."},
+  {tipo:"melhoria", area:"App da representante · Calculadora de acertos", txt:"Saiu o bloco Kit apoio bolsinhas (MP0063 é peça comum: o que não voltar conta como vendido). Últimas 4 vendas na ordem: mais antiga em cima, depois penúltima, última e Venda de hoje em azul, depois a média."}]},
  {v:"0.21.240", data:"2026-11-26", titulo:"App da representante: sem botão de peças vendidas e brinde com preço automático", itens:[
   {tipo:"melhoria", area:"App representante › Calculadora de acertos › Condicionais", txt:"Saiu o botão Peças vendidas (anotar na mão). O total de vendidas vem do bip das peças que voltaram; sem bipar, Peças a devolver fica pendente."},
   {tipo:"melhoria", area:"App representante › Calculadora de acertos › Brindes", txt:"Ao digitar o código da peça, o preço de venda vem sozinho da DevMaster. Sem preço ou sem ligação, a representante digita o valor."}

@@ -128,6 +128,8 @@ function ConfDevolucao(p){
                 abre && e("span",{className:"pl-7 pt-0.5 text-[13px] text-[#374151]"}, descBonita(i.desc))); })); })); }),
     (conf.erros||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#FEF3C7] px-3 py-2"},
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças que não são destas condicionais ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),
+    e("div",{key:"maleta", role:"alert", className:"flex flex-col gap-0.5 rounded-xl bg-[#FEF3C7] px-3 py-2 text-[13px] text-[#92400E]"},   // 26/11/2026 (Marcus): a maleta também precisa bipar; no fim da bipagem só um alerta
+      e("b",null,"⚠ Bipe também a maleta"), e("span",null,"Antes de concluir, bipe a maleta que está com a revendedora.")),
     e("button",{onClick:function(){ p.aoSalvar({lidos:conf.lidos||{}, erros:conf.erros||[], hist:conf.hist||[], ultimo:null, resumo:{voltaram:voltaram, saiu:tot.pecas, vendidas:vendidas, valorVendido:Math.round(valorVendido*100)/100, conds:conds.map(function(c){ return c.numero; }), em:Date.now()}}); p.aoVoltar(); }, className:BTN},"Concluir e voltar ao acerto"));
 }
 

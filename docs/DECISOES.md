@@ -3748,3 +3748,9 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Saiu o botão Peças vendidas da etapa Condicionais (anotar na mão). Agora o total de vendidas = peças das condicionais marcadas − peças bipadas que voltaram, gravado ao tocar em Concluir e voltar ao acerto (`mobile/representante.js`, `mobile/conf-devolucao.js`).
 - O valor inicial de vendidas deixou de ser 40: fica vazio até bipar. Sem bipar, Peças a devolver mostra "—" e a etapa Devolução fica pendente.
 - Brindes: ao digitar um código de peça válido, o preço de venda vem da DevMaster pela rota `/api/precos-pecas` (só leitura, nunca devolve custo). Sem preço ou sem ligação, o campo Valor da peça fica livre para digitar.
+
+## 26/11/2026 — App da representante: Próximo Kit Liberado, vendas pelo bip, links e maleta (Marcus)
+- "Kit novo" no acerto passou a se chamar **Próximo Kit Liberado**. Embaixo só o botão; ao tocar, confirma as condicionais em aberto e mostra o alerta de contar as peças e assinar. Conferência pela câmera OU botão "Conferir só por contagem"; a revendedora assina no app (depois liga ao DocuSign).
+- O valor vendido da bipagem preenche "Valor vendido" em Vendas e pagamentos (editável); comissão e valor a pagar saem dele.
+- Links de pagamento pagos e confirmados já aparecem nos pagamentos; a busca agora aceita nome parecido (e-SiTef x agenda). Link pago hoje só vale no próximo acerto (regra mantida).
+- Kit apoio bolsinhas (MP0063) é peça comum: bloco saiu; o que não voltar conta como vendido. Alerta para bipar a maleta no fim da bipagem. Últimas 4 vendas: mais antiga em cima, depois penúltima, última, venda de hoje e média.

@@ -3,7 +3,7 @@
 //  · TelaLinksRev: app da REVENDEDORA — botão "Solicitar link" (valor + parcelas) e "Meus links" com o andamento de cada pedido.
 //  · LinksDoAcerto: app da REPRESENTANTE — mostra os links PAGOS da revendedora (botão "Usar como pagamento" lança a linha no acerto) e avisa dos cancelados/com erro.
 // Dados reais ficam no estado s.lp (nunca neste arquivo). Estilo do app: cartões brancos, cores sólidas, sem degradê.
-import { BANDEIRAS, agoraSP, hojeSP, formatarDia, formatarDataHora, formatarReais, linksDaRevendedora, linksParaAcerto, meioDe, nomeMeio, parcelasPermitidas, situacaoParaRevendedora, textoFaixas, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
+import { BANDEIRAS, agoraSP, hojeSP, formatarDia, formatarDataHora, formatarReais, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, meioDe, nomeMeio, parcelasPermitidas, situacaoParaRevendedora, textoFaixas, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { listagemDe } from "@/apps/montagem/domain/regras";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
@@ -91,7 +91,7 @@ function TelaLinksRev(p){
 // formasLink = descrições da forma "link" (ex.: "LINK - SICREDI - SERENITY - 59"); onUsar(linha) acrescenta o pagamento ao acerto.
 function LinksDoAcerto(p){
   var s = use().state, lp = s.lp; if(!lp) return null;
-  var info = linksParaAcerto(s, p.rev), jaNoAcerto = {}; (p.pagamentos || []).forEach(function(x){ if(x.linkSolId) jaNoAcerto[x.linkSolId] = 1; });
+  var info = linksParaAcertoPorNome(s, p.rev), jaNoAcerto = {}; (p.pagamentos || []).forEach(function(x){ if(x.linkSolId) jaNoAcerto[x.linkSolId] = 1; });
   var pagos = info.pagos.filter(function(x){ return !jaNoAcerto[x.sol.id]; });
   if(!pagos.length && !info.avisos.length && !info.aguardando.length) return null;
   var contaDe = function(sol){

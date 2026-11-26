@@ -123,6 +123,7 @@ function AppRepresentante(p){
   var cx = use(), s = cx.state, d = cx.dispatch, l = p.l;
   var chatSt = useChat(), chatCid = contatoDaRepresentante(l.rep), chatNaoLidas = chatCid && chatSt.config.representantes ? totalNaoLidas(chatCid) : 0;
   var tb = useState("inicio"), tela = tb[0], setTela = tb[1];
+  var kab = useState(false), kitAbertoConf = kab[0], setKitAbertoConf = kab[1];   // 26/11/2026 (Marcus): "Próximo Kit Liberado" fecha; ao tocar abre a confirmação das condicionais
   var cvv = useState("calcacerto"), confVolta = cvv[0], setConfVolta = cvv[1];   // para onde a conferência das peças volta (entrega do kit novo ou acerto)
   var ms = useState(0), mes = ms[0], setMes = ms[1];
   var bs = useState(""), busca = bs[0], setBusca = bs[1];
@@ -346,7 +347,7 @@ function AppRepresentante(p){
   }, [kitSel && kitSel.id, codDm]);
   // Depois de registrado, o acerto deste kit NÃO conta como dívida anterior (senão o pendente é contado duas vezes e a mensagem de fechamento sai errada)
   var regDoKit = kitSel ? (s.acertosConsignado||[]).find(function(r0){ return r0.kitId===kitSel.id && r0.tipo==="acerto"; }) : null;
-  var dv = derivarAcerto({finalizado:!!jaAcertado, versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
+  var dv = derivarAcerto({finalizado:!!jaAcertado, versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:vezAtual, form:Object.assign({}, acertoForm, {kitApoio:null}), condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
   var apoioDisp = condicionaisRev.filter(function(c){ return (acertoForm.condicionaisSelecionadas||[]).indexOf(c.numero)>=0; }).reduce(function(t0,c){ return t0+(c.apoioQtd||0); }, 0);   // kit apoio (MP0063) que veio nas condicionais deste acerto
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
@@ -694,15 +695,7 @@ function AppRepresentante(p){
             e("span",{className:"text-[13px] font-semibold"}, "Ajuste na venda"),
             e("b",{className:MONO+" text-[13px] text-amber-200"}, sinalT(dv.trocasAjuste)))];
       })()),
-    (apoioDisp>0 || dv.kitApoio.qtd>0) && blocoAcordeao(9, "presente", "#CA8A04", "Kit apoio bolsinhas",
-      apoioDisp>0 ? "Veio "+apoioDisp+(apoioDisp===1 ? " kit" : " kits")+" na condicional · marque os vendidos" : dv.kitApoio.qtd+(dv.kitApoio.qtd===1 ? " kit vendido" : " kits vendidos"),
-      (acertoForm.kitApoio && (acertoForm.kitApoio.marcado || acertoForm.kitApoio.qtd>0)) ? checkOk : badgeTxt("Marcar","#D97706"),
-      [e("p",{key:"ka0", className:"text-[12px] text-amber-200"}, KIT_APOIO.codigo+" · "+KIT_APOIO.nome+" · "+BK(KIT_APOIO.valorUnit)+" cada · sem comissão. Pacote aberto conta como vendido."),   // vem da condicional (Marcus, 24/11/2026): a representante marca o que voltou sem extravio e o que foi vendido
-        e("div",{key:"ka1", className:"flex items-center gap-2"},
-          e("select",{value:(acertoForm.kitApoio && acertoForm.kitApoio.marcado) || dv.kitApoio.qtd>0 ? dv.kitApoio.qtd : "", "aria-label":"Kits de apoio vendidos", onChange:function(ev){ if(ev.target.value==="") return; setAcertoForm(Object.assign({}, acertoForm, {kitApoio:{qtd:Number(ev.target.value), marcado:true}})); }, className:"h-8 min-w-0 flex-1 rounded-lg bg-white px-2 text-[13px] font-semibold text-[#111827] outline-none"},
-            [e("option",{key:"x", value:""}, "Marcar vendidos")].concat(Array.from({length:Math.max(apoioDisp, dv.kitApoio.qtd)+1}, function(_, n){ return e("option",{key:n, value:n}, n===0 ? "Nenhum vendido (todos voltaram)" : n+(n===1 ? " vendido" : " vendidos")); }))),
-          e("b",{className:MONO+" shrink-0 text-[13px] text-amber-200"}, "+ "+BK(dv.kitApoio.valor))),
-        apoioDisp>0 && acertoForm.kitApoio && acertoForm.kitApoio.marcado && e("p",{key:"ka2", className:"text-[12px] text-amber-200"}, "Voltaram sem extravio: "+Math.max(0, apoioDisp-dv.kitApoio.qtd)+" · vendidos: "+dv.kitApoio.qtd)]),
+    // 26/11/2026 (Marcus): saiu o bloco Kit apoio bolsinhas. O MP0063 é peça como qualquer outra: vai no bip, e o que não voltar já conta como vendido.
     blocoAcordeao(3, "grafico", "#2563EB", "Vendas e pagamentos",
       !previaBase ? "Preencha o valor vendido" : quitado ? BK(acertoForm.vendaBruta)+" · quitado" : BK(acertoForm.vendaBruta)+" · restante "+BK(restanteTotal),
       !previaBase ? badgeTxt("Pendente","#64748B") : quitado ? checkOk : acertoForm.recusouNegociar || acordoValido ? checkOk : badgeTxt("","#64748B"),
@@ -891,34 +884,36 @@ function AppRepresentante(p){
               e("p",null,"• O brinde só é entregue depois do pagamento e precisa ser retirado com a representante, NA HORA DO ACERTO."),
               e("p",null,"• Qualquer peça que não estiver na hora do acerto é considerada VENDIDA, mesmo que a revendedora diga que pegou de brinde."),
               e("p",null,"• Quem ficar com kit novo pode pegar o brinde do kit antigo ou do kit novo; quem sai do programa pega da maleta que está com ela.")))]),
-    blocoAcordeao(5, "novas", "#16A34A", "Kit novo",
+    blocoAcordeao(5, "novas", "#16A34A", "Próximo Kit Liberado",
       !previaBase || !acertoForm.pagamentos.length ? "Aguardando pagamento" : kitNovoLiberado ? (acertoForm.kitNovoOk ? "Liberado · confirmado" : "Liberado") : "Não liberado",
       !previaBase || !acertoForm.pagamentos.length ? badgeTxt("—","#374151") : badgeTxt(kitNovoLiberado ? (acertoForm.kitNovoOk ? "OK" : "Liberado") : "Não liberado", kitNovoLiberado ? "#CA8A04" : "#64748B"),
       [!previaBase || !acertoForm.pagamentos.length
-        ? e("p",{key:"k0", className:"text-[13px] text-[#8E8E93]"},"Preencha as vendas e os pagamentos para saber se o kit novo está liberado.")
+        ? e("p",{key:"k0", className:"text-[13px] text-[#8E8E93]"},"Preencha as vendas e os pagamentos para saber se o próximo kit está liberado.")
         : e("p",{key:"k1", className:"text-[13px] font-semibold "+(kitNovoLiberado?"text-amber-200":"text-amber-200")},
             dv.blocoDivida ? dv.blocoDivida
             : dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+" ("+N1(pctPagoAcerto)+"% pago)."
-            : kitNovoLiberado ? "Kit novo liberado — "+N1(pctPagoAcerto)+"% do acerto pago."
-              : previaBase && !previaBase.podeRenovar ? "Kit novo NÃO fornecido — vendas abaixo de "+BK(versaoSel.gerais.minRenovar)+" (mínimo para renovar o Kit 100% Prata). Cobra só as peças vendidas."
-              : "Kit novo não liberado — "+N1(pctPagoAcerto)+"% pago. Precisa de autorização do financeiro (mínimo "+kitNovoMin+"%)."),
+            : kitNovoLiberado ? "Próximo Kit Liberado — "+N1(pctPagoAcerto)+"% do acerto pago."
+              : previaBase && !previaBase.podeRenovar ? "Próximo kit NÃO fornecido — vendas abaixo de "+BK(versaoSel.gerais.minRenovar)+" (mínimo para renovar o Kit 100% Prata). Cobra só as peças vendidas."
+              : "Próximo kit não liberado — "+N1(pctPagoAcerto)+"% pago. Precisa de autorização do financeiro (mínimo "+kitNovoMin+"%)."),
       dv.novas && previaBase && dv.minimo.regra && e("div",{key:"kmed", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
         e("p",{className:"text-[12px] font-semibold text-white"},"Média das últimas 4 vendas"),
-        e("div",{key:"kh", className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,"Venda de hoje"), e("b",{className:MONO+" whitespace-nowrap"}, BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta))),
-        [["Última venda",2],["Penúltima venda",1],["Antepenúltima venda",0]].map(function(r){ var ant = acertoForm.vendasAnteriores||[];   // ordem: hoje, última, penúltima, antepenúltima (Marcus, 24/11/2026)
+        [["Antepenúltima venda",0],["Penúltima venda",1],["Última venda",2]].map(function(r){ var ant = acertoForm.vendasAnteriores||[];   // ordem (Marcus, 26/11/2026): antepenúltima, penúltima, última e a venda de hoje em outra cor; depois a média
           return e("div",{key:"ka"+r[1], className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]"}, e("span",null,r[0]), e("b",{className:MONO+" whitespace-nowrap"}, ant[r[1]]>0 ? BK(ant[r[1]]) : "—")); }),
+        e("div",{key:"kh", className:"flex min-h-8 items-center justify-between gap-2 rounded-lg bg-[#2D5190] px-2 text-[13px] font-bold"}, e("span",null,"Venda de hoje"), e("b",{className:MONO+" whitespace-nowrap"}, BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta))),
         e("div",{className:"flex min-h-8 items-center justify-between gap-2 rounded-lg bg-[#C9A13B]/20 px-2 text-[13px] font-bold"},
           e("span",null,"Média · mínimo "+BK(dv.minimo.ref)),
           e("b",{className:MONO+" whitespace-nowrap text-[15px]"}, BK(dv.minimo.media)))),
-      kitNovoLiberado && previaBase && acertoForm.pagamentos.length>0 && e("div",{key:"kc", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
+      kitNovoLiberado && previaBase && acertoForm.pagamentos.length>0 && !kitAbertoConf && e("button",{key:"kab", onClick:function(){ setKitAbertoConf(true); }, className:"h-11 rounded-xl text-[13.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Próximo Kit Liberado"),
+      kitNovoLiberado && previaBase && acertoForm.pagamentos.length>0 && kitAbertoConf && e("div",{key:"kc", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
         e("p",{className:"text-[12px] font-semibold text-white"},"Condicionais e expositores em aberto — ela continua com:"),
         condAbertasFicam.length+expFicam.length===0 ? e("p",{className:"text-[12.5px] text-[#8E8E93]"},"Nada em aberto: tudo foi conferido neste acerto.")
           : e("div",{className:"flex flex-col gap-1"}, condAbertasFicam.map(function(c){ return e("div",{key:c.numero, className:"flex justify-between rounded-lg bg-black/30 px-2.5 py-1.5 text-[12.5px]"}, e("span",null,"Condicional "+c.numero), e("span",{className:MONO+" text-[#8E8E93]"}, c.pecas+" peças")); }),
               expFicam.map(function(x){ return e("div",{key:x.id, className:"rounded-lg bg-black/30 px-2.5 py-1.5 text-[12.5px]"}, x.qtd+" "+x.nome.toLowerCase()); })),
-        // 1) confirma o kit novo (o que ela leva e o que continua com a revendedora) 2) sai desta tela e vai para a de ENTREGAR o kit e CONFERIR as peças
+        // 26/11/2026 (Marcus): só um alerta para contar as peças do próximo kit e assinar; a conferência é pela câmera ou só por contagem (tela "Conferir as peças")
+        e("p",{key:"kalerta", role:"alert", className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[13px] font-bold text-[#92400E]"}, "⚠ Conte as peças do próximo kit e peça a assinatura da revendedora."),
         ((s.confBip||{})[kitSel.id]||{}).fim
-          ? e("button",{onClick:function(){ setConfVolta("calcacerto"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "✓ Kit novo confirmado e conferido (ver)")
-          : e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {kitNovoOk:true})); setConfVolta("calcacerto"); setTela("confkit"); }, className:"h-11 rounded-xl text-[13.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Confirmar kit novo"))]),
+          ? e("button",{onClick:function(){ setConfVolta("calcacerto"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "✓ Próximo kit confirmado e conferido (ver)")
+          : e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {kitNovoOk:true})); setConfVolta("calcacerto"); setTela("confkit"); }, className:"h-11 rounded-xl text-[13.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Confirmar próximo kit"))]),
     blocoAcordeao(6, "caixa", "#0891B2", "Peças próximo mês",
       dv.pecasProx ? "Liberadas: "+dv.pecasProx.liberadas+" peças" : "Preencha as vendas",
       dv.pecasProx ? checkOk : badgeTxt("","#64748B"),
@@ -970,7 +965,7 @@ function AppRepresentante(p){
     resumo:[["Vendas", BK(acertoForm.vendaBruta)], ["Comissão", previaAcerto.comissaoPct+"%"], ["Valor de Acerto", BK(previaAcerto.valorAcerto), "text-[#A67C12]"],
       ["Pago", BK(totalPagoAtual)], ["Valor restante", restanteTotal>0.009 ? BK(restanteTotal) : "R$ 0,00 · quitado", restanteTotal>0.009 ? "text-[#B91C1C]" : "text-[#15803D]"],
       ["Brindes", brindeBloqueio ? "Sem brinde" : acertoForm.brindes.length+" peça(s) lançada(s)"],
-      ["Kit novo", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
+      ["Próximo kit", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
     onAbrirRegras:function(){ setRegrasDaAssinatura("assinaracerto"); setTela("regrascom"); },
     onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:r.regrasLidas!==false, semAssinatura:r.semAssinatura||null})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
@@ -1455,7 +1450,7 @@ function AppRepresentante(p){
           e("b",{className:"min-w-0 flex-1 text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Peças que voltaram")),
         e("p",{className:"text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfDevolucao,{key:kitSel.id, cod:codDm, numeros:acertoForm.condicionaisSelecionadas, inicial:acertoForm.devolucaoBip||{},
-        aoSalvar:function(dados){ setAcertoForm(function(f){ return Object.assign({}, f, {devolucaoBip:Object.assign({}, f.devolucaoBip||{}, dados)}, dados.resumo ? {pecasVendidas:dados.resumo.vendidas} : {}); }); }, aoVoltar:function(){ setTela("calcacerto"); }}))),
+        aoSalvar:function(dados){ setAcertoForm(function(f){ return Object.assign({}, f, {devolucaoBip:Object.assign({}, f.devolucaoBip||{}, dados)}, dados.resumo ? {pecasVendidas:dados.resumo.vendidas, vendaBruta:dados.resumo.valorVendido} : {}); }); }, aoVoltar:function(){ setTela("calcacerto"); }}))),
     tela==="pedidodata" && sel && e(PedidoDataRep,{key:"pd"+sel.id, s:s, d:d, l:l, rev:sel, onVoltar:function(){ setTela("rev"); }}),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
     tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(""); setTela(volta || "inicio"); }}),
