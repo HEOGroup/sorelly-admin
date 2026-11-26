@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.248", data:"2026-11-26", titulo:"Conta do Nickolas: conferência do banco aceita campos em outra ordem", itens:[
+  {tipo:"correção", area:"Sistema · dados", txt:"Fotos de catálogo e Inadimplência nunca apareciam como confirmados no banco porque o banco devolve os campos em outra ordem. Agora a conferência compara só o conteúdo, e a cópia antiga sai do navegador. Conferido na conta do Nickolas: cópia apagada, nada pendente, sistema abre do banco."}
+ ]},
  {v:"0.21.247", data:"2026-11-26", titulo:"Direcionar: comprovante da representante aparece", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix → Direcionados", txt:"O comprovante que a representante anexa no acerto não aparecia no Direcionar: a tela procurava o pagamento pelo código errado. Agora aparece, e cada linha mostra e confere só o comprovante do seu próprio Pix (a representante pode ter mais de um Pix no mesmo acerto)."}]},
  {v:"0.21.246", data:"2026-11-26", titulo:"Direcionar: Pix para prestador também cai sozinho na conta em aberto", itens:[

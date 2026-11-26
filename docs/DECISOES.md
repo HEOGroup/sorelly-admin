@@ -3774,3 +3774,7 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 ## 26/11/2026 — Karine Teste na conta de representante Sorelly (Marcus, v0.21.244)
 - A cliente fictícia Karine Teste (`domain/acerto-exemplo.js`) é a primeira revendedora da conta de representante cujo nome no app é Sorelly. Ao tocar nela, o acerto abre preenchido (cenário Acerto completo). Na aba Apps o exemplo continua igual.
 - O Marcus autorizou os pedidos de Pix dela irem ao Financeiro de verdade (Nayale e Ana Maria veem pedidos de Karine Teste: são de teste). Telefone e código dela são falsos.
+
+## 26/11/2026 — Conta só no banco: conferência sem ordem dos campos (Nickolas, v0.21.248)
+- `tudoNoBanco()` (`lib/sync-modulos.js`) comparava o texto exato; o banco (jsonb) devolve os campos de `fc.m` e `inad.m` em outra ordem e a cópia nunca saía. Agora compara o conteúdo com os campos em ordem (`mesmaOrdemLivre`).
+- Conferido no navegador embutido com a conta do Nickolas: 7 acertos que estavam só no navegador subiram, a cópia `sorelly_montagem_v9` foi apagada, nada pendente; ao recarregar, o sistema abriu do banco sem criar cópia.

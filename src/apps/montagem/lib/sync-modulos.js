@@ -100,11 +100,14 @@ function soBanco(){ return apiAtiva() && !!token() && CONTAS_SO_BANCO.indexOf(St
 // havia cópia do estado neste navegador ao abrir? (sem cópia, o estado começa do padrão do código e NADA dele pode subir como item "só daqui")
 var TEM_COPIA = (function(){ try { return !!localStorage.getItem("sorelly_montagem_v9"); } catch(x){ return false; } })();
 var VIVO = null;   // o hook de sincronização aberto (mods + estado atual)
+// o banco (jsonb) devolve os campos em outra ordem: igual = mesmo conteúdo, qualquer ordem dos campos
+function canonico(v){ if(Array.isArray(v)) return v.map(canonico); if(v && typeof v==="object"){ var o = {}; Object.keys(v).sort().forEach(function(k){ o[k] = canonico(v[k]); }); return o; } return v; }
+function mesmaOrdemLivre(a, b){ if(a===undefined || b===undefined) return false; try { return JSON.stringify(canonico(JSON.parse(a)))===JSON.stringify(canonico(JSON.parse(b))); } catch(x){ return false; } }
 // true = todos os módulos leram o banco e nada da tela ficou sem enviar; window.__sorellyPendentes lista o que falta (para conferir)
 function tudoNoBanco(){
   var r = VIVO, falta = []; if(!r || !r.s) return false;
   modulosLigados().forEach(function(c){ var m = r.mods[c]; if(!m){ falta.push(c+":sem leitura"); return; } if(m.semAcesso) return; if(!m.pronto || m.enviando || m.bloqueado){ falta.push(c+":"+(m.pronto ? "enviando" : "lendo")); return; }
-    var at = fatia(r.s, c) || {}; Object.keys(at).forEach(function(k){ if(json(at[k])!==m.snaps[k]) falta.push(c+"."+k); }); });
+    var at = fatia(r.s, c) || {}; Object.keys(at).forEach(function(k){ var j = json(at[k]); if(j!==m.snaps[k] && !mesmaOrdemLivre(j, m.snaps[k])) falta.push(c+"."+k); }); });
   try { window.__sorellyPendentes = falta; } catch(x){}
   return !falta.length;
 }
