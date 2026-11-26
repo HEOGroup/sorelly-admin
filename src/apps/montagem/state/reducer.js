@@ -1054,6 +1054,15 @@ function reducer(s, a){
         return Object.assign({}, r, {recebimento:Object.assign({}, r.recebimento, {bip:a.desfazer ? null : {por:a.por, porId:a.porId||null, ts:agora}})});
       })}, a.desfazer ? null : "Retorno bipado por "+a.por));
     }
+    // Diferenças do retorno (Marcus, 26/11/2026): a bipadora registra no card o que achou de diferente (peça, valor, brinde, rifa...). Fica em recebimento.dif; sem regra por enquanto, só registro.
+    case "RETORNO_DIF": {
+      return com(s, {acertosConsignado:(s.acertosConsignado||[]).map(function(r){
+        if(r.id!==a.id) return r;
+        var rcD = r.recebimento || {}, lsD = rcD.dif || [];
+        lsD = a.remover ? lsD.filter(function(x){ return x.id!==a.remover; }) : lsD.concat([Object.assign({id:"DF"+agora}, a.item, {em:new Date(agora).toISOString()})]);
+        return Object.assign({}, r, {recebimento:Object.assign({}, rcD, {dif:lsD})});
+      })}, a.remover ? null : "Diferença registrada");
+    }
     case "AUTORIZ_SET": { var au = Object.assign({}, s.autoriz); au[a.k] = a.ids; return com(s, {autoriz:au}, "Autorização atualizada"); }
     case "BIPA_RETORNO_SET": return com(s, {bipaRetorno:a.ids}, "Quem bipa os retornos foi atualizado");
     // Financeiro dá o OK de uma linha (pagamento "0","1"… ou comissão fixa "k") e diz em que conta o dinheiro entrou (desfazer = ok:false).

@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Retorno do kit na empresa: processo anotado, Consolidado dos representantes)
+- **Marcus:** o Consolidado dos representantes "está ruim"; o principal é o card. O processo tem 4 etapas: **agendamento** (pega o dinheiro, marca "recebi o kit", marca as condicionais que voltaram e a assinatura, deixa o kit separado), **bipadora** (faz o retorno no PDV, confere valores, brindes e códigos, marca as diferenças, gera a condicional do próximo mês, não finaliza a venda), **faturamento** (abre a venda pendente pelo Carregar, confere os bancos, troca a TES dos brindes e fecha a venda) e **financeiro** (pagamentos, na tela Comissões dos representantes).
+- **Regras:** a bipadora vê tudo do acerto no card, com valores; dinheiro que não bate vira alerta; condicional sem assinatura (kit novo ou acerto + kit novo) não paga comissão; condicional que faltou é marcada; só acerto tem venda e vai ao faturamento, reposição e kit novo só guardam as condicionais; os erros de bipagem precisam ser registrados (hoje ninguém faz nada com eles).
+- **Só anotado, nada mudou no sistema.** Documento completo, com o que está em aberto: `docs/setores/representantes/PROCESSO-RETORNO-DO-KIT.md`. O Marcus vai enviar a listagem de erros de bipagem e o relatório das bipadoras.
+
 ## 26/11/2026 (Atendimento Sorelly: pedido sem conta direcionada pode ser todo mudado, Lucas)
 - **Lucas: "elas só conseguem adicionar mais formas de pagamento. Preciso que, se a conta não for direcionada, elas possam mudar toda a solicitação".**
 - **Causa:** o Reabrir voltava o pedido para a fila, mas as linhas do Controle de pagamentos continuavam com a conta escolhida; no reenvio, a linha igual (mesma forma e valor) ficava com a conta antiga e só a linha nova ia para a fila.

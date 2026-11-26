@@ -46,6 +46,7 @@ Agendamento confere dinheiro e condicional ─► Financeiro confirma ─► Com
 | App da representante | `/app-representante` (cartão "Regras e comissões" = manual) |
 | Manual da representante | `materiais-do-app/folder-representantes.html` (origem), `materiais-do-app/Regras & Comissões Representante 02-11.pdf`, `public/regras/rep-1..12.png` |
 | Regiões, horários e viagens | `docs/setores/representantes/Mapa das representantes.md` |
+| Processo do retorno do kit (agendamento → bipadora → faturamento), ler antes de mexer no Consolidado | `docs/setores/representantes/PROCESSO-RETORNO-DO-KIT.md` |
 | Contexto antigo (comissão, Consolidado, placar) | `docs/negocio/CONTEXTO-REPRESENTANTES.md` |
 | Regras de Pix | `docs/negocio/REGRAS-DE-PIX.md` |
 
