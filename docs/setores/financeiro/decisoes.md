@@ -4,6 +4,7 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **Direcionar, comprovante da representante aparece (Lucas, 26/11/2026):** a tela procurava o pagamento pelo código errado; cada linha mostra só o comprovante do seu Pix.
 - **Direcionar, prestador cai sozinho na conta em aberto (Lucas, 26/11/2026):** igual ao fornecedor; lançamento manual vale e nada se duplica.
 - **Cartão pede bandeira e parcelas no Atendimento Sorelly (Lucas, 25/11/2026):** a Maquininha Banho lança completo, sem "A informar".
 - **Maquininha Banho, todo cartão da Pontual entra sozinho (Lucas, 25/11/2026):** inclusive o resolvido pela Maquininha única, sem passar pelo Direcionar; 8 que faltavam foram lançados (lista em `docs/DECISOES.md` de 25/11/2026).

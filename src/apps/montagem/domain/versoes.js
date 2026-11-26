@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.247", data:"2026-11-26", titulo:"Direcionar: comprovante da representante aparece", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar Pix → Direcionados", txt:"O comprovante que a representante anexa no acerto não aparecia no Direcionar: a tela procurava o pagamento pelo código errado. Agora aparece, e cada linha mostra e confere só o comprovante do seu próprio Pix (a representante pode ter mais de um Pix no mesmo acerto)."}]},
  {v:"0.21.246", data:"2026-11-26", titulo:"Direcionar: Pix para prestador também cai sozinho na conta em aberto", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix → Lançamento de pagamentos", txt:"Pix confirmado para um prestador da empresa (ex.: Dávila, produção externa) não era lançado; só fornecedor era. Agora fornecedor e prestador caem sozinhos na conta em aberto, com o comprovante da funcionária ou da representante. Se o mesmo Pix já foi lançado à mão (mesmo fornecedor, mesmo valor, até 5 dias, mesma cliente), vale o manual e nada se duplica."},
   {tipo:"correção", area:"Dados de 26/11/2026", txt:"Lançados na conta da Dávila os 3 Pix que faltavam (Giovana R$ 915,85, Maria Fernanda R$ 204,00 e Lanna R$ 402,00)."}]},

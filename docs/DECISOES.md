@@ -3,6 +3,11 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 26/11/2026 (Direcionar: comprovante da representante aparece, Lucas)
+- **Lucas: "Ana Leticia Ducate, por que não aparece o comprovante anexado pela representante na aba de Direcionar?"**
+- **Causa:** o pedido da representante mora em `LFR_P`+kit (domain/pagamento-rep.js) e a tela procurava `LFR_`+kit; o comprovante estava salvo, mas a tela nunca achava. Valia para todos os Pix de representante.
+- **Decidido:** `lfDe` (pages/DirecionarPix.js) acha `LFR_P`+kit; `pagLinhas` recebe o pedido e, na representante, fica só com o pagamento do mesmo `pid` (comprovante, "tudo com comprovante" e Conferir de uma linha não mexem nos outros Pix do mesmo acerto). Teste com dados reais: 26 dos 47 Pix de representante direcionados passam a mostrar o comprovante.
+
 ## 26/11/2026 (Direcionar: prestador cai sozinho na conta em aberto, Lucas)
 - **Lucas: "independente se é prestador ou fornecedor, preciso que todo o processo seja automático; o que foi lançado manualmente só confirma que está ok; não quero nada duplicado".**
 - **Causa:** o Direcionar só lançava destino FORNECEDOR (`fornDoDestino` ignora prestador). A Dávila (prestador, produção externa) ficava sem lançamento.
