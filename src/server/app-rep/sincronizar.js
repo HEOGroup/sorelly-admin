@@ -205,7 +205,7 @@ async function guardarResultado(r) {
 let rodando = false;
 export async function sincronizarApp() {
   const r = { enviados: 0, retirados: 0, respostas: 0, avisos: 0, erros: [], em: new Date().toISOString() };
-  if (!podeGravar()) { r.erros.push("Sincronização desligada (MOBILE_API_URL, MOBILE_API_KEY e APP_REP_SINCRONIZAR=1). configurado=" + configurado() + ", VERCEL_ENV=" + (process.env.VERCEL_ENV || "vazio")); await guardarResultado(r); return r; }
+  if (!podeGravar()) { r.erros.push("Sincronização desligada (MOBILE_API_URL, MOBILE_API_KEY e APP_REP_SINCRONIZAR=1). configurado=" + configurado() + ", VERCEL_ENV=" + (process.env.VERCEL_ENV || "vazio") + ", NODE_ENV=" + (process.env.NODE_ENV || "vazio") + ", flag=" + (process.env.APP_REP_SINCRONIZAR || "vazio") + ", versao=1033a8c4"); await guardarResultado(r); return r; }
   if (rodando) { r.erros.push("Já está sincronizando."); return r; }
   rodando = true;
   try {
