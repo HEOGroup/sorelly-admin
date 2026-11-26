@@ -112,6 +112,8 @@ function carteiraRep(s, rep, reais){
   var jaHoje = {}; hojeK.forEach(function(k){ jaHoje[semAcento(k.rev)] = 1; });
   var reaisC = (reais||[]).filter(function(it){ return !jaHoje[semAcento(it.nome)]; }).map(function(it){
     var vs = (it.vendas||[]).map(function(v){ return v.v; }), md = vs.length ? vs.reduce(function(t,x){ return t+x; }, 0)/vs.length : 0;
+    // 26/11/2026 (Marcus: Ana Claudia da Lysie mostrava no mês atual a venda do mês anterior): "vendas" são as 3 últimas vendas, não os 3 meses. Os botões atual/anterior/retrasado usam o mês de calendário (vm); sem vm, fica como antes.
+    if(it.vm){ var hj = new Date(); vs = [0,1,2].map(function(i){ var dd = new Date(hj.getFullYear(), hj.getMonth()-i, 1); return it.vm[dd.getFullYear()+"-"+String(dd.getMonth()+1).padStart(2,"0")] || 0; }); }
     return comPedido(comFeito({vendaApp:it.vendaApp||0, id:"R"+it.cod, rev:it.nome, fone:it.celular||"", bairro:it.cidade||"", vendas:vs, cond:Math.round(md/500)*500, hora:null, hoje:false, data:dmISO(String(it.prevDevol||"").slice(0,10)), cod:it.cod})); });
   return hojeK.map(comFeito).concat(reaisC).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
     var ag = (perfis[c.rev]||{}).agendado;
