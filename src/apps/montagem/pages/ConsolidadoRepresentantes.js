@@ -15,11 +15,15 @@ import { GRUPOS_CONTA, grupoDaConta } from "@/apps/montagem/domain/contas-grupos
 import { AGENDAMENTO, BIPADORAS, BIPA_RETORNO_PADRAO, FINANCEIRO, SUPERVISORA, nomeDe, papelDe, podeAgendar, podeBipRetorno, veTotais } from "@/apps/montagem/domain/equipe";
 import { corDaFila, podeBiparRetorno, qtdFila } from "@/apps/montagem/domain/retornos";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
+import { abrirAnexo } from "@/apps/montagem/lib/anexo";
+import { pedeConta, pedidoDe } from "@/apps/montagem/domain/pagamento-rep";
+import { dadosDaConta } from "@/apps/montagem/lib/chave-da-parte";
 import { nomePropio } from "@/apps/montagem/lib/nome-conta";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MoneyInput } from "@/apps/montagem/ui/input";
-import { e, useRef, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
 var r2 = function(n){ return Math.round(n*100)/100; };
@@ -104,79 +108,86 @@ function Diferencas(p){
   var registra = function(){ if(!f.tipo) return;
     p.onDif({tipo:f.tipo, cod:f.cod.trim().toUpperCase(), dir:f.valor>0 ? (f.dir || "mais") : "", valor:f.valor>0 ? f.valor : 0, origem:origem, obs:f.obs.trim(), montou:montou, bipou:bipou, por:p.usuarioNome});
     setF({tipo:"", cod:"", dir:"", valor:0, origem:"", obs:""}); };
-  var campo = function(t, ctl){ return e("div",{className:"grid min-h-6 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 border-b border-white/30 px-2 py-px text-center text-[11px]"}, e("span",null, t), ctl); };
+  var campo = function(t, ctl){ return e("div",{className:PAR}, e("span",{className:PAR_ROT}, t), e("div",{className:"flex items-center px-2"}, ctl)); };
   var opc = function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); };
-  return e(Bloco,{t:"Diferenças · "+lista.length, dir:e("span",{className:lista.length ? "text-destructive" : "text-white"}, lista.length ? "Registradas" : "Nenhuma")},
+  return e(Bloco,{t:"Diferenças"},
+    e(Par,{t:"Registradas", v:lista.length ? String(lista.length) : "Nenhuma", cor:lista.length ? "text-destructive" : ""}),
     e(Par,{t:"Bipou na saída", v:bipou}),
     lista.map(function(x){ var cor = x.dir==="mais" ? "text-success" : x.dir==="menos" ? "text-destructive" : "";
-      return e("div",{key:x.id, title:(x.obs ? x.obs+" · " : "")+"Registrado por "+(x.por || "—")+" em "+new Date(x.em).toLocaleString("pt-BR"), className:"grid min-h-6 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_1.5rem] items-center gap-2 break-words border-b border-white/30 px-2 py-px text-center text-[11px]"},
+      return e("div",{key:x.id, title:(x.obs ? x.obs+" · " : "")+"Registrado por "+(x.por || "—")+" em "+new Date(x.em).toLocaleString("pt-BR"), className:"grid min-h-6 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_1.5rem] items-center gap-2 break-words border-b border-white/30 px-2 text-center text-[11px]"},
         e("span",{className:"font-semibold"}, x.tipo+(x.cod ? " · "+x.cod : "")),
         e("span",{className:"tabular-nums"}, e("b",{className:cor}, x.valor>0 ? (x.dir==="menos" ? "−" : "+")+BK(x.valor)+" · " : ""), x.origem+(x.obs ? " · "+x.obs : "")),
         p.podeBip ? e("button",{type:"button", onClick:function(){ p.onDifTira(x.id); }, "aria-label":"Tirar a diferença "+x.tipo, title:"Tirar", className:"mx-auto grid size-5 place-items-center rounded hover:bg-white/20"}, "×") : e("span",null)); }),
-    p.podeBip && campo("Tipo", e("select",{value:f.tipo, "aria-label":"Tipo da diferença", className:CAMPO, onChange:function(ev){ set("tipo", ev.target.value); }},
+    p.podeBip && campo("Tipo", e("select",{value:f.tipo, "aria-label":"Tipo da diferença", className:CAMPO+" [color-scheme:dark]", onChange:function(ev){ set("tipo", ev.target.value); }},
       e("option",{value:"", className:"bg-[#1f3358]"}, "Escolha o tipo"),
       TIPOS_DIF.map(function(g){ return e("optgroup",{key:g[0], label:g[0], className:"bg-[#1f3358]"}, g[2].map(function(t){ return e("option",{key:t, value:t, className:"bg-[#1f3358]"}, t); })); }))),
     p.podeBip && f.tipo && campo("Código da peça", e("input",{value:f.cod, placeholder:"Ex.: CL2419", "aria-label":"Código da peça", className:CAMPO, onChange:function(ev){ set("cod", ev.target.value); }})),
-    p.podeBip && f.tipo && campo("Valor", e("div",{className:"grid grid-cols-[6rem_1fr] gap-1"},
+    p.podeBip && f.tipo && campo("Valor", e("div",{className:"grid w-full grid-cols-[6rem_1fr] gap-1"},
       e("select",{value:f.dir, "aria-label":"Direção do valor", className:CAMPO, onChange:function(ev){ set("dir", ev.target.value); }}, DIRS_DIF.map(opc)),
       e(MoneyInput,{value:f.valor, label:"Valor da diferença", className:"w-full h-[22px]! px-1! text-center! text-[11px]! bg-white/10! border-white/40!", onChange:function(v){ set("valor", v); }}))),
     p.podeBip && f.tipo && campo("Origem", e("select",{value:origem, "aria-label":"Origem da diferença", className:CAMPO, onChange:function(ev){ set("origem", ev.target.value); }}, ORIGENS_DIF.map(function(o){ return opc([o, o]); }))),
     p.podeBip && f.tipo && campo("Observação", e("input",{value:f.obs, placeholder:"Texto curto", "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set("obs", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") registra(); }})),
-    p.podeBip && f.tipo && e("div",{className:"flex justify-center border-b border-white/30 px-2 py-1"}, e(Botao,{principal:true, onClick:registra}, "Registrar diferença")),
-    !p.podeBip && lista.length===0 && e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, "Nenhuma diferença registrada."));
+    p.podeBip && f.tipo && e("div",{className:LIN}, e(Botao,{principal:true, onClick:registra}, "Registrar diferença")),
+    !p.podeBip && lista.length===0 && e("div",{className:MSG}, "Nenhuma diferença registrada."));
 }
 
 // FICHA DA REVENDEDORA (Marcus, 23/11/2026): o card onde se confere o acerto; as meninas da conferência usam este mesmo card. Três colunas, blocos ligados numa borda azul só:
 // 1) atendimento e conferência | 2) condicionais, dinheiro, pagamentos e retorno | 3) peças, com os brindes normal e BB lado a lado (podem ser muitos), trocas e próximo mês.
 var corTxt = function(c){ return function(){ return c; }; };
-var PAR = "grid min-h-6 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-2 break-words border-b border-white/30 px-2 py-px text-center text-[11px]";   // responsivo: o nome longo quebra dentro da própria célula (Marcus, 26/11/2026)
-function Par(p){ var g = p.grande ? " [&&]:!text-[14px]" : ""; return e("div",{className:PAR+g}, e("span",null, p.t), e("b",{className:"tabular-nums "+(p.cor||"")+g}, p.v)); }   // padrao-ok: grande = nomes em 14 px (Marcus 26/11/2026)
+// ESTILO DA FICHA (Marcus, 26/11/2026: "precisão milimétrica no alinhamento das tabelas"). UM LUGAR SÓ para mexer no visual da ficha.
+// Regras: (1) toda linha tem a mesma altura (min-h-6, que a FICHA_FINA transforma em 20 px) e uma borda de baixo de 1 px; (2) NADA quebra de linha dentro da célula;
+// (3) a barra azul do título não tem borda de cima: a borda de baixo da linha anterior já é a linha, e assim as linhas horizontais caem na mesma altura nas colunas vizinhas;
+// (4) botão e campo ficam em células sem folga vertical, para a linha não passar de 20 px.
+var LINHA = "min-h-6 border-b border-white/30 text-center text-[11px]";                                     // altura e borda de toda linha
+var CEL = "flex items-center justify-center whitespace-nowrap px-2";                                         // célula: uma linha só, centralizada
+var CAB = "bg-[#1f3358] font-bold";                                                                          // cabeçalho de tabela
+var PAR = "grid grid-cols-[minmax(min-content,1fr)_var(--vcol,60%)] items-stretch "+LINHA;                    // linha nome | valor (a 2ª coluna é --vcol; sem ela, 60%)
+var PAR_ROT = CEL+" border-r border-white/30";                                                               // célula do nome (linha vertical à direita)
+var PAR_VAL = CEL;                                                                                           // célula do valor
+var LIN = "flex items-center justify-center gap-2 px-2 "+LINHA;                                              // linha inteira com um texto ou um botão
+var MSG = "flex items-center justify-center px-2 py-px "+LINHA;                                              // mensagem de uma linha (texto livre pode quebrar)
+var SUB = "flex items-center justify-center bg-[#19263d] font-bold "+LINHA;                                  // sub-barra dentro de um bloco
+// Coluna 1: as três últimas colunas do pagamento (DevMaster, Valor, Comprovante) e a coluna do valor das linhas Par têm a MESMA largura (22 rem; o nome da DevMaster mais comprido, "Pix - Santander - Anamaria", pede 9,5 rem): a linha vertical do meio é uma só, do topo ao fim.
+var VCOL = "[--c-dm:9.5rem] [--c-vl:6rem] [--c-cp:7.5rem] [--vcol:23rem]";
+var COLS_PAG = "minmax(min-content,1fr) var(--c-dm) var(--c-vl) var(--c-cp)";
+var COLS_BRINDE = "4rem minmax(4.4rem,1fr) 3.4rem 4.6rem";   // Conferência | Código da peça | Origem | Valor. CAUSA das linhas quebradas: cabeçalho, corpo, área vazia e rodapé são grades separadas e "minmax(min-content,1fr)" dava larguras diferentes em cada uma; agora só medidas que não dependem do conteúdo, então as 4 grades têm as mesmas colunas (e o rodapé "Sem diferença" cabe)
+var COLS_COND = "minmax(min-content,1fr) 6rem 11rem";                                                       // Número | Qtd. de peças | Conferência (condicionais)
+var COLS_CONF = "4.75rem minmax(min-content,1fr)";                                                           // Conferência | Código da peça (peças do próximo mês)
+// abre o comprovante do pagamento (data URL ou chave de anexo) em outra aba
+function abreComp(u){ var c = typeof u==="string" && u.indexOf("an_")===0 ? abrirAnexo(u) : fetch(u).then(function(b){ return b.blob(); }).then(function(blob){ var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }); return c.catch(function(){}); }
+// tabela da ficha: cabeçalho + linhas; as colunas vêm em "cols" (modelo CSS) e todas as células seguem o mesmo padrão (altura, borda, uma linha só). A última coluna não tem linha vertical.
+function GradeFicha(p){
+  var n = p.cab.length, k = 0;
+  var cel = function(c, j, cab){ return e("div",{key:k++, className:(p.junto ? CEL.replace("px-2", "px-1") : CEL)+" min-h-6 border-b border-white/30 text-center text-[11px]"+(j<n-1 ? " border-r" : "")+(cab ? " "+CAB : "")}, c); };
+  return e("div",{className:"grid", style:{gridTemplateColumns:p.cols}},
+    p.cab.map(function(h, j){ return cel(h, j, true); }),
+    p.linhas.map(function(ln){ return ln.map(function(c, j){ return cel(c, j, false); }); }));
+}
+function Par(p){ var g = p.grande ? " [&&]:!text-[12px]" : ""; return e("div",{className:PAR+g}, e("span",{className:PAR_ROT}, p.t), e("b",{className:"tabular-nums "+PAR_VAL+(p.grande ? " whitespace-nowrap" : "")+" "+(p.cor||"")}, p.v)); }   // padrao-ok: grande = nomes em 14 px (Marcus 26/11/2026); nome de pessoa nunca quebra a linha
 function FichaConferencia(p){
   var l = p.l, r = l.r, rec = l.rec, nums = numsCond(l), ce = condEstado(l), agenda = p.agenda, vc = p.vc;
-  var vs = useState(""), v = vs[0], setV = vs[1], cs = useState(null), contado = cs[0], setContado = cs[1];
+  var vs = useState(""), v = vs[0], setV = vs[1], as = useState(false), abre = as[0], setAbre = as[1];
   var din = l.din, diverge = din.ok && din.contado!=null && Math.abs(din.contado-l.dinTot)>0.009, ok = !!rec.ok, rodando = !!rec.inicioTs && !ok;
   var grava = function(lista, ass){ var todas = lista.length>0 && lista.every(function(n){ return ass[n]===true; });
     p.onSet({condNums:lista, condAss:ass, prom:todas ? {ok:true, em:new Date().toISOString(), por:p.usuario} : {ok:false}}); };
   var assAtual = function(){ var o = {}; nums.forEach(function(n){ var a = assinadaDe(rec, n); if(a!==undefined) o[n] = a; }); return o; };
-  var adiciona = function(){ var n = v.trim(); setV(""); if(!n || nums.indexOf(n)>=0) return; grava(nums.concat([n]), assAtual()); };
+  var adiciona = function(){ var n = v.trim(); setV(""); setAbre(false); if(!n || nums.indexOf(n)>=0) return; grava(nums.concat([n]), assAtual()); };
   var define = function(n, val){ var o = assAtual(); if(val==="") delete o[n]; else o[n] = val==="sim"; grava(nums, o); };
   var tira = function(n){ var o = assAtual(); delete o[n]; grava(nums.filter(function(x){ return x!==n; }), o); };
   var pecasDe = function(n){ var x = (r.condicionaisPecas||[]).filter(function(y){ return y.numero===n; })[0]; return x ? x.pecas : 0; };
   var multa = vc ? partesMulta(r, l.ac ? ((r.descontoRemarcacao||{}).comissaoPct||0)+(r.atrasoPct||0) : 0, l.falta) : [];
-  var dinTxt = l.dinTot<=0 ? "Sem dinheiro" : !din.ok ? "Falta receber" : diverge ? "Divergente" : l.repDinOk ? "Recebido" : "Aguarda representante";
-  var retTxt = !rec.ok ? "Aguarda recebimento" : rec.bip ? "Bipado por "+nome(rec.bip.por)+" · "+hm(rec.bip.ts) : "Falta bipar";
-  var item = function(t, feito, txt){ return e("div",{key:t, className:PAR}, e("span",null, t), e("b",{className:feito ? "text-success" : "text-white"}, (feito ? "✓ " : "")+txt)); };
-  // INFORMADO PELA REPRESENTANTE (Marcus, 26/11/2026: "tudo que é registrado no admin da representante precisa aparecer aí"): tudo que o app grava no atendimento e ainda não tinha lugar na ficha
-  var linhasInfo = [], pI = function(tt, v, cor){ if(v===null || v===undefined || v==="" || v===false) return; linhasInfo.push(e(Par,{key:tt, t:tt, v:v, cor:cor})); };
-  if(l.ac){
-    if(vc){ pI("Venda bruta", BK(r.vendaBruta||0)); if(r.vendaDigitada && Math.abs((r.vendaDigitada||0)-(r.vendaBruta||0))>0.009) pI("Venda digitada", BK(r.vendaDigitada)); }
-    pI("Motivo da venda baixa", r.motivoVendaBaixa); if(vc && r.garantia>0) pI("Garantia", BK(r.garantia)); if(r.tagsDanificadas>0) pI("Etiquetas danificadas", r.tagsDanificadas+(vc && r.tagsValor>0 ? " · "+BK(r.tagsValor) : ""), "text-destructive");
-    if(vc && r.brindeNormal>0) pI("Brinde normal", BK(r.brindeNormal)); if(vc && r.brindeSelect>0) pI("Brinde BB", BK(r.brindeSelect));
-    if(vc && r.abatidoDivida>0) pI("Abatido da dívida", BK(r.abatidoDivida), "text-success"); if(r.recusouNegociar) pI("Negociação", "Recusou negociar", "text-destructive");
-    if(r.acordo && r.acordo.length>0) pI("Acordo", r.acordo.length+(r.acordo.length===1 ? " parcela" : " parcelas")+(vc ? " · "+BK(r.acordo.reduce(function(t2, x){ return t2+(x.valor||0); }, 0)) : ""));
-    if((r.creditosGarantiaUsados||[]).length>0) pI("Crédito de garantia", r.creditosGarantiaUsados.length+(r.creditosGarantiaUsados.length===1 ? " usado" : " usados"), "text-success");
-    if(r.pecasProxLiberadas>0) pI("Peças do próximo mês liberadas", r.pecasProxLiberadas);
-    pI("Kit novo no acerto", r.kitNovoOk ? "Representante confirmou" : null, "text-success");
-  } else {
-    var cfA = r.conferencia; if(cfA){ pI("Peças esperadas", cfA.esperadas); pI("Peças contadas", cfA.contadas); if(cfA.faltas>0) pI("Faltaram", cfA.faltas, "text-destructive"); if(cfA.sobras>0) pI("Sobraram", cfA.sobras, "text-destructive"); }
-    else if(r.pecasTotal!=null){ pI("Peças do kit", r.pecasTotal); if(r.pecasFaltaram>0) pI("Faltaram", r.pecasFaltaram, "text-destructive"); }
-    pI("Observação da divergência", r.obsDivergencia || (cfA && cfA.nota)); if(r.expositorFoto) pI("Foto do expositor", "Enviada", "text-success"); if(r.semCelular) pI("Revendedora", "Sem celular");
-  }
-  pI("Assinatura no app", r.assinatura ? "Assinou" : "Sem assinatura", r.assinatura ? "text-success" : "text-destructive"); pI("Regras lidas", r.regrasLidas ? "Sim" : null, "text-success");
-  var blocoInfo = e(Bloco,{key:"info", t:"Informado pela representante"}, linhasInfo,
-    e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, r.obs ? "Observação: "+r.obs : "Sem observação da representante."));
   var kitA = kitDe(p.kits, r), montouKit = kitA && kitA.montId!=null ? nomeDe(kitA.montId) : "Sem registro";
+  // COLUNA 1 (Marcus, 26/11/2026): botão da conferência no topo; Informações (revendedora, representante, montagem, status, datas); Acerto (venda, comissão, valor do acerto); Pagamento
+  var recebidoTxt = rec.fimTs ? hmd(rec.fimTs)+" "+hm(rec.fimTs) : "Ainda não recebido";
   var colA = e("div",{key:"a", className:"flex flex-col"},
-    e(Bloco,{t:"Atendimento"},
-      e(Par,{t:"Representante", v:nome(r.rep)||"—", grande:true}), e(Par,{t:"Revendedora", v:nome(r.rev), grande:true}), e(Par,{t:"Montou o kit", v:montouKit})),   // nomes em letra maior, no lugar das duas linhas do topo, mantendo a tabela (Marcus, 26/11/2026)
-    e(Bloco,{t:"Acerto"},
-      e(Par,{t:"Status", v:l.status, cor:corStatus(l.status)}), e(Par,{t:"Acerto", v:fmtData(r.data)+(r.hora ? " "+r.hora : "")}),
-      vc && l.ac && e(Par,{t:"Vendas", v:BK(r.vendaLiquida||0)}), vc && l.ac && e(Par,{t:"Comissão", v:r.comissaoPct+"%"}), vc && l.ac && e(Par,{t:"Valor do acerto", v:BK(r.valorAcerto||0)}),
-      vc && l.ac && r.excedenteBrinde>0 && e(Par,{t:"Brinde a mais", v:BK(r.excedenteBrinde), cor:"text-destructive"}), vc && l.tx.taxa>0 && e(Par,{t:"Taxa", v:BK(l.tx.taxa)+(l.tx.paga ? " · paga" : " · não paga"), cor:l.tx.paga ? "text-success" : "text-destructive"})));
-  var blocoMulta = multa.length>0 && e(Bloco,{key:"mu", t:"Multas e prazo"}, multa.map(function(m, i){ return e("div",{key:i, title:m.d, className:PAR}, e("span",null, m.l), e("b",{className:"tabular-nums "+m.c}, m.v)); }));
+    e(Bloco,{t:"Informações"},
+      e(Par,{t:"Revendedora", v:nome(r.rev), grande:true}), e(Par,{t:"Representante", v:nome(r.rep)||"—", grande:true}), e(Par,{t:"Montou o kit", v:montouKit}),
+      e(Par,{t:"Status do atendimento", v:l.status, cor:corStatus(l.status)}), e(Par,{t:"Data da venda", v:fmtData(r.data)+(r.hora ? " "+r.hora : "")}), e(Par,{t:"Recebido na empresa", v:recebidoTxt, cor:rec.fimTs ? "" : "text-white"})),
+    vc && l.ac && e(Bloco,{t:"Acerto"},
+      e(Par,{t:"Valor de venda", v:BK(r.vendaLiquida||0)}), e(Par,{t:"Comissão", v:r.comissaoPct+"%"}), e(Par,{t:"Valor do acerto", v:BK(r.valorAcerto||0), cor:"font-semibold"})));
+  var blocoMulta = multa.length>0 && e(Bloco,{key:"mu", t:"Multas e prazo"}, multa.map(function(m, i){ return e("div",{key:i, title:m.d, className:PAR}, e("span",{className:PAR_ROT}, m.l), e("b",{className:"tabular-nums "+PAR_VAL+" "+m.c}, m.v)); }));
   // SITUAÇÃO DO PAGAMENTO (Marcus, 26/11/2026): em palavras, o que a revendedora pagou, o que falta e o que a regra manda fazer (multa, prazo, kit bloqueado, parcelas, jurídico)
   var NR = r.regrasNovas || null, pzS = vc && l.ac && l.falta>0.009 ? prazoPendente(r, isoDia(new Date())) : null, nadaPago = l.pago<=0.009, pctPago = l.devido>0 ? Math.round(l.pago/l.devido*100) : 0;
-  var sitDir = l.falta<=0.009 ? "Quitado" : nadaPago ? "Não pagou nada" : "Pagou "+pctPago+"%";
   var linhasSit = [];
   if(l.falta>0.009){
     if(nadaPago) linhasSit.push("A revendedora não pagou nada deste acerto. A representante precisa cobrar e avisar a empresa.");
@@ -190,51 +201,72 @@ function FichaConferencia(p){
     linhasSit.push("Pagou depois? Registre em Inadimplência › Registrar pagamento. O valor quita primeiro a dívida mais antiga.");
     linhasSit.push("Com "+((NR && NR.juridicoDias) || 60)+" dias de atraso perde comissão e brinde e vai ao Jurídico.");
   }
-  var blocoSit = vc && l.ac && e(Bloco,{key:"sit", t:"Situação do pagamento", dir:e("span",{className:l.falta<=0.009 ? "text-success" : "text-destructive"}, sitDir)},
-    e(Par,{t:"Total a pagar", v:BK(l.devido)}), e(Par,{t:"Pagou", v:BK(l.pago)+" · "+pctPago+"%", cor:l.pago>0.009 ? "text-success" : ""}), l.falta>0.009 && e(Par,{t:"Falta pagar", v:BK(l.falta), cor:"text-destructive"}),
+  var pags = r.pagamentos||[];
+  // FORMAS DE PAGAMENTO (Marcus, 26/11/2026): Conta | DevMaster | Valor | Comprovante, uma linha para cada pagamento e nada quebra de linha
+  // DINHEIRO NA TABELA (Marcus, 26/11/2026): a confirmação do recebimento fica na coluna Comprovante da linha Dinheiro; depois de confirmada mostra "Recebido" e o mesmo clique desfaz. As regras de recebimento (p.onDin, p.onDinDesfaz) não mudaram.
+  var primDin = pags.filter(function(x){ return x.forma==="dinheiro"; })[0];
+  var celDin = function(pg){
+    if(pg!==primDin) return "—";
+    if(!din.ok) return agenda ? e(Botao,{principal:true, onClick:function(){ p.onDin(null); }}, "Recebi o dinheiro") : "Falta receber";
+    var txt = diverge ? "Divergente" : "✓ Recebido", cor = diverge ? "text-destructive" : "text-success", tit = (diverge ? "Contado "+BK(din.contado)+" · " : "")+(l.repDinOk ? "Representante confirmou" : "Aguarda a representante");
+    return agenda && !ok ? e("button",{type:"button", onClick:p.onDinDesfaz, title:tit+" · clique para desfazer", className:"whitespace-nowrap font-bold underline "+cor}, txt) : e("span",{title:tit, className:"font-bold "+cor}, txt); };
+  var tabPag = pags.length>0 && e(GradeFicha,{key:"tp", cols:COLS_PAG, cab:["Conta", "DevMaster", "Valor", "Comprovante"], linhas:pags.map(function(pg){
+    var f = FORMA_PALAVRA[pg.forma] || pg.forma, c = pg.descricao ? rotuloConta(pg.descricao, false) : "", conta = c && c.toLowerCase()!==String(f).toLowerCase() ? f+" · "+c : f,
+      dc = pg.descricao ? dadosDaConta(p.estado, pg.descricao) : null, sis = dc && dc.numerario ? dc.numerario : "—";   // DevMaster = o numerário: o que se escreve na DevMaster (Marcus, 26/11/2026: Pix Greice entra no sistema como Pix Marcus Hess)
+    var an = pg.anexo, pedL = pedidoDe(p.estado && p.estado.lancFin, r.kitId), lnh = pedL && (pedL.linhas||[]).filter(function(x){ return x.pid===pg.pid; })[0],
+      cmp = lnh ? (lnh.partes||[]).map(function(q){ return q.comprovante; }).filter(Boolean)[0] : null, u = (an && an.dados) || (cmp && cmp.url) || null,   // comprovante anexado pela representante no admin dela (Marcus, 26/11/2026)
+      cel = pg.forma==="dinheiro" ? celDin(pg) : !pedeConta(pg.forma) ? "—" : u ? e("button",{type:"button", onClick:function(){ abreComp(u); }, className:"font-bold text-success underline"}, "Ver comprovante") : (an || cmp) ? "Anexado" : e("span",{className:"text-destructive"}, "Sem comprovante");
+    return [conta, e("b",null, sis), e("b",{className:"tabular-nums text-success"}, BK(pg.valor||0)), cel]; })});
+  var blocoSit = vc && l.ac && e(Bloco,{key:"sit", t:"Pagamento"},
+    pags.length===0 && e("div",{className:MSG}, "Nenhum pagamento registrado."),
+    tabPag,
+    e("div",{className:PAR},
+      e("span",{className:PAR_ROT+" gap-1"}, "Pagou", e("b",{className:"tabular-nums "+(l.pago>0.009 ? "text-success" : "")}, BK(l.pago)+" · "+pctPago+"%")),
+      e("span",{className:PAR_VAL+" gap-1"}, "Falta pagar", e("b",{className:"tabular-nums "+(l.falta>0.009 ? "text-destructive" : "")}, BK(Math.max(l.falta, 0))))));
+  // prazo e regras da cobrança vão para a coluna do lado (Marcus, 26/11/2026: o bloco 2 termina nas formas de pagamento)
+  var blocoRegras = vc && l.ac && l.falta>0.009 && e(Bloco,{key:"reg", t:"Prazo e cobrança"},
     pzS && e(Par,{t:"Prazo", v:pzS.atraso>0 ? pzS.atraso+" dias de atraso · +"+pzS.pct+"%" : "dia "+pzS.dias+" de "+pzS.prazo, cor:pzS.atraso>0 ? "text-destructive" : ""}),
-    linhasSit.length>0 && e("details",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, e("summary",{className:"cursor-pointer font-semibold"}, "Regras da cobrança"), linhasSit.map(function(x, i){ return e("p",{key:i, className:"py-0.5"}, x); })));
-  var blocoConf = e(Bloco,{t:"Conferência", dir:e("span",{className:ok ? "text-success" : "text-white"}, ok ? "Conferido" : rodando ? "Em andamento" : "Não iniciada")},
-    rec.inicioTs && e(Par,{t:"Início", v:hmd(rec.inicioTs)+" "+hm(rec.inicioTs)}), rec.fimTs && e(Par,{t:"Fim", v:hmd(rec.fimTs)+" "+hm(rec.fimTs)+" · "+tempoEntre(r, rec.fimTs)}), rec.quem && e(Par,{t:"Conferido por", v:rec.quem}),
-    !rec.inicioTs && !ok && e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, "A conferência ainda não começou."),
-    e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{principal:!ok, desabilitado:!agenda, onClick:p.onRelogio}, ok ? "Desfazer conferência" : rodando ? "Terminar conferência" : "Iniciar conferência")));
-  var colB = e("div",{key:"b", className:"flex flex-col"},
-    blocoConf,
-    !(l.repos || r.tipoKit==="saiu") && e(Bloco,{t:"Condicionais · "+nums.length, dir:e("span",{className:l.condOk ? "text-success" : "text-white"}, ce.resumo)},
-      nums.length===0 && e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Nenhuma condicional."),
-      nums.map(function(n){ var a = assinadaDe(rec, n), c = a===true ? "text-success" : a===false ? "text-destructive" : "";
-        return e("div",{key:n, className:"grid min-h-7 grid-cols-[1fr_6rem_1.5rem] items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"},
-          e("b",{className:"tabular-nums "+c}, n+(pecasDe(n)>0 ? " · "+pecasDe(n)+" peças" : "")),
-          agenda ? e("select",{value:a===true ? "sim" : a===false ? "nao" : "", "aria-label":"Assinatura da condicional "+n, className:CAMPO, onChange:function(ev){ define(n, ev.target.value); }}, OPS_ASS.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); })) : e("span",{className:c}, a===true ? "Assinada" : a===false ? "Não assinada" : "A conferir"),
-          agenda ? e("button",{type:"button", onClick:function(){ tira(n); }, "aria-label":"Tirar a condicional "+n, title:"Tirar a condicional "+n, className:"mx-auto grid size-5 place-items-center rounded hover:bg-white/20"}, "×") : e("span",null)); }),
-      agenda && e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-2 border-b border-white/30 px-2 py-1"},
-        e("input",{value:v, placeholder:"Nº da nova condicional", "aria-label":"Número da condicional", className:CAMPO, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") adiciona(); }}),
-        e(Botao,{onClick:adiciona, desabilitado:!v.trim()}, "Adicionar"))));
-  var blocoDin = l.dinTot>0 && e(Bloco,{key:"din", t:"Dinheiro", dir:e("span",{className:din.ok && l.repDinOk && !diverge ? "text-success" : "text-white"}, dinTxt)},
-      e(Par,{t:"Valor lançado", v:BK(l.dinTot), cor:"text-success"}),
-      din.ok && e(Par,{t:"Empresa", v:"✓ Recebido", cor:"text-success"}), din.ok && e(Par,{t:"Representante", v:l.repDinOk ? "✓ Confirmou" : "Aguarda", cor:l.repDinOk ? "text-success" : "text-white"}),
-      diverge && e(Par,{t:"Contado", v:BK(din.contado)+" · falta "+BK(l.dinTot-din.contado), cor:"text-destructive"}),
-      !din.ok && agenda && e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-2 border-b border-white/30 px-2 py-1"},
-        e(MoneyInput,{value:contado==null ? l.dinTot : contado, label:"Dinheiro contado", className:"w-full h-[22px]! px-1! text-center! text-[11px]! bg-white/10! border-white/40!", onChange:setContado}),
-        e(Botao,{principal:true, onClick:function(){ var c2 = contado==null ? l.dinTot : contado; p.onDin(Math.abs(c2-l.dinTot)>0.009 ? c2 : null); }}, "Recebi o dinheiro")),
-      din.ok && agenda && !ok && e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{onClick:p.onDinDesfaz}, "Desfazer")));
-  var blocoPag = vc && (r.pagamentos||[]).length>0 && e(Bloco,{key:"pag", t:"Formas de pagamento · "+(r.pagamentos||[]).length},
-      (r.pagamentos||[]).map(function(pg, i){ var f = FORMA_PALAVRA[pg.forma] || pg.forma, c = pg.descricao ? rotuloConta(pg.descricao, false) : "";
-        return e("div",{key:i, className:PAR}, e("span",null, c && c.toLowerCase()!==String(f).toLowerCase() ? f+" · "+c : f), e("b",{className:"tabular-nums"}, BK(pg.valor||0))); }));
-  var colP = e("div",{key:"p", className:"flex flex-col"}, blocoSit, blocoPag, blocoDin, blocoMulta, !blocoSit && !blocoPag && !blocoDin && e(Bloco,{t:"Pagamento"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Este atendimento não tem pagamento.")));
-  var colR = e("div",{key:"r", className:"flex flex-col"},
-    e(Bloco,{t:"Retorno · bipar", dir:e("span",{className:rec.bip ? "text-success" : "text-white"}, rec.bip ? "Bipado" : !rec.ok ? "Aguarda recebimento" : "Falta bipar")},
-      e("p",{className:"px-2 py-1 text-center text-[11px] "+(rec.bip ? "text-success" : "font-semibold text-white")}, retTxt),
-      rec.ok && p.podeBip && e("div",{className:"flex justify-center px-2 py-1"}, e(Botao,{principal:!rec.bip, onClick:p.onBipar}, rec.bip ? "Desfazer" : "Bipei"))),
-    l.ac && p.podeBip && e(Diferencas,{l:l, kits:p.kits, podeBip:p.podeBip, usuarioNome:p.usuarioNome, onDif:p.onDif, onDifTira:p.onDifTira}));
-  var pm = function(parte){ return e(PecasMini,{parte:parte, l:l, agenda:agenda, receber:p.receber, todos:p.todos, usuario:p.usuario, podeProx:p.podeProx}); };
-  var col = function(k, c){ return e("div",{key:k, className:"flex flex-col"}, c); };
-  var semPecas = e(Bloco,{t:"Peças e brindes"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Este atendimento não tem peças do acerto."));
-  var dois = function(k, a, b){ return e("div",{key:k, className:"flex flex-col"}, a, b); };
-  var vazio = function(k, titulo, msg){ return col(k, e(Bloco,{t:titulo}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, msg))); };
-  // 8 blocos fixos, numerados, 4 em cima e 4 embaixo (Marcus, 26/11/2026). 1 e 2 juntos mostram o acerto e todo o pagamento; os outros ficam como estão até ele melhorar.
-  var celulas = [colA, colP, colB, col("info", blocoInfo), colR, l.ac ? col("c5", pm("pecas")) : col("c5", semPecas), l.ac ? col("c6", pm("prox")) : vazio("c6", "Peças do próximo mês", "Não se aplica."), l.ac ? col("c7", pm("trocas")) : vazio("c7", "Trocas", "Não se aplica.")];
-  var cheias = celulas.map(function(c, i){ return e("div",{key:"n"+i, className:"relative flex flex-col"}, e("span",{className:"absolute left-1 top-0.5 z-10 grid size-4 place-items-center rounded-full bg-white/20 text-[10px] font-bold"}, i+1), c); });
+    linhasSit.length>0 && e("details",null, e("summary",{className:LIN+" cursor-pointer font-semibold"}, "Regras da cobrança"), linhasSit.map(function(x, i){ return e("p",{key:i, className:MSG}, x); })));
+  // CONFERÊNCIA (Marcus, 26/11/2026): só o título na barra azul; o status e o botão ficam na linha logo abaixo
+  var confRec = e(Bloco,{t:"Conferência do recebimento"},
+    e("div",{className:PAR},
+      e("span",{className:PAR_ROT+" font-semibold "+(ok ? "text-success" : "text-white")}, ok ? "Conferido" : rodando ? "Em andamento" : "Não iniciada"),
+      e("div",{className:CEL}, e(Botao,{principal:!ok, desabilitado:!agenda, onClick:p.onRelogio}, ok ? "Desfazer conferência" : rodando ? "Terminar conferência" : "Iniciar conferência"))),
+    rec.inicioTs && e(Par,{t:"Início", v:hmd(rec.inicioTs)+" "+hm(rec.inicioTs)}), rec.fimTs && e(Par,{t:"Fim", v:hmd(rec.fimTs)+" "+hm(rec.fimTs)+" · "+tempoEntre(r, rec.fimTs)}), rec.quem && e(Par,{t:"Conferido por", v:rec.quem}));
+  // CONFERÊNCIA DO ACERTO (Marcus, 26/11/2026): o Retorno · bipar veio para cá; fica travada até terminar a conferência do recebimento
+  var confAc = e(Bloco,{t:"Conferência do acerto"},
+    e("div",{className:PAR},
+      e("span",{className:PAR_ROT+" font-semibold "+(rec.bip ? "text-success" : "text-white")}, !rec.ok ? "Aguarda recebimento" : rec.bip ? "Bipado" : "Falta bipar"),
+      e("div",{className:CEL}, p.podeBip ? e(Botao,{principal:!rec.bip, desabilitado:!rec.ok, onClick:p.onBipar}, rec.bip ? "Desfazer bipagem" : "Bipei") : e("span",null, "—"))),
+    rec.bip && e(Par,{t:"Bipado por", v:nome(rec.bip.por)+" · "+hm(rec.bip.ts)}));
+  var blocoConf = e("div",{key:"conf", className:"grid grid-cols-2 items-stretch gap-[2px] bg-white/50 [--vcol:50%]"}, e("div",{key:"cr", className:"flex min-w-0 flex-col bg-[#0f1729]"}, confRec), e("div",{key:"ca", className:"flex min-w-0 flex-col bg-[#0f1729]"}, confAc));
+  // CONDICIONAIS EM TABELA (Marcus, 26/11/2026): Número | Qtd. de peças | Conferência; o campo de nova condicional só abre depois de conferir as que já existem
+  var todasOk = nums.length===0 || nums.every(function(n){ return assinadaDe(rec, n)===true; });
+  var blocoCond = !(l.repos || r.tipoKit==="saiu") && e(Bloco,{key:"cond", t:"Condicionais"},
+      nums.length===0 ? e("div",{className:MSG}, "Nenhuma condicional.") : e(GradeFicha,{cols:COLS_COND, cab:["Número da condicional", "Qtd. de peças", "Conferência"], linhas:nums.map(function(n){ var a = assinadaDe(rec, n), c = a===true ? "text-success" : a===false ? "text-destructive" : "";
+        return [e("b",{className:"tabular-nums "+c}, n), e("span",{className:"tabular-nums"}, pecasDe(n)>0 ? pecasDe(n) : "—"),
+          agenda ? e("div",{className:"flex w-full items-center gap-1"},
+            e("select",{value:a===true ? "sim" : a===false ? "nao" : "", "aria-label":"Assinatura da condicional "+n, className:CAMPO+" [color-scheme:dark]", onChange:function(ev){ define(n, ev.target.value); }}, OPS_ASS.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); })),
+            e("button",{type:"button", onClick:function(){ tira(n); }, "aria-label":"Tirar a condicional "+n, title:"Tirar a condicional "+n, className:"grid size-4 shrink-0 place-items-center rounded hover:bg-white/20"}, "×")) : e("span",{className:c}, a===true ? "Assinada" : a===false ? "Não assinada" : "A conferir")]; })}),
+      agenda && abre && e("div",{className:PAR},
+        e("div",{className:CEL+" border-r border-white/30"}, e("input",{value:v, placeholder:"Nº da nova condicional", "aria-label":"Número da condicional", className:CAMPO, autoFocus:true, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") adiciona(); }})),
+        e("div",{className:CEL+" gap-1"}, e(Botao,{onClick:adiciona, desabilitado:!v.trim()}, "Adicionar"), e(Botao,{onClick:function(){ setV(""); setAbre(false); }}, "Cancelar"))),
+      agenda && !abre && todasOk && e("div",{className:LIN}, e("button",{type:"button", onClick:function(){ setAbre(true); }, className:"font-semibold text-white/80 underline hover:text-white"}, "+ Adicionar condicional")));
+  var colP = blocoSit || e(Bloco,{key:"pag", t:"Pagamento"}, tabPag || e("div",{className:MSG}, "Este atendimento não tem pagamento."));
+  var pm = function(parte){ return e(PecasMini,{parte:parte, l:l, agenda:agenda, receber:p.receber, todos:p.todos, usuario:p.usuario, podeProx:p.podeProx, podeBip:p.podeBip}); };
+  var col = function(k, c){ return e("div",{key:k, className:"flex flex-1 flex-col"}, c); };   // enche a altura da coluna: lançados e resumo dos brindes ficam fixos embaixo
+  var semPecas = e(Bloco,{t:"Peças e brindes"}, e("div",{className:MSG}, "Este atendimento não tem peças do acerto."));
+  var vazio = function(titulo, msg){ return e(Bloco,{t:titulo}, e("div",{className:MSG}, msg)); };
+  var colR = e("div",{key:"r", className:"flex flex-1 flex-col"},
+    l.ac ? pm("trocas") : vazio("Trocas", "Não se aplica."),
+    l.ac ? pm("prox") : vazio("Peças do próximo mês", "Não se aplica."),
+    l.ac && p.podeBip && e("div",{className:"mt-auto flex flex-col"}, e(Diferencas,{l:l, kits:p.kits, podeBip:p.podeBip, usuarioNome:p.usuarioNome, onDif:p.onDif, onDifTira:p.onDifTira})));
+  // 4 COLUNAS, cada uma da altura toda (Marcus, 26/11/2026; o bloco de dinheiro separado acabou, o dinheiro está no Pagamento):
+  // 1) conferência, informações, acerto, pagamento (com o dinheiro), prazo e cobrança, multas e, no fim, as condicionais (parte do agendamento) | 2) peças do acerto e brindes | 3) retorno e diferenças | 4) peças do próximo mês e trocas
+  var celulas = [e("div",{key:"c1", className:"flex flex-col "+VCOL}, blocoConf, colA, colP, blocoRegras, blocoMulta, blocoCond, l.ac && pm("condnova")),
+    l.ac ? col("c2", pm("pecas")) : col("c2", semPecas),
+    colR];
+  var cheias = celulas.map(function(c, i){ return e("div",{key:"n"+i, className:"relative flex min-w-0 flex-col overflow-x-auto bg-[#0f1729]"}, c); });
   return e(FichaJanela,{t:"Ficha do atendimento", fechar:p.fechar, colunas:cheias});
 }
 
@@ -257,59 +289,76 @@ function partesMulta(r, pct, falta){
 // FICHA no padrão do Consolidado (Marcus, 23/11/2026): UMA borda azul em volta, blocos ligados (barra azul de título e linhas brancas de 30%), tudo centralizado, letra de 11 px.
 var CAMPO = "h-[22px] w-full min-w-0 rounded border border-white/40 bg-white/10 px-1 text-center text-[11px] text-white outline-none placeholder:text-white/70 focus-visible:ring-2 focus-visible:ring-white";
 function Bloco(p){
-  return e("section",{className:"flex flex-col"},
-    e("div",{className:"flex min-h-6 items-center justify-center gap-3 whitespace-nowrap border-y border-white/30 bg-[var(--bloco-titulo)] px-2 text-center text-[11px] font-bold text-white"}, e("span",null,p.t), p.dir),
-    e("div",{className:"flex flex-col"}, p.children));
+  return e("section",{className:"flex flex-col"+(p.cresce ? " flex-1" : "")},
+    e("div",{className:"flex min-h-6 items-center justify-center gap-3 whitespace-nowrap border-b border-white/30 bg-[var(--bloco-titulo)] px-2 text-center text-[11px] font-bold text-white"}, e("span",null,p.t), p.dir),
+    e("div",{className:"flex flex-col"+(p.cresce ? " flex-1" : "")}, p.children));
 }
 function Botao(p){
-  return e("button",{type:"button", onClick:p.onClick, disabled:p.desabilitado, className:"h-[22px] min-w-20 whitespace-nowrap rounded border px-2 text-[11px] font-semibold "+(p.principal ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-white/40 bg-white/10 text-white hover:bg-white/20")+(p.desabilitado ? " opacity-50" : "")}, p.children);
+  return e("button",{type:"button", onClick:p.onClick, disabled:p.desabilitado, className:"h-[22px] min-w-20 whitespace-nowrap rounded border px-2 text-[11px] font-semibold "+((p.cheio ? "w-full " : "")+(p.principal ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-white/40 bg-white/10 text-white hover:bg-white/20"))+(p.desabilitado ? " opacity-50" : "")}, p.children);
 }
 // ficha compacta como Contas a pagar (Marcus, 23/11/2026): letra de 10 px, linhas de 20 px e controles de 18 px; fundo azul-marinho do sistema, nunca preto
-var FICHA_FINA = "[&_*]:!text-[10px] [&_.min-h-6]:!min-h-5 [&_.min-h-7]:!min-h-6 [&_button]:!h-[18px] [&_select]:!h-[18px] [&_input]:!h-[18px] [&_button]:!leading-none";   // padrao-ok: igual à Contas a pagar (10 px, 18 px)
+var FICHA_FINA = "[&_*]:!text-[10px] [&_.min-h-7]:!min-h-6 [&_button]:!h-4 [&_select]:!h-4 [&_input]:!h-4 [&_button]:!leading-none";   // padrao-ok: igual à Contas a pagar (10 px, 18 px)
 function FichaJanela(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-[#0b1530]/85 p-3", onClick:p.fechar},
     e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"max-h-[92vh] w-full max-w-[98vw] overflow-y-auto [&_*]:!normal-case "+FICHA_FINA+" "+PADRAO_BLOCOS},
       e(BlocoPainel,{titulo:p.t, dir:e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-6 place-items-center rounded hover:bg-white/20"}, "×")},
         e("div",{className:"bg-[#0f1729]"},
           p.sub && e("p",{className:"px-2 py-1 text-center text-[11px]"}, p.sub),
-          e("div",{className:"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 [&>*]:border-b [&>*]:border-white/30 lg:[&>*:not(:nth-child(4n))]:border-r"}, p.colunas)))));
+          e("div",{className:"grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-[minmax(36rem,2.2fr)_minmax(33.5rem,1.7fr)_minmax(22rem,1.2fr)] gap-[2px] bg-white/50"}, p.colunas)))));
 }
 function PecasMini(p){
-  var cn = useState(""), numNova = cn[0], setNumNova = cn[1];
+  var cn = useState(""), numNova = cn[0], setNumNova = cn[1], pv = useState({}), precos = pv[0], setPrecos = pv[1];
   var r = p.l.r, rec = p.l.rec, ok = rec.pecasOk || {}, lista = lancadosDe(r);
   var anterior = (p.todos||[]).filter(function(a){ return a.tipo==="acerto" && a.rev===r.rev && a.id!==r.id && (a.data||"")<(r.data||""); }).sort(function(a,b){ return a.data<b.data ? 1 : -1; })[0],
     retiradas = anterior ? lancadosDe(anterior).filter(function(b){ return b.origem==="nova"; }) : [],
     normal = lista.filter(function(b){ return b.cat==="normal"; }), bb = lista.filter(function(b){ return b.cat==="bb"; }), prox = (r.pecasProxCodigos||[]);
-  var marca = function(cod){ if(!p.agenda) return p.receber(r.id, {}); var o = Object.assign({}, ok); o[cod] = !o[cod]; p.receber(r.id, {pecasOk:o}); };
+  // valor de cada peça do próximo mês: preço de venda da DevMaster pelo código (mesma rota da calculadora); sem preço mostra traço
+  var chaveProx = prox.join(",");
+  useEffect(function(){ if(!chaveProx || !apiAtiva()) return; var vivo = true;
+    chamar("GET", "/precos-pecas?codigos="+encodeURIComponent(chaveProx)).then(function(x){ if(vivo && x && x.itens) setPrecos(x.itens); }).catch(function(){});
+    return function(){ vivo = false; }; }, [chaveProx]);
+  var marca = function(cod){ if(!p.podeBip || !(rec.ok)) return; var o = Object.assign({}, ok); o[cod] = !o[cod]; p.receber(r.id, {pecasOk:o}); };
   var salvaNova = function(){ if(numNova) p.receber(r.id, {condNova:{numero:numNova, por:p.usuario, em:new Date().toISOString()}}); };
   var somaDe = function(itens){ return r2(itens.reduce(function(t2,i){ return t2+(i.valor||0); }, 0)); };
-  var linhaPeca = function(i){ var on = !!ok[i.codigo];
-    return e("div",{key:i.codigo, className:"grid min-h-6 grid-cols-[1.25rem_1fr_auto] items-center gap-2 border-b border-white/30 px-2 text-[11px]"},
-      e("button",{type:"button", disabled:!p.agenda, onClick:function(){ marca(i.codigo); }, "aria-label":(on ? "Desmarcar " : "Marcar como conferida ")+i.codigo, title:on ? "Conferida" : "Conferir", className:"text-center font-bold disabled:opacity-50"}, e("span",{className:on ? "text-success" : "text-white"}, on ? "✓" : "○")),
-      e("span",{className:"text-center font-semibold tabular-nums"+(on ? " text-success" : "")}, i.codigo+(i.origem ? " · "+(i.origem==="antiga" ? "Kit antigo" : "Kit novo") : "")),
-      e("span",{className:"tabular-nums"}, i.valor!=null ? BK(i.valor) : "—")); };
-  var blocoBr = function(titulo, itens){ var feitas = itens.filter(function(i){ return ok[i.codigo]; }).length;
-    return e(Bloco,{key:titulo, t:titulo+" · "+itens.length, dir:e("span",{className:feitas===itens.length && itens.length>0 ? "text-success" : "text-white"}, feitas+"/"+itens.length)},
-      itens.length===0 ? e("p",{className:"border-b border-white/30 px-2 py-1 text-center text-[11px]"}, "Nenhum brinde.") : itens.map(linhaPeca),
-      e("div",{className:"grid min-h-6 grid-cols-2 items-center gap-2 border-b border-white/30 px-2 text-center text-[11px] font-bold"}, e("span",null,"Lançado"), e("span",{className:"tabular-nums"}, BK(somaDe(itens))))); };
-  var celula = function(t, v){ return e("div",{key:t, className:"flex flex-col items-center border-r border-white/30 py-1 last:border-r-0"}, e("span",{className:"text-[11px]"}, t), e("b",{className:"text-[11px] tabular-nums"}, v==null || v==="" ? "—" : v)); };
-  var pecas = e(Bloco,{t:"Peças do acerto"}, e("div",{className:"grid grid-cols-5 border-b border-white/30"}, celula("Total", r.pecasCond), celula("Vendidas", r.pecasVendidas), celula("Trocas", r.pecasTrocas||0), celula("Brindes", lista.length), celula("Retornadas", r.pecasADevolver)));
-  var brindes = e("div",{className:"flex flex-col"}, blocoBr("Brindes normal", normal), blocoBr("Brindes BB", bb));
-  var trocas = (r.trocas||[]).length>0 && e(Bloco,{key:"tr", t:"Trocas · "+r.trocas.length},
-    r.trocas.map(function(t, i){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);
-      return e("div",{key:i, className:"grid min-h-6 grid-cols-[1fr_1fr_1fr] items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"},
-        e("span",null, "Voltou "+t.antigaCod+" · "+BK(t.antigaValor)), e("span",null, "Ficou "+t.novaCod+" · "+BK(t.novaValor)), e("b",{className:"tabular-nums"}, (aj>=0 ? "Soma " : "Desconta ")+BK(Math.abs(aj)))); }));
-  var blocoProx = prox.length>0 && e(Bloco,{key:"px", t:"Peças do próximo mês · "+prox.length}, prox.map(function(c){ return linhaPeca({codigo:c}); }));
-  var condNova = prox.length>0 && e(Bloco,{key:"cn", t:"Condicional nova", dir:e("span",{className:rec.condNova ? "text-success" : "text-white"}, rec.condNova ? "Gerada" : "Pendente")},
-    rec.condNova ? e("div",{className:"flex items-center justify-center gap-3 px-2 py-1 text-[11px]"}, e("b",{className:"tabular-nums text-success"}, "✓ "+rec.condNova.numero), p.podeProx && e(Botao,{onClick:function(){ p.receber(r.id, {condNova:null}); }}, "Desfazer"))
-      : p.podeProx ? e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1"},
-          e("input",{value:numNova, placeholder:"Nº da condicional nova", title:"Faça a nova bipagem na DevMaster e coloque aqui o número da condicional nova", "aria-label":"Número da condicional nova", className:CAMPO, onChange:function(ev){ setNumNova(ev.target.value.replace(/[^0-9]/g,"")); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvaNova(); }}),
-          e(Botao,{principal:true, desabilitado:!numNova, onClick:salvaNova}, "Salvar"))
-      : e("p",{className:"px-2 py-1 text-center text-[11px] font-semibold text-white"}, "Aguardando quem faz a bipagem do retorno"));
-  var tiradas = anterior && retiradas.length>0 && e(Bloco,{key:"mal", t:"Tiradas do kit novo · acerto de "+fmtData(anterior.data)}, retiradas.map(function(i){ return e("div",{key:i.codigo, className:"grid min-h-6 grid-cols-2 items-center gap-2 border-b border-white/30 px-2 text-center text-[11px]"}, e("b",{className:"tabular-nums"}, i.codigo), e("span",{className:"tabular-nums"}, i.valor!=null ? BK(i.valor) : "—")); }));
-  if(p.parte==="trocas") return e("div",{className:"flex flex-col"}, trocas || e(Bloco,{t:"Trocas · 0"}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, "Nenhuma troca neste acerto.")));
-  if(p.parte==="prox") return e("div",{className:"flex flex-col"}, blocoProx || e(Bloco,{t:"Peças do próximo mês · "+(r.pecasProxLiberadas||0)}, e("p",{className:"px-2 py-1 text-center text-[11px]"}, r.pecasProxLiberadas>0 ? r.pecasProxLiberadas+" peças liberadas pela representante. Os códigos não vieram do app." : "Nenhuma peça para o próximo mês.")), condNova, tiradas);
-  return e("div",{className:"flex flex-col"}, pecas, brindes);
+  // células das tabelas de peças: Conferência (marca ✓), Código da peça, Origem e Valor, cada uma na sua coluna (Marcus, 26/11/2026: o código nunca vem junto com a origem)
+  var btnConf = function(i){ var on = !!ok[i.codigo];
+    return e("button",{type:"button", disabled:!p.podeBip || !rec.ok, title:!rec.ok ? "Aguarda a conferência do recebimento" : on ? "Conferida" : "Conferir", onClick:function(){ marca(i.codigo); }, "aria-label":(on ? "Desmarcar " : "Marcar como conferida ")+i.codigo, className:"w-full font-bold disabled:opacity-50"}, e("span",{className:on ? "text-success" : "text-white"}, on ? "✓" : "○")); };
+  var codPeca = function(i){ return e("b",{className:"tabular-nums"+(ok[i.codigo] ? " text-success" : "")}, i.codigo); };
+  var origemTxt = function(i){ return i.origem==="antiga" ? "Kit antigo" : i.origem==="nova" ? "Kit novo" : "—"; };
+  // cada tabela de brindes: itens, área vazia com as linhas verticais continuando e, no rodapé fixo, 3 linhas (lançado, total da categoria, diferença); valores vêm das contas de antes (l.brindes e o acerto)
+  var blocoBr = function(titulo, itens, lanc, total){ var feitas = itens.filter(function(i){ return ok[i.codigo]; }).length, dif = r2((lanc||0)-(total||0));
+    var cj = CEL.replace("px-2", "px-1")+" min-h-6 border-b border-white/30 text-center text-[11px] font-bold";
+    var rod = function(rot, val, cor){ return [e("div",{key:rot+"r", className:cj+" col-span-3 border-r"}, rot), e("div",{key:rot+"v", className:cj+" tabular-nums "+(cor||"")}, val)]; };
+    return e(Bloco,{key:titulo, cresce:true, t:titulo},
+      e("div",{className:"flex flex-1 flex-col"},
+        itens.length===0 ? e("div",{className:MSG}, "Nenhum brinde.") : e(GradeFicha,{junto:true, cols:COLS_BRINDE, cab:["Conferência", "Código da peça", "Origem", "Valor"], linhas:itens.map(function(i){ return [btnConf(i), codPeca(i), origemTxt(i), i.valor!=null ? e("span",{className:"tabular-nums"}, BK(i.valor)) : "—"]; })}),
+        e("div",{className:"grid flex-1", style:{gridTemplateColumns:COLS_BRINDE}}, [0, 1, 2, 3].map(function(i){ return e("div",{key:i, className:i<3 ? "border-r border-white/30" : ""}); }))),
+      e("div",{className:"grid border-t border-white/30", style:{gridTemplateColumns:COLS_BRINDE}},
+        rod("Conferidas", feitas+"/"+itens.length, feitas===itens.length && itens.length>0 ? "text-success" : ""), rod("Valor lançado", BK(lanc||0)), rod("Total dos brindes", BK(total||0)),
+        rod("Diferença", dif>0.009 ? "+"+BK(dif) : dif<-0.009 ? "−"+BK(-dif) : "Sem diferença", dif>0.009 ? "text-destructive" : dif<-0.009 ? "text-success" : ""))); };
+  var pecas = e(Bloco,{t:"Peças do acerto"}, e(GradeFicha,{cols:"repeat(5,auto)", cab:["Total", "Vendidas", "Trocas", "Brindes", "Retornadas"],
+    linhas:[[r.pecasCond, r.pecasVendidas, r.pecasTrocas||0, lista.length, r.pecasADevolver].map(function(v){ return e("b",{className:"tabular-nums"}, v==null || v==="" ? "—" : v); })]}));
+  // resumo dos brindes (regras financeiras de antes: lançado e permitido vêm de l.brindes e do acerto; "a pagar a mais" é o excedente já somado no total a pagar)
+  var lancTot = r2((p.l.brindes.lancadoNormal||0)+(p.l.brindes.lancadoSelect||0)), brindesTot = r2((r.brindeNormal||0)+(r.brindeSelect||0)), maisBr = r.excedenteBrinde||0, menosBr = maisBr>0 ? 0 : Math.max(0, r2(brindesTot-lancTot));
+  var resumoBr = e(Bloco,{t:"Resumo dos brindes"},
+    e(Par,{t:"Valor total lançado", v:BK(lancTot)}), e(Par,{t:"Valor total dos brindes", v:BK(brindesTot)}),
+    maisBr>0 ? e(Par,{t:"A pagar a mais", v:BK(maisBr), cor:"text-destructive"}) : menosBr>0.009 ? e(Par,{t:"A pagar a menos", v:BK(menosBr), cor:"text-success"}) : e(Par,{t:"Diferença", v:"Sem diferença"}));
+  var brindes = e("div",{className:"@container flex flex-1 flex-col"}, e("div",{className:"grid flex-1 grid-cols-1 items-stretch gap-[2px] bg-white/50 @min-[33rem]:grid-cols-2"}, e("div",{key:"bn", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes", normal, p.l.brindes.lancadoNormal, r.brindeNormal)), e("div",{key:"bb", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes BB", bb, p.l.brindes.lancadoSelect, r.brindeSelect))), resumoBr);
+  var trocas = (r.trocas||[]).length>0 && e(Bloco,{key:"tr", t:"Trocas"}, e(GradeFicha,{cols:"4.5rem minmax(min-content,1fr) 5.5rem", cab:["Troca", "Código da peça", "Valor"], linhas:r.trocas.reduce(function(o, t){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);   // cada troca vira 3 linhas: a peça que voltou, a que ficou e o ajuste
+    return o.concat([["Voltou", e("b",{className:"tabular-nums"}, t.antigaCod), e("span",{className:"tabular-nums"}, BK(t.antigaValor))], ["Ficou", e("b",{className:"tabular-nums"}, t.novaCod), e("span",{className:"tabular-nums"}, BK(t.novaValor))], [aj>=0 ? "Soma" : "Desconta", "—", e("b",{className:"tabular-nums"}, BK(Math.abs(aj)))]]); }, [])}));
+  var blocoProx = prox.length>0 && e(Bloco,{key:"px", t:"Peças do próximo mês"}, e(GradeFicha,{cols:"3.75rem minmax(min-content,1fr) 5.5rem", cab:["Conferência", "Código da peça", "Valor"], linhas:prox.map(function(c){ var vl = precos[c]; return [btnConf({codigo:c}), codPeca({codigo:c}), vl && vl.preco>0 ? e("span",{className:"tabular-nums"}, BK(vl.preco)) : "—"]; })}));
+  var condNova = prox.length>0 && e(Bloco,{key:"cn", t:"Condicional nova"},
+    e(Par,{t:"Situação", v:rec.condNova ? "Gerada" : "Pendente", cor:rec.condNova ? "text-success" : ""}),
+    rec.condNova ? e("div",{className:LIN}, e("b",{className:"tabular-nums text-success"}, "✓ "+rec.condNova.numero), p.podeProx && e(Botao,{onClick:function(){ p.receber(r.id, {condNova:null}); }}, "Desfazer"))
+      : p.podeProx ? e("div",{className:"grid grid-cols-[minmax(0,1fr)_auto] items-stretch "+LINHA},
+          e("div",{className:"flex items-center border-r border-white/30 px-2"}, e("input",{value:numNova, placeholder:"Nº da condicional nova", title:"Faça a nova bipagem na DevMaster e coloque aqui o número da condicional nova", "aria-label":"Número da condicional nova", className:CAMPO, onChange:function(ev){ setNumNova(ev.target.value.replace(/[^0-9]/g,"")); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvaNova(); }})),
+          e("div",{className:"flex items-center px-2"}, e(Botao,{principal:true, desabilitado:!numNova, onClick:salvaNova}, "Salvar")))
+      : e("div",{className:MSG+" font-semibold text-white"}, "Aguardando quem faz a bipagem do retorno"));
+  var tiradas = anterior && retiradas.length>0 && e(Bloco,{key:"mal", t:"Tiradas do kit novo"}, e(Par,{t:"Acerto de", v:fmtData(anterior.data)}), e(GradeFicha,{cols:"minmax(min-content,1fr) 5.5rem", cab:["Código da peça", "Valor"], linhas:retiradas.map(function(i){ return [e("b",{className:"tabular-nums"}, i.codigo), i.valor!=null ? e("span",{className:"tabular-nums"}, BK(i.valor)) : "—"]; })}));
+  if(p.parte==="condnova") return condNova || null;
+  if(p.parte==="trocas") return e("div",{className:"flex flex-col"}, trocas || e(Bloco,{t:"Trocas"}, e("div",{className:MSG}, "Nenhuma troca neste acerto.")));
+  if(p.parte==="prox") return e("div",{className:"flex flex-col"}, blocoProx || e(Bloco,{t:"Peças do próximo mês"}, r.pecasProxLiberadas>0 ? [e("div",{key:"a", className:MSG}, r.pecasProxLiberadas+" peças liberadas pela representante."), e("div",{key:"b", className:MSG}, "Os códigos não vieram do admin dela.")] : e("div",{className:MSG}, "Nenhuma peça para o próximo mês.")), condNova, tiradas);
+  return e("div",{className:"flex flex-1 flex-col"}, pecas, brindes);
 }
 
 // Passo a passo para quem atende a representante na empresa (abre pelo botão da barra)
@@ -373,7 +422,9 @@ function AbaConsolidadoRep(){
   var usuarioNome = (pessoasRecebem.find(function(x){ return x.id===s.usuario; })||{}).nome || "";   // quem confere é quem está logada (cada uma tem seu login)
   var podeBip = podeBiparRetorno(s, s.usuario, BIPA_RETORNO_PADRAO(), papelDe(s.usuario)==="supervisao");   // quem bipa (Configurador geral) e a diretoria; o agendamento NÃO bipa nem registra diferença (Marcus, 26/11/2026)
   var vc = ver || podeBip || agenda;   // valores da linha: quem bipa o retorno e o agendamento precisam deles para conferir o acerto; os totais seguem só para quem tem "valores"
-  var receber = function(id, patch){ if(!agenda) return d({type:"AVISO", txt:"Só o agendamento e a supervisão conferem os atendimentos"}); d({type:"CONSREP_RECEBER", id:id, patch:patch}); };
+  // permissões separadas (Marcus, 26/11/2026): peças e brindes só quem bipa; recebimento (condicionais e dinheiro) só o agendamento e a supervisão; a gravação também confere
+  var receber = function(id, patch){ var bipa = "pecasOk" in patch || "condNova" in patch;
+    if(bipa ? !(podeBip || podeBipRetorno(s.usuario)) : !agenda) return d({type:"AVISO", txt:bipa ? "Só quem bipa o retorno confere as peças e os brindes" : "Só o agendamento e a supervisão conferem os atendimentos"}); d({type:"CONSREP_RECEBER", id:id, patch:patch}); };
   var agora = function(){ return new Date().toISOString(); };
   // conferência: 1º clique começa, 2º clique termina (grava a data de recebimento); clicar no conferido desfaz
   var relogio = function(l){
@@ -466,7 +517,7 @@ function AbaConsolidadoRep(){
   [g2, g3, g4].forEach(function(g){ g[0] = Object.assign({}, g[0], {sep:true}); });
   // Resumo (padrão, Marcus 26/11/2026): tabela curta, o detalhe está dentro do card. Completo: todas as colunas de antes (vendas, pagamentos, peças), para o financeiro.
   var completo = colunasModo==="completo";
-  var cols = (completo ? g1.concat(g2, g3, g4) : g1.filter(function(c2){ return c2.k!=="cond"; })).filter(function(c2){ return podeBip || c2.k!=="dif"; });   // agendamento não vê Diferenças (só quem bipa)
+  var cols = (completo ? g1.concat(g2, g3, g4) : g1.filter(function(c2){ return c2.k!=="cond"; }).concat(g2.filter(function(c2){ return c2.k==="venda" || c2.k==="comissao" || c2.k==="acerto"; }))).filter(function(c2){ return podeBip || c2.k!=="dif"; });   // agendamento não vê Diferenças (só quem bipa)
   var cabAcima = [[{t:"Agendamento · conferência", span:g1.length}, {t:"Vendas", span:g2.length, sep:true}, {t:"Pagamentos", span:g3.length, sep:true}, {t:"Peças e brindes", span:g4.length, sep:true}]];
   if(estr.length) cabAcima.push([{t:"", span:g1.length+g2.length+2}].concat(estr.map(function(x){ return {t:x.g.nome, span:x.contas.length, sep:true}; }), [{t:"", span:fimCols.length+g4.length, sep:true}]));
   if(!completo) cabAcima = undefined;
@@ -576,7 +627,7 @@ function AbaConsolidadoRep(){
       e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsErro, linhas:linhasErro, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, tracoVazio:"---"}))),
     passosAberto && e(PassoAPasso,{fechar:function(){ setPassosAberto(false); }}),
     // janela por cima de tudo: brindes, trocas e peças do próximo mês do atendimento escolhido
-    lp && e(FichaConferencia,{key:lp.r.id, l:lp, agenda:agenda, vc:vc, usuario:s.usuario, podeBip:podeBip, podeProx:podeBipRetorno(s.usuario), todos:todos, receber:receber, fechar:function(){ setPopId(null); },
+    lp && e(FichaConferencia,{key:lp.r.id, estado:s, l:lp, agenda:agenda, vc:vc, usuario:s.usuario, podeBip:podeBip, podeProx:podeBipRetorno(s.usuario), todos:todos, receber:receber, fechar:function(){ setPopId(null); },
       onRelogio:function(){ relogio(lp); }, onSet:function(patch){ receber(lp.r.id, patch); },
       onDin:function(contado){ receber(lp.r.id, {din:{ok:true, contado:contado, ts:agora(), por:s.usuario}}); }, onDinDesfaz:function(){ receber(lp.r.id, {din:{ok:false}}); },
       kits:s.kits||[], usuarioNome:usuarioNome, onDif:function(item){ d({type:"RETORNO_DIF", id:lp.r.id, item:item}); }, onDifTira:function(id){ d({type:"RETORNO_DIF", id:lp.r.id, remover:id}); },

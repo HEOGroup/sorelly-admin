@@ -38,7 +38,7 @@ function AbaConsolidado(){
   var selCls = "h-10 cursor-pointer rounded-lg border border-primary/50 bg-primary/10 pl-9 pr-3 text-sm font-semibold outline-none hover:bg-primary/15 focus:ring-3 focus:ring-ring/50";
   var dataCls = "h-10 rounded-lg border border-primary/50 bg-primary/10 px-2 text-sm font-semibold outline-none focus:ring-3 focus:ring-ring/50 [color-scheme:dark]";
   return e(React.Fragment,null,
-    e(PageHead,{t:"Consolidado", sub:"Histórico das listagens concluídas. Um bloco por representante; abra para ver as listagens e clique numa listagem para ver os kits."}),
+    e(PageHead,{t:"Consolidado das listagens", sub:"Histórico das listagens concluídas. Um bloco por representante; abra para ver as listagens e clique numa listagem para ver os kits."}),
     e("div",{className:"flex flex-wrap items-center gap-2"},
       e("div",{className:"relative"},
         e(Icon,{n:"user", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"}),

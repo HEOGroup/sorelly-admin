@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.264", data:"2026-11-26", titulo:"Ficha do atendimento: 3 colunas, brindes alinhados, condicional nova na coluna 1 e permissões de bipagem", itens:[
+    {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Ficha em 3 colunas, cabeçalhos só com o título, dinheiro na tabela de pagamento, condicionais em tabela, Condicional nova abaixo das Condicionais, peças do próximo mês com valor da DevMaster. Brindes e Brindes BB com colunas iguais em cabeçalho, corpo e rodapé. Só quem bipa confere brindes e peças, na tela e na gravação. Consolidado das listagens renomeado."}]},
  {v:"0.21.263", data:"2026-11-26", titulo:"Link de pagamento: comprovante obrigatório e entra sozinho no acerto da representante", itens:[
   {tipo:"novo", area:"Link de pagamento → Solicitações", txt:"Coluna Comprovante (Anexado ou Falta) com os botões Anexar e Ver. A foto ou o PDF vai para o servidor de anexos do sistema."},
   {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Confirmar pagamento pede o comprovante antes: sem ele o link não vira Pago. O link pago pelo e-SiTef continua entrando sozinho e fica com Falta até alguém anexar; a importação avisa quantos pagos ficaram sem comprovante."},
