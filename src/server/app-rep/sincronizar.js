@@ -194,6 +194,17 @@ async function avisarProntos(r) {
   }
 }
 
+// Resultado da última rodada guardado no banco (módulo knkommo, chave appsinc), para a equipe e o Claude verem o que o servidor publicado fez (26/11/2026).
+// Só grava quando mudou alguma coisa (envio, retirada, resposta, aviso ou erro diferente), para não gravar a cada minuto.
+async function guardarResultado(r) {
+  try {
+    const resumo = { enviados: r.enviados, retirados: r.retirados, respostas: r.respostas, avisos: r.avisos, erros: r.erros.slice(0, 5) };
+    const chave = JSON.stringify(resumo);
+    if (chave === globalThis.__appRepResumo) return;
+    globalThis.__appRepResumo = chave;
+    await gravarModuloSeguro("knkommo", { appsinc: Object.assign({ em: r.em }, resumo) }, "chaves", "app-rep");
+  } catch (e) { /* guardar o resultado nunca derruba a sincronização */ }
+}
 let rodando = false;
 export async function sincronizarApp() {
   const r = { enviados: 0, retirados: 0, respostas: 0, avisos: 0, erros: [], em: new Date().toISOString() };
@@ -206,6 +217,7 @@ export async function sincronizarApp() {
     }
   } finally { rodando = false; }
   globalThis.__appRepUltimaSinc = r;
+  await guardarResultado(r);
   return r;
 }
 export function ultimaSincronizacao() { return globalThis.__appRepUltimaSinc || null; }
