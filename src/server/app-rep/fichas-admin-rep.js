@@ -32,6 +32,7 @@ export async function publicarFichas() {
     const ex = rpo["pr_" + c];
     if (ex && !ex._apagado && ex.auto === undefined) continue;   // criada pela representante: não mexer
     if (ex && ex.auto !== undefined && ex.auto !== campos(ex)) continue;   // a representante mexeu depois do servidor
+    if (ex && ex.em && Date.now() - Date.parse(ex.em) < 6 * 3600 * 1000) continue;   // já conferida há pouco: a rodada segue para as próximas
     pendentes.push([c, a, ex]);
   }
   r.faltam = pendentes.length;
