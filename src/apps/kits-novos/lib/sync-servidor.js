@@ -80,8 +80,11 @@ function useSyncKitsNovos(s, d){
     // Kommo → Kits novos (25/11/2026): com a tela aberta, pede ao servidor a busca na Kommo a cada 2 minutos (ele só busca se já passou a hora)
     var kommo = function(){ if(vivo && token()) chamar("GET", "/kommo/kits-novos?rodar=1").catch(function(){}); };
     var idK = setInterval(kommo, 120000); setTimeout(kommo, 5000);
+    // App da representante e Bipado pela DevMaster (26/11/2026): sem agendador no servidor publicado, a tela abre o caminho (o servidor só roda se já passou a hora)
+    var appRep = function(){ if(vivo && token()) { chamar("GET", "/app-rep/sincronizar?rodar=1").catch(function(){}); chamar("GET", "/kits-novos-devmaster?rodar=1").catch(function(){}); } };
+    var idA = setInterval(appRep, 60000); setTimeout(appRep, 8000);
     window.addEventListener("focus", rodar);
-    return function(){ vivo = false; clearInterval(id); clearInterval(idK); window.removeEventListener("focus", rodar); };
+    return function(){ vivo = false; clearInterval(id); clearInterval(idK); clearInterval(idA); window.removeEventListener("focus", rodar); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){
     if(!G.pronto) return undefined;

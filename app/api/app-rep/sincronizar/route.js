@@ -7,6 +7,8 @@ export const maxDuration = 60;
 //   GET  /api/app-rep/sincronizar -> agendador: roda uma rodada; pessoa logada: {ligada, ultima}
 //   POST /api/app-rep/sincronizar -> Diretoria pede uma rodada agora: {enviados, retirados, respostas, avisos, erros}
 import { erro, json, rota, usuarioDe } from "@/server/http";
+import { podeModulo } from "@/server/permissoes";
+import { lerModulo } from "@/server/app-rep/base";
 import { podeGravar } from "@/server/app-rep/cliente-app";
 import { sincronizarApp, ultimaSincronizacao } from "@/server/app-rep/sincronizar";
 
@@ -15,10 +17,17 @@ const ehCron = (req) => {
   return !!segredo && (req.headers.get("authorization") || "") === "Bearer " + segredo;
 };
 
-export const GET = rota(async (req) => {
+export const GET = rota(async (req, { url }) => {
   if (ehCron(req)) return json(await sincronizarApp());
-  if (!(await usuarioDe(req))) return erro("Entre no sistema para continuar.", 401);
-  return json({ ligada: podeGravar(), ultima: ultimaSincronizacao() });
+  const eu = await usuarioDe(req);
+  if (!eu) return erro("Entre no sistema para continuar.", 401);
+  // Sem agendador na Vercel (sem CRON_SECRET), quem dispara é a tela dos Kits novos: a cada minuto pede ?rodar=1 e o servidor só roda se a última rodada (guardada no banco) tem mais de 50 s. 26/11/2026.
+  let guardada = (await lerModulo("knkommo")).appsinc || null, rodou = null;
+  if (url.searchParams.get("rodar") === "1" && podeGravar() && podeModulo(eu, "kndados") && (!guardada || !guardada.em || Date.now() - Date.parse(guardada.em) > 50000)) {
+    rodou = await sincronizarApp();
+    guardada = (await lerModulo("knkommo")).appsinc || guardada;
+  }
+  return json({ ligada: podeGravar(), ultima: rodou || ultimaSincronizacao(), guardada });
 }, { publica: true });
 
 export const POST = rota(async () => json(await sincronizarApp()), { diretoria: true });
