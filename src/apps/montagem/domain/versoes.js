@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.239", data:"2026-11-26", titulo:"Direcionar no formato da Negociações", itens:[
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Blocos com pontas retas, encostados e separados por linha branca; tela preenchida nas laterais e no topo; sem a coluna Situação; sem os botões Atendimentos e Testar alerta. Amanda de Miranda passa a ser produção externa (Prod. Exter.)."},
+ ]},
+ {v:"0.21.238", data:"2026-11-25", titulo:"Produção externa com Prod. Exter., Direcionar sem rolagem lateral", itens:[
+  {tipo:"melhoria", area:"Financeiro › Negociações e Direcionar", txt:"Pagamento da produção externa aparece como Nome - Prod. Exter. nas duas telas; Fornecedor e Tipo sem negrito; os três blocos do Direcionar cabem na largura sem rolar para o lado; Pagamentos para Fornecedores mostra só o mês atual."},
+ ]},
  {v:"0.21.237", data:"2026-11-25", titulo:"Negociações: produção externa com nome e \"- Prod. Extern.\", sem negrito", itens:[
   {tipo:"melhoria", area:"Financeiro › Negociações", txt:"Quem vem da produção externa aparece como Nome - Prod. Extern., em letra normal; tabela sem negrito e com quebra de linha em tela estreita."},
  ]},

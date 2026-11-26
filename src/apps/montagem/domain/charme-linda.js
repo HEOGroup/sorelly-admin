@@ -15,6 +15,8 @@ function garantirCharmeLinda(s){
     var pf = JSON.parse(JSON.stringify(s.pf));
     if(semearCharmeLinda(pf)) n = Object.assign({}, n, {pf:pf});
   }
+  // Amanda de Miranda faz produção externa (Marcus, 26/11/2026): o cadastro dela vinha como Outros; garante a categoria para o nome sair com - Prod. Exter.
+  if(n.pf && Array.isArray(n.pf.fornecedores) && n.pf.fornecedores.some(function(f){ return /^amanda de miranda/i.test(f.nome) && f.cat!=="Produção externa"; })) n = Object.assign({}, n, {pf:Object.assign({}, n.pf, {fornecedores:n.pf.fornecedores.map(function(f){ return /^amanda de miranda/i.test(f.nome) && f.cat!=="Produção externa" ? Object.assign({}, f, {cat:"Produção externa"}) : f; })})});
   if(s.cpe && Array.isArray(s.cpe.lanc)){
     var tem = {}; s.cpe.lanc.forEach(function(x){ tem[x.id] = 1; });
     var falta = DIVIDAS.filter(function(d){ return !tem[d.id]; });

@@ -486,10 +486,10 @@ function ResumoGeral(){
     if(atuais.length){
       atuais.forEach(function(x, i){
         var extra = i===0 ? oldAb : 0, ch = "j|"+x.j.chave;
-        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:dataVenc(f, x.j), nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j)+(tipo==="Produção externa" ? " - Prod. Extern." : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
+        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:dataVenc(f, x.j), nome:nomeJanela(bonito(f.nome), atuais.map(function(z){ return z.j; }), x.j)+(tipo==="Produção externa" ? " - Prod. Exter." : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
       });
     } else {
-      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+(tipo==="Produção externa" ? " - Prod. Extern." : "")+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
+      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+(tipo==="Produção externa" ? " - Prod. Exter." : "")+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
     }
     grupos.push({nome:bonito(f.nome), tipo:tipo, linhas:linhas, total:linhas.reduce(function(t, l){ return t+l.total; }, 0)});
   });
