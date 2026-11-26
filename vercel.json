@@ -40,6 +40,10 @@
     {
       "path": "/api/automatico/aquecer-revendedoras",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/kits-novos-devmaster",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

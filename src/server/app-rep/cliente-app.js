@@ -6,7 +6,8 @@
 const VERSAO_APP = "3.5.0";
 
 export function configurado() { return !!(process.env.MOBILE_API_URL && process.env.MOBILE_API_KEY); }
-export function podeGravar() { return configurado() && process.env.APP_REP_SINCRONIZAR === "1"; }
+// 26/11/2026 (Marcus): no site publicado (Vercel, produção) o envio liga sozinho; APP_REP_SINCRONIZAR=0 desliga. Servidor de teste (localhost) continua precisando de =1.
+export function podeGravar() { const v = process.env.APP_REP_SINCRONIZAR; return configurado() && (v === "1" || (process.env.VERCEL_ENV === "production" && v !== "0")); }
 
 export async function chamarApp(metodo, caminho, corpo) {
   if (!configurado()) throw Object.assign(new Error("Ligação com o app não configurada (MOBILE_API_URL e MOBILE_API_KEY)."), { statusCode: 503 });

@@ -7,6 +7,7 @@ import { gravarItens, lerChaves } from "../estado-itens.js";
 import { recusa, texto } from "../servico.js";
 import { revCodDe } from "./base.js";
 import { vivo } from "../../apps/montagem/domain/app-rep.js";
+import { casaDevMaster } from "./casa-devmaster.js";
 
 export const MAX_REFERENCIAS = 3;
 
@@ -45,7 +46,9 @@ function paraApp(p) {
 export async function lerPerfil(revCod) {
   const c = revCodValido(revCod);
   const r = await lerChaves("rpo", ["pr_" + c]);
-  return { perfil: paraApp(r["pr_" + c]) };
+  const perfil = paraApp(r["pr_" + c]);
+  if (!perfil.enderecoResidencial) perfil.enderecoResidencial = await casaDevMaster(c);   // 26/11/2026: sem endereço da casa digitado, vale o do cadastro da DevMaster
+  return { perfil };
 }
 
 export async function salvarPerfil(rep, b) {

@@ -3837,3 +3837,8 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 ## Kits novos · app da representante recebe referências, trabalho e endereço da casa; telefone com o 9 (26/11/2026, Marcus)
 - Contatos de referência vão ao app só com o PRIMEIRO NOME e o telefone. Profissão, local e endereço do trabalho vão padronizados. O endereço da casa vem do kit; se faltar, do cadastro da DevMaster (rua · bairro · CEP).
 - Telefone: celular de 10 dígitos (DDD + 8, começa com 6 a 9) ganha o 9 depois do DDD (`foneContato`, `domain/padroniza.js`). Vale na planilha (contatos e telefone DevMaster) e no envio ao app. Roda na leitura; o dado guardado não muda (navegador com cópia velha regrava o módulo).
+
+## Kits novos · endereço da casa de todas as revendedoras e ligação com o app (26/11/2026, Marcus)
+- **Endereço da casa:** a ficha da revendedora que o app lê (`GET /api/consignado/ingest/perfil`) passa a trazer o endereço do cadastro da DevMaster (rua, número, complemento, bairro, CEP) quando a representante ainda não digitou o dela (`server/app-rep/casa-devmaster.js`). Vale para TODA revendedora, não só os Kits novos (hoje 2.151 têm condicional aberto). O que a representante digitar vale mais. A DevMaster não traz o nome da cidade (só um código), por isso a cidade não vai nesse texto.
+- **Ligação:** no site publicado o envio ao app liga sozinho (`VERCEL_ENV=production`); `APP_REP_SINCRONIZAR=0` desliga. Em localhost continua precisando de `=1`. Antes do ajuste nenhum kit tinha sido enviado (0 de 44 direcionados).
+- **Bipado pela DevMaster:** a Vercel não mantém relógio; entrou o agendador `/api/kits-novos-devmaster` a cada 10 minutos (`vercel.json`). `KITS_NOVOS_DEVMASTER=0` desliga.
