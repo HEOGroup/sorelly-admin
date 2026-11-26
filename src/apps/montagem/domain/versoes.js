@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.260", data:"2026-11-26", titulo:"Produção: colunas travadas, valor sem quebra e Pix a mais vira saldo", itens:[
+  {tipo:"melhoria", area:"Produção › Produção", txt:"Funcionária, Total e A receber ficam travadas à esquerda nas tabelas Serenity e Externa (fundo cheio, nada aparece atrás), inclusive na linha de total. No modo Dinheiro, a coluna do dia ficou mais larga e o valor não quebra na Produção geral diária."},
+  {tipo:"melhoria", area:"Produção › Pagamento por produção", txt:"Pix enviado a mais para a produção externa (Dávila, Leci) vira saldo descontado do próximo pagamento, sem pedido de ajuste em Negociações. Baixas repetidas em Contas a pagar foram desfeitas."}]},
  {v:"0.21.259", data:"2026-11-26", titulo:"Direcionar: volta a direcionar para prestador (erro contaDoDestino)", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar Pix", txt:"Direcionar para um prestador (ex.: Dávila) dava Algo deu errado: a publicação v0.21.256 apagou sem querer a função contaDoDestino e a trava que não deixa duplicar o lançado à mão. As duas voltaram. Conferido: todas as outras mudanças de 25 e 26/11 continuam no código."},
   {tipo:"correção", area:"Sistema → gravação no servidor", txt:"Os mesmos acertos (1,5 MB) eram regravados por várias telas a cada poucos segundos e às vezes passavam do limite (erro 413): o banco guarda os campos em outra ordem e a tela achava que tinha mudado. Agora mesmo conteúdo com outra ordem não é gravado de novo. Nenhum acerto se perdeu: todos estavam salvos."}]},

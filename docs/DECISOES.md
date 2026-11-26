@@ -3877,3 +3877,9 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Endereço antigo `/kits-novos/...` desligado: leva a `/cadastro-de-revendedoras/revendedoras-novas`.
 - Commits: 1e1643f7, 64a2da5b, 1033a8c4, 0f55ed33, 3e0d410c, d5365112.
 - Ficha das revendedoras no admin das representantes: o servidor grava sozinho pr_<código> (endereço da casa da DevMaster + profissão, trabalho e referências de Kits novos) para toda revendedora que a representante enxerga (400 por rodada, src/server/app-rep/fichas-admin-rep.js). Ficha digitada pela representante nunca é regravada.
+
+## Produção externa · Pix a mais vira saldo no próximo pagamento, não pedido de ajuste (26/11/2026, Marcus)
+- Pix enviado a mais para prestadora de Produção externa (Dávila, Leci...) NÃO cria mais o pedido "Diferença enviada a mais" (entrada e saída) em Negociações. A diferença fica só em `pr.saldoExterna` e desconta do pagamento seguinte, que mostra "Desconto do excedente anterior". `ajustaExcesso` (`domain/pf.js`) ignora fornecedor com `cat === "Produção externa"`.
+- A baixa automática (`ProdPagamentos.js`) agora usa o que SAIU de verdade pelo Direcionar (`pagoPix` da data), e não só o valor devido. A baixa em Contas a pagar continua no valor devido; o excesso fica na observação.
+- Nova ação `saldo_somar` (só diretoria) acerta o saldo à mão. Aplicada em 26/11: Dávila +R$ 10,35 (pagamento de 03/12 vai a R$ 375,75) e Leci +R$ 84,45 (vai a R$ 73,05).
+- Resolvido em 26/11 (Marcus mandou corrigir): as 5 baixas repetidas e a baixa indevida da Leci (03/12) foram desfeitas em Contas a pagar; o dia 24/11 da Leci voltou a pagar e o saldo dela voltou a R$ 84,45. Coluna "Período" de Pagamentos agora vem dos dias trabalhados. A semana 12 a 15/11 é "Diária" R$ 130 (regra antiga), correta. Causa das baixas repetidas: telas antigas abertas ao mesmo tempo; todos devem atualizar a tela.
