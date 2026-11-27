@@ -49,29 +49,34 @@ function DialogoDecisao(p){
   var tipo = p.tipo, l = p.lead, cfg = p.cfg;
   var st = useState({opcao:"", vc:cfg.kitCasaPadrao, ve:cfg.kitEmpresaPadrao, nota:"", copiado:false}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
-  var msg = tipo==="aprovar" && v.opcao ? mensagemKit(v.opcao, v.vc, v.ve) : "";
+  // 27/11/2026 (Leonardo: "tem no admin antigo, precisa ter no novo"): a aprovação ficou igual à do admin antigo. A mensagem aparece desde o começo
+  // (o texto não depende do kit escolhido), com "Copiar mensagem" ao lado do título; o botão Aprovar só libera depois de escolher o kit.
+  var msg = tipo==="aprovar" ? mensagemKit(v.opcao, v.vc, v.ve) : "";
   var copiar = function(){ try{ navigator.clipboard.writeText(msg).then(function(){ set("copiado", true); }); }catch(x){} };
   var ok = tipo!=="aprovar" || !!v.opcao;
-  var titulo = tipo==="aprovar" ? "Aprovar cadastro" : tipo==="reprovar" ? "Reprovar cadastro" : "Voltar à análise";
-  return e(Janela,{t:titulo, sub:l.nome, fechar:p.fechar, largo:tipo==="aprovar"},
+  var titulo = tipo==="aprovar" ? "Confirmar aprovação" : tipo==="reprovar" ? "Reprovar cadastro" : "Voltar à análise";
+  return e(Janela,{t:titulo, sub:tipo==="aprovar" ? null : l.nome, fechar:p.fechar, largo:tipo==="aprovar"},
     tipo==="desfazer" && e("p",{className:"text-[13.5px]"}, "O cadastro de "+l.nome+" ("+(l.reviewStatus==="APPROVED" ? "aprovado" : "reprovado")+") volta para a etapa Em análise."),
     tipo==="reprovar" && e("p",{className:"text-[13.5px]"}, "Confirma a reprovação do cadastro de "+l.nome+"?"),
-    tipo==="aprovar" && e("div",{className:"flex flex-col gap-2"},
-      e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-white/70"}, "Como ela recebe o kit"),
-      e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-2"}, KIT_OPCOES.map(function(o){ var sel = v.opcao===o.valor;
-        return e("button",{key:o.valor, type:"button", onClick:function(){ set("opcao", o.valor); }, className:"flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-[13px] font-bold transition "+(sel ? "bg-[#22C55E]/25 text-[#4ADE80] ring-2 ring-[#22C55E]" : "bg-black/30 ring-1 ring-white/15 hover:bg-white/10")}, sel && e(Ph,{n:"check-circle", s:15}), o.rotulo); })),
+    tipo==="aprovar" && e("div",{className:"flex flex-col gap-3 text-left"},
+      e("p",{className:"text-[13px]"}, "Aprovar o cadastro de ", e("b",null, l.nome), ". Escolha como ela recebe o kit e copie a mensagem."),
+      e("div",{className:"flex flex-col gap-1.5"},
+        e("b",{className:"text-[13px]"}, "Kit"),
+        e("div",{role:"radiogroup", "aria-label":"Kit", className:"grid grid-cols-1 gap-2 sm:grid-cols-2"}, KIT_OPCOES.map(function(o){ var sel = v.opcao===o.valor;
+          return e("button",{key:o.valor, type:"button", role:"radio", "aria-checked":sel, onClick:function(){ set("opcao", o.valor); }, className:"flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[13px] font-bold transition "+(sel ? "bg-[#22C55E]/20 text-[#4ADE80] ring-2 ring-[#22C55E]" : "bg-black/30 ring-1 ring-white/15 hover:bg-white/10")},
+            e("span",{className:"grid size-4 shrink-0 place-items-center rounded-full ring-2 "+(sel ? "ring-[#4ADE80]" : "ring-white/60")}, sel && e("span",{className:"size-2 rounded-full bg-[#4ADE80]"})), o.rotulo); }))),
       e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-2"},
-        e(CampoRot,{rot:"Kit em casa (até)"}, e(Dinheiro,{value:v.vc, label:"Kit em casa", onChange:function(x){ set("vc", x); }})),
-        e(CampoRot,{rot:"Kit na empresa (até)"}, e(Dinheiro,{value:v.ve, label:"Kit na empresa", onChange:function(x){ set("ve", x); }}))),
-      msg && e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/30 p-2.5"},
-        e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-white/70"}, "Mensagem para o WhatsApp"),
-        e("pre",{className:"whitespace-pre-wrap break-words text-left font-sans text-[13px]"}, msg),
-        e(Bt,{ic:v.copiado ? "check" : "copy", tipo:v.copiado ? "ok" : "normal", onClick:copiar, className:"self-center"}, v.copiado ? "Mensagem copiada" : "Copiar mensagem"))),
-    tipo!=="desfazer" && e(CampoRot,{rot:"Observação (opcional)"}, e("input",{value:v.nota, "aria-label":"Observação", className:INPUT+" h-10! text-center", onChange:function(ev){ set("nota", ev.target.value); }})),
-    e("div",{className:"flex flex-wrap justify-center gap-2"},
+        e("label",{className:"flex min-w-0 flex-col gap-1 text-[13px] font-bold"}, "Kit em casa (até)", e(Dinheiro,{value:v.vc, label:"Kit em casa", onChange:function(x){ set("vc", x); }})),
+        e("label",{className:"flex min-w-0 flex-col gap-1 text-[13px] font-bold"}, "Kit na empresa (até)", e(Dinheiro,{value:v.ve, label:"Kit na empresa", onChange:function(x){ set("ve", x); }}))),
+      e("div",{className:"flex flex-col gap-1.5"},
+        e("div",{className:"flex items-center justify-between gap-2"}, e("b",{className:"text-[13px]"}, "Mensagem"),
+          e(Bt,{ic:v.copiado ? "check" : "copy", tipo:v.copiado ? "ok" : "normal", onClick:copiar, className:"px-2.5! py-1.5!"}, v.copiado ? "Mensagem copiada" : "Copiar mensagem")),
+        e("pre",{className:"max-h-56 overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-black/30 p-3 text-left font-sans text-[13px] ring-1 ring-white/15"}, msg))),
+    tipo==="reprovar" && e(CampoRot,{rot:"Observação (opcional)"}, e("input",{value:v.nota, "aria-label":"Observação", className:INPUT+" h-8! text-center", onChange:function(ev){ set("nota", ev.target.value); }})),
+    e("div",{className:"flex flex-wrap justify-end gap-2"},
       e(Bt,{onClick:p.fechar}, "Cancelar"),
-      e(Bt,{tipo:tipo==="reprovar" ? "perigo" : "ok", ic:tipo==="reprovar" ? "x-circle" : tipo==="aprovar" ? "check-circle" : "arrow-counter-clockwise", disabled:!ok, onClick:function(){ p.confirmar(v); }},
-        tipo==="aprovar" ? "Confirmar aprovação" : tipo==="reprovar" ? "Confirmar reprovação" : "Voltar à análise")));
+      e(Bt,{tipo:tipo==="reprovar" ? "perigo" : "ok", ic:tipo==="reprovar" ? "x-circle" : tipo==="aprovar" ? "check" : "arrow-counter-clockwise", disabled:!ok, titulo:ok ? undefined : "Escolha o kit", onClick:function(){ p.confirmar(v); }},
+        tipo==="aprovar" ? "Aprovar" : tipo==="reprovar" ? "Confirmar reprovação" : "Voltar à análise")));
 }
 
 // ───────────── janela de detalhe: todos os dados, fotos e observações ─────────────

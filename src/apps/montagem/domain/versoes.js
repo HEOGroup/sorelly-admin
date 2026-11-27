@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.273", data:"2026-11-27", titulo:"Aprovação de cadastros: janela de aprovação igual à do admin antigo", itens:[
+  {tipo:"melhoria", area:"Cadastro de revendedoras → Aprovação de cadastros", txt:"Janela Confirmar aprovação no desenho do admin antigo: escolha do kit (4 opções), kit em casa e na empresa, mensagem para o WhatsApp sempre visível com Copiar mensagem ao lado, e Cancelar e Aprovar embaixo. Aprovar só libera depois de escolher o kit."}]},
  {v:"0.21.272", data:"2026-11-27", titulo:"Admin das representantes: × em toda peça da devolução e digitação do código sem câmera", itens:[
     {tipo:"melhoria", area:"Representantes › Admin das representantes › Conferência da devolução", txt:"Todas as peças ganham × na mesma coluna: nas marcadas desmarca (volta a ficar vendida), nas não marcadas marca como voltou. O campo de código volta a ficar pronto após cada peça, para bipar à mão sem câmera."},
   ]},
