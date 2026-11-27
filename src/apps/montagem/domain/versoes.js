@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.270", data:"2026-11-27", titulo:"Consolidado dos representantes: uma visão só e menu enxuto de Representantes & Kits", itens:[
+    {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Tela única Por representante: todas as representantes ativas (mesmo com 0 atendimentos), coluna Código com todos os códigos, Sorelly fora. Clicar na representante deixa só a linha dela e abre embaixo os atendimentos (Data, Revendedora, Etapa atual, Tipo de atendimento, Condicional), com filtro de Dia e agrupamento por dia. Topo só com Mês e Buscar representante. Terminar conferência fecha a ficha sem mensagem e Ver comprovante abre na própria tela, sem baixar."},
+    {tipo:"melhoria", area:"Representantes & Kits", txt:"Saíram do menu: Visão geral da bipagem e Relatórios (telas excluídas), Meu desempenho, Comissões da bipagem, Consolidado das listagens, Produtividade da montagem e Registros (ocultas). Topo agora: Consolidado, Listagens, Condicionais, Equipe e comissões, Preferências do kit."}]},
  {v:"0.21.269", data:"2026-11-27", titulo:"Admin das representantes: brindes no acerto com busca pelas condicionais", itens:[
     {tipo:"melhoria", area:"Representantes › Admin das representantes › Acerto", txt:"Brindes: a representante já pode lançar antes do pagamento (só confirma depois). Um campo de código com lista suspensa que filtra desde a primeira letra, só com peças das condicionais ativas da revendedora (código, preço e situação). Tocar na peça liberada lança na hora, com brilho dourado; tocar numa peça lançada abre Excluir brinde. BB é identificado sozinho. Kit antigo ou novo vem da data da condicional (a mais recente é o kit novo quando há duas ou mais). Restante por cartão: Normal e Select lado a lado."},
   ]},

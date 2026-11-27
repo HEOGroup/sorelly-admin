@@ -27,7 +27,6 @@ export const BASE_ANTIGA = "/montagem";
 
 export const SLUG_DA_ABA = {
   painel: "listagens",
-  visaobip: "visao-bipagem",
   agpainel: "agendamento",
   agrevs: "agendamento-revendedoras",
   agreps: "agendamento-representantes",
@@ -80,7 +79,6 @@ export const SLUG_DA_ABA = {
   comdatas: "comissoes-datas-pagamento",
   meudesemp: "meu-desempenho",
   consolidado: "consolidado",
-  relatorios: "relatorios",
   equipe: "equipe",
   avalrep: "representantes",
   registros: "registros",

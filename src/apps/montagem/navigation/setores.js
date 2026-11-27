@@ -83,11 +83,12 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 var PERM_PROD = "producao_externa,producao_ver";
 var MENU_PRODUCAO = [M("Produção","producao"), M("Produção externa","prodcasa",{perm:PERM_PROD}), M("Pagamento por produção","prodpagproducao",{perm:PERM_PROD}), M("Envio e devolução","prodnotas",{perm:PERM_PROD+",producao_envio"}), M("Cadastro","prodfunc",{perm:PERM_PROD})];   // as funcionárias da produção só veem a aba Produção (sem a produção externa, sem pagamento e sem cadastro): Marcus, 23/11/2026   // setor próprio desde 16/11/2026: Produção (grade do mês, com o bônus), Produção externa (Dávila) e Cadastro
 var MENU_REPRESENTANTES = [
-  // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
-  {nome:"Montagem", itens:[M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
-  {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
-  {nome:"Acompanhamento", itens:[M("Consolidado das listagens","consolidado"), M("Equipe e comissões","equipe"), M("Produtividade da montagem","prodmont"), M("Registros","registros"), M("Relatórios","relatorios")]},
-  M("Consolidado","consrep")   // 25/11/2026 (Marcus): a tela Painel das representantes saiu do menu; sobra só "Consolidado", sem o grupo Representantes
+  // 27/11/2026 (Marcus): nenhuma aba dentro de outra; ordem do fluxo: Consolidado, Listagens, Condicionais, Equipe e, por último, Preferências do kit
+  M("Consolidado","consrep"),
+  M("Listagens","painel"),
+  M("Condicionais","condicionais"),
+  M("Equipe e comissões","equipe"),
+  M("Preferências do kit","prefkit")
   // 20/11/2026 (Marcus): saíram do menu Regras dos representantes, Regras dos acertos e Regras da montagem: as regras já estão no banco do servidor e no PDF. As telas continuam abrindo pelo endereço.
 ];
 
@@ -219,10 +220,10 @@ var SETORES = [
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("consrep","Consolidado Representante")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
-    {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
+    {nome:"Kits (interno)", telas:[T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
       T("consolidado"), T("regras"),
       T("prefkit","Preferências do kit"), T("prodmont","Produtividade da montagem"),
-      T("equipe"), T("registros"), T("relatorios")]},
+      T("equipe"), T("registros")]},
   ]},
   // Produção de peças: setor próprio (16/11/2026, pedido do Marcus). Saiu de Representantes & Kits › Montagem; a tela e os dados são os mesmos (`pages/Producao.js`, `domain/producao.js`).
   {id:"producao", nome:"Produção", ic:"montadora", cor:"#EC4899", menu:MENU_PRODUCAO, semAbas:true, areas:[

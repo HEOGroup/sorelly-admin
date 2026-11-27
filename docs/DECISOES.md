@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 27/11/2026 — Consolidado dos representantes: uma visão só (Marcus)
+- A tela Consolidado dos representantes NÃO terá outro formato de visualização: só "Por representante" (sem seletor Visão, sem Fila, sem Passo a passo). Tem coluna "Código" com o código ou os códigos de cada representante (ex.: Thalita tem mais de um). "Taxas não pagas" virou "Reposição taxas". Busca da representante em fonte 13 px. A lista de atendimentos que abre ao clicar na representante segue só porque a conferência (Ficha) depende dela; falta o Marcus decidir se ela sai.
+
 ## 27/11/2026 (Brindes no acerto do admin das representantes)
 - **Brinde antes do pagamento:** a representante lança os brindes desde já; o sistema mostra o valor liberado como se o acerto estivesse pago e só confirma depois do pagamento.
 - **Código só das condicionais ativas:** a lista suspensa filtra desde a primeira letra e mostra código, preço e situação (Liberada, Brinde, Troca). BB é identificado sozinho pelo código.

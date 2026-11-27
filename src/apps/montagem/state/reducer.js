@@ -1046,7 +1046,7 @@ function reducer(s, a){
         if(a.patch && a.patch.ok===true && !atual.ok) novo.em = new Date(agora).toISOString();
         if(a.patch && a.patch.ok===false){ novo.em = null; novo.bip = null; }
         return Object.assign({}, r, {recebimento:novo});
-      })}, a.patch && a.patch.ok===true ? "Recebimento conferido: falta o OK do financeiro para liberar a comissão" : null));
+      })}, null));   // sem aviso ao terminar a conferência (Marcus, 27/11/2026)
     }
     // Retorno bipado: quem bipa (marcado no Configurador geral) dá o OK em cada acerto que o agendamento já recebeu. a.desfazer tira o OK.
     case "RETORNO_BIPAR": {
