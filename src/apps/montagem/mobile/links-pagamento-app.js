@@ -98,21 +98,24 @@ function LinksDoAcerto(p){
   var info = linksParaAcertoPorNome(s, p.rev), jaNoAcerto = {}; (p.pagamentos || []).forEach(function(x){ if(x.linkSolId) jaNoAcerto[x.linkSolId] = 1; });
   var pagos = info.pagos.filter(function(x){ return !jaNoAcerto[x.sol.id]; });
   if(!pagos.length && !info.avisos.length && !info.aguardando.length) return null;
-  var linha = function(k, bg, cor, ic, txt, sub, acao){
-    return e("div",{key:k, className:"flex items-center gap-2 rounded-lg px-2.5 py-1.5", style:{background:bg}},
-      e("span",{className:"shrink-0", style:{color:cor}}, e(Icon,{n:ic, s:15})),
-      e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12.5px] font-semibold leading-tight", style:{color:cor}}, txt), sub && e("p",{className:"text-[11px] leading-tight text-[#B5B5BA]"}, sub)), acao); };
-  return e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5 ring-1 ring-emerald-400/25"},
-    e("p",{className:"text-[12px] font-bold uppercase tracking-wide text-emerald-300"}, "Links de pagamento da revendedora"),
-    pagos.map(function(x){ var sol = x.sol, sobra = Math.max(0, sol.valor-Math.max(0, p.falta||0));
-      return linha(sol.id, "rgba(16,185,129,.12)", "#6EE7B7", "check", "Pago por link · "+formatarReais(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : ""),
-        "Pago em "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje")+(x.usavel && sobra>0 ? " · sobram "+formatarReais(sobra)+" de crédito" : "")); }),
+  // 26/11/2026 (Marcus): mesma identidade de "Vendas e pagamentos" (dourado, bege claro, texto escuro); 2 linhas agrupadas; links pagos hoje num bloco à parte
+  var linha = function(k, l1, l2){
+    return e("div",{key:k, className:"flex items-center justify-start gap-2 rounded-lg px-2 py-1 ring-1 ring-[#CA8A04]/60", style:{background:"#F6EFDF", color:"#3B2F0B"}},
+      e("div",{className:"min-w-0 leading-tight"}, e("p",{className:"text-[13px]"}, l1), l2 && e("p",{className:"text-[11px]", style:{color:"#7A5D12"}}, l2))); };
+  var cartaoPago = function(x){ var sol = x.sol, sobra = Math.max(0, sol.valor-Math.max(0, p.falta||0)), n = sol.parcelas>1 ? sol.parcelas : 1;
+    return linha(sol.id, ["Pago por link · ", e("b",{key:"v"}, formatarReais(sol.valor)), " · "+n+"x"], "Pago em "+formatarDia(sol.pagoEm)+(x.usavel && sobra>0 ? " · sobram "+formatarReais(sobra)+" de crédito" : "")); };
+  var pagosHoje = pagos.filter(function(x){ return !x.usavel; }), pagosOk = pagos.filter(function(x){ return x.usavel; });
+  var titulo = function(t){ return e("p",{className:"text-[13px] font-semibold"}, t); };
+  return e("div",{className:"flex flex-col gap-1 rounded-xl border border-[#C9A13B]/70 p-1.5"},
+    titulo("Links de pagamento da revendedora"),
+    pagosOk.map(cartaoPago),
+    pagosHoje.length>0 && titulo("Pagos hoje"),
+    pagosHoje.map(cartaoPago),
     info.avisos.map(function(x){ var sit = situacaoParaRevendedora(x);
-      return linha(x.id, "rgba(239,68,68,.12)", "#FCA5A5", "alert", "Link: "+sit.titulo+" · não conta · "+formatarReais(x.valor), formatarDia(x.criadoEm)+" · "+sit.detalhe); }),
-    info.aguardando.map(function(x){ var sit = situacaoParaRevendedora(x);
-      return linha(x.id, "rgba(251,191,36,.10)", "#FCD34D", "clock", "Link aguardando pagamento · "+formatarReais(x.valor), "Ainda não pago: só conta depois de pago."); }),
-    e("p",{className:"text-[10.5px] leading-snug text-[#8E8E93]"}, "Só valem links emitidos e pagos até o dia anterior ao acerto. O valor não é devolvido em dinheiro: o que passar do acerto vira crédito."));
-}
+      return linha(x.id, ["Link: "+sit.titulo+" · não conta · ", e("b",{key:"v"}, formatarReais(x.valor))], formatarDia(x.criadoEm)+" · "+sit.detalhe); }),
+    info.aguardando.map(function(x){
+      return linha(x.id, ["Link aguardando pagamento · ", e("b",{key:"v"}, formatarReais(x.valor))], "Ainda não pago: só conta depois de pago."); }),
+    e("p",{className:"text-[11px] leading-snug"}, "Só valem links emitidos e pagos até o dia anterior ao acerto. O valor não é devolvido em dinheiro: o que passar do acerto vira crédito."));}
 
 // Links pagos de UMA revendedora, do servidor. Recarrega a cada minuto enquanto o acerto está aberto: o setor de links pode anexar o comprovante durante o acerto.
 // Devolve {links:[{id, valor, parcelas, pagoEm, acertoId, comprovante:{nome, mime} | null}], versao} (versao muda só quando a lista muda).

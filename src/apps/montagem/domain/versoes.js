@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.268", data:"2026-11-27", titulo:"Calculadora de Acertos: comprovante do Pix antes da conta, links e seletor no padrão claro", itens:[
+    {tipo:"correção", area:"Representantes & Kits › Admin das representantes", txt:"O pagamento Pix mostra Anexar comprovante na hora, mesmo sem a conta do financeiro (visualizar, substituir, remover). O acerto finaliza com a conta pendente e o pagamento não vira validado. Texto: Enviado ao financeiro. A conta aparecerá aqui em breve."},
+    {tipo:"melhoria", area:"Representantes & Kits › Admin das representantes", txt:"Links de pagamento da revendedora em bege e dourado, 2 linhas por card, bloco Pagos hoje à parte; link usado mostra Link conta · data · parcelas; o seletor Lançar pagamento deixou o fundo preto."}]},
  {v:"0.21.267", data:"2026-11-27", titulo:"Barra lateral: lista de usuários e engrenagem", itens:[
     {tipo:"melhoria", area:"Barra lateral › Conta", txt:"Foto e nome abrem uma lista própria de usuários (só para quem pode atuar como outra pessoa): Marcus e Vanessa fixos no topo, os demais em ordem alfabética sem grupos nem cargos, uma linha de 26 px por usuário, busca sem acento, teclado, ESC e clique fora. Configurações (foto, senha, som, claro/escuro, tamanho) ficam numa engrenagem à parte."}]},
  {v:"0.21.266", data:"2026-11-26", titulo:"Consolidado liberado para bipagem, listagens, montagem, financeiro, cadastro e inadimplência", itens:[

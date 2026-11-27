@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 27/11/2026 (Comprovante do Pix antes da conta, admin das representantes)
+- **Marcus:** a representante anexa o comprovante do Pix sem esperar a conta do financeiro e finaliza o acerto com a conta pendente; o pagamento NÃO é validado. O comprovante aparece em Ver comprovante na Ficha do Atendimento. Links de pagamento e o seletor Lançar pagamento seguem o padrão claro (bege, dourado, texto escuro) de Vendas e pagamentos.
+
 ## 26/11/2026 (Link de pagamento: comprovante obrigatório e entra sozinho no acerto da representante, Leonardo)
 - **Leonardo: "no Link de pagamento tem que poder anexar o comprovante e ver se tem ou não; só pode marcar como pago com o comprovante. Depois esse comprovante tem que aparecer no acerto da representante já anexado: ela não tem que anexar, isso dá muito trabalho para ela".**
 - **Onde fica o arquivo:** no servidor de anexos do próprio sistema (`/api/anexos`, tabela `sorelly.anexo_modulo`, módulo `lp`). O backend do admin antigo não entra. O link guarda só `comprovante = {key, nome, mime, em, por}`.

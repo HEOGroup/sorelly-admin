@@ -623,7 +623,7 @@ function AppRepresentante(p){
   var vendaMotivo = dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta;
   var minVendaGeral = (dv.novas && dv.novas.minimoRepresentante) || NOVAS_PADRAO.minimoRepresentante, motivosVB = (dv.novas && dv.novas.motivosVendaBaixa) || NOVAS_PADRAO.motivosVendaBaixa;
   var vendaBaixa = vendaMotivo!=null && vendaMotivo < minVendaGeral;
-  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return p.pid && !(es && es.aguardando) && !p.anexo; }).length;   // 25/11/2026 (Lucas): antes só contava quando o pedido já estava no celular; agora todo pagamento com conta pedida precisa do comprovante
+  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando && !p.anexo; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return p.pid && !(es && es.aguardando) && !p.anexo; }).length;   // 25/11/2026 (Lucas): antes só contava quando o pedido já estava no celular; agora todo pagamento com conta pedida precisa do comprovante
   var compSoNoCelular = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return p.pid && p.anexo && es && !es.aguardando && !es.comp; });   // anexou, mas o comprovante não chegou ao financeiro: reenvia ao confirmar
   var reenviarComp = function(){ if(kitSel) compSoNoCelular.forEach(function(p){ d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:p.anexo}); }); };   // Pix, link e cartão: conta do financeiro + comprovante antes de fechar
   var faltaMotivoVB = vendaBaixa && (!acertoForm.motivoVendaBaixa || (acertoForm.motivoVendaBaixa==="Outro" && !(acertoForm.motivoVendaBaixaTexto||"").trim()));
@@ -817,7 +817,8 @@ function AppRepresentante(p){
             acertoForm.pagamentos.map(function(p,i){ var rot = rotPag(p), sp = rot.indexOf(" "), hojeP = isoDia(new Date());
               return e("div",{key:i, className:"flex min-h-9 items-center justify-between gap-2 border-b border-white/10"},
                 e("span",{className:"min-w-0 whitespace-nowrap text-[13px]"}, p.jaPagoLink ? "✓ " : "", e("b",{className:"font-semibold"}, sp<0 ? rot : rot.slice(0, sp)), sp<0 ? "" : rot.slice(sp),
-                  p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null, estPag(p) && estPag(p).aguardando ? e("small",{className:"ml-1.5 text-[11px]"}, "aguardando a empresa") : null),
+                  p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null, estPag(p) && estPag(p).aguardando ? e("small",{className:"ml-1.5 text-[11px]"}, "aguardando a empresa") : null,
+                  p.linkSolId ? e("small",{className:"block text-[11px]"}, "Link "+String(p.descricao||"").split(" - ").slice(1).map(function(w){ return /^\d+$/.test(w) ? w : w.charAt(0)+w.slice(1).toLowerCase(); }).join(" ")+" · "+(p.data ? p.data.split("-").reverse().slice(0,2).join("/") : "")+" · "+(p.parcelas||1)+"x") : null),
                 e("span",{className:"flex shrink-0 items-center gap-0.5"},
                   e("b",{className:MONO+" text-[14px]"}, BK(p.valor)),
                   p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid, ctx:ctxPed(acertoForm.pagamentos.filter(function(x,j){return j!==i;}))});
@@ -840,7 +841,19 @@ function AppRepresentante(p){
               linhaDivergente(p) && linksLivres().length>0 && e(React.Fragment,null,   // o valor digitado não bate com o link pago: vale o link (26/11/2026)
                 e("span",{className:"font-semibold text-amber-200"}, "Valor diferente do link pago"),
                 linksLivres().map(function(x){ return e("button",{key:"usar"+x.id, type:"button", onClick:function(){ usarLink(x, p); }, className:"mt-1 h-8 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Usar o link de "+BK(x.saldo)); })),
-              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : (ehPix ? null : e("span",null,"Faça o pagamento na conta: "+es.conta)),
+              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta aparecerá aqui em breve.") : null,
+              es.aguardando && (function(){   // 26/11/2026 (Marcus): o comprovante já pode ser anexado enquanto a conta não chega; ver, trocar e remover antes de finalizar
+                var btn = "flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg px-2 text-[11px] font-bold ring-1 ring-[#CA8A04]", est = {background:"#F6EFDF", color:"#7A5D12"};
+                if(!p.anexo) return e("label",{className:btn+" mt-0.5", style:est}, "Anexar comprovante", inputAnexo());
+                var ver = function(){ var u = p.anexo.dados; if(!u) return; fetch(u).then(function(r){ return r.blob(); }).then(function(b){ var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }).catch(function(){}); };
+                var tira = function(){ setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:null}) : x; })}); }); if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:null}); };
+                return e("div",{className:"mt-0.5 flex flex-col gap-1"},
+                  e("span",{className:"text-[11px] font-bold"}, "✓ Comprovante anexado: "+(p.anexo.nome||"arquivo")),
+                  e("div",{className:"flex gap-1"},
+                    e("button",{type:"button", onClick:ver, className:btn, style:est}, "Visualizar"),
+                    e("label",{className:btn, style:est}, "Substituir", inputAnexo()),
+                    e("button",{type:"button", onClick:tira, className:btn, style:est}, "Remover"))); })(),
+              es.aguardando ? null : (ehPix ? null : e("span",null,"Faça o pagamento na conta: "+es.conta)),
               !es.aguardando && ehPix && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot, valor:es.partes.length===1 && String(es.partes[0]).indexOf(" + ")<0 ? p.valor : 0, lado:qi===0 ? ladoAnexo : null}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
               !es.aguardando && !ehPix && (p.anexo
                 ? e("span",{className:"font-semibold"}, p.anexo.link ? "✓ Comprovante anexado pela Sorelly" : "✓ Comprovante anexado")   // link: o comprovante veio do setor de links (26/11/2026)
@@ -856,24 +869,25 @@ function AppRepresentante(p){
               chave && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(chave); }catch(x){} }, className:"mt-1 h-8 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Copiar chave")); }),
           (function(){
             var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
+            var campoSel = "h-8 w-full rounded-lg bg-white px-2 text-[13px] text-[#3B2F0B] outline-none ring-1 ring-[#C9A13B]/60", campoValor = "h-8 w-[7.5rem] rounded-lg bg-white px-2 text-right text-[13px] font-semibold text-[#3B2F0B] outline-none ring-1 ring-[#C9A13B]/60 "+MONO;   // 26/11/2026 (Marcus): seletor de forma no padrão claro de Vendas e pagamentos
             var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja" && !pedeCta;   // dinheiro e inadimplência não têm comprovante; Pix, link e cartão: o comprovante vem DEPOIS, quando o financeiro responder a conta (Marcus, 04/11/2026)
             var pronto = !!(fm && lancForm.data && lancForm.valor>0 && (!pedeComp || lancForm.anexo));
             var abre = function(){ if(lancAberto){ setLancAberto(false); setLancForm(LANC_VAZIO); } else { setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); } };
-            return e("div",{key:"lanc1", className:"mt-1 overflow-hidden rounded-xl border border-white/15"},
-              e("button",{onClick:abre, "aria-expanded":lancAberto, className:"flex min-h-10 w-full items-center gap-2.5 bg-white/[.07] px-3 text-left"},
+            return e("div",{key:"lanc1", className:"mt-1 overflow-hidden rounded-xl border border-[#C9A13B]/70", style:{background:"#F6EFDF", color:"#3B2F0B"}},
+              e("button",{onClick:abre, "aria-expanded":lancAberto, className:"flex min-h-10 w-full items-center gap-2.5 px-3 text-left"},
                 e("span",{className:"grid size-8 shrink-0 place-items-center rounded-lg text-[13px] font-bold", style:{background:"#CA8A0426", color:"#CA8A04"}}, "+"),
                 e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Lançar pagamento"),
-                e(Icon,{n: lancAberto ? "chevrondown" : "chevron", s:15, className:"text-[#8E8E93]"})),
-              lancAberto && e("div",{className:"flex flex-col gap-2 border-t border-white/10 p-1.5"},
+                e(Icon,{n: lancAberto ? "chevrondown" : "chevron", s:15, className:"text-[#7A5D12]"})),
+              lancAberto && e("div",{className:"flex flex-col gap-2 border-t border-[#C9A13B]/40 p-1.5"},
                 e("select",{value:fm, "aria-label":"Forma de pagamento", onChange:function(ev){ setLancForm(Object.assign({}, LANC_VAZIO, {forma:ev.target.value, valor:lancForm.valor}));
                     if(ev.target.value==="acerto_loja" && !acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); }, className:campoSel},
                   e("option",{value:""},"Escolha a forma"),
                   formas.map(function(x){ return e("option",{key:x.k, value:x.k}, formaDe(x.k).label); })),
-                fm==="acerto_loja" && e("div",{key:"inad", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
+                fm==="acerto_loja" && e("div",{key:"inad", className:"flex flex-col gap-2 rounded-xl bg-white/60 p-1.5"},
                   e("div",{className:"flex items-center justify-between gap-2"},
                     e("p",{className:"text-[13px] font-bold"},"Negociar o valor em aberto"),
-                    e("button",{onClick:function(){ setRegrasInadAberto(!regrasInadAberto); }, "aria-label":"Regras da inadimplência", "aria-expanded":regrasInadAberto, className:"h-8 shrink-0 rounded-lg bg-white/10 px-3 text-[13px] font-bold"}, "Regras")),
-                  regrasInadAberto && e("div",{className:"flex flex-col gap-1 rounded-lg bg-black/40 p-2 text-[12px]"},
+                    e("button",{onClick:function(){ setRegrasInadAberto(!regrasInadAberto); }, "aria-label":"Regras da inadimplência", "aria-expanded":regrasInadAberto, className:"h-8 shrink-0 rounded-lg bg-white px-3 text-[13px] font-bold ring-1 ring-[#CA8A04]"}, "Regras")),
+                  regrasInadAberto && e("div",{className:"flex flex-col gap-1 rounded-lg bg-white p-2 text-[12px]"},
                     e("p",{className:"font-bold"},"Regras da inadimplência"),
                     e("p",null,"1. Qualquer valor pendente tem multa de "+((versaoSel && versaoSel.novas) || {}).multaPendentePct+"% sobre o pendente. "+(versaoSel && versaoSel.novas ? textoNegociacao(versaoSel.novas)+" Parcela atrasada soma "+versaoSel.novas.atrasoQuitacaoPctDia+"% ao dia, até "+versaoSel.novas.atrasoQuitacaoTetoPct+"%." : "")),
                     e("p",null,"2. Sem negociar o valor que falta, os brindes não são liberados."),
@@ -881,10 +895,10 @@ function AppRepresentante(p){
                     e("p",null,"4. Se a revendedora não quiser negociar, o jurídico entra em contato. Sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente.")),
                   acertoForm.acordoParcelas.map(function(p,i){ return e("div",{key:i, className:"grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-center gap-x-2 gap-y-1"},
                     e("span",{className:"col-span-2 text-[11px] font-semibold"}, "Parcela "+(i+1)),
-                    e("input",{type:"date", value:p.data, "aria-label":"Data da parcela", onChange:function(ev){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {data:ev.target.value}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoSel+" w-full min-w-0 [color-scheme:dark]"}),
+                    e("input",{type:"date", value:p.data, "aria-label":"Data da parcela", onChange:function(ev){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {data:ev.target.value}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoSel+" w-full min-w-0 [color-scheme:light]"}),
                     e(CampoReaisAuto,{value:p.valor, label:"Valor da parcela", onChange:function(v){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {valor:v}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoValor+" w-full min-w-0"})); }),
                   e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:acertoForm.acordoParcelas.concat([{data:isoDia(new Date()), valor:null}])})); }, className:"h-8 w-full rounded-lg text-[13px] font-semibold"}, "+ Adicionar parcela"),
-                  e("div",{className:"grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 border-t border-white/10 pt-2 text-[13px]"}, e("span",{className:"whitespace-nowrap"},"Soma das parcelas"), e("b",{className:MONO+" whitespace-nowrap text-right"}, BK(acordoSoma)), e("span",null,"Falta"), e("b",{className:MONO+" text-right"}, BK(restanteTotal))),
+                  e("div",{className:"grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 border-t border-[#C9A13B]/40 pt-2 text-[13px]"}, e("span",{className:"whitespace-nowrap"},"Soma das parcelas"), e("b",{className:MONO+" whitespace-nowrap text-right"}, BK(acordoSoma)), e("span",null,"Falta"), e("b",{className:MONO+" text-right"}, BK(restanteTotal))),
                   e("div",{className:"grid grid-cols-1 gap-2"},
                     e("button",{onClick:function(){ var validas = acertoForm.acordoParcelas.filter(function(p){return p.data && p.valor>0;}); var soma = validas.reduce(function(a,p){return a+p.valor;},0);
                         setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:validas, acordoSalvo:validas.length>0, recusouNegociar:false}));
@@ -899,7 +913,7 @@ function AppRepresentante(p){
                     PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
                       .map(function(n){ return e("option",{key:n, value:n}, n+"x"); })),
                   e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" w-auto! min-w-0 flex-1"})) : null,
-                pedeComp && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-black/40 px-2.5 text-[13px] ring-1 "+(lancForm.anexo ? "ring-[#CA8A04]" : "ring-white/10")},
+                pedeComp && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-white px-2.5 text-[13px] ring-1 "+(lancForm.anexo ? "ring-[#CA8A04]" : "ring-[#C9A13B]/50")},
                   e("span",{className:"min-w-0"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante *"),
                   e("span",{className:"shrink-0 font-bold"}, lancForm.anexo ? "Trocar" : "Anexar"),
                   e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante (foto ou documento)", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
@@ -1060,7 +1074,7 @@ function AppRepresentante(p){
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
             className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
         e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente || aguardaContaN>0 || semCompN>0, onClick:function(){ reenviarComp(); setTela("assinaracerto"); },
-          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : aguardaContaN>0 ? "Aguardando a conta do financeiro" : semCompN>0 ? "Anexe o comprovante do pagamento" : "Confirmar acerto")]);
+          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : aguardaContaN>0 ? "Anexe o comprovante do pagamento" : semCompN>0 ? "Anexe o comprovante do pagamento" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",

@@ -1397,8 +1397,8 @@ function reducer(s, a){
         return sincContasRep(Object.assign({}, sPed2, dpReduz(sPed2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch)); }
       if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
       if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;
-          return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:{nome:a.anexo.nome, url:a.anexo.dados||null}})]}); })}); })});
-        return sincCompFornecedor(com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro")); }
+          return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:a.anexo ? {nome:a.anexo.nome, url:a.anexo.dados||null} : null})]}); })}); })});
+        return sincCompFornecedor(com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo ? a.anexo.nome : ""}).patch), {}, a.anexo ? "Comprovante enviado ao financeiro" : "Comprovante removido")); }
       if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }
