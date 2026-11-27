@@ -3930,3 +3930,8 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 
 ## 27/11/2026 · Admin das representantes: × em toda peça da devolução; código digitado sem câmera
 - × em todas as peças (desmarca ou marca); campo de código refocado após cada peça (v0.21.272).
+
+## 27/11/2026 — Compras: correção do bloqueio da compra efetuada com valor menor (Nickolas, caso #2789, v0.21.274)
+- Causa: na janela "Compra efetuada", o plano só ia junto da confirmação com `edita` (quem aprova) ou no modo "só valores". O ajuste automático de UMA parte mudava a tela sem ligar esse modo; para quem só efetua (Helen) o plano ajustado não era enviado, e a regra conferia o plano gravado (R$ 111,81) contra o valor final (R$ 109,47): "Passou R$ 2,34".
+- Correção: `planoDoEnvio` manda o plano sempre que a tela mudou (a regra `soValores` decide o que pode mudar); `ajustarPlanoAoValor` em centavos; `rowsDe`/`linhasDoPlano` passaram para o domínio (a tela e o teste usam as mesmas funções).
+- Teste: `scripts/testar-fluxo-compras.mjs` seção 10 reproduz o print (aceita, salva, reabre com R$ 109,47, histórico com R$ 111,81 e R$ 2,34; acima do limite e plano divergente continuam bloqueados). Tela conferida sem confirmar compra real.

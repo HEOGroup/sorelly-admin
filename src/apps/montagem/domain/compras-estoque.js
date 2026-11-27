@@ -454,6 +454,19 @@ function quemRetira(cfg){ return String((cfg && cfg.retiradaPor!=null ? cfg.reti
 function textoTransporte(t){ if(!t || !t.modo) return ""; return (t.modo==="retirada" ? "Retirada por "+(t.responsavel||"Não informado") : ROTULO_TRANSPORTE[t.modo]+(t.responsavel ? " · "+t.responsavel : ""))+(t.previsao ? " · chega "+formatarDia(t.previsao) : "")+(t.obs ? " · "+t.obs : ""); }
 // CONFERÊNCIA NA LOGÍSTICA (26/11/2026): falta = pedido − aceito − saldo encerrado (o que não será mais entregue). Recusado/pendente de aceitação não conta como recebido nem entra no estoque
 function faltaItem(i){ return Math.max(0, i.quantidade-(i.qtdRecebida||0)-(i.qtdEncerrada||0)); }
+// PLANO NA JANELA "COMPRA EFETUADA" (27/11/2026, caso #2789): a tela e o teste usam ESTAS funções (antes ficavam só na tela).
+// rowsDe: plano → linhas da tela; linhasDoPlano: linhas → o que vai para a regra; planoDoEnvio: o plano vai junto da confirmação SEMPRE que a tela mudou (quem pode mudar o quê é a regra que decide).
+function rowsDe(plano){ return (plano || []).map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", prazo:x.prazo || "", parcelas:x.parcelas || null, juros:x.juros==null ? null : x.juros, taxa:x.taxa || "", pago:!!x.pago}; }); }
+function linhasDoPlano(rows){ return rows.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento, prazo:x.prazo || "", parcelas:x.forma==="cartao" ? (Number(x.parcelas) || 1) : x.forma==="boleto" && Number(x.parcelas)>0 ? Number(x.parcelas) : undefined, juros:x.forma==="cartao" ? x.juros : undefined, taxa:x.forma==="cartao" ? x.taxa : undefined}; }); }
+function planoDoEnvio(rows, base){ return JSON.stringify(rows)!==JSON.stringify(base) ? linhasDoPlano(rows) : undefined; }
+// reduz o plano ao valor final, em CENTAVOS: uma única parte não paga absorve a redução ({rows}); várias partes = quem compra escolhe ({escolher:true}); nada a reduzir = {rows} igual
+function ajustarPlanoAoValor(rows, valor){
+  var cent = function(v){ return Math.round((Number(v) || 0)*100); }, sobra = rows.reduce(function(t, x){ return t+cent(x.valor); }, 0)-cent(valor);
+  if(sobra<=0) return {rows:rows, sobra:0};
+  var livres = rows.map(function(x, i){ return i; }).filter(function(i){ return !rows[i].pago && cent(rows[i].valor)>sobra; });
+  if(rows.filter(function(x){ return !x.pago; }).length===1 && livres.length===1) return {rows:rows.map(function(x, i){ return i===livres[0] ? Object.assign({}, x, {valor:(cent(x.valor)-sobra)/100}) : x; }), sobra:sobra/100};
+  return {escolher:true, sobra:sobra/100};
+}
 function limiteDe(p){ var v = p.limiteAprovado!=null ? p.limiteAprovado : p.decisao && p.decisao.total!=null ? p.decisao.total : null; return v>0 ? r2(v) : null; }   // sem valor na solicitação (A definir) = sem limite
 function acoesDoPedido(p){ return Object.keys(TRANSICOES).filter(function(k){ return permitidaNoPedido(p, k); }).map(function(k){ return {op:k, rotulo:TRANSICOES[k].rotulo, cap:TRANSICOES[k].cap, decide:TRANSICOES[k].decide||false}; }); }
 function podeAcaoPedido(p, op){ return permitidaNoPedido(p, op); }
@@ -1367,7 +1380,7 @@ function ceReduz(s, a){
 export { ehCategoriaGrafica, ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
   CONFIG_PADRAO, STATUS_PEDIDO, ROTULO_STATUS, TOM_STATUS, FUNIL_STATUS, HISTORICO_STATUS, PAGAVEL_STATUS, ETIQUETA_ELEGIVEL, ETIQUETAS, ROTULO_ETIQUETA, UNIDADES, ROTULO_UNIDADE, URGENCIAS, ROTULO_URGENCIA, TIPOS_ENTREGA, ROTULO_ENTREGA,
   FORMAS_PAGAMENTO, ROTULO_FORMA, FORMAS_PLANO, ROTULO_FORMA_PLANO, MOTIVOS_ORCAMENTO, ROTULO_MOTIVO_ORC, PAPEIS_COMPRAS, ROTULO_PAPEL, CAPS_COMPRAS, TRANSICOES,
-  FORMAS_DISP, ROTULO_FORMA_DISP, FORMAS_SEM_NF, REF_PRAZO, ETAPA_ANALISE, etapaFinanceira, rotuloStatusDe, faltaItem, limiteDe, nfPendente, semNotaFiscal, MODOS_TRANSPORTE, ROTULO_TRANSPORTE, quemRetira, textoTransporte, textoFormaDisp, pendenciasAnalise, rotuloRefPrazo, avisosDoPedido,
+  FORMAS_DISP, ROTULO_FORMA_DISP, FORMAS_SEM_NF, REF_PRAZO, ETAPA_ANALISE, etapaFinanceira, rotuloStatusDe, faltaItem, limiteDe, rowsDe, linhasDoPlano, planoDoEnvio, ajustarPlanoAoValor, nfPendente, semNotaFiscal, MODOS_TRANSPORTE, ROTULO_TRANSPORTE, quemRetira, textoTransporte, textoFormaDisp, pendenciasAnalise, rotuloRefPrazo, avisosDoPedido,
   SITUACOES, ROTULO_SITUACAO, ANDAMENTOS, ROTULO_ANDAMENTO, ANDAMENTO_DO_PEDIDO, andamentoMaterial, comprasDoMaterial, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
   formatarReais, formatarDia, formatarDataHora, formatarHoras, padronizarUnidade, padronizarFornecedor, estoqueDaSolicitacao,
   papelCompras, podeCompras, veFunilCompleto, podeAprovarCompra, podeEfetuarCompra, podeEditarPlano, capacidadesEstoque, podeEstoque,

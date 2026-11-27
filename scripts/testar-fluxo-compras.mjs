@@ -191,5 +191,36 @@ const avP = ped(Q).eventos.filter((x) => x.aviso && x.aviso.acao==="informar_pro
 t("problema avisa financeiro e logística", !!avP && avP.aviso.pessoas.indexOf("29")>=0 && avP.aviso.pessoas.indexOf("61")>=0 && /Veio a cor errada/.test(avP.aviso.texto));
 t("depois de responder, não dá para confirmar de novo", !D.podeAcaoPedido(ped(Q), "confirmar_recebimento"));
 
+console.log("10. Caso do print (#2789): plano do financeiro R$ 111,81, valor final R$ 109,47, quem compra só EFETUA");
+s.ce.config.aprovadores = [29];   // 16 = quem compra, sem a autorização de aprovar (igual à Helen)
+const Z = novo(); run("pedido_aprovar", { id:Z });
+run("pedido_liberar", { id:Z, cnpjId:"46", plano:[{ forma:"cartao", valor:111.81, vencimento:"2026-11-26", prazo:"30 dias após a nota", parcelas:3, juros:"nao" }] });
+t("quem compra NÃO edita o plano livremente (o plano é do financeiro)", !D.podeEditarPlano(s, ped(Z), 16, null) && D.podeEfetuarCompra(s, 16));
+// a tela: linhas do plano salvo, valor final digitado, botão "Ajustar plano ao valor final"
+const baseP = D.rowsDe(ped(Z).plano), ajP = D.ajustarPlanoAoValor(baseP, 109.47);
+const soma = ajP.rows.reduce((t, x) => t+Math.round(x.valor*100), 0)/100;
+t("1. a tela ajusta a parte e a diferença fica zero (centavos)", !ajP.escolher && ajP.sobra===2.34 && soma===109.47 && ajP.rows[0].valor===109.47, JSON.stringify(ajP));
+// o que a janela manda ao clicar "Marcar como efetuada"
+const plEnvio = D.planoDoEnvio(ajP.rows, baseP);
+t("2. o plano ajustado VAI junto da confirmação (antes não ia: era a causa do bloqueio)", Array.isArray(plEnvio) && plEnvio[0].valor===109.47);
+const semPlano = D.ceReduz(s, { type:"CE", op:"pedido_comprar", id:Z, valorCompra:109.47, por:"Teste", porId:16 });
+t("causa confirmada: sem o plano, a regra confere o plano antigo e dá \"Passou R$ 2,34\"", !(semPlano.patch && semPlano.patch.ce) && /Passou R\$ 2,34/.test(semPlano.msg||""), semPlano.msg);
+r = run("pedido_comprar", { id:Z, valorCompra:109.47, comprador:"Helen", plano:plEnvio }, 16);
+t("3. a regra aceita e salva a compra", passou(r), r.msg);
+t("4. a compra avança para Compra efetuada", ped(Z).status==="COMPRADA" && D.rotuloStatusDe(ped(Z))==="Compra efetuada");
+const reaberto = D.pedidoDe(s, Z);
+t("5. ao reabrir: valor final e plano em R$ 109,47, uma parte só, mesmo id, mesmas condições", reaberto.valorCompra===109.47 && reaberto.plano.length===1 && reaberto.plano[0].valor===109.47 && reaberto.plano[0].id===baseP[0].id && reaberto.plano[0].parcelas===3 && reaberto.plano[0].forma==="cartao" && reaberto.planoInfo.fecha, JSON.stringify(reaberto.plano));
+const ajZ = (ped(Z).ajustesPlano||[]).pop();
+t("6. histórico: R$ 111,81 aprovado e R$ 2,34 de redução; o limite aprovado não mudou", !!ajZ && ajZ.aprovado===111.81 && ajZ.reducao===2.34 && D.limiteDe(ped(Z))===111.81);
+const Y = novo(); run("pedido_aprovar", { id:Y });
+run("pedido_liberar", { id:Y, cnpjId:"46", plano:[{ forma:"cartao", valor:111.81, vencimento:"2026-11-26", parcelas:3, juros:"nao" }] });
+const bY = D.rowsDe(ped(Y).plano);
+r = run("pedido_comprar", { id:Y, valorCompra:115, plano:D.planoDoEnvio(D.ajustarPlanoAoValor(bY, 115).rows, bY) }, 16);
+t("valor ACIMA do limite continua bloqueado (reanálise)", !passou(r) && /reanálise/.test(r.msg||""), r.msg);
+r = run("pedido_comprar", { id:Y, valorCompra:109.47, plano:D.linhasDoPlano([Object.assign({}, bY[0], { valor:105 })]) }, 16);
+t("plano que NÃO fecha com o valor final continua bloqueado", !passou(r) && ped(Y).status==="LIBERADA", r.msg);
+const dois = D.ajustarPlanoAoValor([{ forma:"cartao", valor:60 }, { forma:"boleto", valor:51.81 }], 109.47);
+t("várias partes: a tela pede para escolher onde fica a redução (não divide sozinha)", dois.escolher===true && dois.sobra===2.34);
+
 console.log("\n"+ok+" OK, "+falha+" falha(s)");
 process.exit(falha ? 1 : 0);

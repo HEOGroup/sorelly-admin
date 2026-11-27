@@ -7,7 +7,7 @@ import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
 import { abrirAnexo, enviarAnexo, lerArquivo } from "@/apps/montagem/lib/anexo";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ETAPA_ANALISE, ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_DISP, FORMAS_PLANO, FORMAS_SEM_NF, REF_PRAZO, ROTULO_FORMA_DISP, MOTIVOS_ORCAMENTO, PAGAVEL_STATUS, ROTULO_ETIQUETA, ROTULO_FORMA_PLANO, ROTULO_MOTIVO_ORC, ROTULO_UNIDADE, ROTULO_URGENCIA, TRANSICOES, UNIDADES, URGENCIAS,
-  compraParaOrientacoes, limiteDe, nfPendente, semNotaFiscal, MODOS_TRANSPORTE, ROTULO_TRANSPORTE, quemRetira, textoTransporte, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, pendenciasAnalise, planoSituacao, podeAcaoPedido, podeEditarPlano, avisosDoPedido, textoFormaDisp, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
+  compraParaOrientacoes, limiteDe, rowsDe, linhasDoPlano, planoDoEnvio, ajustarPlanoAoValor, nfPendente, semNotaFiscal, MODOS_TRANSPORTE, ROTULO_TRANSPORTE, quemRetira, textoTransporte, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, pendenciasAnalise, planoSituacao, podeAcaoPedido, podeEditarPlano, avisosDoPedido, textoFormaDisp, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
 import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, EstoqueMomento, Janela, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
@@ -79,21 +79,20 @@ function DlgComprar(p){
   var ini = sugFormas.length ? sugFormas.map(function(f){ return {forma:f, valor:sugFormas.length===1 ? ped.valorFinal : null, vencimento:"", prazo:"", parcelas:null, juros:null, taxa:"", pago:false}; }) : base;
   var st = useState({valor:(doFinanceiro && ped.plano.length ? ped.planoInfo.soma : ped.valorFinal) || null, comprador:c.por, dia:hojeSP(), prev:ped.previsaoEntrega || "", numero:ped.numeroFornecedor || "", nf:ped.notaFiscal || "", rows:ini}), v = st[0];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; st[1](n); };
-  var mudou = JSON.stringify(v.rows)!==JSON.stringify(base);
   // LIMITE (26/11/2026): valor aprovado. Acima = reanálise do financeiro (não confirma); abaixo, com plano do financeiro = ajustar só os valores do plano
   var lim = limiteDe(ped), val = Number(v.valor) || 0, acima = lim!=null && val>lim+0.005;
   var somaRows = v.rows.reduce(function(t, x){ return t+(Number(x.valor) || 0); }, 0), sobra = Math.round((somaRows-val)*100)/100;
   var precisaAjuste = ped.plano.length>0 && !acima && val>0 && sobra>0.005;
   var ajustar = function(){
-    var livres = v.rows.map(function(x, i){ return i; }).filter(function(i){ return !v.rows[i].pago && (Number(v.rows[i].valor) || 0)>sobra; });
-    if(v.rows.filter(function(x){ return !x.pago; }).length===1 && livres.length===1){ var i0 = livres[0]; set("rows", v.rows.map(function(x, i){ return i===i0 ? Object.assign({}, x, {valor:Math.round(((Number(x.valor) || 0)-sobra)*100)/100}) : x; })); return; }
-    set("soValores", true); c.aviso("Informe em qual parte fica a redução: digite o novo valor nas partes abaixo até a diferença ficar R$ 0,00.");
+    var aj = ajustarPlanoAoValor(v.rows, v.valor);
+    if(aj.escolher){ set("soValores", true); return c.aviso("Informe em qual parte fica a redução: digite o novo valor nas partes abaixo até a diferença ficar R$ 0,00."); }
+    st[1](Object.assign({}, v, {rows:aj.rows, soValores:true}));
   };
   var reanalise = function(){ if(c.exec({op:"pedido_reanalise", id:ped.id, valorNovo:v.valor, justificativa:v.just || ""})) p.fechar(); };
   var enviar = function(){
     if(acima) return c.aviso("O valor final passou do aprovado: envie para reanálise do financeiro.");
     var a = {op:"pedido_comprar", id:ped.id, valorCompra:v.valor, comprador:v.comprador, compradoEm:v.dia, previsaoEntrega:v.prev || undefined};
-    if((edita || v.soValores) && mudou) a.plano = linhasDoPlano(v.rows);
+    var pl = planoDoEnvio(v.rows, base); if(pl) a.plano = pl;   // 27/11/2026: o plano da tela vai SEMPRE que mudou (antes só com "edita"/soValores: o ajuste de uma parte não ia e a regra via o plano antigo)
     if(!c.exec(a)) return;
     if(v.numero.trim() && v.numero.trim()!==ped.numeroFornecedor) c.exec({op:"pedido_set", id:ped.id, numeroFornecedor:v.numero});
     if(v.nf.trim() && v.nf.trim()!==ped.notaFiscal) c.exec({op:"pedido_nf", id:ped.id, notaFiscal:v.nf});
@@ -331,8 +330,7 @@ function DlgOp(p){
 
 // ───────────── plano de pagamento (editor reutilizado no detalhe, na liberação e na compra) ─────────────
 // linha do plano para a tela (rowsDe) e de volta para a regra (linhasDoPlano): vencimento OU prazo combinado; parcelas no cartão e no boleto; juros e taxa só no cartão (18/11/2026)
-var rowsDe = function(plano){ return (plano || []).map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", prazo:x.prazo || "", parcelas:x.parcelas || null, juros:x.juros==null ? null : x.juros, taxa:x.taxa || "", pago:!!x.pago}; }); };
-var linhasDoPlano = function(rows){ return rows.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento, prazo:x.prazo || "", parcelas:x.forma==="cartao" ? (Number(x.parcelas) || 1) : x.forma==="boleto" && Number(x.parcelas)>0 ? Number(x.parcelas) : undefined, juros:x.forma==="cartao" ? x.juros : undefined, taxa:x.forma==="cartao" ? x.taxa : undefined}; }); };
+// rowsDe e linhasDoPlano moraram aqui até 27/11/2026; agora vêm de domain/compras-estoque.js (as mesmas no teste)
 var JUROS_SEL = function(j){ return j===true || j==="sim" ? "sim" : j===false || j==="nao" ? "nao" : ""; };
 var JUROS_VAL = function(s){ return s==="sim" ? true : s==="nao" ? false : null; };
 // partes do plano (controlado: rows/set vêm de quem usa). ref = {valorCompra, valorEstimado} (total de referência); linhaExtra(r, i) opcional; botoes opcionais no fim
