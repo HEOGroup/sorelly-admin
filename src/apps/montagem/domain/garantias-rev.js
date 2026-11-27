@@ -90,7 +90,7 @@ function grReduz(s, a){
       var v = Math.round(Number(a.valor)*100)/100;
       if(!a.revendedora) return recusa("Escolha a revendedora.");
       if(!(v>0)) return recusa("Informe o valor do crédito.");
-      g.creditos.push({id:"CG"+(++g.seq), em:agora, revendedora:a.revendedora, cod:a.cod||"", valor:v, obs:String(a.obs||"").slice(0, 300), por:por, usado:null});
+      g.creditos.push({id:"CG"+(++g.seq), em:agora, revendedora:a.revendedora, cod:a.cod||"", valor:v, obs:String(a.obs||"").slice(0, 300), por:por, origem:a.origem==="Manual" ? "Manual" : "Garantias", usado:null});
       return ok("Crédito de "+a.revendedora+" lançado");
     }
     case "credito_del": {

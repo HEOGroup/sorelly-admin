@@ -156,6 +156,7 @@ function AppRepresentante(p){
   var rf = useState({comExpositor:false, especial:false, valorEspecial:0}), reposForm = rf[0], setReposForm = rf[1];
   var mc = useState("acerto"), modoCalc = mc[0], setModoCalc = mc[1];
   var ab = useState(1), blocoAberto = ab[0], setBlocoAberto = ab[1];
+  var gmS = useState({aberto:false, cod:"", valor:null, motivo:"", erro:""}), gm = gmS[0], setGm = gmS[1];   // crédito de garantia lançado à mão (Marcus, 27/11/2026)
   var TROCA_VAZIA = {tipo:null, antigaCod:"", antigaValor:null, novaCod:"", novaValor:null};
   var tr0 = useState(TROCA_VAZIA), trocaIn = tr0[0], setTrocaIn = tr0[1];
   var bcS = useState("normal"), brindeCat = bcS[0], setBrindeCat = bcS[1];   // brinde que está sendo lançado: normal ou bb (02/11/2026)
@@ -516,8 +517,8 @@ function AppRepresentante(p){
   var subirBloco = function(el){ try{
     var c = el.parentElement; while(c && !/(auto|scroll)/.test(getComputedStyle(c).overflowY)) c = c.parentElement;
     if(!c) return;
-    var h = document.getElementById("hdr-calc"), alturaCab = h ? h.getBoundingClientRect().height : 0, cr = c.getBoundingClientRect(), er = el.getBoundingClientRect();
-    c.scrollTo({top:c.scrollTop + (er.top - cr.top) - alturaCab + 4, behavior:"smooth"});
+    var h = document.getElementById("hdr-calc"), baixoCab = h ? h.getBoundingClientRect().bottom : c.getBoundingClientRect().top, er = el.getBoundingClientRect();
+    c.scrollTo({top:c.scrollTop + (er.top - baixoCab) - 8, behavior:"smooth"});
   }catch(x){} };
   var blocoAcordeao = function(idx, icone, cor, titulo, subtitulo, status, conteudo){
     var aberto = blocoAberto===idx;
@@ -632,24 +633,21 @@ function AppRepresentante(p){
   var valorFech = function(sinal, txt){ return e("span",{className:"flex items-center gap-1.5"}, e("i",{className:"w-3 text-center text-[13px] font-semibold not-italic"}, sinal), e("b",{className:MONO+" text-[13px]"}, txt)); };
   var campoSel = "h-8 w-full rounded-lg bg-black/50 px-2 text-[13px] text-white outline-none ring-1 ring-white/10";
   var campoValor = "h-8 w-[7.5rem] rounded-lg bg-black/50 px-2 text-right text-[13px] font-semibold text-white outline-none ring-1 ring-white/10 "+MONO;
-  var headerCalc = kitSel && e("div",{id:"hdr-calc", className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-1.5 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
-    e("div",{className:"flex items-center gap-2"},
-      e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),   // sem borda nem fundo (Marcus, 04/11/2026)
+  // Modalidade do kit (Ouro ou 100% Prata): fica no topo fixo da calculadora, sem seção própria (Marcus, 27/11/2026); cada troca vai pro histórico.
+  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
+  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
+  var headerCalc = kitSel && e("div",{id:"hdr-calc", className:"sticky -top-2 z-20 !-mx-2 !mb-2 !flex !flex-col !gap-1.5 !rounded-none !bg-[#F0F1F3] !px-2 !pb-1 !pt-2 !text-[#111827] !shadow-none"},
+    e("div",{className:"flex items-center gap-2 rounded-2xl bg-[#0B0B0D] px-3 py-2"},
+      e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
       e("b",{className:douradoTitulo+" min-w-0 flex-1 leading-tight"}, "Calculadora de Acertos"),
-      e("button",{onClick:function(){ setTelaAntes("calcacerto"); setTela("regras"); }, "aria-label":"Ver as regras", title:"Regras",
-        className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"book", s:16}))),
-    // Bloco compacto (Marcus, 04/11/2026): Vendas e Comissão lado a lado e o Valor do acerto na linha de baixo; fontes menores
-    e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#1C1C1E] px-2.5 py-1.5 ring-1 ring-amber-200/25"},
-      e("div",{className:"flex items-center gap-2"},
-        e("p",{className:"min-w-0 flex-1 truncate text-[13px] font-extrabold "+BR}, sel.rev),
-        ehPrata && e("span",{className:"shrink-0 rounded-full bg-slate-300 px-2 py-0.5 text-[10.5px] font-black tracking-wider text-slate-900"}, "100% PRATA")),
-      previaAcerto && e("div",{key:"tres", className:"mt-0.5 flex flex-col"},
-        e("div",{className:"flex items-center justify-between gap-3 py-0.5"},
-          e("span",{className:"flex items-baseline gap-1.5 whitespace-nowrap"}, e("span",{className:"text-[11px] "+BR}, "Vendas"), e("b",{className:MONO+" text-[13px] "+BR}, BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta))),
-          e("span",{className:"flex items-baseline gap-1.5 whitespace-nowrap"}, e("span",{className:"text-[11px] "+BR}, "Comissão"), e("b",{className:MONO+" text-[13px] "+BR}, previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"))),
-        e("div",{className:"mt-0.5 flex items-center justify-between gap-3 border-t border-[#C9A13B] pt-0.5"},
-          e("span",{className:"text-[11px] font-bold text-amber-200"}, "Valor do acerto"),
-          e("b",{className:MONO+" whitespace-nowrap text-[16px] text-amber-200"}, BK(previaAcerto.valorAcerto))))));
+      e("button",{onClick:function(){ setTelaAntes("calcacerto"); setTela("regras"); }, "aria-label":"Ver as regras", title:"Regras", className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"book", s:16}))),
+    e("div",{className:"flex flex-col border border-[#C9A13B]/60 bg-white"},
+      e("p",{className:"flex min-h-8 items-center justify-center bg-[#F8F3E8] px-3 text-center text-[18px] font-semibold text-[#5B4410]"}, sel.rev),
+      previaAcerto && e("div",{className:"grid grid-cols-3 gap-px border-t border-[#E4D3A3] bg-[#E4D3A3]"}, [["Vendas", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta), ""], ["Comissão", previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%", ""], ["Valor do acerto", BK(previaAcerto.valorAcerto), "text-[#8A6A12]"]].map(function(x){ return e("div",{key:x[0], className:"flex min-w-0 flex-col items-center justify-center bg-white py-1 text-center"}, e("span",{className:"text-[11px] text-[#374151]"}, x[0]), e("b",{className:"text-[13px] font-semibold "+(x[2]||"text-[#111827]")}, x[1])); })),
+      e("div",{className:"grid grid-cols-2 gap-1.5 border-t border-[#E4D3A3] bg-white p-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
+        return e("button",{key:o[0], type:"button", onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
+          className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-[#334155] ring-[#334155] " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#8A6A12] ring-[#C9A13B]/60")}, o[1]); }))),
+    e("div",{className:"flex items-center gap-3 px-1 pt-0.5"}, e("span",{className:"h-px flex-1 bg-[#C9A13B]/60"}), e("span",{className:"text-[11px] text-[#8A6A12]"}, "ETAPAS DO ACERTO"), e("span",{className:"h-px flex-1 bg-[#C9A13B]/60"})));
 
   // Payload único do acerto (usado na assinatura)
   // venda abaixo do mínimo geral (R$ 500, domain/consignado.js): pede o motivo antes de confirmar o acerto
@@ -672,18 +670,7 @@ function AppRepresentante(p){
       pecasCond:pecasCondSelecionadas, formSnapshot:acertoForm}, extra||{});
   };
 
-  // Modalidade do kit (Ouro ou 100% Prata): só na calculadora de acertos, no começo (Marcus, 03/11/2026); cada troca vai pro histórico.
-  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
-  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
-  // compacto: uma linha só, rótulo pequeno e dois botões baixos (a regra de cada kit fica em Regras)
-  var blocoModalidade = sel && e("div",{className:"flex items-center gap-2 rounded-xl border "+LINHA_CARD+" bg-white px-2.5 py-1.5"},
-    e("p",{className:"shrink-0 text-[10.5px] font-bold uppercase tracking-wide text-[#A67C12]"},"Kit"),
-    e("div",{className:"grid flex-1 grid-cols-2 gap-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
-      return e("button",{key:o[0], onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
-        className:"h-7 rounded-lg text-[11.5px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-slate-700 ring-slate-700 " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#6B7280] ring-black/10")}, (ativo ? "✓ " : "")+o[1]); })),
-    histModalidade.length>0 && e("span",{className:"shrink-0 text-[9.5px] text-[#9A8B63]", title:"Última troca"}, histModalidade[0].em.slice(0,10).split("-").reverse().slice(0,2).join("/")));
-  var calcAcertoScreen = kitSel && e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-72"},
-    blocoModalidade,
+  var calcAcertoScreen = kitSel && e("div",{"data-calc-acerto":"1", className:"-mx-2 flex flex-col gap-2.5 pb-72"},
     blocoAcordeao(0, "lista", "#CA8A04", "Condicionais",
       acertoForm.condicionaisSelecionadas.length ? acertoForm.condicionaisSelecionadas.length+" marcada(s) · "+pecasCondSelecionadas+" peças" : "Marque as condicionais em aberto conferidas",
       acertoForm.condicionaisSelecionadas.length ? badgeTxt(pecasCondSelecionadas+" peças","#CA8A04") : badgeTxt("Pendente","#64748B"),
@@ -751,11 +738,30 @@ function AppRepresentante(p){
     blocoAcordeao(2, "star", "#D97706", "Crédito de garantia",
       acertoForm.garantia>0 ? "Desconto de "+BK(acertoForm.garantia)+" na venda" : "Sem desconto de garantia",
       checkOk,
-      [(function(){ var lista = creditosDaRevendedora(s, sel.rev).filter(function(c){ return !c.usado; }), L = "flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]";
-        if(!lista.length) return e("p",{key:"g0", className:"text-[13px]"}, acertoForm.garantia>0 ? "Crédito de garantia: "+BK(acertoForm.garantia) : "Nenhum crédito liberado pela Garantia.");
-        return e("div",{key:"g1", className:"flex flex-col"},
-          lista.map(function(c){ return e("div",{key:c.id, className:L}, e("span",null,"Garantia"+(c.obs ? " · "+c.obs : "")), e("b",{className:MONO+" whitespace-nowrap"}, BK(c.valor))); }),
-          e("div",{className:"flex min-h-8 items-center justify-between gap-2 rounded-lg bg-[#C9A13B]/20 px-2 text-[13px] font-bold"}, e("span",null,"Desconto na venda"), e("b",{className:MONO+" whitespace-nowrap text-[15px]"}, BK(acertoForm.garantia)))); })()]),
+      [(function(){ var lista = creditosDaRevendedora(s, sel.rev).filter(function(c){ return !c.usado; }), CEL = "flex min-h-8 min-w-0 items-center bg-white px-2 text-[13px]", CAB = "flex h-7 items-center justify-center bg-[#F3EAD3] px-2 text-[11px] text-[#8A6A12]", CI = "h-8 min-w-0 rounded-lg bg-[#F4F5F7] px-2 text-[13px] text-[#111827] outline-none ring-1 ring-[#C9A13B]/50";
+        var ajusta = function(v){ setAcertoForm(function(f){ return Object.assign({}, f, {garantia:Math.max(0, Math.round(((f.garantia||0)+v)*100)/100)}); }); };
+        var lancar = function(){ var v = Math.round((gm.valor||0)*100)/100, cod = gm.cod.trim().toUpperCase(), mot = gm.motivo.trim();
+          if(!cod || !(v>0) || !mot){ setGm(Object.assign({}, gm, {erro:"Preencha referência, valor e motivo."})); return; }
+          if(lista.some(function(c){ return String(c.cod||"").toUpperCase()===cod && c.valor===v; })){ setGm(Object.assign({}, gm, {erro:"Este crédito já está lançado."})); return; }
+          d({type:"GR", op:"credito_add", revendedora:sel.rev, cod:cod, valor:v, obs:mot, origem:"Manual", por:l.rep||"Representante"}); ajusta(v); setGm({aberto:false, cod:"", valor:null, motivo:"", erro:""}); };
+        return e("div",{key:"g1", className:"flex flex-col gap-1.5"},
+          e("p",{className:"text-center text-[13px] text-[#8A6A12]"}, "Créditos enviados diretamente pelo setor de Garantias."),
+          e("div",{className:"grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)] gap-px border border-[#E4D3A3] bg-[#E4D3A3]"},
+            e("span",{className:CAB+" !justify-start"}, "Referência"), e("span",{className:CAB}, "Origem"), e("span",{className:CAB}, "Valor"),
+            lista.length ? lista.map(function(c){ var man = c.origem==="Manual";
+              return e(React.Fragment,{key:c.id},
+                e("span",{className:CEL+" break-all", title:c.obs||""}, c.cod || c.obs || c.id),
+                e("span",{className:CEL+" flex-col justify-center gap-0.5 text-center"}, e("span",null, man ? "Manual" : "Garantias"), man && e("button",{type:"button", onClick:function(){ d({type:"GR", op:"credito_del", id:c.id}); ajusta(-c.valor); }, "aria-label":"Excluir crédito manual", className:"text-[11px] text-[#B91C1C] underline"}, "Excluir")),
+                e("span",{className:CEL+" justify-center text-[#15803D]"}, BK(c.valor))); })
+              : e("span",{className:CEL+" col-span-3 justify-center text-[#374151]"}, "Nenhum crédito liberado pela Garantia.")),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-2 bg-[#E7F6EC] px-2 text-[13px] text-[#15803D]"}, e("span",null,"Desconto na venda"), e("span",{className:"whitespace-nowrap"}, BK(acertoForm.garantia))),
+          e("button",{type:"button", "aria-expanded":gm.aberto, onClick:function(){ setGm(Object.assign({}, gm, {aberto:!gm.aberto, erro:""})); }, className:"flex h-8 w-full items-center justify-center rounded-lg border border-[#C9A13B] bg-[#F3E9D0] text-[13px] text-[#3B2F0B]"}, "+ Lançar crédito manual"),
+          gm.aberto && e("div",{className:"grid grid-cols-2 gap-[6px]"},
+            e("input",{value:gm.cod, placeholder:"Código ou referência", "aria-label":"Código ou referência da peça", onChange:function(ev){ setGm(Object.assign({}, gm, {cod:ev.target.value, erro:""})); }, className:CI}),
+            e(CampoReaisAuto,{value:gm.valor, label:"Valor do crédito", onChange:function(v){ setGm(Object.assign({}, gm, {valor:v, erro:""})); }, className:CI+" text-right"}),
+            e("input",{value:gm.motivo, placeholder:"Motivo do lançamento", "aria-label":"Motivo do lançamento", onChange:function(ev){ setGm(Object.assign({}, gm, {motivo:ev.target.value, erro:""})); }, className:CI+" col-span-2"}),
+            gm.erro && e("p",{className:"col-span-2 text-[13px] text-[#B91C1C]"}, gm.erro),
+            e("button",{type:"button", onClick:lancar, className:"col-span-2 h-8 rounded-lg bg-[#C9A13B] text-[13px] font-semibold text-[#1F1B0E]"}, "Lançar crédito"))); })()]),
     // Trocas, layout 1 (aprovado pelo Marcus em 02/11/2026): lista das trocas lançadas, "+ Troca" abre um formulário em 3 passos (tipo → peça quebrada → peça nova) com a conta ao vivo.
     blocoAcordeao(8, "undo", "#EA580C", "Trocas",
       (acertoForm.trocas||[]).length ? acertoForm.trocas.length+" troca(s) · "+(dv.trocasAjuste>=0 ? "soma " : "desconta ")+BK(Math.abs(dv.trocasAjuste))+" na venda" : "Peça quebrada trocada por outra",

@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.277", data:"2026-11-27", titulo:"Calculadora de acertos: topo fixo com Ouro e Prata e crédito de garantia manual", itens:[
+  {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto", txt:"Topo fixo com nome, Vendas, Comissão, Valor do acerto e seletor Ouro e 100% Prata; divisão Etapas do acerto; seção aberta sobe 8 px abaixo da divisão. A seção Tipo de kit saiu."},
+  {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto → Crédito de garantia", txt:"Tabela Referência, Origem e Valor, desconto na venda e lançamento manual de crédito (origem Manual, exclusão só dos manuais)."},
+ ]},
  {v:"0.21.276", data:"2026-11-27", titulo:"Peças que voltaram: nova tela de bipagem e materiais MP/MU fora da comissão", itens:[
   {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto → Peças que voltaram", txt:"Tela de bipagem refeita: consolidado no topo, controles código/Bipar/câmera, confirmação da última peça, filtros Todas, Vendidas e Devolvidas, Fechar/Abrir todos e Mostrar vendidos, grupos com nomes oficiais da DevMaster (Suporte e Material de uso geral no fim) e rolagem só na lista."},
   {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto", txt:"Materiais MP e MU (rifa, kit apoio, suporte) não devolvidos não geram comissão: entram inteiros no valor do acerto e no total a pagar."},
