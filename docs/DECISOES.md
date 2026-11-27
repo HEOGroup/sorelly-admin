@@ -3927,3 +3927,6 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 
 ## 27/11/2026 · Admin das representantes: brindes em uma linha e × na devolução; Direcionar compacto
 - Brindes do acerto: uma linha por peça, código sem negrito; Excluir brinde em vermelho suave. Devolução: × volta a peça vendida para pendente. Direcionar: identificação dentro do Resumo, sem rodapé, controles compactos (v0.21.271).
+
+## 27/11/2026 · Admin das representantes: × em toda peça da devolução; código digitado sem câmera
+- × em todas as peças (desmarca ou marca); campo de código refocado após cada peça (v0.21.272).

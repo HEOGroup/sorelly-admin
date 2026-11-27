@@ -105,10 +105,10 @@ function ConfDevolucao(p){
       e("b",{className:MONO+" text-[16px]"}, bloco.t),
       bloco.d && e("span",{className:"text-[13px]"}, bloco.d),
       bloco.linhas.map(function(l, i){ return e("span",{key:i, className:"text-[13px]"}, l); })),
-    e("form",{onSubmit:function(ev){ ev.preventDefault(); if(codigo.trim()) ler(codigo); setCodigo(""); }, className:"flex flex-col gap-1.5"},
+    e("form",{onSubmit:function(ev){ ev.preventDefault(); if(codigo.trim()) ler(codigo); setCodigo(""); setTimeout(function(){ var el = document.getElementById("conf-dev-codigo"); if(el) el.focus(); }, 0); }, className:"flex flex-col gap-1.5"},
       e("b",{className:"text-[13px] text-[#111827]"},"Bipe a peça ou digite o código"),
       e("div",{className:"flex gap-2"},
-        e("input",{value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"Código da peça", autoCapitalize:"characters", className:"h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[13px] text-[#111827] outline-none ring-1 ring-black/15"}),
+        e("input",{id:"conf-dev-codigo", enterKeyHint:"go", autoComplete:"off", value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"Código da peça", autoCapitalize:"characters", className:"h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[13px] text-[#111827] outline-none ring-1 ring-black/15"}),
         e("button",{type:"submit", className:"h-12 flex-1 rounded-2xl bg-[#C9A13B] text-[16px] font-bold text-[#1F1B0E]"},"Bipar")),
       e("button",{type:"button", onClick:desfazer, className:"h-12 w-full rounded-2xl bg-white text-[13px] font-bold text-[#111827] ring-1 ring-black/15"},"Desfazer a última peça")),
     conds.map(function(c){ var its = itensDe(c), feitas = its.reduce(function(t, i){ return t+lido(c, i); }, 0), tp = its.reduce(function(t, i){ return t+i.qtd; }, 0), on = aberta===c.numero || (aberta===null && conds.length===1);
@@ -126,7 +126,7 @@ function ConfDevolucao(p){
                   e("b",{className:MONO+" flex-1 text-[13px] text-[#111827]"}, i.codigo+(i.qtd>1 ? "  "+l+"/"+i.qtd : "")),
                   e("b",{className:MONO+" text-[13px] text-[#111827]"}, BR(i.valor))),
                 abre && e("span",{className:"pl-7 pt-0.5 text-[13px] text-[#374151]"}, descBonita(i.desc))),
-                !ok && e("button",{type:"button", "aria-label":"Peça "+i.codigo+" voltou: tirar de vendida", title:"Esta peça voltou: tirar de vendida", onClick:function(){ var falta = i.qtd-l, h = (conf.hist||[]).slice(), lid = Object.assign({}, conf.lidos); for(var q = 0; q<falta; q++) h.push(ch); lid[ch] = i.qtd; guardar(Object.assign({}, conf, {lidos:lid, hist:h, ultimo:null})); }, className:"grid h-8 w-8 shrink-0 place-items-center text-[16px] leading-none text-[#374151] opacity-70"}, "×")); })); })); }),
+                e("button",{type:"button", "aria-label":ok ? "Peça "+i.codigo+": desmarcar, volta a ficar vendida" : "Peça "+i.codigo+" voltou: tirar de vendida", title:ok ? "Desmarcar: a peça volta a ficar vendida" : "Esta peça voltou: tirar de vendida", onClick:function(){ if(ok){ var l2 = Object.assign({}, conf.lidos); delete l2[ch]; guardar(Object.assign({}, conf, {lidos:l2, hist:(conf.hist||[]).filter(function(k){ return k!==ch; }), ultimo:null})); return; } var falta = i.qtd-l, h = (conf.hist||[]).slice(), lid = Object.assign({}, conf.lidos); for(var q = 0; q<falta; q++) h.push(ch); lid[ch] = i.qtd; guardar(Object.assign({}, conf, {lidos:lid, hist:h, ultimo:null})); }, className:"grid h-8 w-8 shrink-0 place-items-center text-[16px] leading-none text-[#374151] opacity-70"}, "×")); })); })); }),
     (conf.erros||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#FEF3C7] px-3 py-2"},
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças que não são destas condicionais ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),
     e("div",{key:"maleta", role:"alert", className:"flex flex-col gap-0.5 rounded-xl bg-[#FEF3C7] px-3 py-2 text-[13px] text-[#92400E]"},   // 26/11/2026 (Marcus): a maleta também precisa bipar; no fim da bipagem só um alerta

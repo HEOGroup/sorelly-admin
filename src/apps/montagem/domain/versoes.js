@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.272", data:"2026-11-27", titulo:"Admin das representantes: × em toda peça da devolução e digitação do código sem câmera", itens:[
+    {tipo:"melhoria", area:"Representantes › Admin das representantes › Conferência da devolução", txt:"Todas as peças ganham × na mesma coluna: nas marcadas desmarca (volta a ficar vendida), nas não marcadas marca como voltou. O campo de código volta a ficar pronto após cada peça, para bipar à mão sem câmera."},
+  ]},
  {v:"0.21.271", data:"2026-11-27", titulo:"Admin das representantes: brindes em uma linha, peças devolvidas com ×; Direcionar mais compacto", itens:[
     {tipo:"melhoria", area:"Representantes › Admin das representantes › Acerto", txt:"Brindes: cada linha fica em uma só (código sem negrito, NOVO ou ANTIGO ao lado, valor alinhado); tocar na linha abre Excluir brinde em vermelho mais suave."},
     {tipo:"melhoria", area:"Representantes › Admin das representantes › Conferência da devolução", txt:"Peça marcada como vendida ganha × no fim da linha para voltar a ficar pendente."},
