@@ -98,6 +98,29 @@ var ORIGENS_DIF = ["A definir", "Montagem", "Bipagem de saída", "Representante"
 var DIRS_DIF = [["", "Sem valor"], ["mais", "A mais"], ["menos", "A menos"]];
 function origemDoTipo(t){ var g = TIPOS_DIF.find(function(x){ return x[2].indexOf(t)>=0; }); return g ? g[1] : "A definir"; }
 function kitDe(kits, r){ return (kits || []).filter(function(k){ return nome(k.rev)===nome(r.rev) && (k.montId!=null || k.bipId!=null); }).sort(function(a, b){ return String(b.retEm || b.criadoEm || "").localeCompare(String(a.retEm || a.criadoEm || "")); })[0]; }
+// MENU DE ESCOLHA da ficha (Marcus, 26/11/2026): no lugar do select nativo. Lista à esquerda, grupos separados por linha, seta azul, altura máxima com rolagem e posição calculada para nunca passar da tela.
+// opcoes: [valor, texto] ou ["#", título do grupo]
+function MenuSel(p){
+  var st = useState(null), pos = st[0], setPos = st[1], ref = useRef(null);
+  useEffect(function(){
+    if(!pos) return undefined;
+    var fecha = function(ev){ if(ref.current && !ref.current.contains(ev.target)) setPos(null); };
+    var fecha2 = function(){ setPos(null); };
+    document.addEventListener("mousedown", fecha); window.addEventListener("resize", fecha2); window.addEventListener("scroll", fecha2, true);
+    return function(){ document.removeEventListener("mousedown", fecha); window.removeEventListener("resize", fecha2); window.removeEventListener("scroll", fecha2, true); };
+  }, [pos]);
+  var abre = function(ev){ if(pos){ setPos(null); return; }
+    var b = ev.currentTarget.getBoundingClientRect(), abaixo = window.innerHeight-b.bottom-8, acima = b.top-8, sobe = abaixo<160 && acima>abaixo, alt = Math.max(96, Math.min(260, sobe ? acima : abaixo));
+    setPos({left:b.left, width:Math.max(b.width, 176), maxH:alt, top:sobe ? null : b.bottom+2, bottom:sobe ? window.innerHeight-b.top+2 : null}); };
+  var atual = p.opcoes.filter(function(o){ return o[0]!=="#" && o[0]===p.value; })[0];
+  return e("div",{ref:ref, className:"relative flex w-full min-w-0"},
+    e("button",{type:"button", "aria-label":p.label, "aria-expanded":!!pos, onClick:abre, className:p.className+" flex items-center justify-between gap-1 text-left"}, e("span",{className:"whitespace-nowrap"}, atual ? atual[1] : p.vazio || ""), e("span",{"aria-hidden":"true", className:"shrink-0 text-[10px] leading-none text-info"}, "▼")),
+    pos && e("div",{role:"listbox", style:{position:"fixed", left:pos.left, width:pos.width, maxHeight:pos.maxH, top:pos.top==null ? undefined : pos.top, bottom:pos.bottom==null ? undefined : pos.bottom}, className:"z-[200] overflow-y-auto rounded border border-white/40 bg-[#1f3358] text-left text-[11px] shadow-lg"},
+      p.opcoes.map(function(o, i){
+        if(o[0]==="#") return e("div",{key:"g"+i, className:"border-y border-white/30 bg-white/10 px-2 py-0.5 text-left text-[10px] font-bold first:border-t-0"}, o[1]);
+        return e("button",{key:o[0]+i, type:"button", role:"option", "aria-selected":o[0]===p.value, onClick:function(){ p.onChange(o[0]); setPos(null); }, className:"block min-h-5 w-full border-b border-white/10 px-2 py-0.5 text-left hover:bg-white/20"+(o[0]===p.value ? " font-bold text-info" : "")}, o[1]); })));
+}
+
 function Diferencas(p){
   var r = p.l.r, lista = (p.l.rec.dif || []);
   var st = useState({tipo:"", cod:"", dir:"", valor:0, origem:"", obs:""}), f = st[0], setF = st[1];
@@ -109,7 +132,7 @@ function Diferencas(p){
     p.onDif({tipo:f.tipo, cod:f.cod.trim().toUpperCase(), dir:f.valor>0 ? (f.dir || "mais") : "", valor:f.valor>0 ? f.valor : 0, origem:origem, obs:f.obs.trim(), montou:montou, bipou:bipou, por:p.usuarioNome});
     setF({tipo:"", cod:"", dir:"", valor:0, origem:"", obs:""}); };
   var campo = function(t, ctl){ return e("div",{className:PAR}, e("span",{className:PAR_ROT}, t), e("div",{className:"flex items-center px-2"}, ctl)); };
-  var opc = function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); };
+  var CAMPO_E = CAMPO.replace("text-center","text-left")+" appearance-none pl-2 pr-5";   // lista à esquerda; a seta é a nossa, em azul
   return e(Bloco,{t:"Diferenças"},
     e(Par,{t:"Registradas", v:lista.length ? String(lista.length) : "Nenhuma", cor:lista.length ? "text-destructive" : ""}),
     e(Par,{t:"Bipou na saída", v:bipou}),
@@ -118,15 +141,13 @@ function Diferencas(p){
         e("span",{className:"font-semibold"}, x.tipo+(x.cod ? " · "+x.cod : "")),
         e("span",{className:"tabular-nums"}, e("b",{className:cor}, x.valor>0 ? (x.dir==="menos" ? "−" : "+")+BK(x.valor)+" · " : ""), x.origem+(x.obs ? " · "+x.obs : "")),
         p.podeBip ? e("button",{type:"button", onClick:function(){ p.onDifTira(x.id); }, "aria-label":"Tirar a diferença "+x.tipo, title:"Tirar", className:"mx-auto grid size-5 place-items-center rounded hover:bg-white/20"}, "×") : e("span",null)); }),
-    p.podeBip && campo("Tipo", e("select",{value:f.tipo, "aria-label":"Tipo da diferença", className:CAMPO+" [color-scheme:dark]", onChange:function(ev){ set("tipo", ev.target.value); }},
-      e("option",{value:"", className:"bg-[#1f3358]"}, "Escolha o tipo"),
-      TIPOS_DIF.map(function(g){ return e("optgroup",{key:g[0], label:g[0], className:"bg-[#1f3358]"}, g[2].map(function(t){ return e("option",{key:t, value:t, className:"bg-[#1f3358]"}, t); })); }))),
+    p.podeBip && campo("Tipo", e(MenuSel,{value:f.tipo, label:"Tipo da diferença", vazio:"Escolha o tipo", className:CAMPO_E, onChange:function(v){ set("tipo", v); }, opcoes:[["", "Escolha o tipo"]].concat(TIPOS_DIF.reduce(function(o, g){ return o.concat([["#", g[0]]], g[2].map(function(t){ return [t, t]; })); }, []))})),
+    p.podeBip && e("div",{className:"flex items-center border-b border-white/30 px-2 py-1"}, e("textarea",{value:f.obs, rows:2, placeholder:"Observação", "aria-label":"Observação", className:CAMPO_E.replace("h-[22px]","min-h-9 !h-auto resize-none py-1")+" w-full", onChange:function(ev){ set("obs", ev.target.value); }})),
     p.podeBip && f.tipo && campo("Código da peça", e("input",{value:f.cod, placeholder:"Ex.: CL2419", "aria-label":"Código da peça", className:CAMPO, onChange:function(ev){ set("cod", ev.target.value); }})),
     p.podeBip && f.tipo && campo("Valor", e("div",{className:"grid w-full grid-cols-[6rem_1fr] gap-1"},
-      e("select",{value:f.dir, "aria-label":"Direção do valor", className:CAMPO, onChange:function(ev){ set("dir", ev.target.value); }}, DIRS_DIF.map(opc)),
+      e(MenuSel,{value:f.dir || DIRS_DIF[0][0], label:"Direção do valor", className:CAMPO_E, onChange:function(v){ set("dir", v); }, opcoes:DIRS_DIF}),
       e(MoneyInput,{value:f.valor, label:"Valor da diferença", className:"w-full h-[22px]! px-1! text-center! text-[11px]! bg-white/10! border-white/40!", onChange:function(v){ set("valor", v); }}))),
-    p.podeBip && f.tipo && campo("Origem", e("select",{value:origem, "aria-label":"Origem da diferença", className:CAMPO, onChange:function(ev){ set("origem", ev.target.value); }}, ORIGENS_DIF.map(function(o){ return opc([o, o]); }))),
-    p.podeBip && f.tipo && campo("Observação", e("input",{value:f.obs, placeholder:"Texto curto", "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set("obs", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") registra(); }})),
+    p.podeBip && f.tipo && campo("Origem", e(MenuSel,{value:origem, label:"Origem da diferença", className:CAMPO_E, onChange:function(v){ set("origem", v); }, opcoes:ORIGENS_DIF.map(function(o){ return [o, o]; })})),
     p.podeBip && f.tipo && e("div",{className:LIN}, e(Botao,{principal:true, onClick:registra}, "Registrar diferença")),
     !p.podeBip && lista.length===0 && e("div",{className:MSG}, "Nenhuma diferença registrada."));
 }
@@ -150,7 +171,7 @@ var SUB = "flex items-center justify-center bg-[#19263d] font-bold "+LINHA;     
 // Coluna 1: as três últimas colunas do pagamento (DevMaster, Valor, Comprovante) e a coluna do valor das linhas Par têm a MESMA largura (22 rem; o nome da DevMaster mais comprido, "Pix - Santander - Anamaria", pede 9,5 rem): a linha vertical do meio é uma só, do topo ao fim.
 var VCOL = "[--c-dm:9.5rem] [--c-vl:6rem] [--c-cp:7.5rem] [--vcol:23rem]";
 var COLS_PAG = "minmax(min-content,1fr) var(--c-dm) var(--c-vl) var(--c-cp)";
-var COLS_BRINDE = "4rem minmax(4.4rem,1fr) 3.4rem 4.6rem";   // Conferência | Código da peça | Origem | Valor. CAUSA das linhas quebradas: cabeçalho, corpo, área vazia e rodapé são grades separadas e "minmax(min-content,1fr)" dava larguras diferentes em cada uma; agora só medidas que não dependem do conteúdo, então as 4 grades têm as mesmas colunas (e o rodapé "Sem diferença" cabe)
+var COLS_BRINDE = "4rem minmax(4.4rem,1fr) 3.4rem 5.4rem";   // Conferência | Código da peça | Origem | Valor. CAUSA das linhas quebradas: cabeçalho, corpo, área vazia e rodapé são grades separadas e "minmax(min-content,1fr)" dava larguras diferentes em cada uma; agora só medidas que não dependem do conteúdo, então as 4 grades têm as mesmas colunas (e o rodapé "Sem diferença" cabe)
 var COLS_COND = "minmax(min-content,1fr) 6rem 11rem";                                                       // Número | Qtd. de peças | Conferência (condicionais)
 var COLS_CONF = "4.75rem minmax(min-content,1fr)";                                                           // Conferência | Código da peça (peças do próximo mês)
 // abre o comprovante do pagamento (data URL ou chave de anexo) em outra aba
@@ -246,7 +267,7 @@ function FichaConferencia(p){
       nums.length===0 ? e("div",{className:MSG}, "Nenhuma condicional.") : e(GradeFicha,{cols:COLS_COND, cab:["Número da condicional", "Qtd. de peças", "Conferência"], linhas:nums.map(function(n){ var a = assinadaDe(rec, n), c = a===true ? "text-success" : a===false ? "text-destructive" : "";
         return [e("b",{className:"tabular-nums "+c}, n), e("span",{className:"tabular-nums"}, pecasDe(n)>0 ? pecasDe(n) : "—"),
           agenda ? e("div",{className:"flex w-full items-center gap-1"},
-            e("select",{value:a===true ? "sim" : a===false ? "nao" : "", "aria-label":"Assinatura da condicional "+n, className:CAMPO+" [color-scheme:dark]", onChange:function(ev){ define(n, ev.target.value); }}, OPS_ASS.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); })),
+            e("div",{className:"relative flex min-w-0 flex-1"}, e("select",{value:a===true ? "sim" : a===false ? "nao" : "", "aria-label":"Assinatura da condicional "+n, className:CAMPO.replace("text-center","text-left")+" appearance-none pl-2 pr-5 [color-scheme:dark]", onChange:function(ev){ define(n, ev.target.value); }}, OPS_ASS.map(function(o){ return e("option",{key:o[0], value:o[0], className:"bg-[#1f3358]"}, o[1]); })), e("span",{"aria-hidden":"true", className:"pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-info"}, "▼")),
             e("button",{type:"button", onClick:function(){ tira(n); }, "aria-label":"Tirar a condicional "+n, title:"Tirar a condicional "+n, className:"grid size-4 shrink-0 place-items-center rounded hover:bg-white/20"}, "×")) : e("span",{className:c}, a===true ? "Assinada" : a===false ? "Não assinada" : "A conferir")]; })}),
       agenda && abre && e("div",{className:PAR},
         e("div",{className:CEL+" border-r border-white/30"}, e("input",{value:v, placeholder:"Nº da nova condicional", "aria-label":"Número da condicional", className:CAMPO, autoFocus:true, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") adiciona(); }})),
@@ -300,11 +321,11 @@ function Botao(p){
 var FICHA_FINA = "[&_*]:!text-[10px] [&_.min-h-7]:!min-h-6 [&_button]:!h-4 [&_select]:!h-4 [&_input]:!h-4 [&_button]:!leading-none";   // padrao-ok: igual à Contas a pagar (10 px, 18 px)
 function FichaJanela(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-[#0b1530]/85 p-3", onClick:p.fechar},
-    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"max-h-[92vh] w-full max-w-[98vw] overflow-y-auto [&_*]:!normal-case "+FICHA_FINA+" "+PADRAO_BLOCOS},
+    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"max-h-[92vh] w-full max-w-[min(98vw,1700px)] overflow-y-auto [&_*]:!normal-case "+FICHA_FINA+" "+PADRAO_BLOCOS},
       e(BlocoPainel,{titulo:p.t, dir:e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-6 place-items-center rounded hover:bg-white/20"}, "×")},
         e("div",{className:"bg-[#0f1729]"},
           p.sub && e("p",{className:"px-2 py-1 text-center text-[11px]"}, p.sub),
-          e("div",{className:"grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-[minmax(36rem,2.2fr)_minmax(33.5rem,1.7fr)_minmax(22rem,1.2fr)] gap-[2px] bg-white/50"}, p.colunas)))));
+          e("div",{className:"grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-[minmax(34rem,2.2fr)_minmax(36rem,1.9fr)_minmax(22rem,1.2fr)] gap-[2px] bg-white/50"}, p.colunas)))));
 }
 function PecasMini(p){
   var cn = useState(""), numNova = cn[0], setNumNova = cn[1], pv = useState({}), precos = pv[0], setPrecos = pv[1];
@@ -322,7 +343,7 @@ function PecasMini(p){
   var somaDe = function(itens){ return r2(itens.reduce(function(t2,i){ return t2+(i.valor||0); }, 0)); };
   // células das tabelas de peças: Conferência (marca ✓), Código da peça, Origem e Valor, cada uma na sua coluna (Marcus, 26/11/2026: o código nunca vem junto com a origem)
   var btnConf = function(i){ var on = !!ok[i.codigo];
-    return e("button",{type:"button", disabled:!p.podeBip || !rec.ok, title:!rec.ok ? "Aguarda a conferência do recebimento" : on ? "Conferida" : "Conferir", onClick:function(){ marca(i.codigo); }, "aria-label":(on ? "Desmarcar " : "Marcar como conferida ")+i.codigo, className:"w-full font-bold disabled:opacity-50"}, e("span",{className:on ? "text-success" : "text-white"}, on ? "✓" : "○")); };
+    return e("button",{type:"button", disabled:!p.podeBip || !rec.ok, title:!rec.ok ? "Aguarda a conferência do recebimento" : on ? "Conferida" : "Conferir", onClick:function(){ marca(i.codigo); }, "aria-label":(on ? "Desmarcar " : "Marcar como conferida ")+i.codigo, className:"w-full font-bold disabled:opacity-50"}, e("span",{className:on ? "text-success" : "text-info"}, on ? "✓" : "○")); };
   var codPeca = function(i){ return e("b",{className:"tabular-nums"+(ok[i.codigo] ? " text-success" : "")}, i.codigo); };
   var origemTxt = function(i){ return i.origem==="antiga" ? "Kit antigo" : i.origem==="nova" ? "Kit novo" : "—"; };
   // cada tabela de brindes: itens, área vazia com as linhas verticais continuando e, no rodapé fixo, 3 linhas (lançado, total da categoria, diferença); valores vêm das contas de antes (l.brindes e o acerto)
@@ -331,7 +352,7 @@ function PecasMini(p){
     var rod = function(rot, val, cor){ return [e("div",{key:rot+"r", className:cj+" col-span-3 border-r"}, rot), e("div",{key:rot+"v", className:cj+" tabular-nums "+(cor||"")}, val)]; };
     return e(Bloco,{key:titulo, cresce:true, t:titulo},
       e("div",{className:"flex flex-1 flex-col"},
-        itens.length===0 ? e("div",{className:MSG}, "Nenhum brinde.") : e(GradeFicha,{junto:true, cols:COLS_BRINDE, cab:["Conferência", "Código da peça", "Origem", "Valor"], linhas:itens.map(function(i){ return [btnConf(i), codPeca(i), origemTxt(i), i.valor!=null ? e("span",{className:"tabular-nums"}, BK(i.valor)) : "—"]; })}),
+        e(GradeFicha,{junto:true, cols:COLS_BRINDE, cab:["Conferência", "Código", "Origem", "Valor"], linhas:itens.map(function(i){ return [btnConf(i), codPeca(i), origemTxt(i), i.valor!=null ? e("span",{className:"tabular-nums"}, BK(i.valor)) : "—"]; })}),
         e("div",{className:"grid flex-1", style:{gridTemplateColumns:COLS_BRINDE}}, [0, 1, 2, 3].map(function(i){ return e("div",{key:i, className:i<3 ? "border-r border-white/30" : ""}); }))),
       e("div",{className:"grid border-t border-white/30", style:{gridTemplateColumns:COLS_BRINDE}},
         rod("Conferidas", feitas+"/"+itens.length, feitas===itens.length && itens.length>0 ? "text-success" : ""), rod("Valor lançado", BK(lanc||0)), rod("Total dos brindes", BK(total||0)),
@@ -343,10 +364,10 @@ function PecasMini(p){
   var resumoBr = e(Bloco,{t:"Resumo dos brindes"},
     e(Par,{t:"Valor total lançado", v:BK(lancTot)}), e(Par,{t:"Valor total dos brindes", v:BK(brindesTot)}),
     maisBr>0 ? e(Par,{t:"A pagar a mais", v:BK(maisBr), cor:"text-destructive"}) : menosBr>0.009 ? e(Par,{t:"A pagar a menos", v:BK(menosBr), cor:"text-success"}) : e(Par,{t:"Diferença", v:"Sem diferença"}));
-  var brindes = e("div",{className:"@container flex flex-1 flex-col"}, e("div",{className:"grid flex-1 grid-cols-1 items-stretch gap-[2px] bg-white/50 @min-[33rem]:grid-cols-2"}, e("div",{key:"bn", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes", normal, p.l.brindes.lancadoNormal, r.brindeNormal)), e("div",{key:"bb", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes BB", bb, p.l.brindes.lancadoSelect, r.brindeSelect))), resumoBr);
+  var brindes = e("div",{className:"@container flex flex-1 flex-col"}, e("div",{className:"grid flex-1 grid-cols-1 items-stretch gap-[2px] bg-white/50 @min-[35rem]:grid-cols-2"}, e("div",{key:"bn", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes", normal, p.l.brindes.lancadoNormal, r.brindeNormal)), e("div",{key:"bb", className:"flex min-w-0 flex-col bg-[#0f1729]"}, blocoBr("Brindes BB", bb, p.l.brindes.lancadoSelect, r.brindeSelect))), resumoBr);
   var trocas = (r.trocas||[]).length>0 && e(Bloco,{key:"tr", t:"Trocas"}, e(GradeFicha,{cols:"4.5rem minmax(min-content,1fr) 5.5rem", cab:["Troca", "Código da peça", "Valor"], linhas:r.trocas.reduce(function(o, t){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);   // cada troca vira 3 linhas: a peça que voltou, a que ficou e o ajuste
     return o.concat([["Voltou", e("b",{className:"tabular-nums"}, t.antigaCod), e("span",{className:"tabular-nums"}, BK(t.antigaValor))], ["Ficou", e("b",{className:"tabular-nums"}, t.novaCod), e("span",{className:"tabular-nums"}, BK(t.novaValor))], [aj>=0 ? "Soma" : "Desconta", "—", e("b",{className:"tabular-nums"}, BK(Math.abs(aj)))]]); }, [])}));
-  var blocoProx = prox.length>0 && e(Bloco,{key:"px", t:"Peças do próximo mês"}, e(GradeFicha,{cols:"3.75rem minmax(min-content,1fr) 5.5rem", cab:["Conferência", "Código da peça", "Valor"], linhas:prox.map(function(c){ var vl = precos[c]; return [btnConf({codigo:c}), codPeca({codigo:c}), vl && vl.preco>0 ? e("span",{className:"tabular-nums"}, BK(vl.preco)) : "—"]; })}));
+  var blocoProx = prox.length>0 && e(Bloco,{key:"px", t:"Peças do próximo mês"}, e(GradeFicha,{cols:"3.75rem minmax(min-content,1fr) 5.5rem", cab:["Conferência", "Código", "Valor"], linhas:prox.map(function(c){ var vl = precos[c]; return [btnConf({codigo:c}), codPeca({codigo:c}), vl && vl.preco>0 ? e("span",{className:"tabular-nums"}, BK(vl.preco)) : "—"]; })}));
   var condNova = prox.length>0 && e(Bloco,{key:"cn", t:"Condicional nova"},
     e(Par,{t:"Situação", v:rec.condNova ? "Gerada" : "Pendente", cor:rec.condNova ? "text-success" : ""}),
     rec.condNova ? e("div",{className:LIN}, e("b",{className:"tabular-nums text-success"}, "✓ "+rec.condNova.numero), p.podeProx && e(Botao,{onClick:function(){ p.receber(r.id, {condNova:null}); }}, "Desfazer"))
@@ -575,7 +596,6 @@ function AbaConsolidadoRep(){
   var tracoOk = "---";   // célula sem nada aparece com --- (Marcus, 25/11/2026)
   var tabelaPend = e(TabelaPlanilha,{key:"pend", fina:true, cols:[{k:"rep", t:"Representante", titulo:true}, {k:"qtd", t:"Acertos aguardando a empresa", qtd:true}, {k:"desde", t:"Mais antigo", data:true, fmt:function(v){ return fmtData(v); }}], linhas:linhasPend, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true,
     aoClicar:function(row){ setMostra("pend"); setRepIni(row.rep); }, vazio:"Nenhum acerto aguardando a empresa.", tracoVazio:tracoOk});
-  var tabelaPassos = e(TabelaPlanilha,{key:"passos", fina:true, cols:[{k:"n", t:"Passo"}, {k:"t", t:"O que confirmar"}, {k:"d", t:"Como"}], linhas:PASSOS.map(function(x, i){ return {n:i+1, t:x[0], d:x[1]}; }), chave:"n", grade:true, semFiltro:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, vazio:"", tracoVazio:tracoOk});
   var textoSel = "Selecione a representante";
   var primeiro = function(n){ return String(n||"").trim().split(/\s+/)[0] || ""; };   // só um nome: "Jessica Castro" vira "Jessica" (pedido do Marcus 25/11/2026)
   var semAc = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); };
@@ -587,11 +607,11 @@ function AbaConsolidadoRep(){
   var listaSel = repsOps.map(function(p){ return p[0]; }).filter(function(o){ var q = semAc(dig); return !q || semAc(doisNomes(o)).indexOf(q)>=0 || semAc(o).indexOf(q)>=0 || semAc(codDe(o))===q || semAc(codDe(o)).indexOf(q)===0; });
   var escolheRep = function(v){ setRepIni(v); setRevUnica(""); filtradas.current = null; setSelAberto(false); };
   var rectSel = selAberto && selRef.current ? selRef.current.getBoundingClientRect() : null;   // lista solta da tela (fixed): não é cortada pelo bloco e rola por dentro (Marcus, 26/11/2026)
-  var seletorRep = vista==="lista" && e("div",{ref:selRef, className:"relative flex min-w-[180px]"},
+  var seletorRep = vista==="lista" && e("div",{ref:selRef, className:"relative flex min-w-[220px]"},
     e("button",{type:"button", "aria-haspopup":"listbox", "aria-expanded":selAberto, "aria-label":textoSel, title:textoSel, onClick:function(){ setSelAberto(!selAberto); },
-      className:"flex flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-[#FACC15] px-3 text-[10px] font-extrabold text-[#111111] outline-none focus-visible:ring-2 focus-visible:ring-white"},   // padrao-ok: botão amarelo, pedido do Marcus 25/11/2026
+      className:"flex flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-[#FACC15] px-4 text-[15px] font-extrabold text-[#111111] outline-none focus-visible:ring-2 focus-visible:ring-white"},   // padrao-ok: botão amarelo, pedido do Marcus 25/11/2026
       e("span",{className:"whitespace-nowrap"}, rotuloBotao),
-      e("span",{"aria-hidden":"true", className:"text-[10px] leading-none"}, selAberto ? "▲" : "▼")),
+      e("span",{"aria-hidden":"true", className:"text-[11px] leading-none"}, selAberto ? "▲" : "▼")),
     selAberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setSelAberto(false); }}),
     selAberto && e("div",{role:"listbox", style:rectSel ? {position:"fixed", left:rectSel.left, top:rectSel.bottom, width:Math.max(rectSel.width, 220), maxHeight:Math.max(160, window.innerHeight-rectSel.bottom-12)} : undefined, className:"z-50 overflow-y-auto overscroll-contain border border-white bg-[var(--bloco-titulo)] shadow-lg"},
       e("input",{type:"text", autoFocus:true, value:dig, placeholder:"Digite e aperte Enter", "aria-label":"Digitar a representante",
@@ -606,7 +626,7 @@ function AbaConsolidadoRep(){
 
   return e(Pagina,{className:PAGINA_CHEIA+" [&_*]:!normal-case"},
     e(BlocoPainel,{titulo:"Consolidado dos representantes", compacto:true},
-      e("div",{className:"flex items-stretch gap-0 bg-[var(--bloco-titulo)] pt-1.5"}, seletorRep, e("div",{className:"min-w-0 flex-1 [&>div]:!justify-start [&_input]:!h-[26px] [&_input]:!text-[12px]"}, e(BarraMini,null,   // padrao-ok: campo Buscar maior e botão de 20 px, pedido do Marcus (25/11/2026)
+      e("div",{className:"flex items-stretch gap-0 bg-[var(--bloco-titulo)] [&_button]:!min-h-8"}, seletorRep, e("div",{className:"min-w-0 flex-1 [&>div]:!justify-start [&_input]:!h-8 [&_input]:!text-[13px] [&_select]:!h-8 [&_select]:!text-[12px] [&_button]:!text-[12px]"}, e(BarraMini,null,   // padrao-ok: campo Buscar maior e botão de 20 px, pedido do Marcus (25/11/2026)
         vista==="lista" && e(BuscaMini,{valor:busca, aoMudar:function(t){ setBusca(t); setRevUnica(""); filtradas.current = null; }, rotulo:"Buscar revendedora", ph:"Buscar revendedora", larg:"w-64"}),
         vista==="lista" && e(CampoMini,{valor:mostra, aoMudar:function(k){ setMostra(k); filtradas.current = null; }, rotulo:"Mostrar", ops:[["pend", "Aguardando a empresa"], ["todos", "Todos do mês"]]}),
         !(vista==="lista" && mostra==="pend") && e(CampoMini,{valor:mes, aoMudar:function(m){ setMes(m); setRevUnica(""); filtradas.current = null; }, rotulo:"Mês", ops:meses.map(function(m){ return [m, nomeMes(m)]; })}),
@@ -619,8 +639,6 @@ function AbaConsolidadoRep(){
         ver && vista==="lista" && !semRep && e("button",{type:"button", disabled:!linhas.length, onClick:exportar, className:"disabled:opacity-50"}, "Exportar CSV")))),
       e("div",{className:CLS_FINA_ESPACO+(vista==="lista" && !semRep && !completo ? " [&_table_td]:!text-[11px] [&_table_th]:!text-[11px] [&_table_th]:!h-[20px]" : ""), style:vista==="lista" && !semRep && !completo ? {"--lh":"26px"} : undefined},   // padrao-ok: resumo com linha mais alta e letra 11 px, variante da Home da família (Marcus 26/11/2026)
         vista==="rep" ? tabelaRep : semRep ? tabelaPend : tabelaLista)),
-    semRep && vista==="lista" && e(BlocoPainel,{titulo:"O que confirmar, passo a passo", compacto:true},
-      e("div",{className:CLS_FINA_ESPACO}, tabelaPassos)),
     (vista==="rep" || !!repIni) && kn.length>0 && e(BlocoPainel,{titulo:"Kits novos · termo assinado · "+kn.length, compacto:true, aoTitulo:function(){ setKnAberto(!knAberto); }, fechado:!knAberto, dir:semTermo>0 ? e("span",{className:"text-[11px] text-white"}, semTermo+" sem termo") : null},
       e("div",{className:CLS_FINA_ESPACO}, e(TabelaPlanilha,{fina:true, cols:colsKn, linhas:linhasKn, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, semCaixaAlta:true, tracoVazio:"---", vazio:"Nenhum kit novo neste mês."}))),
     (vista==="rep" || !!repIni) && erros.length>0 && e(BlocoPainel,{titulo:"Erros de bipagem · conferência da representante", compacto:true, dir:e("span",{className:"text-[11px]"}, totalErros+(totalErros===1 ? " peça com erro" : " peças com erro"))},

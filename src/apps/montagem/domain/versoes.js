@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.265", data:"2026-11-26", titulo:"Ficha do atendimento: card maior, brindes lado a lado, menu próprio em Diferenças e topo do Consolidado maior", itens:[
+    {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Topo maior: botão amarelo da representante colado na busca, fontes e áreas de clique maiores. Bloco O que confirmar, passo a passo retirado. Cabeçalho Código nas tabelas de brindes e próximo mês."},
+    {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Card da ficha centralizado, até 1.700 px, com colunas mais largas. Brindes e Brindes BB lado a lado, também sem brindes (empilham só em coluna estreita). Diferenças com menu próprio (Tipo, Direção, Origem): lista à esquerda, grupos separados, seta azul, rolagem interna. Observação em largura total. Seletores e círculo de conferência com azul."}]},
  {v:"0.21.264", data:"2026-11-26", titulo:"Ficha do atendimento: 3 colunas, brindes alinhados, condicional nova na coluna 1 e permissões de bipagem", itens:[
     {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Ficha em 3 colunas, cabeçalhos só com o título, dinheiro na tabela de pagamento, condicionais em tabela, Condicional nova abaixo das Condicionais, peças do próximo mês com valor da DevMaster. Brindes e Brindes BB com colunas iguais em cabeçalho, corpo e rodapé. Só quem bipa confere brindes e peças, na tela e na gravação. Consolidado das listagens renomeado."}]},
  {v:"0.21.263", data:"2026-11-26", titulo:"Link de pagamento: comprovante obrigatório e entra sozinho no acerto da representante", itens:[
