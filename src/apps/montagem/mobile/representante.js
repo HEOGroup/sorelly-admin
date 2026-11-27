@@ -1431,7 +1431,9 @@ function AppRepresentante(p){
   var kitsVistaFiltrados = buscaLNorm ? kitsVista.filter(function(k){return k.rev.toLowerCase().indexOf(buscaLNorm)>=0;}) : kitsVista;
   var resultadosForaDaVista = buscaLNorm ? s.kits.filter(function(k){ return (!listagemVista || k.lid!==listagemVista.id) && minhasL.some(function(x){return x.id===k.lid;}) && k.rev.toLowerCase().indexOf(buscaLNorm)>=0; }) : [];
   // 09/11/2026 (Marcus): Listagens em Lista/Calendário, toca no dia e abre a tela do dia (mobile/listagens-rep.js). Seta ‹ da barra preta volta uma tela por vez (lgSub).
+  var adicionarDireto = function(r, lid, x){ if(!r || !lid) return; x = x || {}; d({type:"ADD_KIT", lid:lid, rev:r.rev, bairro:r.bairro||"", vendas:r.vendas, prio:false, atrasado:false, tipoKit:x.tipoKit||"acerto_kit", obs:x.obs||"", conds:[], fone:r.fone, cod:r.cod, hora:r.hora||null, semAgendamento:false, porRepNome:l.rep, porRep:true}); if(x.modalidade) d({type:"SET_MODALIDADE", chave:r.rev, modalidade:x.modalidade, por:l.rep, origem:"listagem"}); };
   var telaListagens = e("div",{className:"mt-3"}, e(ListagensRep,{s:s, d:d, rep:l.rep, ouro:ouro, minhas:minhasL, sub:lgSub, setSub:setLgSub,
+    carteira:cart, adicionar:adicionarDireto,
     irAdicionar:function(lid){ if(lid) setLidPed(lid); setTela("revs"); },
     abrirRev:function(k){ var alvo = cart.find(function(r){return r.rev===k.rev;}); if(alvo){ setSel(alvo.id); setTela("rev"); } }}));
   var estrelas = function(k){ var n = (notas[k.id]||{}).nota || 0;
@@ -1680,7 +1682,7 @@ function AppRepresentante(p){
         e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
       e("b",{className:douradoTitulo}, "Kits novos")),
     tela==="listagens" && e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"},
-      e("button",{onClick:function(){ if(lgSub.t==="excluir") setLgSub(Object.assign({}, lgSub, {t:"dia"})); else if(lgSub.t==="nova") setLgSub(Object.assign({}, lgSub, {t:lgSub.dia ? "dia" : "lista"})); else setTela("inicio"); }, "aria-label":lgSub.t==="lista" || lgSub.t==="dia" ? "Voltar ao início" : "Voltar", className:douradoArrow},
+      e("button",{onClick:function(){ if(lgSub.t==="excluir") setLgSub(Object.assign({}, lgSub, {t:"dia"})); else if(lgSub.t==="nova" || lgSub.t==="minhas") setLgSub(Object.assign({}, lgSub, {t:lgSub.dia ? "dia" : "lista"})); else setTela("inicio"); }, "aria-label":lgSub.t==="lista" || lgSub.t==="dia" ? "Voltar ao início" : "Voltar", className:douradoArrow},
         e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
       e("b",{className:douradoTitulo}, "Listagens")),
     tela==="comissoes" && e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"},

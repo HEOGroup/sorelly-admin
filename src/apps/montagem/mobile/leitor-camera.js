@@ -134,22 +134,16 @@ function LeitorCamera(p){
   // Com aoDesligar (conferência de devolução): câmera bloqueada ou indisponível recolhe a área sozinha e a bipagem manual segue liberada; o botão do grid vira "Ativar câmera".
   useEffect(function(){ if(estado.est==="erro" && p.aoDesligar) p.aoDesligar(); }, [estado.est]);   // eslint-disable-line react-hooks/exhaustive-deps
   if(estado.est==="erro" && p.aoDesligar) return null;
-  return e("div",{className:"flex flex-col gap-1.5"},
+  return e("div",{className:"flex flex-col"},
     estado.est==="erro"
       ? e("div",{className:"flex flex-col gap-1"}, e("button",{type:"button", onClick:function(){ setTentou(true); setEstado({est:"abrindo", msg:"", zoom:1, flash:0, diag:""}); setTentativa(tentativa+1); }, className:"flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#C9A13B] text-[13px] font-semibold text-white"}, "Ativar câmera"), tentou && estado.msg && e("p",{className:"px-1 text-[11px] text-[#8A6A12]"}, estado.msg))
-      : e("div",{className:"flex flex-col gap-2 rounded-xl bg-[#222] p-2.5"},
-          e("div",{className:"flex min-h-8 items-center justify-between gap-2"},
-            e("span",{className:"flex items-center gap-1.5 text-[11px] txt-branco"}, e("i",{className:"size-1.5 rounded-full "+(estado.est==="lendo" ? "bg-[#22C55E]" : "bg-[#9CA3AF]")}), estado.est==="lendo" ? "Câmera ativa" : "Abrindo a câmera..."),
-            null),
-          e("div",{className:"relative overflow-hidden rounded-lg bg-[#333]", style:{aspectRatio:"16 / 8"}},
-            e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
-            canto("left-3 top-3 border-l-2 border-t-2"), canto("right-3 top-3 border-r-2 border-t-2"), canto("bottom-3 left-3 border-b-2 border-l-2"), canto("bottom-3 right-3 border-b-2 border-r-2"),
-            e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-px "+(estado.flash ? "bg-[#22C55E]" : "bg-[#C9A13B]")}),
-            e("p",{className:"pointer-events-none absolute inset-x-0 top-[28%] text-center text-[13px] txt-branco"}, "Posicione o código da peça")),
-          e("div",{className:"flex min-h-8 items-center justify-between"},
-            e("span",null, estado.luz && e("button",{type:"button", onClick:alternarLuz, "aria-label":"Lanterna", "aria-pressed":luzOn, className:"grid size-8 place-items-center rounded-lg text-[13px] "+(luzOn ? "text-[#E8C766]" : "txt-branco")}, "☀")),
-            e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"h-8 px-2 text-[13px] txt-branco"}, "Ler por foto")),
-          fotoMsg && e("p",{className:"rounded-lg bg-black/65 px-2 py-1 text-center text-[13px] font-semibold txt-branco"}, fotoMsg)),
+      : e("div",{className:"relative w-full overflow-hidden bg-[#222]", style:{height:"clamp(96px, 14vh, 120px)"}},
+          e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
+          e("div",{className:"pointer-events-none absolute inset-x-0 top-1/2 h-px "+(estado.flash ? "bg-[#22C55E]" : "bg-[#C9A13B]")}),
+          (p.aoFechar || p.aoDesligar) && e("button",{type:"button", onClick:p.aoFechar || p.aoDesligar, "aria-label":"Fechar câmera", className:"absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/60 text-[13px] leading-none txt-branco"}, "×"),
+          estado.luz && e("button",{type:"button", onClick:alternarLuz, "aria-label":"Lanterna", "aria-pressed":luzOn, className:"absolute bottom-1 left-1 grid size-6 place-items-center rounded-full bg-black/60 text-[13px] leading-none "+(luzOn ? "text-[#E8C766]" : "txt-branco")}, "☀"),
+          e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"absolute bottom-1 right-1 h-6 rounded-full bg-black/60 px-2 text-[11px] txt-branco"}, "Ler por foto"),
+          fotoMsg && e("p",{className:"absolute inset-x-6 bottom-1 truncate rounded bg-black/70 px-2 text-center text-[11px] font-semibold txt-branco"}, fotoMsg)),
     e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}));
 }
 

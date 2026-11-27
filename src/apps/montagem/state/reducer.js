@@ -724,6 +724,7 @@ function reducer(s, a){
       if(a.cod) nk.codRev = a.cod;
       nk.cond = {nums:a.conds||[], pegas:false, chkM:{}, chkB:{}, faltas:{}, impressas:{}, novas:[]};
       nk.horaAtend = a.hora || null;
+      nk.obsMontagem = String(a.obs||"").slice(0,400);   // observações e preferências de peças desta revendedora, para a Montagem (Marcus, 27/11/2026)
       // Carimba a vers\u00e3o de regras de comiss\u00e3o/brinde vigente agora: o acerto deste kit sempre vai usar esta vers\u00e3o,
       // mesmo que as regras mudem antes do acerto acontecer (a mudan\u00e7a s\u00f3 vale a partir do pr\u00f3ximo kit).
       var vv = versaoDaRevendedora(s, nk.rev); nk.regrasVersaoId = vv ? vv.id : null; nk.remarcacoes = 0; nk.remarcacoesLista = [];
@@ -732,6 +733,15 @@ function reducer(s, a){
       var txtAdd = SEM_KIT[nk.tipoKit] ? a.rev+" entrou s\u00f3 para retirar a condicional" : nk.tipoKit==="reposicao" ? "Reposi\u00e7\u00e3o de "+a.rev+" inclu\u00edda: defina o valor (at\u00e9 o m\u00e1ximo liberado)" : "Kit de \u00faltima hora inclu\u00eddo, defina o valor para ele entrar na fila";
       return com(s, {kits: s.kits.concat([nk])}, txtAdd+(nk.atrasado?" \u00b7 atrasado":""));
     }
+    // Listagens da representante (27/11/2026): observação por revendedora e geral, envio para a montagem e confirmação de recebimento.
+    case "KIT_OBS": { var lO = s.listagens.find(function(x){ return x.id===a.lid; }); if(!lO || lO.enviadaEm) return s; return com(s, {kits: s.kits.map(function(k){ return k.id===a.id ? Object.assign({}, k, {obsMontagem:String(a.obs||"").slice(0,400)}) : k; })}); }
+    case "LISTAGEM_OBS": { var lG = s.listagens.find(function(x){ return x.id===a.lid; }); if(!lG || lG.enviadaEm) return s; return com(s, {listagens: s.listagens.map(function(x){ return x.id===a.lid ? Object.assign({}, x, {obsGeral:String(a.obs||"").slice(0,400)}) : x; })}); }
+    case "ENVIAR_LISTAGEM": {
+      var lE = s.listagens.find(function(x){ return x.id===a.lid; }); if(!lE || lE.enviadaEm) return s;
+      if(!s.kits.some(function(k){ return k.lid===a.lid; })) return com(s, {}, "Adicione ao menos uma revendedora antes de enviar", "alerta");
+      return com(s, {listagens: s.listagens.map(function(x){ return x.id===a.lid ? Object.assign({}, x, {enviadaEm:agora, enviadaPor:a.por||x.rep}) : x; })}, "Listagem de "+tituloDoDia(lE.data)+" enviada para a montagem");
+    }
+    case "LISTAGEM_RECEBIDA": { var lR = s.listagens.find(function(x){ return x.id===a.lid; }); if(!lR || !lR.enviadaEm || lR.recebidaEm) return s; return Object.assign({}, s, {listagens: s.listagens.map(function(x){ return x.id===a.lid ? Object.assign({}, x, {recebidaEm:agora}) : x; })}); }   // sem aviso: só carimba quando o banco confirmou
     case "SALVAR_PERFIL_REV": {
       var perfis = Object.assign({}, s.perfisRev);
       perfis[a.chave] = Object.assign({}, perfis[a.chave], a.patch);

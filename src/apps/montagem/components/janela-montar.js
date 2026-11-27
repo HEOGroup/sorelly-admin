@@ -92,6 +92,8 @@ function JanelaMontar(p){
 
         faixa("Antes de começar"),
         linha("Encomenda", enc.length ? "Sim · nº "+enc.join(", ") : "Sem encomenda", "enc"),
+        k.obsMontagem && linha("Observações da representante", k.obsMontagem, "obsrep"),
+        l && l.obsGeral && linha("Observação geral da listagem", l.obsGeral, "obsger"),
         k.status==="ajuste" && linha("Voltou para ajuste", k.motivo || "—", "ajuste"),
         semMontador(k) && linha("Atenção", "Este kit não tem montador informado: a bipagem e a comissão da bipadora só valem com montador.", "sm"),
         prefs && prefs.preferencias.resumoGeral && linha("Ouro e prata", "Ouro "+Math.round(prefs.preferencias.resumoGeral.ouro)+"% · Prata "+Math.round(prefs.preferencias.resumoGeral.prata)+"%", "mix"),
