@@ -46,11 +46,17 @@ export const GET = rota(async (req, { eu, url }) => {
     const r = await consultarTabela("dmaaa", { registros: 100, filtro: { aaa_codigo: { in: prods.slice(i, i + 100) } }, campos: ["aaa_codigo", "aaa_grupo", "aaa_codbarras"] });
     (r.itens || []).forEach((x) => { grupoDe.set(String(x.aaa_codigo).trim(), String(x.aaa_grupo || "").trim()); barrasDe.set(String(x.aaa_codigo).trim(), String(x.aaa_codbarras || "").trim()); });
   }
+  // nome do grupo = descrição oficial da DevMaster (dmaad), numa consulta só; o mapa fixo GRUPOS fica só de reserva (29/11/2026)
+  const oficial = new Map();
+  try {
+    const gr = await consultarTabela("dmaad", { registros: 200, campos: ["aad_codigo", "aad_descricao"] });
+    (gr.itens || []).forEach((x) => { const d = String(x.aad_descricao || "").trim(); if (d) oficial.set(String(x.aad_codigo).trim(), d.toLowerCase().replace(/(^|\s)(?!de\s|do\s|da\s)(\S)/g, (m, a, b) => a + b.toUpperCase())); });
+  } catch { /* sem a tabela de grupos: usa o mapa de reserva */ }
   const condicionais = kits.sort((a, b) => String(b.afi_data).localeCompare(String(a.afi_data))).map((c) => {
     const por = new Map();
     itens.filter((i) => i.afj_condicional === c.afi_codigo).forEach((i) => {
       const codigo = String(i.afj_produto || "").trim(), g = grupoDe.get(codigo) || "00";
-      if (!por.has(g)) por.set(g, { cod: g, nome: GRUPOS[g] || "Grupo " + g, itens: [] });
+      if (!por.has(g)) por.set(g, { cod: g, nome: oficial.get(g) || GRUPOS[g] || "Grupo " + g, itens: [] });
       // a DevMaster grava uma linha por peça: o mesmo código em duas linhas da mesma condicional soma a quantidade (25/11/2026)
       const igual = por.get(g).itens.find((x) => x.codigo === codigo);
       if (igual) { igual.qtd += Number(i.afj_quantidade) || 0; return; }

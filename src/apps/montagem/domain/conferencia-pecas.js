@@ -52,6 +52,7 @@ function resultado(conds, conf){
 }
 
 // Descrição da peça para MOSTRAR (Marcus, 24/11/2026): "Colar folheado ouro 18k", nunca "COLAR FOLHEADO OURO 18K". A DevMaster guarda em caixa alta; a primeira letra fica maiúscula e o resto minúsculo.
-function descBonita(t){ var s = String(t||"").toLowerCase().replace(/\s+/g, " ").trim(); return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+// "folheado"/"banhado" saem da descrição: ocupam espaço (Marcus, 27/11/2026)
+function descBonita(t){ var s = String(t||"").toLowerCase().replace(/\b(folhead[oa]s?|banhad[oa]s?)\b/g, " ").replace(/\s+/g, " ").trim(); return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 
 export { condicionaisDoKit, unir, itensDe, totaisDe, totaisKit, bipar, resultado, descBonita };

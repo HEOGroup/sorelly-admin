@@ -101,7 +101,7 @@ function derivarAcerto(p){
   var multaAplica = !!(novas && previaAcerto && (p.finalizado || acordoExistente || form.recusouNegociar));
   var multasSoma = multaAplica ? (previaAcerto.multas||0) : 0;
   var kitApoio = kitApoioDoForm(form);   // kit apoio bolsinhas: soma só no total a pagar (fora de venda, faixa, comissão, brinde, taxa e meta)
-  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma+kitApoio.valor)*100)/100 : 0;
+  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma+kitApoio.valor+(form.materiaisValor||0))*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
   // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
   var blocoDivida = dividaAnt>0.009 && !!previaAcerto && restanteTotal>0.009 ? "Dívida anterior de "+BK(dividaAnt)+": ela não pode ficar devendo duas vezes seguidas. Kit novo só com tudo quitado." : "";

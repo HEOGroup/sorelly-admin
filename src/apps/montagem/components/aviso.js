@@ -15,6 +15,8 @@ function Aviso(){
   if(!s.aviso) return null;
   // Financeiro e Fiscal: escolher algo é só escolher, sem aviso de sucesso (Marcus, 12/11/2026). Avisos de atenção e de alerta continuam.
   var lugar = ondeEsta(s.aba); if(lugar && (lugar.setor.id==="financeiro" || lugar.setor.id==="fiscal") && (!s.aviso.tom || s.aviso.tom==="ok")) return null;
+  // Calculadora de acertos (Marcus, 27/11/2026): a própria tela mostra o resultado; avisos de sucesso não aparecem. Erro e alerta continuam.
+  if((!s.aviso.tom || s.aviso.tom==="ok") && typeof document!=="undefined" && document.querySelector("[data-calc-acerto]")) return null;
   var tom = TONS[s.aviso.tom] || TONS.ok, perto = Date.now()-ultimo.t < 4000 && ultimo.t>0, W = 260;
   var pos = perto ? {left:Math.max(8, Math.min(ultimo.x+14, window.innerWidth-W-8)), top:Math.max(8, Math.min(ultimo.y-64, window.innerHeight-90))} : {right:20, bottom:20};
   return e("div",{key:s.aviso.t, role:"status", className:"toast-sobe fixed z-50 flex max-w-[260px] items-start gap-2 rounded-lg bg-popover px-3 py-2 text-[13px] font-medium leading-snug shadow-lg ring-1 ring-foreground/10", style:Object.assign({borderLeft:"4px solid "+tom[0]}, pos)},

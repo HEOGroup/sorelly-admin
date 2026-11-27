@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.276", data:"2026-11-27", titulo:"Peças que voltaram: nova tela de bipagem e materiais MP/MU fora da comissão", itens:[
+  {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto → Peças que voltaram", txt:"Tela de bipagem refeita: consolidado no topo, controles código/Bipar/câmera, confirmação da última peça, filtros Todas, Vendidas e Devolvidas, Fechar/Abrir todos e Mostrar vendidos, grupos com nomes oficiais da DevMaster (Suporte e Material de uso geral no fim) e rolagem só na lista."},
+  {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto", txt:"Materiais MP e MU (rifa, kit apoio, suporte) não devolvidos não geram comissão: entram inteiros no valor do acerto e no total a pagar."},
+ ]},
  {v:"0.21.275", data:"2026-11-27", titulo:"Resgates de moedas: brindes retirados da maleta na confirmação da retirada", itens:[
   {tipo:"melhoria", area:"Indicações → Resgates → Confirmar retirada", txt:"Opção Brindes retirados da maleta na Conferência, com data do acerto e representante. Grava os mesmos campos de Dados do balcão (vale para todos os pedidos retirados juntos) e aparece no filtro de maleta do quadro."}]},
  {v:"0.21.274", data:"2026-11-27", titulo:"Compras: Compra efetuada com valor menor que o aprovado não trava mais (caso #2789)", itens:[

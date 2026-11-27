@@ -35,7 +35,7 @@ function valido(c){ return /^\d{7,13}$/.test(c) || /^[A-Z]{1,4}\d{3,6}$/.test(c)
 
 function LeitorCamera(p){
   var ref = useRef(null), st = useState({est:"abrindo", msg:"", zoom:1, flash:0, diag:""}), estado = st[0], setEstado = st[1];
-  var fotoRef = useRef(null), fs = useState(""), fotoMsg = fs[0], setFotoMsg = fs[1];
+  var tn = useState(false), tentou = tn[0], setTentou = tn[1], tt = useState(0), tentativa = tt[0], setTentativa = tt[1], trRef = useRef(null), lz = useState(true), luzOn = lz[0], setLuzOn = lz[1], fotoRef = useRef(null), fs = useState(""), fotoMsg = fs[0], setFotoMsg = fs[1];
   var lerRef = useRef(p.aoLer); lerRef.current = p.aoLer;
   useEffect(function(){
     var vivo = true, stream = null, timer = null, ultimo = {cod:"", ts:0}, previo = "", digital = 1, lanterna = false, zoomCam = false, dg = {n:0, ms:0, bruto:"", fmt:"", motor:"", t:0};
@@ -51,7 +51,7 @@ function LeitorCamera(p){
       try {
         var tr = stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, adv = [];
         if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); zoomCam = true; }
-        if(cap.torch){ adv.push({torch:true}); lanterna = true; }
+        if(cap.torch){ adv.push({torch:true}); lanterna = true; trRef.current = tr; }
         if(cap.focusMode && cap.focusMode.indexOf("continuous") >= 0) adv.push({focusMode:"continuous"});
         if(adv.length) await tr.applyConstraints({advanced:adv});
       } catch(x){}
@@ -113,7 +113,7 @@ function LeitorCamera(p){
       laco();
     })();
     return parar;
-  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tentativa]);   // eslint-disable-line react-hooks/exhaustive-deps
   // Ler por foto: abre a câmera do próprio celular (foco automático e foto inteira, bem mais nítida que o vídeo) e lê o código da foto.
   async function lerFoto(ev){
     var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;
@@ -129,17 +129,28 @@ function LeitorCamera(p){
       else setFotoMsg("Não achei código nessa foto. Chegue mais perto, com a etiqueta reta e bem iluminada, ou digite o código.");
     } catch(x){ setFotoMsg("Não consegui ler a foto. Digite o código da peça."); }
   }
+  var canto = function(pos){ return e("i",{key:pos, className:"pointer-events-none absolute size-6 border-[#C9A13B] "+pos}); };
+  var alternarLuz = function(){ var t = trRef.current; if(!t) return; var novo = !luzOn; setLuzOn(novo); try { t.applyConstraints({advanced:[{torch:novo}]}); } catch(x){} };
+  // Com aoDesligar (conferência de devolução): câmera bloqueada ou indisponível recolhe a área sozinha e a bipagem manual segue liberada; o botão do grid vira "Ativar câmera".
+  useEffect(function(){ if(estado.est==="erro" && p.aoDesligar) p.aoDesligar(); }, [estado.est]);   // eslint-disable-line react-hooks/exhaustive-deps
+  if(estado.est==="erro" && p.aoDesligar) return null;
   return e("div",{className:"flex flex-col gap-1.5"},
     estado.est==="erro"
-      ? e("p",{className:"rounded-xl bg-[#FEF3C7] px-3 py-2 text-[12.5px] font-bold text-[#92400E]"}, estado.msg)
-      : e("div",{className:"relative overflow-hidden rounded-2xl bg-black", style:{aspectRatio:"16 / 10"}},
-          e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
-          e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-24 -translate-y-1/2 rounded-xl border-2 " + (estado.flash ? "border-[#22C55E]" : estado.est==="lendo" ? "border-white/90" : "border-white/40")}),
-          estado.est==="abrindo" && e("p",{className:"absolute inset-x-0 bottom-2 px-3 text-center text-[12px] font-bold txt-branco"}, "Abrindo a câmera..."),
-          e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"absolute bottom-2 right-2 h-8 rounded-lg bg-black/55 px-3 text-[12px] font-semibold txt-branco"}, "Ler por foto"),
-          fotoMsg && e("p",{className:"absolute inset-x-2 bottom-12 rounded-lg bg-black/65 px-2 py-1 text-center text-[12px] font-semibold txt-branco"}, fotoMsg)),
-    e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}),
-    p.aoFechar && p.mostrarFechar ? e("button",{type:"button", onClick:p.aoFechar, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#374151]"}, "Fechar a câmera") : null);
+      ? e("div",{className:"flex flex-col gap-1"}, e("button",{type:"button", onClick:function(){ setTentou(true); setEstado({est:"abrindo", msg:"", zoom:1, flash:0, diag:""}); setTentativa(tentativa+1); }, className:"flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#C9A13B] text-[13px] font-semibold text-white"}, "Ativar câmera"), tentou && estado.msg && e("p",{className:"px-1 text-[11px] text-[#8A6A12]"}, estado.msg))
+      : e("div",{className:"flex flex-col gap-2 rounded-xl bg-[#222] p-2.5"},
+          e("div",{className:"flex min-h-8 items-center justify-between gap-2"},
+            e("span",{className:"flex items-center gap-1.5 text-[11px] txt-branco"}, e("i",{className:"size-1.5 rounded-full "+(estado.est==="lendo" ? "bg-[#22C55E]" : "bg-[#9CA3AF]")}), estado.est==="lendo" ? "Câmera ativa" : "Abrindo a câmera..."),
+            null),
+          e("div",{className:"relative overflow-hidden rounded-lg bg-[#333]", style:{aspectRatio:"16 / 8"}},
+            e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
+            canto("left-3 top-3 border-l-2 border-t-2"), canto("right-3 top-3 border-r-2 border-t-2"), canto("bottom-3 left-3 border-b-2 border-l-2"), canto("bottom-3 right-3 border-b-2 border-r-2"),
+            e("div",{className:"pointer-events-none absolute inset-x-6 top-1/2 h-px "+(estado.flash ? "bg-[#22C55E]" : "bg-[#C9A13B]")}),
+            e("p",{className:"pointer-events-none absolute inset-x-0 top-[28%] text-center text-[13px] txt-branco"}, "Posicione o código da peça")),
+          e("div",{className:"flex min-h-8 items-center justify-between"},
+            e("span",null, estado.luz && e("button",{type:"button", onClick:alternarLuz, "aria-label":"Lanterna", "aria-pressed":luzOn, className:"grid size-8 place-items-center rounded-lg text-[13px] "+(luzOn ? "text-[#E8C766]" : "txt-branco")}, "☀")),
+            e("button",{type:"button", onClick:function(){ if(fotoRef.current) fotoRef.current.click(); }, className:"h-8 px-2 text-[13px] txt-branco"}, "Ler por foto")),
+          fotoMsg && e("p",{className:"rounded-lg bg-black/65 px-2 py-1 text-center text-[13px] font-semibold txt-branco"}, fotoMsg)),
+    e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}));
 }
 
 export { LeitorCamera };
