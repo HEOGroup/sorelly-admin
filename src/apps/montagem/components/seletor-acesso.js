@@ -61,6 +61,39 @@ function PilulaSituacao(p){ p = p || {};
         e("span",{className:"size-2.5 rounded-full", style:{background:SITUACOES[k][1]}}), SITUACOES[k][0]); })));
 }
 
+// Lista de usuários (27/11/2026, Marcus): Marcus (id 16) e Vanessa (id 9001) fixos no topo; os demais em ordem alfabética, sem grupos; busca sem acento, teclado, ESC e clique fora.
+var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+function listaUsuarios(){
+  var vistos = {}, todos = [];
+  SETORES_LOGIN().forEach(function(gr){ gr[1].forEach(function(x){ var chave = semAcento(x && x.nome).trim(); if(x && !vistos[x.id] && !vistos["n"+chave]){ vistos[x.id] = 1; vistos["n"+chave] = 1; todos.push({id:x.id, nome:x.nome, papel:PAPEL_LB[gr[0]]}); } }); });
+  var fixos = [16, 9001].map(function(id){ return todos.find(function(x){ return x.id===id; }); }).filter(Boolean);
+  var resto = todos.filter(function(x){ return x.id!==16 && x.id!==9001; }).sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR", {sensitivity:"base"}); });
+  return {fixos:fixos, resto:resto};
+}
+function SeletorUsuarios(p){
+  var sq = useState(""), q = sq[0], setQ = sq[1], sh = useState(0), sel = sh[0], setSel = sh[1], lista = useRef(null);
+  var l = listaUsuarios(), busca = semAcento(q).trim();
+  var itens = l.fixos.concat(l.resto).filter(function(x){ return !busca || semAcento(x.nome).indexOf(busca)>=0; });
+  useEffect(function(){ var el = lista.current && lista.current.querySelector('[data-sel="1"]'); if(el && el.scrollIntoView) el.scrollIntoView({block:"nearest"}); }, [sel, q]);
+  var tecla = function(ev){
+    if(ev.key==="Escape"){ ev.preventDefault(); p.onFechar(); }
+    else if(ev.key==="ArrowDown"){ ev.preventDefault(); setSel(Math.min(sel+1, itens.length-1)); }
+    else if(ev.key==="ArrowUp"){ ev.preventDefault(); setSel(Math.max(sel-1, 0)); }
+    else if(ev.key==="Enter"){ ev.preventDefault(); if(itens[sel]) p.onEscolher(itens[sel].id); }
+  };
+  return e("div",{className:"contents"},
+    e("div",{className:"fixed inset-0 z-40", onClick:p.onFechar}),
+    e("div",{onKeyDown:tecla, className:"absolute "+(p.esq ? "left-0" : "right-0")+" top-9 z-50 flex w-60 max-w-[calc(100vw-1rem)] flex-col rounded-lg bg-card p-1 shadow-2xl ring-1 ring-[#E8B84B]/40", style:{maxHeight:"min(400px, calc(100vh - 80px))"}},
+      e("input",{autoFocus:true, value:q, onChange:function(ev){ setQ(ev.target.value); setSel(0); }, placeholder:"Buscar usuário", "aria-label":"Buscar usuário", className:"mb-1 h-7 w-full shrink-0 rounded-md border border-border bg-black/20 px-2 text-[12px] outline-none focus:border-primary"}), // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
+      e("div",{ref:lista, role:"listbox", className:"min-h-0 flex-1 overflow-y-auto", style:{scrollbarWidth:"thin"}},
+        itens.length===0 && e("p",{className:"px-2 py-1.5 text-[12px] font-medium"}, "Ninguém encontrado."), // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
+        itens.map(function(x, i){ var atual = x.id===p.atual, fixo = x.id===16 || x.id===9001;
+          return e("button",{key:x.id, type:"button", role:"option", "aria-selected":atual, "data-sel":i===sel ? "1" : "0", onMouseEnter:function(){ setSel(i); }, onClick:function(){ p.onEscolher(x.id); },
+            className:"flex h-[26px] w-full shrink-0 cursor-pointer items-center gap-2 overflow-hidden whitespace-nowrap rounded-md px-2 text-left text-[12px] leading-none outline-none "+(i===sel ? "bg-white/10" : "")+(atual ? " font-bold" : " font-medium")}, // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
+            e("span",{className:"min-w-0 flex-1 truncate", title:x.nome}, x.id===9001 ? "Vanessa — Representante" : x.nome), // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
+            atual && e(Icon,{n:"check", s:14, className:"shrink-0"})); }))));
+}
+
 // Conta: foto e nome; o menu reúne foto, aparência, tamanho da tela, "atuar como" (Diretoria) e Sair.
 // p.zoom = o controle de tamanho; p.onTema = alterna claro/escuro. O zoom fica sempre montado (só escondido quando o menu está fechado) para valer desde a abertura do sistema.
 function ContaMenu(p){
@@ -82,28 +115,30 @@ function ContaMenu(p){
     ? e("span",{className:"block shrink-0 bg-cover bg-center", style:{width:tam, height:tam, backgroundImage:"url("+quem.foto+")", borderRadius:rd}})
     : e("span",{className:"grid shrink-0 place-items-center text-white", style:{width:tam, height:tam, background:v[0], borderRadius:rd}}, e(Icon,{n:v[1], s:Math.round(tam*0.5)})); };
 
-  var conta = e("div",{className:p.compacto ? "relative min-w-0 flex-1" : "relative"},
+  // 27/11/2026 (Marcus): foto e nome abrem a LISTA DE USUÁRIOS (só quem pode atuar como outra pessoa); as configurações ficam numa engrenagem à parte.
+  var eng = useState(false), engAberta = eng[0], setEngAberta = eng[1];
+  var botaoConta = e("button",{type:"button", onClick:function(){ if(podeTrocar){ setAberto(!aberto); setEngAberta(false); } }, "aria-label":podeTrocar ? "Trocar de usuário" : "Minha conta", "aria-expanded":aberto, disabled:!podeTrocar,
+      className:(p.compacto ? "flex h-8 w-full" : "flex h-8")+" "+(podeTrocar ? "cursor-pointer hover:bg-white/10" : "cursor-default")+" min-w-0 items-center gap-2 rounded-lg px-1.5 text-[13px] font-semibold outline-none"},
+    foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, doisNomes(nomeDe(s.usuario))), s.usuario===16 && e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),   // o nível de acesso (Acesso total) aparece só para o Marcus; os outros veem só o nome (Marcus, 21/11/2026)
+    podeTrocar && e(Icon,{n:aberto ? "chevrondown" : "chevron", s:12, className:"ml-auto"}));
+  var conta = e("div",{className:p.compacto ? "relative min-w-0 flex-1" : "relative"}, botaoConta,
+    aberto && podeTrocar && e(SeletorUsuarios,{atual:s.usuario, esq:p.esq, onEscolher:function(id){ setAberto(false); escolher(id); }, onFechar:function(){ setAberto(false); }}));
+  var linhaMenu = "flex h-7 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-[12px] font-medium outline-none hover:bg-white/10"; // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
+  var engrenagem = e("div",{className:"relative shrink-0"},
     e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
-    e("button",{onClick:function(){ setAberto(!aberto); }, "aria-label":"Minha conta", "aria-expanded":aberto,
-        className:(p.compacto ? "flex h-8 w-full" : "flex h-8")+" cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold outline-none hover:bg-primary/15"},
-      foto(p.compacto ? 22 : 26, 7), e("span",{className:"flex min-w-0 flex-col items-start leading-none"}, e("span",null, doisNomes(nomeDe(s.usuario))), s.usuario===16 && e("span",{className:"mt-0.5 text-[11px] font-medium opacity-70"}, PAPEL_LB[g])),   // o nível de acesso (Acesso total) aparece só para o Marcus; os outros veem só o nome (Marcus, 21/11/2026)
-      e(Icon,{n: aberto ? "chevrondown" : "chevron", s:12, className:p.compacto ? "ml-auto" : ""})),
-    aberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(false); }}),
-    // painel mínimo (Marcus, 16/11/2026: "tem que ser muito mais simplificado"): sem cabeçalho (o nome já está na barra), 1 coluna de linhas de 32 px, 14 rem
-    e("div",{className:(aberto ? "" : "hidden ")+"absolute "+(p.esq ? "left-0" : "right-0")+" top-10 z-50 flex max-h-[80vh] w-56 flex-col gap-0.5 overflow-y-auto rounded-xl bg-card p-1.5 shadow-2xl ring-1 ring-[#E8B84B]/40"},
+    e("button",{type:"button", onClick:function(){ setEngAberta(!engAberta); setAberto(false); }, title:"Configurações do perfil", "aria-label":"Configurações do perfil", "aria-expanded":engAberta, className:"flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg outline-none hover:bg-white/10"}, e(Icon,{n:"settings", s:15})),
+    engAberta && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setEngAberta(false); }}),
+    e("div",{className:(engAberta ? "" : "hidden ")+"absolute "+(p.esq ? "left-0" : "right-0")+" top-9 z-50 flex max-h-[80vh] w-52 flex-col gap-0.5 overflow-y-auto rounded-lg bg-card p-1 shadow-2xl ring-1 ring-[#E8B84B]/40"},
       comLogin && meu && e("div",{className:"flex gap-0.5"},
-        e("button",{type:"button", onClick:function(){ arq.current.click(); }, className:BOTAO_MENU}, e(Icon,{n:"pencil", s:14}), "Trocar foto"),
-        meu.foto && e("button",{type:"button", onClick:removerFoto, title:"Remover foto", "aria-label":"Remover foto", className:"grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-white/10"}, e(Icon,{n:"trash", s:14}))),
+        e("button",{type:"button", onClick:function(){ arq.current.click(); }, className:linhaMenu}, e(Icon,{n:"pencil", s:14}), "Trocar foto"),
+        meu.foto && e("button",{type:"button", onClick:removerFoto, title:"Remover foto", "aria-label":"Remover foto", className:"grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md hover:bg-white/10"}, e(Icon,{n:"trash", s:14}))), // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
       comLogin && e(TrocarSenha),
-      e("button",{type:"button", onClick:function(){ sons.mudar({mudo:!som.mudo}); try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} }, title:som.mudo ? "Liga de novo todos os sons do sistema" : "Desliga todos os sons do sistema (cliques, avisos, sirene e voz de Nova venda); os avisos continuam aparecendo na tela", className:BOTAO_MENU}, e(Icon,{n:som.mudo ? "volumex" : "volume2", s:14}), som.mudo ? "Som desligado" : "Som ligado"),
-      e("button",{type:"button", onClick:p.onTema, className:BOTAO_MENU}, e(Icon,{n:"sunmoon", s:14}), "Claro / escuro"),
-      e("div",{className:"flex h-8 items-center justify-between gap-2 px-2"}, e("span",{className:"text-[13px] font-semibold"}, "Tamanho"), p.zoom),
-      podeTrocar && e("select",{value:s.usuario, title:"Atuar como outra pessoa", "aria-label":"Atuar como outra pessoa", onChange:function(ev){ escolher(Number(ev.target.value)); },
-        className:"mt-1 h-8 w-full cursor-pointer rounded-lg border border-border bg-black/20 px-2 text-[13px] outline-none focus:border-primary"},
-        SETORES_LOGIN().map(function(gr){ return e("optgroup",{key:gr[0], label:PAPEL_LB[gr[0]]}, gr[1].map(function(x){ return e("option",{key:x.id, value:x.id, className:"bg-card text-white"}, x.nome); })); }))));
+      e("button",{type:"button", onClick:function(){ sons.mudar({mudo:!som.mudo}); try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} }, title:som.mudo ? "Liga de novo todos os sons do sistema" : "Desliga todos os sons do sistema (cliques, avisos, sirene e voz de Nova venda); os avisos continuam aparecendo na tela", className:linhaMenu}, e(Icon,{n:som.mudo ? "volumex" : "volume2", s:14}), som.mudo ? "Som desligado" : "Som ligado"),
+      e("button",{type:"button", onClick:p.onTema, className:linhaMenu}, e(Icon,{n:"sunmoon", s:14}), "Claro / escuro"),
+      e("div",{className:"flex h-7 items-center justify-between gap-2 px-2"}, e("span",{className:"text-[12px] font-medium"}, "Tamanho"), p.zoom))); // padrao-ok (Marcus 27/11/2026: 12 px, linha 26 px, reticências)
   // botão Sair sempre à vista ao lado da conta (Marcus, 29/10/2026: não achava onde sair para entrar com a conta de outra pessoa)
   var botaoSair = e("button",{type:"button", onClick:sair, title:comLogin ? "Sair e entrar com outra conta" : "Sair (voltar para a tela de entrada)", "aria-label":"Sair", className:(p.compacto ? "flex h-8 w-8 shrink-0 justify-center" : "flex h-8 gap-1.5 px-2.5")+" cursor-pointer items-center rounded-lg border border-border bg-white/5 text-[13px] font-semibold outline-none hover:bg-white/10"}, e(Icon,{n:"logout", s:15}), !p.compacto && "Sair");
-  return e("div",{className:p.compacto ? "flex min-w-0 flex-1 items-center gap-1.5" : "flex items-center gap-1.5"}, conta, botaoSair, recorte && e(RecortarFoto,{arquivo:recorte, onSalvar:salvarRecorte, onCancelar:function(){ setRecorte(null); }}));
+  return e("div",{className:p.compacto ? "flex min-w-0 flex-1 items-center gap-1" : "flex items-center gap-1"}, conta, engrenagem, botaoSair, recorte && e(RecortarFoto,{arquivo:recorte, onSalvar:salvarRecorte, onCancelar:function(){ setRecorte(null); }}));
 }
 
 export { PilulaSituacao, ContaMenu, SETORES_LOGIN };
