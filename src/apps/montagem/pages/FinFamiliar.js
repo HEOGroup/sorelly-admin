@@ -787,11 +787,13 @@ function CartaoPix(p){
   var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }), pe2 = !pr && b.personaId && ff.personas.find(function(y){ return y.id===b.personaId; }); return pr ? pr.nome : pe2 ? pe2.nome : "—"; };
   var nomeConta = function(id){ var b = contaDe(id), n = String(b.nome || "").replace(/^Conta\s+/i, ""), lo = n.toLowerCase(), bk = String(b.banco || "").toLowerCase(), k = bk ? lo.lastIndexOf(bk) : -1; if(k>0 && lo.slice(k).trim()===bk) n = n.slice(0, k).replace(/[\s—-]+$/, ""); n = n.replace(/\s*\([^)]*\)\s*$/, "").trim(); return n || "—"; };
   // FILTRO da lista (Lucas, 06/11/2026): as meninas conferem PIX por PIX; buscam por revendedora, valor, data ou conta e filtram por conta e por conferência. O total do cartão continua sendo o de todos os PIX.
-  var nfl = useState({q:"", conta:"", conf:""}), fl = nfl[0], setFl = function(o){ nfl[1](Object.assign({}, fl, o)); };
+  var nfl = useState({q:"", conta:"", conf:"", de:"", ate:""}), fl = nfl[0], setFl = function(o){ nfl[1](Object.assign({}, fl, o)); };
   var semAc = function(t2){ return String(t2||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }, nq = semAc(fl.q);
-  var lista = listaTodas.filter(function(x){ return (!nq || semAc((x.origem||"")+" "+BK(x.valor)+" "+x.valor+" "+br(x.data)+" "+(contaDe(x.contaId).banco||"")+" "+nomeConta(x.contaId)).indexOf(nq)>=0) && (!fl.conta || x.contaId===fl.conta) && (!fl.conf || stDe(x)===fl.conf); });
+  var lista = listaTodas.filter(function(x){ return (!nq || semAc((x.origem||"")+" "+BK(x.valor)+" "+x.valor+" "+br(x.data)+" "+(contaDe(x.contaId).banco||"")+" "+nomeConta(x.contaId)).indexOf(nq)>=0) && (!fl.conta || x.contaId===fl.conta) && (!fl.conf || stDe(x)===fl.conf) && (!fl.de || x.data>=fl.de) && (!fl.ate || x.data<=fl.ate); });
   var contasLista = []; listaTodas.forEach(function(x){ if(x.contaId && contasLista.indexOf(x.contaId)<0) contasLista.push(x.contaId); });
-  var filtrando = !!(fl.q || fl.conta || fl.conf);
+  var filtrando = !!(fl.q || fl.conta || fl.conf || fl.de || fl.ate);
+  // TOTAL DO FILTRO (Lucas, 27/11/2026: "sempre que filtrado, mostrar o total"): soma dos PIX que aparecem; "Não identificado" fica fora, a não ser que o filtro seja ele
+  var totFil = r2(lista.filter(function(x){ return fl.conf==="NAOIDENT" || stDe(x)!=="NAOIDENT"; }).reduce(function(s, x){ return s+x.valor; }, 0));
   var recTodos = r2(listaTodas.filter(function(x){ return stDe(x)!=="NAOIDENT"; }).reduce(function(s, x){ return s+x.valor; }, 0));
   // EDITAR o PIX na própria linha, só enquanto estiver "Aguardando" (Lucas, 18/11/2026)
   var ned = useState(null), ed = ned[0], setEd = ned[1], setE = function(o){ setEd(Object.assign({}, ed, o)); };
@@ -823,6 +825,7 @@ function CartaoPix(p){
         e("span",{className:"inline-flex items-center gap-2"}, e(Botao,{principal:true, desabilitado:!(num(ed.valor)>0) || !ed.data, onClick:salvarEd}, "Salvar"), e(Botao,{onClick:function(){ setEd(null); }}, "Cancelar"))))));
   });
   fecha();
+  if(filtrando && lista.length) linhas.push(e("tr",{key:"totfil", className:"border-t-2 border-border bg-white/5 font-semibold"}, e("td",{className:TC, colSpan:5}, "Total filtrado ("+lista.length+" PIX)"), e("td",{className:TC}, BK(totFil)), e("td",{className:TC, colSpan:2}, "")));
   var fechado = p.aberto===false;
   return e("div",{className:fechado ? "cursor-pointer" : "", onClick:fechado ? p.onToggle : undefined}, e(Bloco,{ouro:true, cls:fechado ? "[&>div:last-child]:hidden" : "", t:pe.nome, dir:e("span",{className:"inline-flex items-center gap-3 tabular-nums"}, (ym==="TODOS" ? "Todos os meses" : nomeMes(ym))+" · "+BK(todos ? recTodos : t.pix.recebido), p.aberto===true && e("button",{type:"button", onClick:p.onToggle, className:"rounded-md border border-[#1a1306]/40 px-2 text-[11px] font-semibold"}, "Recolher"))},
     // Anotar PIX voltou (Lucas, 23/11/2026): tinha saído em 21/11 (v0.21.77) e não havia outro jeito de lançar o Pix da família
@@ -836,9 +839,11 @@ function CartaoPix(p){
       e("div",{className:"min-w-[10rem] flex-1"}, e(Rotulo,{t:"Buscar"}), e("input",{type:"search", value:fl.q, "aria-label":"Buscar na lista", placeholder:"Revendedora, valor, data ou conta", className:CAMPO, onChange:function(ev){ setFl({q:ev.target.value}); }})),
       e("div",{className:"w-52"}, e(Rotulo,{t:"Conta"}), e("select",{value:fl.conta, "aria-label":"Filtrar por conta", className:CAMPO, onChange:function(ev){ setFl({conta:ev.target.value}); }}, e("option",{value:""}, "Todas as contas"), contasLista.map(function(id){ return e("option",{key:id, value:id}, nomeConta(id)+(contaDe(id).banco ? " · "+contaDe(id).banco : "")); }))),
       e("div",{className:"w-44"}, e(Rotulo,{t:"Conferência"}), e("select",{value:fl.conf, "aria-label":"Filtrar por conferência", className:CAMPO, onChange:function(ev){ setFl({conf:ev.target.value}); }}, e("option",{value:""}, "Todas"), e("option",{value:"PENDENTE"}, "Aguardando"), e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVERG"}, "Divergência"))),
-      filtrando && e(Botao,{onClick:function(){ setFl({q:"", conta:"", conf:""}); }}, "Limpar"),
+      e("div",{className:"w-36"}, e(Rotulo,{t:"Pago de"}), e("input",{type:"date", value:fl.de, "aria-label":"Data de pagamento: de", className:CAMPO+" text-center", onChange:function(ev){ setFl({de:ev.target.value}); }})),   // filtro por data de pagamento (Lucas, 27/11/2026)
+      e("div",{className:"w-36"}, e(Rotulo,{t:"Pago até"}), e("input",{type:"date", value:fl.ate, "aria-label":"Data de pagamento: até", className:CAMPO+" text-center", onChange:function(ev){ setFl({ate:ev.target.value}); }})),
+      filtrando && e(Botao,{onClick:function(){ setFl({q:"", conta:"", conf:"", de:"", ate:""}); }}, "Limpar"),
       casa && !c.leitura && listaTodas.some(function(x){ return !x.casa; }) && e(Botao,{onClick:function(){ var n0 = ff.pix.filter(function(x){ return pixCasa(ff, x) && !x.casa; }).length; if(window.confirm("Marcar os "+n0+" Pix da Casa que estão sem casa como Casa Alphaville?")) acao(c, "pix_casa_lote", {casa:"casaalphaville"}); }}, "Marcar os sem casa como Alphaville"),
-      e("span",{className:"pb-1.5 text-[13px] tabular-nums"}, lista.length+" de "+listaTodas.length+" PIX")),
+      e("span",{className:"pb-1.5 text-[13px] tabular-nums"}, lista.length+" de "+listaTodas.length+" PIX", filtrando && e("b",null, " · Total "+BK(totFil)))),
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, filtrando ? "Nenhum PIX com esse filtro." : ym==="TODOS" ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
     : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:220}, {t:"", w:56}]}, linhas),
     ab.length>0 && lista.some(function(x){ return x.id===ab[0]; }) && e(DivPix,{key:abre, tipo:ab[1], x:lista.find(function(x){ return x.id===ab[0]; }), c:c, ff:ff, cbs:cbs, left:Math.max(8, Math.min(+ab[2], window.innerWidth-300)), top:Math.max(8, Math.min(+ab[3]+4, window.innerHeight-330)), onFecha:function(){ setAbre(""); }})));

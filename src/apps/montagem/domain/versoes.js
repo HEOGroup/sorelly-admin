@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.278", data:"2026-11-27", titulo:"PIX revendedoras: filtro por data de pagamento e total do filtrado", itens:[
+  {tipo:"melhoria", area:"Financeiro → Família → PIX revendedoras", txt:"Em cada sócio, filtros Pago de e Pago até (data do PIX). Sempre que há filtro, aparece o total dos PIX filtrados ao lado da contagem e numa linha Total filtrado no fim da tabela. Não identificado fica fora do total, a não ser que o filtro seja ele."},
+ ]},
  {v:"0.21.277", data:"2026-11-27", titulo:"Calculadora de acertos: topo fixo com Ouro e Prata e crédito de garantia manual", itens:[
   {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto", txt:"Topo fixo com nome, Vendas, Comissão, Valor do acerto e seletor Ouro e 100% Prata; divisão Etapas do acerto; seção aberta sobe 8 px abaixo da divisão. A seção Tipo de kit saiu."},
   {tipo:"melhoria", area:"Representantes → Admin das representantes → Acerto → Crédito de garantia", txt:"Tabela Referência, Origem e Valor, desconto na venda e lançamento manual de crédito (origem Manual, exclusão só dos manuais)."},

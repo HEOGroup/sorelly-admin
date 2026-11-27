@@ -706,3 +706,9 @@ Janela da Pontual: data do pedido com calendário (clicar abre o calendário; a 
 - Gravação: marca própria `pd.semNota` (pedido_add e pedido_editar), sem CNPJ fictício; o texto `cnpj` continua "Sem NF" como nos pedidos 100% sem nota de antes. Recusa "Sem nota" com valor com nota.
 - Reabrir/editar/consultar: `semNota` ou pedido antigo "Sem NF" 100% sem nota abrem com "Sem nota" (antes abriam no CNPJ 34). Nada muda no banco até salvar.
 - Teste: `scripts/testar-sem-nota-pf.mjs` (13 verificações).
+
+## 27/11/2026 · PIX revendedoras: filtro por data de pagamento e total do filtrado (Lucas, v0.21.278)
+- Pedido: "ao filtrar apareça o total da relação filtrada"; "conseguir filtrar por data de pagamento".
+- Decisão: no bloco de cada sócio entram os campos Pago de e Pago até (data do PIX). Com qualquer filtro ligado, aparece "Total R$ ..." ao lado de "x de y PIX" e uma linha Total filtrado no fim da tabela.
+- O total soma os PIX que aparecem. Não identificado fica fora, como no total do cartão; se o filtro de conferência for Não identificado, ele entra.
+- Conferido com dados reais (só leitura): Marcus, novembro, conta Anamaria · Sicredi = 6 de 82 PIX, R$ 3.936,26.

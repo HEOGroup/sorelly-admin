@@ -3935,3 +3935,9 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Causa: na janela "Compra efetuada", o plano só ia junto da confirmação com `edita` (quem aprova) ou no modo "só valores". O ajuste automático de UMA parte mudava a tela sem ligar esse modo; para quem só efetua (Helen) o plano ajustado não era enviado, e a regra conferia o plano gravado (R$ 111,81) contra o valor final (R$ 109,47): "Passou R$ 2,34".
 - Correção: `planoDoEnvio` manda o plano sempre que a tela mudou (a regra `soValores` decide o que pode mudar); `ajustarPlanoAoValor` em centavos; `rowsDe`/`linhasDoPlano` passaram para o domínio (a tela e o teste usam as mesmas funções).
 - Teste: `scripts/testar-fluxo-compras.mjs` seção 10 reproduz o print (aceita, salva, reabre com R$ 109,47, histórico com R$ 111,81 e R$ 2,34; acima do limite e plano divergente continuam bloqueados). Tela conferida sem confirmar compra real.
+
+## 27/11/2026 · PIX revendedoras: filtro por data de pagamento e total do filtrado (Lucas, v0.21.278)
+- Pedido: "ao filtrar apareça o total da relação filtrada"; "conseguir filtrar por data de pagamento".
+- Decisão: no bloco de cada sócio entram os campos Pago de e Pago até (data do PIX). Com qualquer filtro ligado, aparece "Total R$ ..." ao lado de "x de y PIX" e uma linha Total filtrado no fim da tabela.
+- O total soma os PIX que aparecem. Não identificado fica fora, como no total do cartão; se o filtro de conferência for Não identificado, ele entra.
+- Conferido com dados reais (só leitura): Marcus, novembro, conta Anamaria · Sicredi = 6 de 82 PIX, R$ 3.936,26.
