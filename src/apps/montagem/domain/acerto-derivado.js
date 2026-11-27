@@ -80,15 +80,17 @@ function derivarAcerto(p){
   var brindeBloqueio = !previaAcerto ? null
     : previaAcerto.vendaLiquida < faixaMinBrinde ? {curto:"Venda abaixo de "+BK(faixaMinBrinde), frase:"Venda líquida abaixo de "+BK(faixaMinBrinde)+" não tem brinde."}
     : form.recusouNegociar ? {curto:"Bloqueado — sem negociação", frase:"Revendedora não quis negociar o valor em aberto. Sem brinde. Sem kit novo. O caso vai para o setor de Inadimplência; sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente."}
-    : !form.pagamentos.length && !acordoValido ? {curto:"Aguardando pagamento", frase:"O brinde só é liberado depois do pagamento do acerto. Lance os pagamentos ou feche a negociação."}
-    : previaAcerto.fatorPagamento===0 ? {curto: ehPrata ? "Bloqueado — só com pagamento integral" : "Bloqueado — falta mais de "+tetoFalta+"%", frase: ehPrata
+    : !form.pagamentos.length && !acordoValido ? {porPagamento:true, curto:"Aguardando pagamento", frase:"O brinde só é liberado depois do pagamento do acerto. Lance os pagamentos ou feche a negociação."}
+    : previaAcerto.fatorPagamento===0 ? {porPagamento:true, curto: ehPrata ? "Bloqueado — só com pagamento integral" : "Bloqueado — falta mais de "+tetoFalta+"%", frase: ehPrata
         ? "No Kit 100% Prata o brinde só sai depois do pagamento integral. Falta pagar para liberar."
         : regraNova ? "Falta mais de "+tetoFalta+"% do acerto: sem brinde. A negociação libera o kit novo, não o brinde." : "Falta mais de "+tetoFalta+"% do acerto. Pague o que falta ou negocie com parcelas que fechem o valor exato."}
     : (previaAcerto.brindeNormal+previaAcerto.brindeSelect)<=0 ? {curto:"Brinde zerado pelas remarcações", frase:"As remarcações zeraram o brinde deste acerto."}
     : null;
   var brindeLiberado = !!previaAcerto && !brindeBloqueio;
   var fatorBrinde = p.brindeFator>=0 && p.brindeFator<=1 ? p.brindeFator : 1;   // atendimento interno: chegou muito atrasada = 90% do brinde
-  var libN = previaAcerto ? Math.round(previaAcerto.brindeNormal*fatorBrinde) : 0, libS = previaAcerto ? Math.round(previaAcerto.brindeSelect*fatorBrinde) : 0;
+  // 27/11/2026 (Marcus): antes do pagamento a representante já escolhe os brindes; o valor mostrado é o que vale com o acerto pago por inteiro (só confirma depois do pagamento).
+  var previaBrinde = previaAcerto && brindeBloqueio && brindeBloqueio.porPagamento && !form.recusouNegociar ? calcularAcerto(entrada(previaAcerto.valorDevido), versao) : previaAcerto;
+  var libN = previaBrinde ? Math.round(previaBrinde.brindeNormal*fatorBrinde) : 0, libS = previaBrinde ? Math.round(previaBrinde.brindeSelect*fatorBrinde) : 0;
   var confBrinde = conferirBrindes(form.brindes, libN, libS);
   var excedenteBrinde = brindeLiberado ? confBrinde.excedente : 0;
   // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda

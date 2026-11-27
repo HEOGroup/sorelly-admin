@@ -537,57 +537,88 @@ function AppRepresentante(p){
     libN = dv.libN, libS = dv.libS, confBrinde = dv.confBrinde, excedenteBrinde = dv.excedenteBrinde, totalAPagar = dv.totalAPagar, restanteTotal = dv.restanteTotal;
   var irPagar = function(){ setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); setBlocoAberto(3); };   // volta aos pagamentos com o valor da diferença já preenchido
   var travaExcedente = excedenteBrinde>0.009 && restanteTotal>0.009;   // brinde acima do liberado: a diferença precisa ser paga antes de seguir (Marcus, 03/11/2026)
-  var lancarBrinde = function(cat){
-    var f = brindeIn[cat];
-    if(!(codigoBrindeValido(cat, f.codigo) && f.valor>0 && f.origem)) return;
-    var o = {}; o[cat] = {codigo:"", valor:null, origem:null};
-    setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.concat([{cat:cat, codigo:normalizarCodigo(f.codigo), valor:f.valor, origem:f.origem}])}));
+  // 27/11/2026 (Marcus): um campo só; o código decide a categoria (começa com BB = Select, o resto = Normal).
+  var codigoCompleto = function(c){ return /[0-9]{4,}$/.test(c||""); };   // só busca o preço com pelo menos 4 números (Marcus, 27/11/2026)
+  var catDe = function(c){ return /^BB/i.test(c||"") ? "bb" : "normal"; };
+  var lancarBrinde = function(codNovo, origemNova){
+    var f0 = brindeIn.normal, f = Object.assign({}, f0, {codigo:codNovo || f0.codigo}), cat = catDe(f.codigo);
+    var pc = pecasCondAtivas && pecasCondAtivas[normalizarCodigo(f.codigo)];
+    f.origem = pc ? pc.origem : null;
+    var val = pc && pc.valor>0 ? pc.valor : f.valor;
+    if(!(codigoBrindeValido(cat, f.codigo) && codigoCompleto(f.codigo) && pc && val>0 && f.origem)) return;
+    var o = {}; o.normal = {codigo:"", valor:null, origem:f.origem};
+    setBrilhoBrinde(normalizarCodigo(f.codigo)); setTimeout(function(){ setBrilhoBrinde(""); }, 1800);
+    setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.concat([{cat:cat, codigo:normalizarCodigo(f.codigo), valor:val, origem:f.origem}])}));
     setBrindeIn(Object.assign({}, brindeIn, o));
   };
   // Código da peça digitado no brinde: o preço vem sozinho da DevMaster (26/11/2026, Marcus). Sem preço ou sem ligação: a representante digita o valor, como antes.
+  // 27/11/2026 (Marcus): o brinde só aceita código de peça das condicionais ATIVAS da revendedora (DevMaster), nunca código solto; o valor vem da própria condicional.
+  var exS = useState(-1), exclBrinde = exS[0], setExclBrinde = exS[1];
+  var poS = useState(false), pedeOrigem = poS[0], setPedeOrigem = poS[1];
+  var bgS = useState(""), brilhoBrinde = bgS[0], setBrilhoBrinde = bgS[1];
+  var csS = useState(null), pecasCondAtivas = csS[0], setPecasCondAtivas = csS[1], revCodBrinde = String((kitSel && kitSel.codRev) || (sel && sel.cod) || "");
+  useEffect(function(){
+    if(!revCodBrinde || !apiAtiva()){ setPecasCondAtivas(null); return; }
+    var vivo = true;
+    chamar("GET", "/representante/condicionais?cod="+encodeURIComponent(revCodBrinde)).then(function(r){
+      if(!vivo) return; var m = {};
+      var conds = r.condicionais||[], maisNova = conds.reduce(function(t,c){ return String(c.emissao||"")>t ? String(c.emissao||"") : t; }, "");   // origem automática (Marcus, 27/11/2026): com 2 ou mais condicionais abertas, a mais recente é o kit novo; as outras são o kit antigo
+      conds.forEach(function(c){ var org = conds.length>1 && String(c.emissao||"")===maisNova ? "nova" : "antiga"; (c.grupos||[]).forEach(function(g){ (g.itens||[]).forEach(function(i){ var k = normalizarCodigo(i.codigo); if(k && !m[k]) m[k] = {valor:Number(i.valor)||0, desc:i.desc||"", qtd:Number(i.qtd)||1, origem:org}; }); }); });
+      setPecasCondAtivas(m);
+    }).catch(function(){ if(vivo) setPecasCondAtivas(null); });
+    return function(){ vivo = false; };
+  }, [revCodBrinde]);
+  // Situação da peça na condicional (Marcus, 27/11/2026): Brinde (já lançada), Troca, Vendida (não voltou na conferência da devolução) ou Liberada.
+  var situacaoPeca = function(k){
+    var kk = normalizarCodigo(k);
+    if((acertoForm.brindes||[]).some(function(b){ return normalizarCodigo(b.codigo)===kk; })) return "Brinde";
+    if((acertoForm.trocas||[]).some(function(t){ return normalizarCodigo(t.antigaCod)===kk || normalizarCodigo(t.novaCod)===kk; })) return "Troca";
+    return "Liberada";
+  };
   var buscaPrecoBrinde = function(cat, codigo){
-    if(!codigoBrindeValido(cat, codigo) || !apiAtiva()) return;
+    if(!codigoBrindeValido(catDe(codigo), codigo) || !codigoCompleto(codigo)) return;
     var cod = normalizarCodigo(codigo);
+    if(pecasCondAtivas){ var pc = pecasCondAtivas[cod]; if(pc && pc.valor>0){ setBrindeIn(function(b){ if(normalizarCodigo((b.normal||{}).codigo)!==cod) return b; var o = {}; o.normal = Object.assign({}, b.normal, {valor:pc.valor}); return Object.assign({}, b, o); }); return; } }
+    if(!apiAtiva()) return;
     chamar("GET", "/precos-pecas?codigos="+encodeURIComponent(cod)).then(function(r){ var p = r && r.itens && r.itens[cod];
       if(!p || !(p.preco>0)) return;
-      setBrindeIn(function(b){ if(normalizarCodigo((b[cat]||{}).codigo)!==cod) return b; var o = {}; o[cat] = Object.assign({}, b[cat], {valor:p.preco}); return Object.assign({}, b, o); });
+      setBrindeIn(function(b){ if(normalizarCodigo((b.normal||{}).codigo)!==cod) return b; var o = {}; o.normal = Object.assign({}, b.normal, {valor:p.preco}); return Object.assign({}, b, o); });
     }).catch(function(){});
   };
   // Brindes no mesmo desenho do bloco Condicionais (02/11/2026, Marcus): linhas, total logo abaixo, "Falta lançar" na última linha; formulário atrás de "+ Brinde".
   var blocoBrindesNovo = function(){
     var itens = acertoForm.brindes.map(function(b,i){ return {b:b, i:i}; });
     var totalLanc = confBrinde.lancadoNormal + confBrinde.lancadoSelect;
-    var cat = brindeCat, f = brindeIn[cat], codOk = codigoBrindeValido(cat, f.codigo), pronto = codOk && f.valor>0 && !!f.origem, origem = f.origem || null;
-    var setF = function(patch){ var o = {}; o[cat] = Object.assign({}, f, patch); setBrindeIn(Object.assign({}, brindeIn, o)); };
-    var aberto = brindeFormAberto || itens.length===0;
+    var f = brindeIn.normal, cat = catDe(f.codigo), codOk = codigoBrindeValido(cat, f.codigo) && codigoCompleto(f.codigo), naCond = !codOk || (!!pecasCondAtivas && !!pecasCondAtivas[normalizarCodigo(f.codigo)]), situ = codOk && naCond ? situacaoPeca(f.codigo) : "", pronto = codOk && naCond && situ==="Liberada", origem = f.origem || null;
+    var digitado = normalizarCodigo(f.codigo), sugestoes = (pecasCondAtivas && digitado.length>=1) ? Object.keys(pecasCondAtivas).filter(function(k){ return k.indexOf(digitado)===0; }).slice(0,30) : [], semResultado = !!pecasCondAtivas && digitado.length>=1 && sugestoes.length===0;
+    var setF = function(patch){ var o = {}; o.normal = Object.assign({}, f, patch); setBrindeIn(Object.assign({}, brindeIn, o)); };
+    var aberto = true;
     return e("div",{key:"bnovo", className:"flex flex-col gap-2"},
-      e("button",{onClick:function(){ setBrindeFormAberto(!aberto); }, "aria-expanded":aberto, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, aberto ? "Fechar" : "Novo brinde"),
       aberto && e("div",{className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
-        e("div",{className:"grid grid-cols-2 gap-1.5"}, [["normal","Normal"],["bb","Select (BB)"]].map(function(o){ var on = cat===o[0];
-          return e("button",{key:o[0], onClick:function(){ setBrindeCat(o[0]); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? "bg-[#C9A13B] txt-branco ring-transparent" : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
-        e("div",{className:"grid grid-cols-2 gap-1.5"}, [["antiga","Kit antigo","devolvendo","bg-[#F59E0B] txt-branco ring-transparent"],["nova","Kit novo","recebendo","bg-[#16A34A] txt-branco ring-transparent"]].map(function(o){ var on = origem===o[0];
-          return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on, className:"h-8 whitespace-nowrap rounded-lg text-[13px] font-bold ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
-        e("div",{className:"flex gap-1.5"},
-          e("input",{value:f.codigo, placeholder:cat==="bb" ? "BB0001" : "AB123", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ var novoCod = limitarCodigo(ev.target.value); setF({codigo:novoCod}); buscaPrecoBrinde(cat, novoCod); },
-            className:"h-8 w-[6.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-[13px] font-semibold tracking-wide text-white outline-none ring-1 ring-white/10 "+MONO+" uppercase"}),
-          e(CampoReais,{value:f.valor, label:"Valor da peça", onChange:function(v){ setF({valor:v}); }, className:"h-8 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-right text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
-          e("button",{disabled:!pronto, onClick:function(){ lancarBrinde(cat); }, className:"h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar")),
-        f.codigo && !codOk && e("p",{className:"text-[11px] font-semibold text-red-400"},
-          cat==="bb" ? "Código BB: começa com BB (ou BB + 1 ou 2 letras) e termina com até 7 números. Ex.: BB0001, BBA0001 (anel). BB não é só brinco." : "Código: até 4 letras e até 7 números. Ex.: N1287.")),
-      [["normal","Brinde Normal",libN,confBrinde.lancadoNormal,confBrinde.restanteNormal],["bb","Brinde BB (Select)",libS,confBrinde.lancadoSelect,confBrinde.restanteSelect]].map(function(g){
+        e("div",{className:"relative grid grid-cols-1 gap-1.5"},
+          e("input",{value:f.codigo, placeholder:"BB0000", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ var novoCod = limitarCodigo(ev.target.value); setF({codigo:novoCod, valor:null}); buscaPrecoBrinde(cat, novoCod); },
+            className:"h-9 min-w-0 rounded-lg border-2 border-[#C9A13B] bg-black/50 px-2 text-center text-[15px] font-bold tracking-wide text-white outline-none placeholder:text-[15px] placeholder:font-semibold placeholder:text-[#C4C8CF] "+MONO+" uppercase"}),
+                    sugestoes.length>0 && e("div",{className:"absolute inset-x-0 top-full z-30 mt-1 flex max-h-[216px] flex-col overflow-y-auto rounded-lg border-2 border-[#C9A13B] bg-white shadow-2xl"}, sugestoes.map(function(k){ var pc = pecasCondAtivas[k], st = situacaoPeca(k), livre = st==="Liberada";
+          return e("button",{key:"sg"+k, type:"button", onClick:function(){ if(livre) lancarBrinde(k); }, className:"grid min-h-9 cursor-pointer grid-cols-[1fr_1fr_1fr] items-center gap-2 border-b border-[#E5E7EB] bg-white px-2 text-[13px] last:border-b-0 hover:bg-[#FEF3C7]"}, e("b",{className:MONO+" text-left text-[#111827]"}, k), e("span",{className:MONO+" text-center text-[#111827]"}, BK(pc.valor)), e("b",{className:"text-right "+(livre ? "text-[#15803D]" : "text-[#B45309]")}, st)); }))),
+        semResultado && e("p",{className:"text-[12px] font-semibold text-red-400"}, "Nenhuma peça das condicionais ativas começa com "+digitado+"."),
+        codOk && !naCond && e("p",{className:"text-[12px] font-semibold text-red-400"}, pecasCondAtivas ? "Peça fora das condicionais ativas." : "Condicionais da revendedora não carregadas."),
+        codOk && naCond && situ!=="Liberada" && e("p",{className:"text-[12px] font-semibold text-red-400"}, "Essa peça já está como "+situ.toLowerCase()+"."),
+        codOk && naCond && situ==="Liberada" && e("p",{className:"text-[12px] font-semibold text-green-400"}, "Peça liberada. Toque nela na lista para lançar.")),
+        e("div",{key:"gradeBrindes", className:"grid grid-cols-2 items-start gap-1.5"}, [["normal","Normal",libN,confBrinde.lancadoNormal,confBrinde.restanteNormal],["bb","Brinde BB (Select)",libS,confBrinde.lancadoSelect,confBrinde.restanteSelect]].map(function(g){
         var its = itens.filter(function(x){ return x.b.cat===g[0]; });
         return e("div",{key:"gb"+g[0], className:"flex flex-col overflow-hidden rounded-xl border border-white/15"},
-          e("div",{className:"flex min-h-8 items-center justify-between gap-2 bg-white/[.07] px-2.5 text-[13px]"}, e("b",{className:"font-bold"}, g[1]), e("span",null,"Liberado ", e("b",{className:MONO+" whitespace-nowrap"}, BK(g[2])))),
-          its.length===0 && e("p",{className:"border-t border-white/10 px-2.5 py-1.5 text-center text-[13px]"}, "Nenhuma peça lançada."),
-          its.map(function(x){ return e("div",{key:"br"+x.i, className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-2.5 text-[13px]"},
-            e("span",{className:MONO+" shrink-0 font-semibold"}, x.b.codigo),
-            e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO"),
-            e("span",{className:"min-w-0 flex-1"}),
-            e("span",{className:MONO+" shrink-0 whitespace-nowrap"}, BK(x.b.valor)),
-            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); },
-              "aria-label":"Remover peça "+x.b.codigo, className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")); }),
-          e("div",{className:"flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-2.5 text-[13px]"}, e("span",null,"Lançado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[3]))),
-          e("div",{className:"flex min-h-8 items-center justify-between gap-2 bg-[#C9A13B]/20 px-2.5 text-[13px] font-bold"}, e("span",null,g[4]<-0.009 ? "Excedente" : "Diferença"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(g[4]))))); }));
+          e("div",{className:"flex min-h-8 flex-col justify-center gap-0.5 bg-white/[.07] px-2 py-1 text-[13px]"}, e("b",{className:"text-[13px] font-bold"}, g[1])),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-1 border-t border-white/10 px-2 text-[13px]"}, e("span",null,"Liberado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[2]))),
+          
+          its.map(function(x){ var aberto = exclBrinde===x.i;
+            return e("div",{key:"br"+x.i, className:"flex flex-col border-t border-white/10 transition-all duration-500 "+(brilhoBrinde===x.b.codigo ? "bg-[#C9A13B]/30 ring-2 ring-inset ring-[#E8B84B] shadow-[0_0_14px_#E8B84B]" : "")},
+              e("button",{type:"button", onClick:function(){ setExclBrinde(aberto ? -1 : x.i); }, "aria-expanded":aberto, "aria-label":"Brinde "+x.b.codigo+": tocar para excluir", className:"flex min-h-8 w-full cursor-pointer flex-wrap items-center justify-between gap-x-1.5 px-2 py-0.5 text-left text-[13px]"},
+                e("span",{className:MONO+" shrink-0 font-semibold"}, x.b.codigo),
+                e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO"),
+                e("span",{className:MONO+" ml-auto shrink-0 whitespace-nowrap"}, BK(x.b.valor))),
+              aberto && e("button",{type:"button", onClick:function(){ setExclBrinde(-1); setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); }, className:"mx-2 mb-1 h-8 rounded-lg bg-[#DC2626] text-[13px] font-bold text-white"}, "Excluir brinde")); }),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-1 border-t border-white/10 px-2 text-[13px]"}, e("span",null,"Lançado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[3]))),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-1 bg-[#C9A13B]/20 px-2 text-[13px] font-bold"}, e("span",null,(g[2]-g[3])<-0.009 ? "Excedente" : "Restante"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(g[2]-g[3]))))); })));
   };
 
   // ── Cabeçalho fixo: título, ícone das regras, nome da revendedora e o consolidado padronizado (aparece quando preenche a venda) ──
@@ -980,6 +1011,12 @@ function AppRepresentante(p){
         : "Normal "+BK(libN)+" · Select "+BK(libS),
       !previaAcerto ? badgeTxt("—","#374151") : brindeBloqueio ? badgeTxt("Bloqueado","#DC2626") : excedenteBrinde>0 ? badgeTxt("Excedente","#F59E0B") : pagamentoParcial ? badgeTxt(N1(previaAcerto.fatorPagamento*100)+"%","#D97706") : checkOk,
       [!previaAcerto ? e("p",{key:"b0", className:"text-[13px] text-[#8E8E93]"},"Preencha as vendas e os pagamentos para ver os brindes.")
+        : brindeBloqueio && brindeBloqueio.porPagamento ? e(React.Fragment,{key:"bp"},
+            e("div",{className:"flex flex-col gap-0.5 text-[12px] font-semibold text-amber-200"},
+              e("p",null,"Pode lançar os brindes, o sistema identifica o que é BB automático."),
+              e("p",null,"Só libere os brindes com o pagamento do acerto."+(faltaAtual>0.009 ? " Falta "+BK(faltaAtual) : ""))),
+            blocoBrindesNovo(),
+            e("button",{key:"bokp", disabled:true, className:"h-9 w-full cursor-not-allowed rounded-lg text-[13px] font-bold opacity-50 "+BR2, style:{background:"#C9A13B"}}, "Confirmar brindes depois do pagamento"))
         : brindeBloqueio ? e("div",{key:"bl", className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5 ring-1 ring-white/10"},
             e("p",{className:"text-[13px] font-bold text-amber-200"},"Brinde bloqueado."),
             e("p",{className:"text-[12.5px] text-amber-200"}, brindeBloqueio.frase),

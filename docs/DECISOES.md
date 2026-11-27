@@ -3,6 +3,12 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 27/11/2026 (Brindes no acerto do admin das representantes)
+- **Brinde antes do pagamento:** a representante lança os brindes desde já; o sistema mostra o valor liberado como se o acerto estivesse pago e só confirma depois do pagamento.
+- **Código só das condicionais ativas:** a lista suspensa filtra desde a primeira letra e mostra código, preço e situação (Liberada, Brinde, Troca). BB é identificado sozinho pelo código.
+- **Kit antigo ou novo automático:** com 2 ou mais condicionais abertas, a mais recente é o kit novo; as outras são o kit antigo (suposição do Claude, a confirmar com o Marcus).
+- Tocar na peça lançada abre "Excluir brinde" (sem o X). Restante calculado por cartão.
+
 ## 27/11/2026 (Comprovante do Pix antes da conta, admin das representantes)
 - **Marcus:** a representante anexa o comprovante do Pix sem esperar a conta do financeiro e finaliza o acerto com a conta pendente; o pagamento NÃO é validado. O comprovante aparece em Ver comprovante na Ficha do Atendimento. Links de pagamento e o seletor Lançar pagamento seguem o padrão claro (bege, dourado, texto escuro) de Vendas e pagamentos.
 

@@ -111,3 +111,10 @@ O texto é o original. Para a decisão completa, abra o diário na linha indicad
 - **Sem divergência = o valor vem sempre do link:** (a) link pago até ontem (ou pedido do atendimento) entra **sozinho** como "✓ pago por link", com o comprovante, valor = saldo do link até o que falta (mesma regra do Atendimento Sorelly de 11/11/2026; o botão "Usar como pagamento" saiu); (b) "+ Lançar pagamento → Link" mostra os links pagos para tocar, sem digitar valor; (c) linha Link digitada com valor diferente mostra "Valor diferente do link pago" e o botão "Usar o link de R$ X" (troca a linha pela do link e tira o pedido de conta do Direcionar); enquanto houver linha assim, o link não entra sozinho (não duplica).
 - **Link maior que o acerto:** o resto fica para o próximo acerto. A rota calcula o **saldo** de cada link (valor − o que entrou em acertos finalizados das representantes, `rpf`). Janela: links pagos nos últimos 60 dias.
 - O Atendimento Sorelly (link pago por fora) continua com a foto opcional.
+
+## 27/11/2026 (Brindes no acerto do admin das representantes)
+- **Brinde antes do pagamento:** a representante lança os brindes desde já; o sistema mostra o valor liberado como se o acerto estivesse pago e só confirma depois do pagamento.
+- **Código só das condicionais ativas:** a lista suspensa filtra desde a primeira letra e mostra código, preço e situação (Liberada, Brinde, Troca). BB é identificado sozinho pelo código.
+- **Kit antigo ou novo automático:** com 2 ou mais condicionais abertas, a mais recente é o kit novo; as outras são o kit antigo (suposição do Claude, a confirmar com o Marcus).
+- Tocar na peça lançada abre "Excluir brinde" (sem o X). Restante calculado por cartão.
+

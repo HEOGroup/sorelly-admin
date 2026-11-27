@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.269", data:"2026-11-27", titulo:"Admin das representantes: brindes no acerto com busca pelas condicionais", itens:[
+    {tipo:"melhoria", area:"Representantes › Admin das representantes › Acerto", txt:"Brindes: a representante já pode lançar antes do pagamento (só confirma depois). Um campo de código com lista suspensa que filtra desde a primeira letra, só com peças das condicionais ativas da revendedora (código, preço e situação). Tocar na peça liberada lança na hora, com brilho dourado; tocar numa peça lançada abre Excluir brinde. BB é identificado sozinho. Kit antigo ou novo vem da data da condicional (a mais recente é o kit novo quando há duas ou mais). Restante por cartão: Normal e Select lado a lado."},
+  ]},
  {v:"0.21.268", data:"2026-11-27", titulo:"Calculadora de Acertos: comprovante do Pix antes da conta, links e seletor no padrão claro", itens:[
     {tipo:"correção", area:"Representantes & Kits › Admin das representantes", txt:"O pagamento Pix mostra Anexar comprovante na hora, mesmo sem a conta do financeiro (visualizar, substituir, remover). O acerto finaliza com a conta pendente e o pagamento não vira validado. Texto: Enviado ao financeiro. A conta aparecerá aqui em breve."},
     {tipo:"melhoria", area:"Representantes & Kits › Admin das representantes", txt:"Links de pagamento da revendedora em bege e dourado, 2 linhas por card, bloco Pagos hoje à parte; link usado mostra Link conta · data · parcelas; o seletor Lançar pagamento deixou o fundo preto."}]},
