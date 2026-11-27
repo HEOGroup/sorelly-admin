@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.275", data:"2026-11-27", titulo:"Resgates de moedas: brindes retirados da maleta na confirmação da retirada", itens:[
+  {tipo:"melhoria", area:"Indicações → Resgates → Confirmar retirada", txt:"Opção Brindes retirados da maleta na Conferência, com data do acerto e representante. Grava os mesmos campos de Dados do balcão (vale para todos os pedidos retirados juntos) e aparece no filtro de maleta do quadro."}]},
  {v:"0.21.274", data:"2026-11-27", titulo:"Compras: Compra efetuada com valor menor que o aprovado não trava mais (caso #2789)", itens:[
   {tipo:"correção", area:"Compras → Compra efetuada", txt:"Com o plano do financeiro em uma parte só, o botão Ajustar plano ao valor final mudava a tela, mas o plano ajustado não ia junto ao Marcar como efetuada (para quem só efetua a compra). A regra conferia o plano antigo (R$ 111,81) e dava Passou R$ 2,34. Agora o plano da tela vai sempre que mudou, em centavos; a regra continua aceitando só mudança de valores."}
  ]},

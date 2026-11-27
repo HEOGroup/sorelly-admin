@@ -469,7 +469,7 @@ function indReduz(s, a){
       var re = res1(); if(!re) return recusa("Pedido não encontrado."); if(re.etapa!=="aprovado") return recusa(re.etapa==="solicitado" ? "Agende a retirada antes de confirmar." : "Esse pedido já foi "+(re.etapa==="entregue" ? "retirado." : "cancelado."));
       var cod = a.codigosPecas!==undefined ? normalizarCodigosPecas(a.codigosPecas) : re.operacao.codigosPecas, vv = a.valorVenda!==undefined ? (a.valorVenda==null || a.valorVenda==="" ? null : num(a.valorVenda)) : re.operacao.valorVenda;
       if(cod.length===0) return recusa("Informe as peças retiradas antes de confirmar."); if(vv==null || vv<=0) return recusa("Informe o valor em venda das peças antes de confirmar."); if(a.revendedoraConfirmou!==true) return recusa("Confirme que a revendedora conferiu as peças.");
-      var eb = balcao(re.operacao, {codigosPecas:cod, valorVenda:vv, valorDiferencaBrinde:a.valorDiferencaBrinde, responsavelNome:a.responsavelNome, observacao:a.observacao}); if(eb) return recusa(eb);
+      var eb = balcao(re.operacao, {codigosPecas:cod, valorVenda:vv, valorDiferencaBrinde:a.valorDiferencaBrinde, responsavelNome:a.responsavelNome, observacao:a.observacao, retiradaMaleta:a.retiradaMaleta, dataAcertoMaleta:a.dataAcertoMaleta, representanteMaleta:a.representanteMaleta}); if(eb) return recusa(eb);   // brindes retirados da maleta (27/11/2026)
       re.etapa = "entregue"; re.entregueEm = a.entregueEm||agora; re.historico.push({em:agora, por:por, de:"aprovado", para:"entregue", nota:formatarReais(vv)+" em venda"+(diferencaDoPremio(vv, re.premioValor) ? " · "+diferencaDoPremio(vv, re.premioValor) : "")});
       return ok("Retirada confirmada: "+re.premioTitulo+" ("+formatarReais(vv)+").");
     }

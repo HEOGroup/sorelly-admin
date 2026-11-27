@@ -564,6 +564,8 @@ async function entregar(a, por) {
     const r = pedidos[k], obsBase = k === 0 ? a.observacao : [texto(a.observacao || ""), "Retirada junto com o pedido #" + principal.id + " (mesmas peças, valor dividido)"].filter(Boolean).join(" · ");
     const dados = { codigosPecas: cod, valorVenda: partes[k] / 100, responsavelNome: a.responsavelNome !== undefined ? a.responsavelNome : undefined, observacao: obsBase !== undefined ? obsBase : undefined };
     if (k === 0 && a.valorDiferencaBrinde !== undefined) dados.valorDiferencaBrinde = a.valorDiferencaBrinde || null;
+    // brindes retirados da maleta (27/11/2026): marcado na confirmação, vale para todos os pedidos da mesma visita
+    if (a.retiradaMaleta !== undefined) { dados.retiradaMaleta = !!a.retiradaMaleta; if (a.retiradaMaleta) { dados.dataAcertoMaleta = a.dataAcertoMaleta || null; dados.representanteMaleta = a.representanteMaleta || null; } }
     if (r.status === "solicitado") { await salvarBalcao(r.id, { dataAgendada: diaVisita.slice(0, 16) }, por); await patchResgate(r.id, { status: "aprovado", retiradaEm: diaVisita.slice(0, 10) }); }
     await salvarBalcao(r.id, dados, por);
     await patchResgate(r.id, { status: "entregue" });

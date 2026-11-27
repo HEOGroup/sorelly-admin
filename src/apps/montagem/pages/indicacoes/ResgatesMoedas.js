@@ -102,11 +102,13 @@ function FormEntregar(p){
   var r = p.r, op = r.operacao;
   var st1 = useState((op.codigosPecas||[]).join(" ")), pecas = st1[0], st2 = useState(op.valorVenda!=null ? op.valorVenda : r.premioValor), valor = st2[0];
   var st3 = useState(op.valorDiferencaBrinde||0), dif = st3[0], st4 = useState(op.responsavelNome||p.por), resp = st4[0], st5 = useState(op.observacao||""), obs = st5[0], st6 = useState(false), conf = st6[0];
+  // brindes retirados da maleta (27/11/2026, Leonardo): os mesmos campos de "Dados do balcão" (retiradaMaleta, data do acerto e representante), agora também na confirmação
+  var sm = useState({ok:!!op.retiradaMaleta, dia:op.dataAcertoMaleta||"", rep:op.representanteMaleta||""}), mal = sm[0], setMal = function(k, x){ var n = Object.assign({}, mal); n[k] = x; sm[1](n); };
   var outros = outrosEmAberto(p.ind, r), sj = useState(outros.map(function(x){ return x.id; })), juntos = sj[0], se = useState(false), enviando = se[0];
   // retirada junto: o prêmio de referência é a soma dos pedidos marcados; o servidor divide o valor em venda na proporção de cada prêmio
   var premioRef = r.premioValor + outros.filter(function(x){ return juntos.indexOf(x.id)>=0; }).reduce(function(t, x){ return t+(Number(x.premioValor)||0); }, 0);
   var n = normalizarCodigosPecas(pecas).length, pode = podeConfirmarEntrega({codigosPecas:pecas, valorVenda:valor, revendedoraConfirmou:conf}) && !enviando, df = diferencaDoPremio(valor, premioRef), pecasOk = n>0 && !!valor;
-  var confirmar = function(){ se[1](true); despachar(p, {type:"IND", op:"resgate_entregar", id:r.id, juntos:juntos, codigosPecas:pecas, valorVenda:valor, valorDiferencaBrinde:dif||null, responsavelNome:resp, observacao:obs||undefined, revendedoraConfirmou:true, por:p.por}, p.fechar).then(function(){ se[1](false); }); };
+  var confirmar = function(){ se[1](true); despachar(p, {type:"IND", op:"resgate_entregar", id:r.id, juntos:juntos, codigosPecas:pecas, valorVenda:valor, valorDiferencaBrinde:dif||null, responsavelNome:resp, observacao:obs||undefined, retiradaMaleta:mal.ok, dataAcertoMaleta:mal.ok ? mal.dia : undefined, representanteMaleta:mal.ok ? mal.rep : undefined, revendedoraConfirmou:true, por:p.por}, p.fechar).then(function(){ se[1](false); }); };
   return e(Janela,{t:"Confirmar retirada", sub:r.nomeRevendedora+" · "+r.premioTitulo+" · "+formatarReais(r.premioValor), tam:"xl", fechar:p.fechar, passos:[{t:"Pedido", estado:"feito"}, {t:"Peças e valores", estado:pecasOk ? "feito" : "atual"}, {t:"Conferência", estado:conf ? "feito" : pecasOk ? "atual" : "futuro"}, {t:"Retirada", estado:pode ? "atual" : "futuro"}]},
     e(Colunas,{n:3},
       e(PedidoInfo,{r:r}, e(Juntos,{lista:outros, marcados:juntos, set:sj[1], nota:"Mesmas peças; o valor em venda é dividido na proporção de cada prêmio."})),
@@ -119,6 +121,10 @@ function FormEntregar(p){
       e(Painel,{t:"Conferência", ic:"check-square", estado:conf ? "feito" : pecasOk ? "atual" : undefined},
         e(CampoRot,{rot:"Responsável pela entrega"}, e(Entrada,{v:resp, on:st4[1], rot:"Responsável"})),
         e(CampoRot,{rot:"Observação (opcional)"}, e(Entrada,{v:obs, on:st5[1], rot:"Observação"})),
+        e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-[13px] font-bold ring-1 transition "+(mal.ok ? "bg-[#22C55E]/20 ring-[#22C55E]/60" : "bg-black/30 ring-white/10")}, e("input",{type:"checkbox", checked:mal.ok, onChange:function(ev){ setMal("ok", ev.target.checked); }}), e(Ph,{n:"briefcase", s:14}), "Brindes retirados da maleta"),
+        mal.ok && e("div",{className:"grid grid-cols-2 gap-2"},
+          e(CampoRot,{rot:"Data do acerto"}, e(Entrada,{type:"date", v:mal.dia, on:function(x){ setMal("dia", x); }, rot:"Data do acerto"})),
+          e(CampoRot,{rot:"Representante"}, e(Entrada,{v:mal.rep, on:function(x){ setMal("rep", x); }, rot:"Representante"}))),
         e("label",{className:"flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-[13px] font-bold ring-1 ring-white/10"}, e("input",{type:"checkbox", checked:conf, onChange:function(ev){ st6[1](ev.target.checked); }}), "A revendedora conferiu as peças"),
         e(Linha,null, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"ok", ic:"check-circle", disabled:!pode, onClick:confirmar}, "Confirmar retirada")))));
 }
