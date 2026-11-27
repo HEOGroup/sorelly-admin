@@ -106,7 +106,7 @@ function grupoDe(id){
 // Partes de cada tela que o RH liberta por grupo. Os grupos padrão reproduzem o que já valia; "supervisao" (sócios) sempre vê tudo.
 var BLOCOS = {
   valores:{tela:"consrep", nome:"Ver totais em dinheiro e exportar", padrao:["familia","supervisora","financeiro"]},   // só a diretoria: quem bipa os retornos usa o Consolidado sem ver os totais
-  conferir:{tela:"consrep", nome:"Conferir recebimento (dinheiro, condicional, peças)", padrao:["familia","supervisora","agendamento","inadimplencia"]},
+  conferir:{tela:"consrep", nome:"Conferir recebimento (dinheiro, condicional, peças)", padrao:["familia","supervisora","agendamento","inadimplencia","bipadora","financeiro","linkcadastro","cadastropecas","listagens","montadora"]},
   conciliar:{tela:"comissoes", nome:"Conciliar pagamentos (OK do financeiro)", padrao:["familia","supervisora","financeiro","inadimplencia"]},
   configurar:{tela:"comissoes", nome:"Configurar as comissões", padrao:["financeiro"]}};
 var BLOCOS_OVR = {};
