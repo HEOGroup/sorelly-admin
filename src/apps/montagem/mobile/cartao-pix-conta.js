@@ -1,13 +1,12 @@
 // Sorelly Admin · montagem — mobile/cartao-pix-conta.js
 // App da representante: quando o financeiro responde a conta de um Pix, o cartão mostra a chave Pix (banco, empresa, CNPJ e a chave) para ela passar à revendedora, com dois botões: copiar a mensagem pronta e copiar só a chave (Marcus, 04/11/2026).
-import { AVISO_COMPROVANTE, mensagemPixPadrao } from "@/apps/montagem/lib/mensagem-pix";
-import { BKC } from "@/apps/montagem/lib/format";
+import { contaPadrao, mensagemPixPadrao } from "@/apps/montagem/lib/mensagem-pix";
 import { dadosDaConta } from "@/apps/montagem/lib/chave-da-parte";
 import { use } from "@/apps/montagem/state/context";
 import { e, useState } from "@/shared/react";
 
 var ROT_TIPO = {CNPJ:"CNPJ", CPF:"CPF", EMAIL:"E-mail", TELEFONE:"Telefone", ALEATORIA:"Aleatória"};
-var BTN = "h-8 flex-1 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]";
+var BTN = "h-8 flex-1 rounded-lg text-[13px] ring-1 ring-[#C9A13B]/60";
 
 function BotaoCopiar(p){
   var st = useState(0), ok = st[0];   // 0 normal, 1 copiou, 2 o aparelho não deixou
@@ -26,18 +25,14 @@ var AVISO_SEM_NUM = "Numerário não ligado a esta conta. Avise o financeiro ant
 function CartaoPixConta(p){
   var cx = use(), d = dadosDaConta(cx.state, p.rotulo);
   if(!d || d.semChave) return e("div",{className:"mt-1 flex flex-col gap-1 text-[13px]"}, e("span",null, "Conta: "+p.rotulo+". A chave Pix desta conta ainda não está cadastrada no Financeiro. Avise o financeiro."), p.lado && e("div",{className:"flex"}, p.lado));
-  var msg = {numerario:d.numerario || "", valor:p.valor, favorecido:d.empresa, tipo:d.tipo, chave:d.chave};   // mesma mensagem padrão do Financeiro (lib/mensagem-pix.js)
-  return e("div",{className:"mt-1 flex flex-col gap-1 rounded-lg border border-[#CA8A04]/60 px-2.5 py-1.5 text-[13px]"},
-    e("b",{className:"font-semibold"}, AVISO_COMPROVANTE),
-    e("span",{className:"font-semibold"}, "Escrever na folha/Sistema:"),
-    e("span",{className:msg.numerario ? "" : "font-bold"}, msg.numerario || AVISO_SEM_NUM),
-    msg.valor>0 && e("span",null, "Valor a pagar: "+BKC(msg.valor)),
-    e("span",{className:"font-semibold"}, "Chave Pix:"),
-    msg.favorecido && e("span",null, msg.favorecido),
-    e("span",null, ROT_TIPO[d.tipo] || "Pix"),
-    e("span",{className:"break-all font-mono text-[13px] font-bold", "aria-label":"Chave Pix"}, d.chave),
-    e("div",{className:"mt-0.5 flex items-stretch gap-1.5"},
-      e(BotaoCopiar,{texto:mensagemPixPadrao(msg), rot:"Copiar"}),
-      p.lado));   // Copiar (a mensagem com a chave) e Anexar comprovante, numa linha só (Marcus, 04/11/2026)
+  var msg = {conta:p.rotulo, numerario:d.numerario || "", valor:p.valor, favorecido:d.empresa, tipo:d.tipo, chave:d.chave};   // mesma mensagem padrão do Financeiro (lib/mensagem-pix.js)
+  var pc = String(p.rotulo||"").split(" - "), contaCurta = contaPadrao(p.rotulo) || p.rotulo;
+  var lin = function(r, v, mono){ return e("div",{className:"box-border flex min-h-[26px] w-full items-center justify-between gap-3 border-b border-[#C9A13B]/30 px-2 text-[13px]"}, e("span",{className:"shrink-0 text-[#6B7280]"}, r), e("span",{className:"min-w-0 text-right text-[#111827]"+(mono ? " break-all font-mono" : "")}, v)); };
+  return e("div",{className:"box-border flex w-full min-w-0 flex-col bg-white text-[#111827]"},
+    lin("Conta", contaCurta), lin("Beneficiário", msg.favorecido || "—"), lin("Tipo de chave", ROT_TIPO[d.tipo] || "Pix"), lin("Chave Pix", d.chave, true),
+    !msg.numerario && e("span",{className:"px-2 py-1 text-[13px]"}, AVISO_SEM_NUM),
+    e("div",{className:"box-border flex w-full min-w-0 items-stretch gap-1.5 p-1.5"},
+      e(BotaoCopiar,{texto:mensagemPixPadrao(msg), rot:"Copiar Pix"}),
+      p.lado));
 }
 export { CartaoPixConta };

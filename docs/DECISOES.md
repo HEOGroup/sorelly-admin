@@ -3924,3 +3924,6 @@ Pedido do Marcus: "deixa uma só, é pago por dia". As 3 contas Diarista da Casa
 - Entregue: `confirmacao` do solicitante (aguardando → confirmado ou problema), separada do registro da logística; problema avisa os envolvidos e não desfaz nada. O chat não tem botões: o aviso traz o botão que abre o pedido, e as ações ficam no pedido.
 - Avisos pessoais (`aviso.pessoas`): solicitante (ajustes, aprovação, transporte, pedido de confirmação), quem compra (liberação, resultado da reanálise), financeiro (quem liberou: reanálise, compra efetuada, problema), logística (papel LOGISTICA: compra efetuada, transporte, problema). Conversa "Avisos de compras" por pessoa, criada só quando chega o primeiro aviso para ela (decisão do Nickolas). Id fixo: não duplica.
 - Teste: `scripts/testar-fluxo-compras.mjs` (74 verificações) + testes antigos de compras.
+
+## 27/11/2026 · Admin das representantes: brindes em uma linha e × na devolução; Direcionar compacto
+- Brindes do acerto: uma linha por peça, código sem negrito; Excluir brinde em vermelho suave. Devolução: × volta a peça vendida para pendente. Direcionar: identificação dentro do Resumo, sem rodapé, controles compactos (v0.21.271).

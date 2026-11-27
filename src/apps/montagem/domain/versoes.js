@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.271", data:"2026-11-27", titulo:"Admin das representantes: brindes em uma linha, peças devolvidas com ×; Direcionar mais compacto", itens:[
+    {tipo:"melhoria", area:"Representantes › Admin das representantes › Acerto", txt:"Brindes: cada linha fica em uma só (código sem negrito, NOVO ou ANTIGO ao lado, valor alinhado); tocar na linha abre Excluir brinde em vermelho mais suave."},
+    {tipo:"melhoria", area:"Representantes › Admin das representantes › Conferência da devolução", txt:"Peça marcada como vendida ganha × no fim da linha para voltar a ficar pendente."},
+    {tipo:"melhoria", area:"Financeiro › Pagamentos › Direcionar", txt:"Tabela de identificação removida: Representante e Revendedora entram no começo do Resumo; Chegou e Aguardando saíram; rodapé removido; seletores e botões compactos; nova mensagem de Pix."},
+  ]},
  {v:"0.21.270", data:"2026-11-27", titulo:"Consolidado dos representantes: uma visão só e menu enxuto de Representantes & Kits", itens:[
     {tipo:"melhoria", area:"Representantes & Kits › Consolidado", txt:"Tela única Por representante: todas as representantes ativas (mesmo com 0 atendimentos), coluna Código com todos os códigos, Sorelly fora. Clicar na representante deixa só a linha dela e abre embaixo os atendimentos (Data, Revendedora, Etapa atual, Tipo de atendimento, Condicional), com filtro de Dia e agrupamento por dia. Topo só com Mês e Buscar representante. Terminar conferência fecha a ficha sem mensagem e Ver comprovante abre na própria tela, sem baixar."},
     {tipo:"melhoria", area:"Representantes & Kits", txt:"Saíram do menu: Visão geral da bipagem e Relatórios (telas excluídas), Meu desempenho, Comissões da bipagem, Consolidado das listagens, Produtividade da montagem e Registros (ocultas). Topo agora: Consolidado, Listagens, Condicionais, Equipe e comissões, Preferências do kit."}]},

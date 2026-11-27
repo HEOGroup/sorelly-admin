@@ -119,3 +119,6 @@ O texto é o original. Para a decisão completa, abra o diário na linha indicad
 - **Kit antigo ou novo automático:** com 2 ou mais condicionais abertas, a mais recente é o kit novo; as outras são o kit antigo (suposição do Claude, a confirmar com o Marcus).
 - Tocar na peça lançada abre "Excluir brinde" (sem o X). Restante calculado por cartão.
 
+
+## 27/11/2026 · Admin das representantes: brindes em uma linha e × na devolução; Direcionar compacto
+- Brindes do acerto: uma linha por peça, código sem negrito; Excluir brinde em vermelho suave. Devolução: × volta a peça vendida para pendente. Direcionar: identificação dentro do Resumo, sem rodapé, controles compactos (v0.21.271).

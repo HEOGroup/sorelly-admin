@@ -604,21 +604,23 @@ function AppRepresentante(p){
         codOk && !naCond && e("p",{className:"text-[12px] font-semibold text-red-400"}, pecasCondAtivas ? "Peça fora das condicionais ativas." : "Condicionais da revendedora não carregadas."),
         codOk && naCond && situ!=="Liberada" && e("p",{className:"text-[12px] font-semibold text-red-400"}, "Essa peça já está como "+situ.toLowerCase()+"."),
         codOk && naCond && situ==="Liberada" && e("p",{className:"text-[12px] font-semibold text-green-400"}, "Peça liberada. Toque nela na lista para lançar.")),
-        e("div",{key:"gradeBrindes", className:"grid grid-cols-2 items-start gap-1.5"}, [["normal","Normal",libN,confBrinde.lancadoNormal,confBrinde.restanteNormal],["bb","Brinde BB (Select)",libS,confBrinde.lancadoSelect,confBrinde.restanteSelect]].map(function(g){
+        e("div",{key:"gradeBrindes", className:"grid grid-cols-2 items-stretch gap-1.5"}, [["normal","Normal",libN,confBrinde.lancadoNormal,confBrinde.restanteNormal],["bb","Brinde BB (Select)",libS,confBrinde.lancadoSelect,confBrinde.restanteSelect]].map(function(g){
         var its = itens.filter(function(x){ return x.b.cat===g[0]; });
-        return e("div",{key:"gb"+g[0], className:"flex flex-col overflow-hidden rounded-xl border border-white/15"},
+        return e("div",{key:"gb"+g[0], className:"flex h-full flex-col overflow-hidden rounded-xl border border-[#C9A13B]/20"},
           e("div",{className:"flex min-h-8 flex-col justify-center gap-0.5 bg-white/[.07] px-2 py-1 text-[13px]"}, e("b",{className:"text-[13px] font-bold"}, g[1])),
           e("div",{className:"flex min-h-8 items-center justify-between gap-1 border-t border-white/10 px-2 text-[13px]"}, e("span",null,"Liberado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[2]))),
           
           its.map(function(x){ var aberto = exclBrinde===x.i;
             return e("div",{key:"br"+x.i, className:"flex flex-col border-t border-white/10 transition-all duration-500 "+(brilhoBrinde===x.b.codigo ? "bg-[#C9A13B]/30 ring-2 ring-inset ring-[#E8B84B] shadow-[0_0_14px_#E8B84B]" : "")},
-              e("button",{type:"button", onClick:function(){ setExclBrinde(aberto ? -1 : x.i); }, "aria-expanded":aberto, "aria-label":"Brinde "+x.b.codigo+": tocar para excluir", className:"flex min-h-8 w-full cursor-pointer flex-wrap items-center justify-between gap-x-1.5 px-2 py-0.5 text-left text-[13px]"},
-                e("span",{className:MONO+" shrink-0 font-semibold"}, x.b.codigo),
-                e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO"),
+              e("div",{className:"flex items-center"},
+              e("button",{type:"button", onClick:function(){ setExclBrinde(aberto ? -1 : x.i); }, "aria-expanded":aberto, "aria-label":"Brinde "+x.b.codigo+": tocar para excluir", className:"flex min-h-8 min-w-0 flex-1 cursor-pointer flex-nowrap items-center justify-between gap-x-1.5 whitespace-nowrap px-2 py-0.5 text-left text-[13px]"},
+                e("span",{className:"flex shrink-0 items-center gap-1.5"}, e("span",{className:MONO}, x.b.codigo),
+                e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO")),
                 e("span",{className:MONO+" ml-auto shrink-0 whitespace-nowrap"}, BK(x.b.valor))),
-              aberto && e("button",{type:"button", onClick:function(){ setExclBrinde(-1); setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); }, className:"mx-2 mb-1 h-8 rounded-lg bg-[#DC2626] text-[13px] font-bold text-white"}, "Excluir brinde")); }),
-          e("div",{className:"flex min-h-8 items-center justify-between gap-1 border-t border-white/10 px-2 text-[13px]"}, e("span",null,"Lançado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[3]))),
-          e("div",{className:"flex min-h-8 items-center justify-between gap-1 bg-[#C9A13B]/20 px-2 text-[13px] font-bold"}, e("span",null,(g[2]-g[3])<-0.009 ? "Excedente" : "Restante"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(g[2]-g[3]))))); })));
+              ),
+              aberto && e("button",{type:"button", onClick:function(){ setExclBrinde(-1); setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); }, className:"mx-2 mb-1 h-8 rounded-lg bg-[#DC2626]/60 text-[13px] font-semibold text-white"}, "Excluir brinde")); }),
+          e("div",{className:"mt-auto flex min-h-8 items-center justify-between gap-1 border-t border-white/10 px-2 text-[13px]"}, e("span",null,"Lançado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(g[3]))),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-1 px-2 text-[13px] font-bold "+((g[2]-g[3])<-0.009 ? "bg-[#DC2626]/15 text-[#DC2626]" : "bg-[#C9A13B]/20")}, e("span",null,(g[2]-g[3])<-0.009 ? "Excedente" : "Restante"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(g[2]-g[3]))))); })));
   };
 
   // ── Cabeçalho fixo: título, ícone das regras, nome da revendedora e o consolidado padronizado (aparece quando preenche a venda) ──

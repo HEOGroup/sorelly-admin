@@ -183,6 +183,9 @@ function dpReduz(s, a){
       dp.kits = dp.kits.filter(function(x){ return x.id!==idK; }).concat([{id:idK, internoId:a.internoId, nome:a.nome, vendas:(a.vendas||[]).slice(0, 3), media:r2(a.media), minimo:a.minimo||700, divida:r2(a.divida||0), status:"pedido", pedidoPor:por, pedidoEm:Date.now()}]); return ok("Pedido de kit novo enviado ao Financeiro"); }
     case "kit_decidir": { var kD = (dp.kits||[]).find(function(x){ return x.id===a.id; }); if(!kD) return recusa("Pedido de kit não encontrado."); if(!a.aceito && !String(a.motivo||"").trim()) return recusa("Escreva o motivo para não autorizar.");
       kD.status = a.aceito ? "aceito" : "negado"; kD.decididoPor = por; kD.decididoEm = Date.now(); kD.motivo = a.aceito ? "" : String(a.motivo).trim(); return ok(a.aceito ? "Kit novo autorizado" : "Kit novo não autorizado"); }
+    // 27/11/2026 (Marcus): limpa a fila inteira de "aguardando" (os já direcionados ficam)
+    case "limpar_fila": { dp.pix = (dp.pix||[]).filter(function(x){ return x.status!=="fila"; }); return ok("Fila do Direcionar limpa"); }
+    case "rep_apagar": { dp.pix = (dp.pix||[]).filter(function(x){ return x.pid!==a.pid; }); return ok("Pedido apagado do Direcionar"); }   // apaga pelo pid em qualquer estado (Marcus, 27/11/2026)
     case "zerar_testes": { dp.pix = (dp.pix||[]).filter(function(x){ return !x.demo; }); return ok(); }
   }
   return recusa("Ação desconhecida.");

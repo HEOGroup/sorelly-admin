@@ -92,7 +92,7 @@ function derivarAcerto(p){
   var previaBrinde = previaAcerto && brindeBloqueio && brindeBloqueio.porPagamento && !form.recusouNegociar ? calcularAcerto(entrada(previaAcerto.valorDevido), versao) : previaAcerto;
   var libN = previaBrinde ? Math.round(previaBrinde.brindeNormal*fatorBrinde) : 0, libS = previaBrinde ? Math.round(previaBrinde.brindeSelect*fatorBrinde) : 0;
   var confBrinde = conferirBrindes(form.brindes, libN, libS);
-  var excedenteBrinde = brindeLiberado ? confBrinde.excedente : 0;
+  var excedenteBrinde = brindeLiberado || (brindeBloqueio && brindeBloqueio.porPagamento && !form.recusouNegociar) ? confBrinde.excedente : 0;   // 27/11/2026: o excedente já soma no total a pagar mesmo antes do pagamento
   // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda
   var valorTag = gerais.taxaTagExtraviada!=null ? gerais.taxaTagExtraviada : 5, tagsValor = Math.round((form.tagsDanificadas||0)*valorTag*100)/100;
   // regras de 27/10/2026: a multa do valor pendente soma no total a pagar (decisão do Marcus, 26/10/2026)

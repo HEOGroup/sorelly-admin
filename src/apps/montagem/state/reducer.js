@@ -467,6 +467,7 @@ function reducer(s, a){
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
     case "ITAU_UNIR": return com(uneItau(s), {}, "Itaú: uma conta só (Itaú Marco PJ)");
     case "DP": { var rDp = dpReduz(s, a), sDp = com(s, rDp.patch, rDp.msg);
+      if(a.op==="limpar_fila"){ var lfL = sDp.lancFin||[]; ((s.dp && s.dp.pix)||[]).filter(function(x){ return x.status==="fila" && x.pid && x.kitId; }).forEach(function(x){ lfL = repRemoverPedido(lfL, x.kitId, x.pid); }); return Object.assign({}, sDp, {lancFin:lfL}); }
       // Pix pedido pelo app da representante: ao direcionar aqui, o nome da conta vai para o pagamento do acerto (e o app avisa "Conta recebida")
       if(a.op==="confirma" && rDp.patch.dp){ var pDp = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
         if(pDp && pDp.pid && pDp.kitId && pDp.status==="direcionado"){ var nomeD = function(id){ var d = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===id; }); return d ? d.nome : ""; };
@@ -1391,9 +1392,9 @@ function reducer(s, a){
     // Representante pede a conta de um pagamento do acerto (só forma + valor): sobe na hora no Controle de pagamentos, o app dela não espera
     case "REP_PAG": {
       if(a.op==="pedir"){ if(!a.kitId || !a.pid || !(a.valor>0)) return s;
-        var sPed = com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)}, "Conta solicitada ao financeiro: "+BK(a.valor));
+        var sPed = com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)});   // sem aviso de sucesso: o botão só vira "Aguardando" (Marcus, 27/11/2026)
         var fmL = {pix:"Pix", link:"Link de pagamento", credito:"Cartão de crédito", debito:"Cartão de débito"}[a.forma] || a.forma;
-        var sPed2 = Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch);
+        var sPed2 = Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:"Pagamento"+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo admin das representantes", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch);
         return sincContasRep(Object.assign({}, sPed2, dpReduz(sPed2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch)); }
       if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
       if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;

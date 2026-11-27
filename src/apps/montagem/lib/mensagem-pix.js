@@ -27,23 +27,16 @@ function cnpjFormatado(txt){
   var d = String(txt||"").replace(/\D/g, "");
   return d.length===14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : "";
 }
-function mensagemPixEmpresa(d){
-  var linhas = ["*CHAVE PIX*", ""];   // negrito do WhatsApp: texto entre asteriscos (Marcus, 04/11/2026)
-  if(d.banco) linhas.push("- *Banco:* "+d.banco);
-  if(d.empresa) linhas.push("- *Empresa:* "+d.empresa);
-  if(d.cnpj) linhas.push("- *CNPJ:* "+d.cnpj);
-  linhas.push("", "🔑 *Chave ("+(TIPO[d.tipo] || "Pix")+"):*", d.chave, "", "Envie o comprovante após o pagamento.");   // a chave SEMPRE na linha de baixo (Marcus, 04/11/2026)
-  return linhas.join("\n");
+// PADRÃO DO NOME DA CONTA (Marcus, 27/11/2026): "Banco Empresa 59", sem palavra repetida e sem "Pix"/"CNPJ" soltos. Ex.: "Pix · CNPJ 59 · Serenity · Sicredi Serenity" → "Sicredi Serenity 59".
+function contaPadrao(rotulo){
+  var sem = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
+  var vistos = {}, banco = "", num = "", resto = [];
+  String(rotulo||"").split(/\s+[·-]\s+|\s+/).forEach(function(w){ var k = sem(w); w = w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); if(!k || k==="pix" || k==="cnpj" || vistos[k]) return; vistos[k] = 1;
+    if(/^\d{2}$/.test(k)) num = w; else if(!banco && BANCOS.some(function(b){ return sem(b)===k; })) banco = w; else resto.push(w); });
+  return [banco].concat(resto, [num]).filter(Boolean).join(" ");
 }
-// Pix de PESSOA (funcionária, sócio, prestador, fornecedor, representante): mesma mensagem, com o nome no lugar da empresa (Marcus, 04/11/2026: "de todo mundo tem que ser")
-function mensagemPixPessoa(d){
-  var linhas = ["*CHAVE PIX*", ""];
-  if(d.nome) linhas.push("- *Nome:* "+d.nome);
-  if(d.banco) linhas.push("- *Banco:* "+d.banco);
-  if(d.favorecido && d.favorecido!==d.nome) linhas.push("- *Favorecido:* "+d.favorecido);
-  linhas.push("", "🔑 *Chave ("+(TIPO[d.tipo] || "Pix")+"):*", d.chave, "", "Envie o comprovante após o pagamento.");
-  return linhas.join("\n");
-}
+function mensagemPixEmpresa(d){ return mensagemPixPadrao({conta:["Pix", d.banco, d.empresa].filter(Boolean).join(" · "), tipo:d.tipo, chave:d.chave}); }
+function mensagemPixPessoa(d){ return mensagemPixPadrao({conta:["Pix", d.banco, d.nome || d.favorecido].filter(Boolean).join(" · "), tipo:d.tipo, chave:d.chave}); }
 // Copiar uma chave Pix de CONTA DA EMPRESA já sai nesta mensagem, em qualquer tela (Marcus, 04/11/2026). Chave de outra pessoa: devolve "" e o botão copia só a chave.
 function tipoDaChave(chave){ var s = String(chave||"").trim(), n = s.replace(/\D/g, ""); if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(n.length===14) return "CNPJ"; return ""; }
 // empresa do bloco: pelo id ("34") ou pelo nome do bloco ("Sorelly Atac · 34", "Serenity · 59", "H&O"); assim funciona mesmo em dados salvos com outro nome
@@ -78,14 +71,15 @@ function dadosPixDaChave(s, chave){
 //   CNPJ
 //   49886705000147
 var AVISO_COMPROVANTE = "Comprovante: enviar assim que fizer o Pix.";
+// FORMATO ÚNICO (Marcus, 27/11/2026): toda chave Pix copiada sai assim. d.conta tem prioridade sobre o numerário.
+//   Por favor, envie o comprovante após o pagamento.
+//   (vazia) *Conta:* Pix · Sicredi · Serenity · 59 / *Valor:* R$ 2.515,00 / *Tipo de chave:* CNPJ (vazia) *Chave Pix:* / 59146403000196
 function mensagemPixPadrao(d){
-  var l = [AVISO_COMPROVANTE, ""];
-  if(d.numerario) l.push("Escrever na folha/Sistema:", d.numerario, "");
-  if(Number(d.valor)>0) l.push("Valor a pagar: "+BKC(d.valor), "");
-  l.push("Chave Pix:");
-  if(d.favorecido) l.push(d.favorecido);
-  if(d.tipo) l.push(TIPO[d.tipo] || d.tipo);
-  l.push(d.chave);
+  var l = ["Por favor, envie o comprovante após o pagamento.", ""], conta = d.conta ? "Pix · "+contaPadrao(d.conta) : d.numerario;
+  if(conta) l.push("*Conta:* "+conta);
+  if(Number(d.valor)>0) l.push("*Valor:* "+BKC(d.valor));
+  if(d.tipo) l.push("*Tipo de chave:* "+(TIPO[d.tipo] || d.tipo));
+  l.push("", "*Chave Pix:*", d.chave);
   return l.join("\n");
 }
 function mensagemPixDaChave(s, chave){ var d = dadosPixDaChave(s, chave); return d ? mensagemPixEmpresa(d) : ""; }
@@ -101,4 +95,4 @@ function dadosPixDaConta(s, rotulo){
   return ch ? dadosPixDaChave(s, ch) : null;
 }
 
-export { AVISO_COMPROVANTE, bancoDaConta, cnpjFormatado, mensagemPixPadrao, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave, dadosPixDaChave, dadosPixDaConta };
+export { contaPadrao, AVISO_COMPROVANTE, bancoDaConta, cnpjFormatado, mensagemPixPadrao, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave, dadosPixDaChave, dadosPixDaConta };

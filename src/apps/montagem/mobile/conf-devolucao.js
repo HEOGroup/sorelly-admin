@@ -120,12 +120,13 @@ function ConfDevolucao(p){
           return e("div",{key:g.cod, className:"flex flex-col"},
             e("p",{className:"mt-1 flex items-center justify-between rounded-lg bg-[#F3F4F6] px-2 py-1 text-[11px] font-bold text-[#374151]"}, e("span",null,g.nome), e("span",{className:MONO}, gf+"/"+gt)),
             g.itens.map(function(i){ var l = lido(c, i), ok = l>=i.qtd, ch = c.numero+"|"+i.codigo, abre = descAberta===ch;
-              return e("button",{type:"button", key:i.codigo, onClick:function(){ setDescAberta(abre ? "" : ch); }, className:"flex flex-col rounded-lg px-2 py-1.5 text-left "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white")},
+              return e("div",{key:i.codigo, className:"flex items-start rounded-lg "+(ok ? "bg-[#F0FDF4]" : l>0 ? "bg-[#FEF9C3]" : "bg-white")}, e("button",{type:"button", onClick:function(){ setDescAberta(abre ? "" : ch); }, className:"flex min-w-0 flex-1 flex-col px-2 py-1.5 text-left"},
                 e("span",{className:"flex items-center gap-2"},
                   e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-black "+(ok ? "bg-[#16A34A] txt-branco" : "bg-[#E5E7EB] text-[#E5E7EB]")}, ok ? "✓" : "·"),
                   e("b",{className:MONO+" flex-1 text-[13px] text-[#111827]"}, i.codigo+(i.qtd>1 ? "  "+l+"/"+i.qtd : "")),
                   e("b",{className:MONO+" text-[13px] text-[#111827]"}, BR(i.valor))),
-                abre && e("span",{className:"pl-7 pt-0.5 text-[13px] text-[#374151]"}, descBonita(i.desc))); })); })); }),
+                abre && e("span",{className:"pl-7 pt-0.5 text-[13px] text-[#374151]"}, descBonita(i.desc))),
+                !ok && e("button",{type:"button", "aria-label":"Peça "+i.codigo+" voltou: tirar de vendida", title:"Esta peça voltou: tirar de vendida", onClick:function(){ var falta = i.qtd-l, h = (conf.hist||[]).slice(), lid = Object.assign({}, conf.lidos); for(var q = 0; q<falta; q++) h.push(ch); lid[ch] = i.qtd; guardar(Object.assign({}, conf, {lidos:lid, hist:h, ultimo:null})); }, className:"grid h-8 w-8 shrink-0 place-items-center text-[16px] leading-none text-[#374151] opacity-70"}, "×")); })); })); }),
     (conf.erros||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#FEF3C7] px-3 py-2"},
       e("b",{className:"text-[12.5px] text-[#92400E]"},"Peças que não são destas condicionais ("+conf.erros.length+")"), e("span",{className:MONO+" text-[12px] text-[#92400E]"}, conf.erros.map(function(x){ return x.codigo; }).join(", "))),
     e("div",{key:"maleta", role:"alert", className:"flex flex-col gap-0.5 rounded-xl bg-[#FEF3C7] px-3 py-2 text-[13px] text-[#92400E]"},   // 26/11/2026 (Marcus): a maleta também precisa bipar; no fim da bipagem só um alerta
