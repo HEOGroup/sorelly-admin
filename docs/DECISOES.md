@@ -3,6 +3,31 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 28/11/2026 (Bipagem pela câmera: tecnologia única, finalização do acerto e novo kit)
+
+Pedidos do Marcus ("FINALIZAÇÃO DO ACERTO E ENTREGA DO NOVO KIT" e "PADRONIZAÇÃO DEFINITIVA DA TECNOLOGIA DE BIPAGEM"). Versões 0.21.282 e 0.21.283. **Não publicado**: depende da autorização do Marcus e do teste no iPhone real.
+
+**Decisões do Marcus**
+- Uma tecnologia de câmera só para cinco operações: peças que voltaram, brinde Normal, brinde BB, peças do próximo mês e conferência do novo kit. Arquivos: `mobile/leitor-camera.js` (câmera, leitura e som) e `mobile/bip-comum.js` (câmera que abre sozinha, aviso e código comercial). Cada tela mantém as suas validações comerciais.
+- Câmera com 190 px no celular. Linha dourada, lanterna, Ler por foto, fechar, reabrir pelo próprio espaço, código manual largo, uma coluna por padrão.
+- Bip curto e fino (2.350 Hz, 70 ms), só quando a peça é registrada. Peça recusada: dois bips curtos (1.250 Hz, 50 ms). A etiqueta parada na mira não toca de novo.
+- A tela mostra o código comercial (COL0088), nunca o número da etiqueta (00033139). Primeiro o que já está carregado (condicionais da revendedora); peça de fora, uma consulta ao cadastro oficial (`/api/representante/peca?leve=1`, só leitura). Sem cadastro: "Código não localizado no cadastro". Nunca inventar código.
+- Aviso de peça fora da condicional: vermelho claro, borda fina vermelha, texto vermelho escuro, código em destaque, duas linhas.
+- Calculadora: motivo de venda baixa só quando a venda fica abaixo do mínimo; comprovante só com pagamento maior que zero; bloco Devolução de peças retirado (era repetido); botão Finalizar acerto; Resumo do acerto em tela separada, com Liberar novo kit e Encerrar atendimento.
+
+**Causa técnica da leitura difícil no iPhone (não era o intervalo entre leituras)**
+- Poucos pixels por listra: com imagem de 1440 px a etiqueta só era legível a menos de 15 cm, mais perto do que a lente principal foca. Agora pede até 3840x2160 e confere o que o aparelho entregou; imagem pequena é compensada com o zoom da câmera, nunca com corte digital.
+- O leitor processava a imagem inteira (3,7 milhões de pontos) e a tela só mostra uma faixa. Agora lê só a faixa que aparece.
+- Um quadro novo chega a cada 33 ms; esperar 8 ms relia o mesmo quadro. Agora cada quadro novo é lido uma vez.
+- Lente: no iPhone com mais de uma câmera traseira, usa a câmera dupla grande-angular (troca sozinha para a lente que foca de perto). Lanterna desligada ao abrir (reflexo no metal).
+- Biblioteca mantida: zxing-cpp em WebAssembly no iPhone e leitor nativo no Android. Scandit e Dynamsoft são pagos e não foram necessários nesta etapa.
+- Diagnóstico no aparelho: segurar o dedo 1 segundo sobre a imagem da câmera mostra lente, imagem, zoom, foco, luz e leituras por segundo.
+
+**Pendências para o Marcus**
+- Teste no iPhone real com etiquetas pequenas: não foi feito (o Claude não tem o aparelho).
+- "Liberar novo kit" (Resumo do acerto): publicado abrindo **só a conferência das peças**, que volta para o Resumo. Não chama a entrega existente (KITNOVO_ENTREGAR), porque ela grava `kit_novo_entrega` e paga a comissão de kit novo, e a regra de 02/11/2026 diz que renovação paga só a comissão do acerto. O Marcus mandou publicar sem responder a essa pergunta; falta ele decidir se a renovação deve passar pela entrega com assinatura.
+- `kitNovoOk` (botão Confirmar próximo kit) não foi alterado: carimba a versão das regras e entra na comissão do novo fluxo. A entrega só fica concluída em `kitNovoEntregue`, gravada na entrega de verdade.
+
 ## 28/11/2026 (Calculadora de acertos: missão de reestruturação, condições novas desligadas e conferência no servidor)
 
 Pedido do Marcus (texto "MISSÃO — REESTRUTURAÇÃO DEFINITIVA DAS REGRAS E CALCULADORAS DE ACERTOS SORELLY"). O documento Markdown citado como anexo **não chegou**: vale o que está escrito no pedido. Nada foi publicado. Regras completas: `docs/regras/CALCULADORA-DE-ACERTOS.md`.

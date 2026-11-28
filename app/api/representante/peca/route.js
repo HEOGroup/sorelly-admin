@@ -32,8 +32,14 @@ const achaProduto = async (q, barras) => {
 
 export const GET = rota(async (req, { eu, url }) => {
   const cod = String(url.searchParams.get("cod") || "").trim(), q = String(url.searchParams.get("q") || "").trim().toUpperCase().replace(/\s+/g, "");
-  if (!/^\d{1,10}$/.test(cod)) return erro("Informe ?cod=código da revendedora.", 400);
   if (!/^[A-Z0-9]{1,20}$/.test(q)) return erro("Informe ?q=código da peça ou número de barras (só letras e números).", 400);
+  // 28/11/2026 (Marcus): ?leve=1 = só o cadastro oficial do produto (número de barras -> código comercial), para a bipagem mostrar COL0088 e não 00033139.
+  // Não traz nada de revendedora (sem histórico, sem valor), por isso não precisa do código dela. Uma consulta só, só leitura.
+  if (url.searchParams.get("leve")) {
+    const p = await achaProduto(q, [...new Set([q, q.replace(/^0+/, ""), /^\d+$/.test(q) ? q.padStart(8, "0") : ""].filter(Boolean))]);
+    return json(p ? { achou: true, codigo: String(p.aaa_codigo).trim(), desc: nomeNormal(String(p.aaa_descricao || "").trim()) } : { achou: false, q });
+  }
+  if (!/^\d{1,10}$/.test(cod)) return erro("Informe ?cod=código da revendedora.", 400);
   // trava de carteira (igual à rota das condicionais)
   const semZeros = q.replace(/^0+/, "");
   const barras = [...new Set([q, semZeros, /^\d+$/.test(q) ? q.padStart(8, "0") : ""].filter(Boolean))];
