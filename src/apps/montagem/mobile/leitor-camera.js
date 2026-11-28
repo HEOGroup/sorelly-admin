@@ -19,17 +19,20 @@ function audio(){
     return AUDIO;
   } catch(x){ return null; }
 }
-// bip curto + vibração a cada leitura
-function avisar(){
-  try { if(navigator.vibrate) navigator.vibrate(80); } catch(x){}
+// 28/11/2026: o bip de SUCESSO toca só quando a peça é reconhecida (quem chama é a conferência); erro e peça repetida têm som grave diferente.
+function tom(freq, dur, tipo, vol, vib){
+  try { if(navigator.vibrate) navigator.vibrate(vib); } catch(x){}
   try {
     var a = audio(); if(!a) return;
     var o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
-    o.type = "square"; o.frequency.value = 1500;
-    g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + 0.17);
+    o.type = tipo; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.01);
   } catch(x){}
 }
+function bipeOk(){ tom(1500, 0.16, "square", 0.25, 80); }
+function bipeErro(){ tom(330, 0.28, "sawtooth", 0.2, [60, 50, 60]); }
+function avisar(){ bipeOk(); }
 // Vale número de barras com 7 a 13 dígitos (a DevMaster guarda 8) ou código de peça (CL2542, BB0531). Leitura torta (ex.: 6 dígitos) é descartada.
 function valido(c){ return /^\d{7,13}$/.test(c) || /^[A-Z]{1,4}\d{3,6}$/.test(c); }
 
@@ -50,7 +53,7 @@ function LeitorCamera(p){
       // 24/11 (3): zoom 2x só onde a câmera faz zoom de verdade (Android). Onde não faz (iPhone) lê a imagem INTEIRA em resolução alta: o corte digital jogava pixels fora e obrigava a chegar bem perto.
       try {
         var tr = stream.getVideoTracks()[0], cap = tr.getCapabilities ? tr.getCapabilities() : {}, adv = [];
-        if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2, cap.zoom.max))}); zoomCam = true; }
+        if(cap.zoom && cap.zoom.max >= 2){ adv.push({zoom: Math.max(cap.zoom.min || 1, Math.min(2.5, cap.zoom.max))}); zoomCam = true; }
         if(cap.torch){ adv.push({torch:true}); lanterna = true; trRef.current = tr; }
         if(cap.focusMode && cap.focusMode.indexOf("continuous") >= 0) adv.push({focusMode:"continuous"});
         if(adv.length) await tr.applyConstraints({advanced:adv});
@@ -100,7 +103,7 @@ function LeitorCamera(p){
             // uma leitura basta (Code128 tem dígito de controle); o mesmo número só conta outra vez se sair da mira e voltar
             {
               if(cod !== ultimo.cod || agora - ultimo.ts > ENTRE_LEITURAS){
-                ultimo = {cod:cod, ts:agora}; avisar();
+                ultimo = {cod:cod, ts:agora}; if(!p.semBip) bipeOk();
                 setEstado(function(x){ return Object.assign({}, x, {flash:agora}); });
                 setTimeout(function(){ if(vivo) setEstado(function(x){ return Object.assign({}, x, {flash:0}); }); }, 700);
                 lerRef.current(cod);
@@ -108,7 +111,7 @@ function LeitorCamera(p){
             }
           } else previo = "";
         } catch(x){}
-        if(vivo) timer = setTimeout(laco, 40);
+        if(vivo) timer = setTimeout(laco, 8);
       };
       laco();
     })();
@@ -125,7 +128,7 @@ function LeitorCamera(p){
       var zx = await import("zxing-wasm/reader");
       var r = await zx.readBarcodes(cx.getImageData(0, 0, c.width, c.height), {formats:["Code128","Code39","Code93","Codabar","ITF","EAN13","EAN8","UPCA","UPCE"], tryHarder:true, tryRotate:true, tryDownscale:true, tryInvert:true, maxNumberOfSymbols:1});
       var cod = r && r[0] ? String(r[0].text || "").trim().toUpperCase().replace(/s+/g, "") : "";
-      if(cod){ avisar(); setFotoMsg("Li " + cod + " (" + r[0].format + ")"); lerRef.current(cod); }
+      if(cod){ if(!p.semBip) bipeOk(); setFotoMsg("Li " + cod + " (" + r[0].format + ")"); lerRef.current(cod); }
       else setFotoMsg("Não achei código nessa foto. Chegue mais perto, com a etiqueta reta e bem iluminada, ou digite o código.");
     } catch(x){ setFotoMsg("Não consegui ler a foto. Digite o código da peça."); }
   }
@@ -147,4 +150,4 @@ function LeitorCamera(p){
     e("input",{ref:fotoRef, type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:lerFoto}));
 }
 
-export { LeitorCamera };
+export { LeitorCamera, bipeOk, bipeErro };

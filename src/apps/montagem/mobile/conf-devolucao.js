@@ -5,7 +5,7 @@
 // As condicionais selecionadas formam UM kit só. O que não voltou foi vendido. Nada é gravado como erro de ninguém: peça de fora só fica registrada.
 import { bipar, descBonita, itensDe, totaisKit, unir } from "@/apps/montagem/domain/conferencia-pecas";
 import { chamar } from "@/apps/montagem/lib/api";
-import { LeitorCamera } from "@/apps/montagem/mobile/leitor-camera";
+import { LeitorCamera, bipeOk, bipeErro } from "@/apps/montagem/mobile/leitor-camera";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
@@ -55,6 +55,7 @@ function ConfDevolucao(p){
       var chave = Object.keys(novo.lidos).find(function(k){ return (novo.lidos[k]||0)!==((conf.lidos||{})[k]||0); });
       novo = Object.assign({}, novo, {hist:(conf.hist||[]).concat([chave])});
     }
+    if(novo.ultimo && novo.ultimo.tipo==="ok") bipeOk(); else bipeErro();   // bip de sucesso só quando a peça é reconhecida
     guardar(novo);
   };
   if(carga.est==="carregando") return null;   // sem banner: a calculadora já espera os dados antes de abrir esta tela
@@ -83,14 +84,14 @@ function ConfDevolucao(p){
         e("p",{className:"flex min-h-8 items-center justify-center bg-[#F8F3E8] px-3 text-center text-[18px] font-semibold text-[#5B4410]"}, p.rev || ""),
         e("div",{className:"grid grid-cols-3 gap-px border-t border-[#E4D3A3] bg-[#E4D3A3]"}, [["todas","Todas",tot.pecas],["vendidas","Não devolvidas",vendidas],["devolvidas","Devolvidas",voltaram]].map(function(o){ var on = fil===o[0];
           return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ setFil(o[0]); }, className:"flex h-7 min-w-0 items-center justify-center gap-1.5 text-[13px] "+(on ? "bg-[#C9A13B] text-[#1F1B0E]" : "bg-white text-[#8A6A12]")}, e("span",null,o[1]), e("b",{className:"font-semibold"}, String(o[2]))); }))),
-      camera ? e(LeitorCamera,{aoLer:ler, altura:125, aoDesligar:function(){ setCamera(false); }})
-        : e("button",{type:"button", onClick:function(){ setCamera(true); }, "aria-label":"Abrir câmera", className:"flex w-full items-center justify-center border border-[#C9A13B]/60 bg-[#F8F3E8] text-[13px] font-semibold text-[#8A6A12]", style:{height:"125px"}}, "Toque para abrir a câmera"),
+      camera ? e(LeitorCamera,{aoLer:ler, altura:144, semBip:true, aoDesligar:function(){ setCamera(false); }})
+        : e("button",{type:"button", onClick:function(){ setCamera(true); }, "aria-label":"Abrir câmera", className:"flex w-full items-center justify-center border border-[#C9A13B]/60 bg-[#F8F3E8] text-[13px] font-semibold text-[#8A6A12]", style:{height:"144px"}}, "Toque para abrir a câmera"),
       e("form",{onSubmit:function(ev){ ev.preventDefault(); if(codigo.trim()) ler(codigo); setCodigo(""); setTimeout(function(){ var el = document.getElementById("conf-dev-codigo"); if(el) el.focus(); }, 0); }, className:"grid gap-[6px]", style:{gridTemplateColumns:"minmax(0, 3fr) repeat(2, minmax(0, 1fr))"}},
         e("input",{id:"conf-dev-codigo", enterKeyHint:"go", autoComplete:"off", inputMode:"text", value:codigo, onChange:function(ev){ setCodigo(ev.target.value); }, placeholder:"Código da peça", autoCapitalize:"characters", className:"h-8 w-full min-w-0 rounded-lg bg-white px-3 text-left text-[13px] text-[#111827] outline-none border border-[#C9A13B]/70"}),
         e("button",{type:"submit", className:BT+" bg-[#C9A13B] text-[#1F1B0E]"},"Bipar"),
         e("button",{type:"button", onClick:function(){ setColunas(colunas===1 ? 2 : 1); }, className:BT+" border border-[#C9A13B] bg-white text-[#3B2F0B]"}, colunas===1 ? "2 colunas" : "1 coluna")),
       (function(u){ if(!u) return null; var ok = u.tipo==="ok", mot = u.tipo==="repetida" ? "Peça já bipada" : "Peça fora destas condicionais";
-        return e("div",{className:"flex flex-col gap-0.5 border px-3 py-1.5 text-[13px] "+(ok ? "border-[#16A34A]/50 bg-[#F0FDF4] text-[#15803D]" : "border-[#DC2626]/40 bg-[#FEF2F2] text-[#991B1B]")},
+        return e("div",{className:"flex flex-col gap-0.5 border px-3 py-1.5 text-[13px] "+(ok ? "border-[#16A34A]/50 bg-[#F0FDF4] text-[#15803D]" : "border-[#C9A13B] bg-[#FBF3DC] text-[#6B4A06]")},
           e("div",{className:"flex items-center justify-between gap-2 font-semibold"}, e("span",{className:"whitespace-nowrap"}, u.codigo), ok || u.valor ? e("span",{className:"whitespace-nowrap"}, BR(u.valor)) : null),
           e("span",{className:"leading-snug"}, ok ? (descBonita(u.desc) || "Sem descrição") : mot+(u.desc ? " · "+descBonita(u.desc) : ""))); })(ult)),
     // LISTA: rola sozinha entre o topo e o rodapé
