@@ -6,7 +6,7 @@ import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { JanelaIncluirCliente, sincronizarDm } from "@/apps/montagem/pages/RevendedorasInternas";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
-import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
+import { FORM_ACERTO_VAZIO, derivarAcerto, novaChanceUsada } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { AVISO_BB, PARCELAS_CARTAO, linhasAtraso, codigoBrindeValido, comissaoEspecialDe, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
@@ -257,7 +257,9 @@ function AtendimentoInterno(){
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, atrasoBruto = atrasoChegada>TOLERANCIA_CHEGADA_MIN, atrasoIsento = !!(sel && sel.atrasoIsento), chegouMuitoAtrasada = atrasoBruto && !atrasoIsento;   // 19/11/2026 (Marcus: "elas podem alterar isso"): quem atende pode isentar o desconto do brinde por atraso de chegada (a cliente avisou)
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
-  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), regraAntiga:!!form.regraAntiga, brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
+  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), regraAntiga:!!form.regraAntiga, brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, novaChanceUsada:sel ? novaChanceUsada((s.acertosConsignado||[]).filter(function(r0){ return r0.internoId!==sel.id; }), sel.nome) : false,
+    dataAcerto:(function(){ var rg0 = sel && sel.status==="acertado" ? (s.acertosConsignado||[]).find(function(r0){ return r0.internoId===sel.id && r0.tipo==="acerto"; }) : null; return rg0 ? rg0.data : undefined; })(),   // acerto já feito: a versão das regras é a da data dele
+    dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
   var pa = dv.previaAcerto, versao = dv.versao, pxm = dv.pecasProx;
   // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
   var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
@@ -719,7 +721,7 @@ function AtendimentoInterno(){
       e("div",{className:"flex justify-between border-t border-border/50 pt-1.5 text-[13px] font-bold"}, e("span",null,"Lançado "+din(lanc)), e("span",{className:rest>0 ? "text-success" : "text-muted-foreground"},"Restante "+din(rest))));
   };
   var pBrindes = !pa ? e("p",{className:"rounded-lg border border-dashed border-border p-3 text-center text-[13px] text-muted-foreground"},"Lance as vendas e os pagamentos primeiro.")
-    : dv.brindeBloqueio ? e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : ""))
+    : dv.brindeBloqueio ? e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : "")+(dv.brindeAviso ? " "+dv.brindeAviso.texto : ""))
     : e(React.Fragment,null,
         e("p",{className:"rounded-lg border border-[#E8B84B]/60 bg-[#E8B84B]/15 px-3 py-1.5 text-center text-[13px] font-bold text-white"},"⚠ "+AVISO_BB+" Pode ser brinco, anel, colar ou qualquer outra peça."),
         e("div",{className:"grid grid-cols-1 gap-2.5 md:grid-cols-2 "+(travaBrinde ? "pointer-events-none opacity-50" : "")},
@@ -753,6 +755,8 @@ function AtendimentoInterno(){
             e("span",{className:"absolute inset-y-0 w-0.5 bg-white", style:{left:dv.kitNovoMin+"%"}, title:"Mínimo para liberar o kit novo"})),
           dv.novas && dv.minimo.regra && e("p",{className:"text-[13px] font-semibold "+(dv.minimo.abaixo ? "text-destructive" : "text-success")},
             "Média de "+dv.minimo.qtd+" venda(s): "+din(dv.minimo.media)+" · mínimo "+din(dv.minimo.ref)+(dv.minimo.abaixo ? ". Abaixo do mínimo: kit novo não liberado e cadastro bloqueado." : ".")),
+          dv.novaChanceDisponivel && !jaFeito && e("button",{type:"button", "aria-pressed":!!form.novaChance, onClick:function(){ up({novaChance:!form.novaChance}); },   // NOVA CHANCE (Marcus, 28/11/2026): uma vez por revendedora, gravada no acerto
+            className:"h-8 rounded-md border border-foreground/40 px-3 text-[13px] font-semibold "+(form.novaChance ? "bg-primary text-primary-foreground" : "")}, form.novaChance ? "Nova chance dada · desfazer" : "Dar nova chance (uma vez só)"),
           !dv.kitNovoLiberado && e("p",{className:"text-[13px] font-semibold text-destructive"},
             dv.blocoDivida ? dv.blocoDivida
             : dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+"."
@@ -778,7 +782,7 @@ function AtendimentoInterno(){
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
   var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : (!!continuaEf && (continuaEf!=="outro_dia" || !!form.renovaDia)))));
   var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente || saiu, saiuSemAssinar:saiu, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
-    d({type:"INT_ACERTO_REGISTRAR", id:sel.id, regraAntiga:!!form.regraAntiga && !ehPrata, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
+    d({type:"INT_ACERTO_REGISTRAR", id:sel.id, regraAntiga:!!form.regraAntiga && !ehPrata, brindeFator:fatorBrindeAtraso, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
@@ -1124,12 +1128,13 @@ function AtendimentoInterno(){
       cat==="normal" && motivosBr.length>0 && e("div",{className:"border-t border-foreground/25 px-2 py-1.5 text-center text-[11px] font-medium uppercase tracking-[.05em]"}, "Redução: "+motivosBr.join(" · "))));
   };
   var est2 = !pa ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-[13px] text-muted-foreground"}, "Lance as vendas e os pagamentos primeiro.")
-    : dv.brindeBloqueio ? e("div",{className:"p-3"}, e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : "")))
+    : dv.brindeBloqueio ? e("div",{className:"p-3"}, e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : "")+(dv.brindeAviso ? " "+dv.brindeAviso.texto : "")))
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},
         metades("@[56rem]:grid-cols-2 grid-cols-1", blocoBr("normal","Brinde normal", dv.libN, cb.lancadoNormal, bnIn, setBnIn), blocoBr("bb","Brinde select (BB)", dv.libS, cb.lancadoSelect, bbIn, setBbIn)),
         atrasoBruto && e("label",{className:"flex cursor-pointer items-center justify-center gap-2 border-t border-foreground/25 bg-primary/[0.07] px-3 py-2 text-center text-[13px] font-semibold"},
           e("input",{type:"checkbox", checked:atrasoIsento, disabled:jaFeito, "aria-label":"Não descontar o brinde pelo atraso de chegada", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{atrasoIsento:ev.target.checked, atrasoIsentoPor:ev.target.checked ? nomeDe(s.usuario) : ""}}); }, className:"size-5 shrink-0 accent-[#E8B84B]"}),
           "Chegou "+atrasoChegada+" min depois do horário. Não descontar o brinde"+(atrasoIsento && sel.atrasoIsentoPor ? " (isentado por "+String(sel.atrasoIsentoPor).split(" ")[0]+")" : " (a cliente avisou)")),
+        dv.brindeAviso && e("p",{role:"alert", className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, dv.brindeAviso.texto),
         dv.excedenteBrinde>0 && e("p",{className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, "Diferença do brinde: "+din(dv.excedenteBrinde)+" soma no valor a pagar (financeiro define a conta)."),
         dv.excedenteBrinde>0 && caixaFinanceiro && e("div",{className:"p-2"}, caixaFinanceiro));
 

@@ -137,7 +137,7 @@ function LeitorCamera(p){
   return e("div",{className:"flex flex-col"},
     estado.est==="erro"
       ? e("div",{className:"flex flex-col gap-1"}, e("button",{type:"button", onClick:function(){ setTentou(true); setEstado({est:"abrindo", msg:"", zoom:1, flash:0, diag:""}); setTentativa(tentativa+1); }, className:"flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#C9A13B] text-[13px] font-semibold text-white"}, "Ativar câmera"), tentou && estado.msg && e("p",{className:"px-1 text-[11px] text-[#8A6A12]"}, estado.msg))
-      : e("div",{className:"relative w-full overflow-hidden bg-[#222]", style:{height:"clamp(80px, 12vh, 100px)"}},
+      : e("div",{className:"relative w-full overflow-hidden bg-[#222]", style:{height:(p.altura ? p.altura+"px" : "clamp(80px, 12vh, 100px)")}},
           e("video",{ref:ref, playsInline:true, muted:true, className:"absolute inset-0 size-full object-cover", style:{transform:"scale(" + (estado.zoom || 1) + ")"}}),
           e("div",{className:"pointer-events-none absolute inset-x-0 top-1/2 h-px "+(estado.flash ? "bg-[#22C55E]" : "bg-[#C9A13B]")}),
           (p.aoFechar || p.aoDesligar) && e("button",{type:"button", onClick:p.aoFechar || p.aoDesligar, "aria-label":"Fechar câmera", className:"absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/60 text-[13px] leading-none txt-branco"}, "×"),

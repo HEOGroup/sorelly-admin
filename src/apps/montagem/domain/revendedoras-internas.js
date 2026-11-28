@@ -1,3 +1,4 @@
+import { feriadosDe } from "@/apps/montagem/domain/feriados";
 // Sorelly Admin — domain/revendedoras-internas.js
 // Kits → Atendimento interno → Revendedoras internas. Controle das revendedoras que acertam na própria Sorelly:
 // ciclo de acerto (30/45/60 dias), próxima data, agendamento (feito pela agendadora) e mensagens prontas.
@@ -231,7 +232,7 @@ function vagasDoDia(lista, iso){ return capacidadeDia(iso) - marcadasDoDia(lista
 // ── PRAZO DO ACERTO EM DIAS ÚTEIS (regra de 11/11/2026; docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md) ──
 // Dia útil = segunda a sexta, sem feriado (os feriados vêm do RH, definirFeriadosAgenda). O relógio conta do PRIMEIRO dia marcado do ciclo; sem dia marcado, da data do kit (acerto previsto).
 var PRAZO_UTEIS = 5, JURIDICO_UTEIS = 30, ANTECEDENCIA_LIVRE = 10;
-function ehDiaUtil(iso){ var w = diaDaSemana(iso); return w!==0 && w!==6 && !feriadoDe(iso); }
+function ehDiaUtil(iso){ var w = diaDaSemana(iso); return w!==0 && w!==6 && !feriadoDe(iso) && !feriadosDe(String(iso).slice(0, 4))[iso]; }   // 28/11/2026: além dos feriados lançados no RH, valem os de Curitiba (nacionais, do Paraná e da cidade), mesmo que o RH não tenha lançado
 function diasUteisDepois(deIso, ateIso){ if(!deIso || !ateIso || ateIso<=deIso) return 0; var n = 0, d = deIso, guarda = 0; while(d<ateIso && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n++; } return n; }   // conta os dias úteis DEPOIS de "de", até "ate" (inclusive)
 function somaDiasUteis(iso, n){ var d = iso, guarda = 0; while(n>0 && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n--; } return d; }
 // o ciclo começa na data do KIT ATUAL (condicional aberto) ou no último acerto, o que for mais novo. Correção de 11/11/2026: quem já fez o acerto e pegou kit novo continua com a data marcada antiga guardada;

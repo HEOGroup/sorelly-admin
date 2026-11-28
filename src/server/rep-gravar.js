@@ -5,6 +5,7 @@
 // Nunca aceita chave da equipe (lx_, kx_, ax_, cf_) nem mexe em item de outra representante.
 import { emTransacao, gravarItens, lerPrefixosCli, versaoItens } from "./estado-itens.js";
 import { nomeDaRep } from "./rep-filtro.js";
+import { conferirSemDerrubar } from "./acerto-conferir.js";
 import { gravarModulo, lerModulo } from "./app-rep/base.js";
 import { LAPIDE, STATUS_TIRAR, idDaChave, prefixo, vivo } from "../apps/montagem/domain/app-rep.js";
 
@@ -92,7 +93,9 @@ export async function gravarItensRep(modulo, chaves, eu) {
         if (existe && ax && ax.recebimento && ax.recebimento.ok) { nega(k, "Esse atendimento já foi conferido pelo agendamento e não muda mais."); continue; }
         if (v._apagado) { nega(k); continue; }
         if (!String(v.rev || "").trim() || !/^\d{4}-\d{2}-\d{2}$/.test(String(v.data || ""))) { nega(k); continue; }
-        gravar[k] = Object.assign({}, v, { repCod: dono(existe), rep: nome, origem: "app", recebimento: existe ? existe.recebimento || null : null, fin: existe ? existe.fin : undefined, recebidoEm: (existe && existe.recebidoEm) || new Date().toISOString() });
+        // 28/11/2026 (Marcus): antes de gravar, o servidor refaz a conta do acerto com as regras oficiais e carimba o resultado (conferenciaServidor). Divergência não recusa o acerto: fica marcada para a auditoria (GET /api/consignado/ingest/conferencia).
+        const confSrv = conferirSemDerrubar(v);
+        gravar[k] = Object.assign({}, v, { repCod: dono(existe), rep: nome, origem: "app", recebimento: existe ? existe.recebimento || null : null, fin: existe ? existe.fin : undefined, recebidoEm: (existe && existe.recebidoEm) || new Date().toISOString() }, confSrv ? { conferenciaServidor: confSrv } : {});
         if (!existe && Array.isArray(v.creditosGarantiaUsados) && v.creditosGarantiaUsados.length) creditos.push({ ids: v.creditosGarantiaUsados.map(String), acertoId: id, kitId: v.kitId || null });
       } else if (p === "ar") {
         if (!minha(vale("a_" + id))) { nega(k); continue; }

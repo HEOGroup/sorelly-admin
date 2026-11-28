@@ -134,7 +134,9 @@ function valorLinha(r, i){
 function ehLoja(r, p){ return !ehInterno(r) && p.forma==="acerto_loja"; }
 // abatidoDivida: parte do que foi pago neste acerto que quitou dívida de acertos anteriores da mesma revendedora (o pagamento quita primeiro a dívida mais antiga)
 function pagoDe(r){ return Math.max(0, r2((r.pagamentos||[]).reduce(function(t,p,i){ return ehLoja(r, p) ? t : t+valorLinha(r, i); }, 0) - (r.abatidoDivida||0))); }
-function devidoDe(r){ return r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0) + (r.multas||0)); }   // multas: regras de 27/10/2026 (10% do valor pendente), somam no que ela deve
+// 28/11/2026 (Marcus): TUDO que foi cobrado no acerto e não foi pago é dívida: joias, taxa, multas, brinde a mais, tags e materiais (apoio, uso geral, maleta, expositor).
+// As cobranças à parte (tags + materiais) ficam em r.cobrancasAParte, gravadas pela conta única. Acerto antigo não tem esse campo e fica como sempre foi: registro finalizado não é recalculado.
+function devidoDe(r){ return r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0) + (r.multas||0) + (r.contaUnica ? (r.cobrancasAParte||0) : 0)); }   // multas: regras de 27/10/2026 (10% do valor pendente), somam no que ela deve
 // Prazo de 15 dias para quitar o pendente (regras de 27/10/2026): dias desde o acerto, dias de atraso e % de multa de atraso (1% ao dia, teto 10%). Acerto de regras antigas: null.
 function prazoPendente(r, hoje){
   var N = r.regrasNovas; if(!N || !r.data) return null;

@@ -6,7 +6,8 @@ import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk, condVisiveisPre } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
-import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, versaoComissaoAntiga, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
+import { contaDoRegistro, novaChanceUsada } from "@/apps/montagem/domain/acerto-derivado";
+import { calcularAcerto, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, versaoComissaoAntiga, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
 import { BIPADORAS, DIRETORIA, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
@@ -69,7 +70,8 @@ import { uneItau } from "@/apps/montagem/domain/itau-unico";
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
 // Regras de 27/10/2026 que o acerto precisa lembrar depois (prazo de quitação, multa de atraso): copiadas para o registro, para a Inadimplência não depender da versão atual.
-function copiaNovas(N){ return {prazoAcertoDiasUteis:N.prazoAcertoDiasUteis, atrasoPctDiaUtil:N.atrasoPctDiaUtil, juridicoDiasUteis:N.juridicoDiasUteis, prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
+function copiaNovas(N){ return {prazoAcertoDiasUteis:N.prazoAcertoDiasUteis, atrasoPctDiaUtil:N.atrasoPctDiaUtil, juridicoDiasUteis:N.juridicoDiasUteis, prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct,
+  baseCompleta:!!N.baseCompleta, brindeArredondamento:N.brindeArredondamento||"", semExcedenteComPendencia:!!N.semExcedenteComPendencia}; }
 // Dívida de acertos anteriores (Marcus, 26/10/2026): o que a revendedora paga num acerto novo quita PRIMEIRO a dívida mais antiga; só o resto vale para o acerto novo.
 // Devolve {total, abat:{idDoAcertoAntigo: valor}}. "Acerto com loja" não é pagamento.
 function abaterDividas(s, rev, pagamentos, exceto){
@@ -965,23 +967,32 @@ function reducer(s, a){
     // isenção (motivo justificado, ex.: falecimento na família) — remarcação isenta não pesa multa nem avança a escada.
     case "KIT_REMARCAR": {
       k = kitDe(s, a.id); if(!k) return s;
+      // 28/11/2026 (Marcus): a representante informa QUEM causou a ocorrência (domain/ocorrencias-acerto.js). Só a causada pela revendedora pesa multa; o percentual é sempre o do regulamento.
+      var isentaR = a.responsavel ? a.responsavel!=="revendedora" : !!a.isenta;
       return com(s, {kits: mapKit(s, a.id, function(x){
-          var lista = (x.remarcacoesLista||[]).concat([{em:agora, isenta:!!a.isenta, motivo:a.motivo||""}]);
-          return {remarcacoesLista:lista, remarcacoes:lista.length}; })},
-        "Remarcação registrada para "+k.rev+(a.isenta?" (isenta)":""), "atencao");
+          var lista = (x.remarcacoesLista||[]).concat([{em:agora, isenta:isentaR, motivo:a.motivo||"", responsavel:a.responsavel || (isentaR ? "" : "revendedora"), prova:!!a.prova, por:a.por||"", origem:"manual"}]), paR = x.preAcerto||{};
+          return {remarcacoesLista:lista, remarcacoes:lista.length, preAcerto:Object.assign({}, paR, {edicoes:(paR.edicoes||[]).concat([{em:agora, por:a.por||"", campo:"remarcacoes", de:lista.length-1, para:lista.length, justificativa:a.motivo||"", origem:"manual"}])})}; })},
+        "Remarcação registrada para "+k.rev+(isentaR?" (isenta)":""), "atencao");
     }
     // Representante remove uma remarcação lançada por engano (botão X na lista).
     case "KIT_REMARCAR_REMOVER": {
       k = kitDe(s, a.id); if(!k) return s;
       return com(s, {kits: mapKit(s, a.id, function(x){
-          var lista = (x.remarcacoesLista||[]).filter(function(r,i){ return i!==a.indice; });
-          return {remarcacoesLista:lista, remarcacoes:lista.length}; })},
+          var antes = (x.remarcacoesLista||[]).length, lista = (x.remarcacoesLista||[]).filter(function(r,i){ return i!==a.indice; }), paX = x.preAcerto||{};
+          return {remarcacoesLista:lista, remarcacoes:lista.length, preAcerto:Object.assign({}, paX, {edicoes:(paX.edicoes||[]).concat([{em:agora, por:a.por||"", campo:"remarcacoes", de:antes, para:lista.length, justificativa:a.justificativa||"", origem:"manual"}])})}; })},
         "Remarcação removida");
     }
     // Pré-acerto (02/11/2026, Marcus): a representante preenche ANTES do acerto os dias de atraso (as remarcações já ficam em remarcacoesLista). No acerto os dois chegam travados.
     case "KIT_PRE_ACERTO": {
       k = kitDe(s, a.id); if(!k) return s;
-      return com(s, {kits: mapKit(s, a.id, function(){ return {preAcerto:{atrasoDias:Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), em:agora}}; })},
+      // 28/11/2026 (Marcus): a PRIMEIRA data prevista fica guardada (primeiraData) e não é apagada por correção nem por mudança de data na DevMaster.
+      // Corrigir a data ou os dias, ou salvar dias diferentes da contagem do sistema, gera linha no histórico: antes (de), depois (para), justificativa, quem (por), quando (em) e origem.
+      return com(s, {kits: mapKit(s, a.id, function(x){ var pa = x.preAcerto||{}, dias = Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), ed = (pa.edicoes||[]).slice(), og = a.origem==="automatico" ? "automatico" : "manual";
+          var linha = function(campo, de, para){ ed.push({em:agora, por:a.por||"", campo:campo, de:de, para:para, justificativa:a.justificativa||"", origem:og}); };
+          if(a.dataOriginal && pa.dataOriginal && a.dataOriginal!==pa.dataOriginal) linha("dataOriginal", pa.dataOriginal, a.dataOriginal);
+          if(pa.conferido && (pa.atrasoDias||0)!==dias) linha("atraso", pa.atrasoDias||0, dias);
+          else if(!pa.conferido && a.diasCalculados!=null && a.diasCalculados!==dias) linha("atraso", a.diasCalculados, dias);
+          return {preAcerto:Object.assign({}, pa, {atrasoDias:dias, em:agora, dataOriginal:a.dataOriginal || pa.dataOriginal || null, primeiraData:pa.primeiraData || a.dataOriginal || null, origem:og, conferido:true, confirmada:true, por:a.por || pa.por || "", edicoes:ed})}; })},
         "Pré-acerto salvo para "+k.rev);
     }
     // MULTAS AUTOMÁTICAS (26/11/2026, Marcus): o sistema calcula o atraso e as remarcações (rota /api/representante/multas) e grava aqui; a representante só confirma.
@@ -994,6 +1005,7 @@ function reducer(s, a){
           for(n=0; n<isn; n++) lista.push({em:agora, isenta:true, motivo:"Autorizada", auto:true});
           var pa = x.preAcerto||{};
           return {remarcacoesLista:lista, remarcacoes:lista.length, preAcerto:{atrasoDias:Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), em:agora, auto:a.auto||pa.auto||null, confirmada:!!a.confirmada, editada:!!a.editada || !!pa.editada,
+            primeiraData:pa.primeiraData || (a.auto && a.auto.referencia) || null, origem:"automatico",   // 28/11/2026: a primeira data de referência fica guardada; mudança de data depois não a apaga
             edicoes:(pa.edicoes||[]).concat(a.edicao ? [Object.assign({em:agora, por:a.por||""}, a.edicao)] : [])}}; })},
         a.edicao ? "Multa editada em "+k.rev : "");
     }
@@ -1005,18 +1017,24 @@ function reducer(s, a){
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
       var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK, comissaoEspecialDe(s, k.rev));   // comissão especial da revendedora (09/11/2026)
       var abK = abaterDividas(s, k.rev, a.pagamentos, null);
-      var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
+      // CÁLCULO ÚNICO (Marcus, 28/11/2026): o registro sai da mesma conta da tela (contaDoRegistro = derivarAcerto finalizado, com o formulário do acerto). Sem formulário (chamada antiga), vale a conta de antes.
+      var ctK = a.formSnapshot ? contaDoRegistro({versaoBase:versaoK0, modalidade:modK, especial:comissaoEspecialDe(s, k.rev), vez:vezCobravel(k.remarcacoesLista), form:Object.assign({}, a.formSnapshot, {kitApoio:null}), condicionais:[], autoPecas:true, novaChanceUsada:novaChanceUsada(s.acertosConsignado, k.rev),
+        dividaAnterior:dividasAnteriores(s.acertosConsignado, k.rev).reduce(function(t, x){ return t+x.falta; }, 0)}) : null;
+      if(ctK && ctK.bloqueio) return com(s, {}, ctK.bloqueio, "alerta");   // 28/11/2026: brinde escolhido sem direito não fecha o acerto (a tela já trava; aqui é a última conferência antes de gravar)
+      var vUsoK = ctK && ctK.versao ? ctK.versao : versaoK;   // versão realmente aplicada (a da DATA do acerto: condições de 28/11/2026 valem para os próximos acertos, não só para kits novos)
+      var res = ctK ? ctK.res : calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
         valorPago:(a.valorPago||0) > abK.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abK.total), atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
       // Revendedora recusou negociar o que faltava: sem brinde de jeito nenhum, vira nota promissória (executada em 48h úteis).
       if(a.recusouNegociar) res = Object.assign({}, res, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:isoDia(new Date(agora)), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:versaoK.novas ? copiaNovas(versaoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:isoDia(new Date(agora)), regrasVersaoId:vUsoK.id, regrasCondicoes:vUsoK.condicoes||1, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:vUsoK.novas ? copiaNovas(vUsoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, motivoVendaBaixa:a.motivoVendaBaixa||"", recebimento:null,
         vendaDigitada:a.vendaDigitada!=null ? a.vendaDigitada : a.vendaBruta, trocas:a.trocas||[], tagsDanificadas:a.tagsDanificadas||0, tagsValor:a.tagsValor||0,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
         pecasADevolver:a.pecasADevolver!=null?a.pecasADevolver:null, condicionaisSelecionadas:a.condicionaisSelecionadas||[],
         pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
-        brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, kitApoio:a.kitApoio||null, semAssinatura:a.semAssinatura||null,
+        brindesLancados:ctK && ctK.brindeBloqueado ? [] : (a.brindesLancados||[]), excedenteBrinde:ctK ? ctK.excedenteBrinde : (a.excedenteBrinde||0), contaUnica:!!ctK, totalAPagar:ctK ? ctK.totalAPagar : null, cobrancasAParte:ctK ? ctK.cobrancasAParte : null,
+        memoria:ctK ? ctK.memoria : null, garantiaUsada:ctK ? ctK.garantiaUsada : null, creditoGarantiaSobra:ctK ? ctK.garantiaSobra : 0, novaChance:!!(ctK && ctK.novaChance), kitApoio:a.kitApoio||null, semAssinatura:a.semAssinatura||null,
         pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0, kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[],
         assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas}, res);
       var lpU1 = usarLinksNoAcerto(s.lp, a.pagamentos, registro.id, agoraSPLp(), k.rev);   // links de pagamento usados como pagamento ficam marcados (não descontam duas vezes)
@@ -1437,18 +1455,25 @@ function reducer(s, a){
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
+      if(it.status==="acertado" && (s.acertosConsignado||[]).some(function(r0){ return r0.internoId===it.id && r0.tipo==="acerto"; })) return s;   // 28/11/2026: dois cliques em Finalizar não gravam dois acertos
       var modI = a.modalidade || modalidadeDe(s, it.nome), antigaI = !!a.regraAntiga && modI!=="prata";   // comissão antiga: a revendedora questionou (Marcus, 16/11/2026); vale só neste acerto
       var vEf = versaoEfetiva(antigaI ? versaoComissaoAntiga(vBase) : vBase, modI, comissaoEspecialDe(s, it.nome));   // comissão especial da revendedora (Edna, 09/11/2026)
       var abI = abaterDividas(s, it.nome, a.pagamentos, null);
-      var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
+      // CÁLCULO ÚNICO (Marcus, 28/11/2026): mesma conta da tela do Atendimento Sorelly (sem taxa de deslocamento, com o desconto de brinde por atraso de chegada). Sem formulário, vale a conta de antes.
+      var ctI = a.formSnapshot ? contaDoRegistro({regraAntiga:antigaI, brindeFator:a.brindeFator, versaoBase:vBase, modalidade:modI, especial:comissaoEspecialDe(s, it.nome), vez:vezCobravel(it.remarcacoesLista), form:a.formSnapshot, condicionais:[], semTaxa:true, novaChanceUsada:novaChanceUsada(s.acertosConsignado, it.nome),
+        dividaAnterior:dividasAnteriores(s.acertosConsignado, it.nome).reduce(function(t, x){ return t+x.falta; }, 0)}) : null;
+      if(ctI && ctI.bloqueio) return com(s, {}, ctI.bloqueio, "alerta");   // 28/11/2026: brinde escolhido sem direito não fecha o acerto
+      var vUsoI = ctI && ctI.versao ? ctI.versao : vEf; if(vUsoI.condicoes===2) antigaI = false;   // versão aplicada na data do acerto; a comissão antiga não existe nas condições de 28/11/2026
+      var resI = ctI ? ctI.res : calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
         valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
       if(a.recusouNegociar) resI = Object.assign({}, resI, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var regI = Object.assign({id:"AC"+agora, internoId:it.id, rev:it.nome, rep:"Atendimento interno", origem:"interno", tipo:"acerto",
-        data:isoDia(new Date(agora)), regrasVersaoId:vBase.id, regraAntiga:antigaI, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        data:isoDia(new Date(agora)), regrasVersaoId:vUsoI.id, regrasCondicoes:vUsoI.condicoes||1, regraAntiga:antigaI, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vUsoI.novas ? copiaNovas(vUsoI.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(it.remarcacoesLista||[]).length, formSnapshot:a.formSnapshot||null, recebimento:null,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null, pecasADevolver:a.pecasADevolver!=null ? a.pecasADevolver : null,
         condicionaisSelecionadas:a.condicionaisSelecionadas||[], pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
-        brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
+        brindesLancados:ctI && ctI.brindeBloqueado ? [] : (a.brindesLancados||[]), excedenteBrinde:ctI ? ctI.excedenteBrinde : (a.excedenteBrinde||0), contaUnica:!!ctI, totalAPagar:ctI ? ctI.totalAPagar : null, cobrancasAParte:ctI ? ctI.cobrancasAParte : null,
+        memoria:ctI ? ctI.memoria : null, garantiaUsada:ctI ? ctI.garantiaUsada : null, creditoGarantiaSobra:ctI ? ctI.garantiaSobra : 0, novaChance:!!(ctI && ctI.novaChance), pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
       var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno", semExplicacao:!!a.semExplicacao, saiuSemAssinar:!!a.saiuSemAssinar}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
@@ -1637,11 +1662,9 @@ function reducer(s, a){
     case "FORMAS_PAGAMENTO_SET": return com(s, {formasPagamento:a.formas}, "Formas de pagamento atualizadas");
     // Nova versão das regras de comissão/brinde/remarcação: só vale a partir do próximo kit criado (kits em aberto mantêm a regra antiga carimbada).
     case "REGRAS_CONSIGNADO_ATUALIZAR": {
-      var atualAntes = versaoVigente(s);
-      var novaV = novaVersaoRegras(a.campos, atualAntes ? atualAntes.id : null);
-      if(novaV.novas && novaV.vigenciaDesde < "2026-10-27") novaV.vigenciaDesde = "2026-10-27";   // as regras novas só valem para kits entregues a partir dessa data
-      return com(s, {regrasConsignado:{versoes:(s.regrasConsignado.versoes||[]).concat([novaV]), atualId:novaV.id}},
-        "Regras do consignado atualizadas: vale a partir do próximo kit de cada revendedora");
+      // 28/11/2026 (Marcus: fonte única, nenhuma regra só no navegador): as regras do acerto mudam SÓ no código (domain/consignado.js) e chegam iguais a todos os computadores.
+      // Esta ação criava uma versão que existia só neste navegador, até recarregar. Não cria mais nada.
+      return com(s, {}, "As regras do acerto são definidas no código e valem iguais para todos. Peça a mudança ao desenvolvimento.", "alerta");
     }
     // Modelo do papel da condicional (Revendedoras › Condicional): guarda o texto de cada peça (cab, termo, nota, acerto) e o histórico das versões anteriores.
     case "CONDICIONAL_MODELO_SALVAR": {

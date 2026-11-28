@@ -3,6 +3,79 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 28/11/2026 (Calculadora de acertos: missão de reestruturação, condições novas desligadas e conferência no servidor)
+
+Pedido do Marcus (texto "MISSÃO — REESTRUTURAÇÃO DEFINITIVA DAS REGRAS E CALCULADORAS DE ACERTOS SORELLY"). O documento Markdown citado como anexo **não chegou**: vale o que está escrito no pedido. Nada foi publicado. Regras completas: `docs/regras/CALCULADORA-DE-ACERTOS.md`.
+
+**Decisões da direção registradas**
+- As condições novas valem para os **próximos acertos**, com kit novo ou em circulação. A ativação depende de homologação jurídica e de autorização do Marcus.
+- Brinde novo (Ouro e Prata): abaixo de R$ 500,00 sem brinde; R$ 500,00 a R$ 699,99 só R$ 44,00 de Select; R$ 700,00 a R$ 999,99 R$ 68,00 Normal e R$ 82,00 Select. Demais faixas iguais.
+- Brinde arredondado de forma matemática, por categoria, depois das penalidades. Saldos Normal e Select separados; o que sobra é perdido.
+- Multa do valor pendente: 5% sobre tudo que ficou pendente ao finalizar (antes 10%). Nunca sobre ela mesma.
+- Base da pendência: acerto completo (joias, taxa, materiais e tags), sem a diferença de brinde e sem a multa.
+- Com valor pendente não existe diferença de brinde. Brinde sem direito não é entregue e não gera dívida. O acerto parcial fecha depois de acertar a escolha.
+- Material não bipado é cobrado. **A marcação "Cobrar este material", criada na manhã de 28/11, foi superada e retirada.**
+- A representante informa fatos (data original, remarcações, quem causou, motivo, prova). O sistema define a penalidade. Toda correção fica no histórico.
+- Venda mínima: média das 4 últimas (ou as que existem), venda zero conta, R$ 500,00 representante e R$ 700,00 interno, nova chance uma única vez por revendedora.
+- Peças do próximo mês: R$ 7.000,00 ou mais = 50 peças (condições novas).
+- Negativação, Jurídico e encargos sujeitos a análise não são automáticos.
+
+**Feito no código (só neste computador)**
+- `consignado.js`: condições novas como versão 2, com data efetiva em `VIGENCIA_CONDICOES_2` (hoje `null` = desligadas). Na data, calculadoras, registro, dívida, aba de regras e leitura do Sorelly Intel trocam sozinhos.
+- `consignado.js`: limite exato de 5% e de 10% de pendência corrigido (arredondamento do percentual em 6 casas).
+- `acerto-derivado.js`: versão pela data do acerto; cobranças sem comissão separadas; sobra do crédito de garantia; diferença de brinde proibida com pendência; memória de cálculo; `conferirRegistro`.
+- **Erro corrigido:** a média de vendas nunca bloqueava o kit novo (argumentos fora de ordem). Agora bloqueia. Nova chance com botão nas duas calculadoras, uma vez por revendedora, gravada no acerto.
+- `reducer.js`: registro guarda versão aplicada, memória de cálculo, sobra de garantia e nova chance; brinde sem direito não fecha o acerto; segundo clique em Finalizar não grava outro acerto (também no Atendimento Sorelly); regra não muda mais pelo navegador.
+- **Multas:** desde 26/11 o cálculo automático só achava revendedoras do Atendimento Sorelly e o pré-acerto estava escondido. Nos 26 acertos reais de 27/11, todos saíram sem multa de atraso e sem remarcação. Agora o acerto só finaliza com as multas conferidas: confirmação do cálculo do sistema ou pré-acerto preenchido. O bloco diz a origem ("calculado pelo sistema" ou "informado pela representante").
+- Pré-acerto: data original, contagem do sistema em dias úteis (feriados de Curitiba), quem causou cada ocorrência, prova para motivo sério, justificativa em toda correção e histórico (`preAcerto.edicoes`). A primeira data fica guardada (`primeiraData`).
+- Servidor: `src/server/acerto-conferir.js` refaz a conta de cada acerto antes de gravar (`rep-gravar.js`) e carimba `conferenciaServidor`. Divergência não recusa o acerto: fica marcada. Rota de auditoria só de leitura: `GET /api/consignado/ingest/conferencia`.
+- `regras-acerto.js`: leitura com versão vigente, condições novas, penalidades, feriados, definições e fórmulas.
+- Teste: `node scripts/testar-acertos.mjs`, 387 conferências certas.
+
+**Auditoria dos acertos reais de 27/11/2026 (26 acertos, só leitura)**
+- Comissão, valor do acerto e valor devido: certos nos 26.
+- Remarcação e atraso: zero nos 26 (causa acima).
+- 1 acerto com 2 brindes lançados sem direito (pendência de 60,8%). A trava nova impede.
+- 5 acertos com material (R$ 130,00 no total), todos pagos. Dívida aberta: R$ 381,92 em 1 acerto, conta certa.
+- Nenhum registro foi alterado.
+
+**Versão publicada x este computador**
+- Publicada: 0.21.278 (27/11/2026, 23:45). A pasta deste computador está 60 publicações atrás e tem trabalho não publicado de várias conversas.
+- Nenhuma correção de regra desta conversa está publicada. `mobile/representante.js` difere da publicada em cerca de 430 linhas para cada lado. Publicar exige juntar com a versão publicada, arquivo por arquivo.
+
+**Em aberto (aguardando o Marcus)**
+1. O documento anexo não chegou. Dependem dele: as "demais faixas" de brinde (mantive as atuais), os módulos da Inadimplência e os encargos depois do prazo.
+2. A multa de 5% incide também sobre dívida anterior que continua em aberto? Hoje não (só sobre o pendente do acerto atual).
+3. Desconto de 10% do brinde por chegar mais de 30 minutos atrasada no Atendimento Sorelly: continua? Não está no regulamento.
+4. A lista de feriados tem 29/03 (aniversário de Curitiba) e 19/12 (emancipação do Paraná). A empresa trata como feriado?
+5. Jurídico da Inadimplência aparece aos 60 dias corridos, sem base no regulamento. Qual é o prazo?
+6. Taxa de R$ 35,00 no cancelamento com venda baixa: está no folder e não na conta.
+7. Sobra do crédito de garantia fica gravada no acerto, mas ainda não volta sozinha como crédito no próximo acerto (falta ligar a Garantia › Créditos).
+8. Rota antiga do app (`/api/consignado/ingest/acerto`) ainda aceita acerto com números prontos. Desligar?
+9. Migração do atendimento interno para representante quando a média não fecha: falta definir como.
+10. Dívida anterior e acerto atual em recebimentos separados (fiscal): a conta separa os valores; a tela ainda aceita um pagamento só.
+
+## 28/11/2026 (Calculadora de acertos: definições oficiais e alinhamento das regras)
+
+- **Fonte única (Marcus):** as regras do acerto seguem o folder oficial e ficam em um lugar só. Texto: `docs/regras/CALCULADORA-DE-ACERTOS.md`. Números: `domain/consignado.js`. Leitura para o Sorelly Intel: `domain/regras-acerto.js` e `GET /api/consignado/ingest/regras` (só leitura, chave de serviço; falta o Leonardo ligar a ferramenta `regras_acerto` do Sorelly Intel a essa rota).
+- **Venda e materiais (Marcus):** joia não devolvida é vendida. Material de apoio, material de uso geral, maleta, expositor e demais materiais cobrados entram pelo valor inteiro, sem comissão e sem desconto. Tags cobradas fazem parte do valor devido. **Feito:** em Peças que voltaram o material de uso geral (código MU) só é cobrado com marcação explícita na peça (`conf.cobrar`); a tabela de comissão repetida (`faixaDe`) saiu da tela.
+- **Dívida (Marcus: "não existe sentido em pagar só as joias, deixar os materiais em aberto e não aparecer como inadimplente"):** tudo que foi cobrado no acerto e não foi pago é dívida. **Feito:** `devidoDe` (`domain/comissoes.js`) soma `cobrancasAParte` (tags + materiais) nos registros da conta única; Inadimplência, Comissões, Direcionar e Consolidado usam essa função. A conta do servidor (`faltaDe` em `server/app-rep/consignado.js`) recebeu a mesma soma.
+- **Brinde antes do pagamento (Marcus):** a revendedora continua escolhendo antes de pagar, mas a escolha é provisória. **Feito** em `derivarAcerto`: sem pagamento lançado vale o direito cheio; com pagamento lançado vale a tabela de pendência (até 5% = 80%, até 10% = 50%, acima = sem brinde), recalculada a cada pagamento; `brindeAviso` diz se é para diminuir os brindes ou se não pode liberar; `brindeSemDireito` impede finalizar no admin das representantes com brinde sem direito. Antes, quem devia mais de 10% via o brinde cheio. A diferença de brinde só conta como paga depois do acerto quitado (ordem: dívida antiga → acerto → diferença de brinde, tags e materiais).
+- **Acertos antigos (Marcus):** os registros históricos ficam como estão. Nada de recálculo nem cobrança retroativa. As correções valem daqui em diante (`contaUnica` marca os registros novos).
+- **Regras antigas tiradas do código (Marcus: "seguir exatamente o folder"):** escada de atraso em dias corridos (5% a 25%) e Jurídico em 60 dias (`NOVAS_PADRAO.atrasoAcerto` e `juridicoDias`); valor de reserva de R$ 500,00 na taxa de deslocamento; textos "60 dias" no Consolidado dos representantes e no pré-acerto. Comparação com o folder: tabelas Normal e Prata, remarcação, pendência do brinde, taxa, multa, parcelas, prazos e venda mínima estão iguais.
+- **Fica, por ser histórico:** conta de kit recebido antes de 27/10/2026 (versão sem `novas`, citada no próprio folder) e as tabelas legadas usadas só nela.
+- **Layout e ordem das etapas (Marcus):** ele define com o ChatGPT. Não reorganizar telas por conta própria.
+- **Datas e multas (análise, nada construído):** não dá para impedir a troca de data na DevMaster (só lemos; gravar lá é proibido). Proposta: o Admin guarda o próprio histórico por ciclo do kit (data original, data atual, cada mudança detectada na leitura da DevMaster com motivo e isenção, data do atendimento) e calcula sozinho os dias úteis de atraso. No atendimento interno isso já existe (`r.primeira`, `remarcacoesDoCiclo` em `domain/revendedoras-internas.js`). No admin das representantes os dias de atraso e as remarcações são digitados pela representante no pré-acerto: é o ponto fraco. Aguardando aprovação do Marcus.
+- **Em aberto (perguntar ao Marcus):** (1) "Comissão antiga" do Atendimento Sorelly (decisão de 16/11: brinde de R$ 48,00 / R$ 68,00 na faixa de R$ 500,00 quando a revendedora questiona) contradiz o folder: tirar? (2) A tela Regras dos acertos edita as regras só no navegador de quem editou (`regrasConsignado` não vai para o servidor): travar a edição e deixar só o padrão oficial do código? (3) Venda mínima: o folder diz "sem nova chance", a decisão de 11/11 deixa a representante dar nova chance, e a conta nunca bloqueia (argumentos trocados na chamada de `kitNovoLiberado2` em `acerto-derivado.js`); o admin das representantes não tem botão de nova chance. (4) Multa de 10%: hoje incide só sobre joias e taxa pendentes, não sobre material nem diferença de brinde. (5) Inadimplência manda a dívida para "Jurídico" com 60 dias corridos; o folder não dá esse prazo. (6) Taxa de R$ 35,00 no cancelamento com venda abaixo de R$ 300,00 está no folder e não está na conta. (7) No Atendimento Sorelly a lista de brindes some quando o brinde bloqueia: o aviso aparece, mas não dá para retirar o brinde escolhido.
+- **Teste:** 48 conferências de conta (brinde do exemplo do Marcus, dívida com material e tags, atraso em dias úteis igual ao exemplo do folder, taxa, tabelas iguais ao folder) e os 9 casos da conta única. Nenhum acerto real foi finalizado. Nada publicado.
+
+## 28/11/2026 (Calculadora de acertos: auditoria, cálculo único e 3 definições)
+- **Marcus aprovou 3 definições:** (1) **Material de uso geral (MU) nunca é cobrado só porque não foi bipado**; a cobrança precisa de marcação explícita, peça por peça. Material de apoio (MP) segue a regra de 26/11 (MP0063 não devolvido conta como vendido), também com marcação explícita. (2) **A falta de pagamento (que define o brinde) é medida só sobre as joias** (valor devido = valor do acerto + taxa); material e brinde excedente ficam fora dessa conta. (3) **Prazos: 30 dias corridos para quitar e 48 horas para a nota promissória** (vale o que a tela mostra; as notas de 11/11 com 15 dias e 24 h ficam substituídas).
+- **Cálculo único (feito):** o registro do acerto (`ACERTO_REGISTRAR` e `INT_ACERTO_REGISTRAR` em `state/reducer.js`) agora usa `contaDoRegistro` (`domain/acerto-derivado.js`), que é o mesmo `derivarAcerto` da tela, já como finalizado. Antes o reducer refazia a conta com `calcularAcerto` e, nas regras novas, um acordo fechado era gravado como pago por inteiro: sem a multa de 10% do pendente e com brinde cheio. O registro guarda também `totalAPagar`, `cobrancasAParte` (tags + materiais + kit apoio) e `contaUnica:true`. Teste em 9 casos: o registro novo bate com a tela nos 9; só muda o caso do acordo.
+- **Topo de Peças que voltaram (feito):** lista financeira compacta vinda da conta oficial (`calcFin` em `mobile/representante.js` → `mobile/conf-devolucao.js`).
+- **Falta (aprovado, não construído):** regra do MU/MP na bipagem; brinde em duas fases (provisório antes do pagamento, definitivo depois; hoje quem paga menos de 90% vê o brinde cheio); ordem das etapas (conferência, trocas e garantias, multas e atraso, brindes, vendas e pagamentos, peças do próximo mês, finalizar); tirar a tabela própria `faixaDe` de `conf-devolucao.js`; rota só de leitura `regras-acerto` para o Sorelly Intel (`regras_acerto`); atualizar as tabelas de brinde em `domain/CLAUDE.md` (500 a 699,99: Normal R$ 44 e Select R$ 32, no Ouro e na Prata).
+- **Em aberto (perguntar ao Marcus):** `devidoDe` (`domain/comissoes.js`), usado por Inadimplência, Comissões e Direcionar, não soma materiais nem tags. Quem não paga o material não aparece como devedora.
+
 ## 27/11/2026 — Consolidado dos representantes: uma visão só (Marcus)
 - A tela Consolidado dos representantes NÃO terá outro formato de visualização: só "Por representante" (sem seletor Visão, sem Fila, sem Passo a passo). Tem coluna "Código" com o código ou os códigos de cada representante (ex.: Thalita tem mais de um). "Taxas não pagas" virou "Reposição taxas". Busca da representante em fonte 13 px. A lista de atendimentos que abre ao clicar na representante segue só porque a conferência (Ficha) depende dela; falta o Marcus decidir se ela sai.
 
